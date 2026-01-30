@@ -1,0 +1,507 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background, #f8fafc);
+}
+
+.main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2rem;
+}
+
+.loadingContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+/* Image Gallery */
+.gallery {
+  grid-column: 1 / -1;
+}
+
+.mainImage {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: #e2e8f0;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.discountBadge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.thumbnails {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.thumbnail {
+  width: 100px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  padding: 0;
+  background: none;
+  transition: all 0.2s ease;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbnail.active {
+  border-color: var(--color-primary, #0066ff);
+}
+
+.thumbnail:hover {
+  transform: scale(1.05);
+}
+
+/* Content */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.productInfo {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text, #1a1a2e);
+  margin: 0 0 1rem;
+  line-height: 1.3;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.rating {
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.reviewCount {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.location {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.875rem;
+}
+
+.badges {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  background: #f0fdf4;
+  color: #16a34a;
+  border-radius: 20px;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.description {
+  color: var(--color-text, #1a1a2e);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.infoLabel {
+  font-size: 0.813rem;
+  color: var(--color-text-muted, #64748b);
+}
+
+.infoValue {
+  font-weight: 500;
+  color: var(--color-text, #1a1a2e);
+}
+
+/* Section */
+.section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  margin: 0 0 1rem;
+}
+
+.highlightsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.highlightsList li {
+  font-size: 0.938rem;
+  color: var(--color-text, #1a1a2e);
+  line-height: 1.5;
+}
+
+.inclusionsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list li {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.included {
+  color: #16a34a;
+}
+
+.excluded {
+  color: #dc2626;
+}
+
+/* Booking Card */
+.bookingCard {
+  position: sticky;
+  top: 2rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  height: fit-content;
+}
+
+.priceSection {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.currency {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.suffix {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #64748b);
+}
+
+.originalPrice {
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #64748b);
+  text-decoration: line-through;
+  margin-top: 0.25rem;
+}
+
+/* Booking Section */
+.bookingSection {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.dateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.dateButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dateButton:hover:not(.disabled) {
+  border-color: var(--color-primary, #0066ff);
+}
+
+.dateButton.selected {
+  border-color: var(--color-primary, #0066ff);
+  background: rgba(0, 102, 255, 0.05);
+}
+
+.dateButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.dateLabel {
+  font-size: 0.813rem;
+  font-weight: 500;
+  color: var(--color-text, #1a1a2e);
+}
+
+.availability {
+  font-size: 0.688rem;
+  color: #16a34a;
+  margin-top: 0.25rem;
+}
+
+.dateButton.disabled .availability {
+  color: #dc2626;
+}
+
+/* Quantity Selector */
+.quantitySelector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.quantitySelector span {
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.quantityControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.quantityBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantityBtn:hover:not(:disabled) {
+  border-color: var(--color-primary, #0066ff);
+  color: var(--color-primary, #0066ff);
+}
+
+.quantityBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantityValue {
+  font-weight: 600;
+  min-width: 2rem;
+  text-align: center;
+}
+
+/* Total Section */
+.totalSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.totalLabel {
+  font-weight: 500;
+  color: var(--color-text, #1a1a2e);
+}
+
+.totalPrice {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .bookingCard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .priceSection {
+    margin-bottom: 1rem;
+  }
+
+  .bookingSection {
+    margin-bottom: 1rem;
+  }
+
+  .dateGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.375rem;
+  }
+
+  .dateButton {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .dateLabel {
+    font-size: 0.75rem;
+  }
+
+  .availability {
+    font-size: 0.625rem;
+  }
+
+  .totalSection {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .actions {
+    flex-direction: row;
+  }
+
+  .main {
+    padding-bottom: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .title {
+    font-size: 1.375rem;
+  }
+
+  .inclusionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}

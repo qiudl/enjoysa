@@ -1,0 +1,163 @@
+/* PaymentMethodSelector Component Styles */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+}
+
+/* Methods List */
+.methods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.method {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  text-align: left;
+  width: 100%;
+}
+
+.method:hover:not(.disabled) {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-50);
+}
+
+.method:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+.method.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.method.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Method Icon */
+.methodIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-background-alt);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+}
+
+.selected .methodIcon {
+  background: var(--color-primary);
+  color: white;
+}
+
+.logo {
+  width: 32px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Method Info */
+.methodInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.methodLabel {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--color-text);
+}
+
+.methodDescription {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Checkmark */
+.checkmark {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-full);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all var(--duration-fast) var(--ease-bounce);
+}
+
+.checkmark.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Security Notice */
+.securityNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-success-bg);
+  border-radius: var(--radius-md);
+}
+
+.securityIcon {
+  font-size: var(--text-lg);
+}
+
+.securityText {
+  font-size: var(--text-sm);
+  color: var(--color-success-dark);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .method {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .methodIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logo {
+    width: 24px;
+  }
+
+  .methodLabel {
+    font-size: var(--text-sm);
+  }
+
+  .methodDescription {
+    font-size: var(--text-xs);
+  }
+}

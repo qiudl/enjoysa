@@ -1,0 +1,161 @@
+/* CategoryCard Component Styles */
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+}
+
+.card:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), var(--shadow-lg);
+}
+
+.card.selected {
+  box-shadow: 0 0 0 3px white, 0 0 0 5px var(--color-primary);
+}
+
+/* Variants */
+.default {
+  min-height: 140px;
+  padding: var(--space-5);
+}
+
+.compact {
+  min-height: 100px;
+  padding: var(--space-4);
+}
+
+.icon-only {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+}
+
+/* Overlay for background images */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  pointer-events: none;
+}
+
+.hasImage .content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Content */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: white;
+}
+
+.icon-only .content {
+  gap: 0;
+}
+
+.default .content {
+  gap: var(--space-2);
+}
+
+.compact .content {
+  gap: var(--space-1);
+}
+
+/* Icon */
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.compact .iconWrapper {
+  width: 40px;
+  height: 40px;
+}
+
+.icon-only .iconWrapper {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 0;
+}
+
+.card:hover .iconWrapper {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Name */
+.name {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: white;
+  line-height: 1.3;
+}
+
+.compact .name {
+  font-size: var(--text-sm);
+}
+
+/* Count */
+.count {
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .default {
+    min-height: 120px;
+    padding: var(--space-4);
+  }
+
+  .compact {
+    min-height: 80px;
+    padding: var(--space-3);
+  }
+
+  .iconWrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .icon-only {
+    width: 60px;
+    height: 60px;
+  }
+
+  .name {
+    font-size: var(--text-sm);
+  }
+
+  .count {
+    font-size: var(--text-xs);
+  }
+}

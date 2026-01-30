@@ -1,0 +1,232 @@
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
+import { User, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Input } from '../../Common/Input';
+import styles from './ParticipantForm.module.css';
+import type { ParticipantDetail } from '../../../types';
+
+export interface ParticipantFormProps {
+  /** 参与者列表 */
+  participants: ParticipantDetail[];
+  /** 参与者变化回调 */
+  onChange?: (participants: ParticipantDetail[]) => void;
+  /** 最大参与者数量 */
+  maxParticipants?: number;
+  /** 最小参与者数量 */
+  minParticipants?: number;
+  /** 是否需要护照信息 */
+  requirePassport?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
+}
+
+const defaultParticipant: Omit<ParticipantDetail, 'id'> = {
+  type: 'adult',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  dateOfBirth: '',
+  nationality: '',
+  passportNumber: '',
+  specialRequirements: '',
+};
+
+export const ParticipantForm: React.FC<ParticipantFormProps> = ({
+  participants,
+  onChange,
+  maxParticipants = 10,
+  minParticipants = 1,
+  requirePassport = false,
+  readonly = false,
+}) => {
+  const { t } = useTranslation();
+  const [expandedIds, setExpandedIds] = useState<string[]>(
+    participants.length > 0 ? [participants[0].id] : []
+  );
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  const addParticipant = () => {
+    if (participants.length >= maxParticipants) return;
+
+    const newId = `p-${Date.now()}`;
+    const newParticipant: ParticipantDetail = {
+      ...defaultParticipant,
+      id: newId,
+    };
+    onChange?.([...participants, newParticipant]);
+    setExpandedIds(prev => [...prev, newId]);
+  };
+
+  const removeParticipant = (id: string) => {
+    if (participants.length <= minParticipants) return;
+    onChange?.(participants.filter(p => p.id !== id));
+    setExpandedIds(prev => prev.filter(i => i !== id));
+  };
+
+  const updateParticipant = (id: string, field: keyof ParticipantDetail, value: string) => {
+    onChange?.(
+      participants.map(p =>
+        p.id === id ? { ...p, [field]: value } : p
+      )
+    );
+  };
+
+  const isExpanded = (id: string) => expandedIds.includes(id);
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>
+          <User size={20} />
+          {t('participant.title')}
+        </h3>
+        <span className={styles.count}>
+          {participants.length} / {maxParticipants} {t('participant.people')}
+        </span>
+      </div>
+
+      <div className={styles.list}>
+        {participants.map((participant, index) => (
+          <div
+            key={participant.id}
+            className={clsx(styles.card, { [styles.expanded]: isExpanded(participant.id) })}
+          >
+            <button
+              type="button"
+              className={styles.cardHeader}
+              onClick={() => toggleExpand(participant.id)}
+            >
+              <div className={styles.cardTitle}>
+                <span className={styles.number}>{index + 1}</span>
+                <span className={styles.name}>
+                  {participant.firstName && participant.lastName
+                    ? `${participant.firstName} ${participant.lastName}`
+                    : t('participant.unnamed')}
+                </span>
+              </div>
+              <div className={styles.cardActions}>
+                {!readonly && participants.length > minParticipants && (
+                  <button
+                    type="button"
+                    className={styles.removeButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeParticipant(participant.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+                {isExpanded(participant.id) ? (
+                  <ChevronUp size={20} />
+                ) : (
+                  <ChevronDown size={20} />
+                )}
+              </div>
+            </button>
+
+            {isExpanded(participant.id) && (
+              <div className={styles.cardContent}>
+                <div className={styles.row}>
+                  <Input
+                    label={t('participant.firstName')}
+                    value={participant.firstName}
+                    onChange={(e) => updateParticipant(participant.id, 'firstName', e.target.value)}
+                    placeholder={t('participant.firstNamePlaceholder')}
+                    required
+                    disabled={readonly}
+                  />
+                  <Input
+                    label={t('participant.lastName')}
+                    value={participant.lastName}
+                    onChange={(e) => updateParticipant(participant.id, 'lastName', e.target.value)}
+                    placeholder={t('participant.lastNamePlaceholder')}
+                    required
+                    disabled={readonly}
+                  />
+                </div>
+
+                <div className={styles.row}>
+                  <Input
+                    label={t('participant.email')}
+                    type="email"
+                    value={participant.email || ''}
+                    onChange={(e) => updateParticipant(participant.id, 'email', e.target.value)}
+                    placeholder={t('participant.emailPlaceholder')}
+                    disabled={readonly}
+                  />
+                  <Input
+                    label={t('participant.phone')}
+                    type="tel"
+                    value={participant.phone || ''}
+                    onChange={(e) => updateParticipant(participant.id, 'phone', e.target.value)}
+                    placeholder={t('participant.phonePlaceholder')}
+                    disabled={readonly}
+                  />
+                </div>
+
+                <div className={styles.row}>
+                  <Input
+                    label={t('participant.dateOfBirth')}
+                    type="date"
+                    value={participant.dateOfBirth || ''}
+                    onChange={(e) => updateParticipant(participant.id, 'dateOfBirth', e.target.value)}
+                    disabled={readonly}
+                  />
+                  <Input
+                    label={t('participant.nationality')}
+                    value={participant.nationality || ''}
+                    onChange={(e) => updateParticipant(participant.id, 'nationality', e.target.value)}
+                    placeholder={t('participant.nationalityPlaceholder')}
+                    disabled={readonly}
+                  />
+                </div>
+
+                {requirePassport && (
+                  <Input
+                    label={t('participant.passportNumber')}
+                    value={participant.passportNumber || ''}
+                    onChange={(e) => updateParticipant(participant.id, 'passportNumber', e.target.value)}
+                    placeholder={t('participant.passportPlaceholder')}
+                    required
+                    disabled={readonly}
+                  />
+                )}
+
+                <Input
+                  label={t('participant.specialRequirements')}
+                  value={participant.specialRequirements || ''}
+                  onChange={(e) => updateParticipant(participant.id, 'specialRequirements', e.target.value)}
+                  placeholder={t('participant.specialRequirementsPlaceholder')}
+                  disabled={readonly}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {!readonly && participants.length < maxParticipants && (
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={addParticipant}
+        >
+          <Plus size={20} />
+          {t('participant.add')}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default ParticipantForm;

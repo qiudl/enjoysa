@@ -1,0 +1,413 @@
+/* Loading Component Styles */
+
+/* Container */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.fullscreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+.fullscreenContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Text */
+.text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text.sm {
+  font-size: var(--text-xs);
+}
+
+.text.lg {
+  font-size: var(--text-base);
+}
+
+.text.xl {
+  font-size: var(--text-lg);
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  animation: rotate 1.4s linear infinite;
+}
+
+.spinner.sm {
+  width: 20px;
+  height: 20px;
+}
+
+.spinner.md {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner.lg {
+  width: 48px;
+  height: 48px;
+}
+
+.spinner.xl {
+  width: 64px;
+  height: 64px;
+}
+
+.spinnerSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.spinnerCircle {
+  stroke-linecap: round;
+  animation: dash 1.4s ease-in-out infinite;
+}
+
+.spinner.primary .spinnerCircle {
+  stroke: var(--color-primary);
+}
+
+.spinner.white .spinnerCircle {
+  stroke: white;
+}
+
+.spinner.gray .spinnerCircle {
+  stroke: var(--color-text-muted);
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+/* Dots */
+.dots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dots.sm .dot {
+  width: 6px;
+  height: 6px;
+}
+
+.dots.md .dot {
+  width: 8px;
+  height: 8px;
+}
+
+.dots.lg .dot {
+  width: 12px;
+  height: 12px;
+}
+
+.dots.xl .dot {
+  width: 16px;
+  height: 16px;
+}
+
+.dot {
+  border-radius: var(--radius-full);
+  animation: bounce 1.4s ease-in-out infinite;
+}
+
+.dots.primary .dot {
+  background: var(--color-primary);
+}
+
+.dots.white .dot {
+  background: white;
+}
+
+.dots.gray .dot {
+  background: var(--color-text-muted);
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pulse */
+.pulse {
+  position: relative;
+  border-radius: var(--radius-full);
+}
+
+.pulse.sm {
+  width: 20px;
+  height: 20px;
+}
+
+.pulse.md {
+  width: 32px;
+  height: 32px;
+}
+
+.pulse.lg {
+  width: 48px;
+  height: 48px;
+}
+
+.pulse.xl {
+  width: 64px;
+  height: 64px;
+}
+
+.pulse.primary {
+  background: var(--color-primary);
+}
+
+.pulse.white {
+  background: white;
+}
+
+.pulse.gray {
+  background: var(--color-text-muted);
+}
+
+.pulseInner {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  animation: pulse 1.5s ease-out infinite;
+}
+
+.pulse.primary .pulseInner {
+  background: var(--color-primary);
+}
+
+.pulse.white .pulseInner {
+  background: white;
+}
+
+.pulse.gray .pulseInner {
+  background: var(--color-text-muted);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Skeleton */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeletonLine {
+  height: 16px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s infinite;
+}
+
+.skeletonLine.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Card Skeleton */
+.cardSkeleton {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.cardSkeletonImage {
+  width: 100%;
+  height: 180px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.cardSkeletonContent {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cardSkeletonTitle {
+  height: 20px;
+  width: 70%;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s infinite;
+}
+
+.cardSkeletonText {
+  height: 14px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s infinite;
+}
+
+.cardSkeletonText.short {
+  width: 40%;
+}
+
+/* List Skeleton */
+.listSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.listSkeletonItem {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+}
+
+.listSkeletonAvatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-full);
+  animation: shimmer 1.5s infinite;
+}
+
+.listSkeletonContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.listSkeletonTitle {
+  height: 18px;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s infinite;
+}
+
+.listSkeletonText {
+  height: 14px;
+  width: 80%;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-background-alt) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.5s infinite;
+}

@@ -1,0 +1,260 @@
+/* Toast Component Styles */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 300px;
+  max-width: 420px;
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s var(--ease-out);
+}
+
+.toast.leaving {
+  animation: slideOut 0.3s var(--ease-out) forwards;
+}
+
+/* Types */
+.toast.success {
+  border-left: 4px solid var(--color-success);
+}
+
+.toast.success .iconWrapper {
+  color: var(--color-success);
+}
+
+.toast.error {
+  border-left: 4px solid var(--color-error);
+}
+
+.toast.error .iconWrapper {
+  color: var(--color-error);
+}
+
+.toast.warning {
+  border-left: 4px solid var(--color-warning);
+}
+
+.toast.warning .iconWrapper {
+  color: var(--color-warning);
+}
+
+.toast.info {
+  border-left: 4px solid var(--color-primary);
+}
+
+.toast.info .iconWrapper {
+  color: var(--color-primary);
+}
+
+/* Icon */
+.iconWrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+}
+
+.message {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* Close Button */
+.closeButton {
+  flex-shrink: 0;
+  padding: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.closeButton:hover {
+  background: var(--color-background-alt);
+  color: var(--color-text);
+}
+
+/* Container */
+.container {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.container > * {
+  pointer-events: auto;
+}
+
+.containerTop {
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.containerTopRight {
+  top: var(--space-4);
+  right: var(--space-4);
+  align-items: flex-end;
+}
+
+.containerTopLeft {
+  top: var(--space-4);
+  left: var(--space-4);
+  align-items: flex-start;
+}
+
+.containerBottom {
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.containerBottomRight {
+  bottom: var(--space-4);
+  right: var(--space-4);
+  align-items: flex-end;
+}
+
+.containerBottomLeft {
+  bottom: var(--space-4);
+  left: var(--space-4);
+  align-items: flex-start;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Position-specific animations */
+.toast.top,
+.toast.top-right,
+.toast.top-left {
+  animation-name: slideInFromTop;
+}
+
+.toast.top.leaving,
+.toast.top-right.leaving,
+.toast.top-left.leaving {
+  animation-name: slideOutToTop;
+}
+
+.toast.bottom,
+.toast.bottom-right,
+.toast.bottom-left {
+  animation-name: slideInFromBottom;
+}
+
+.toast.bottom.leaving,
+.toast.bottom-right.leaving,
+.toast.bottom-left.leaving {
+  animation-name: slideOutToBottom;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutToTop {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutToBottom {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .toast {
+    min-width: auto;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .containerTopRight,
+  .containerTopLeft,
+  .containerBottomRight,
+  .containerBottomLeft {
+    left: var(--space-4);
+    right: var(--space-4);
+    transform: none;
+  }
+}

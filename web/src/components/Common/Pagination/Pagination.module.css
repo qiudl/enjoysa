@@ -1,0 +1,189 @@
+/* Pagination Component Styles */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.pagination.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Sizes */
+.pagination.sm {
+  gap: var(--space-3);
+}
+
+.pagination.sm .pageButton,
+.pagination.sm .navButton {
+  min-width: 28px;
+  height: 28px;
+  font-size: var(--text-xs);
+}
+
+.pagination.lg .pageButton,
+.pagination.lg .navButton {
+  min-width: 40px;
+  height: 40px;
+  font-size: var(--text-base);
+}
+
+/* Total */
+.total {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Size Changer */
+.sizeChanger {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.sizeChanger:hover {
+  border-color: var(--color-primary-light);
+}
+
+.sizeChanger:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.navButton:hover:not(.disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.navButton.disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.pageButton:hover:not(.active) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pageButton.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  letter-spacing: 2px;
+}
+
+/* Jumper */
+.jumper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.jumperInput {
+  width: 50px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  text-align: center;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.jumperInput:hover {
+  border-color: var(--color-primary-light);
+}
+
+.jumperInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+/* Hide number input spinners */
+.jumperInput::-webkit-outer-spin-button,
+.jumperInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.jumperInput[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .pagination {
+    justify-content: center;
+  }
+
+  .total {
+    width: 100%;
+    text-align: center;
+  }
+
+  .jumper {
+    display: none;
+  }
+}
