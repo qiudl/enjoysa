@@ -33,6 +33,10 @@
     "favorites": "Favorites",
     "profile": "Profile"
   },
+  "brand": {
+    "name": "EnjoySA",
+    "tagline": "Enjoy South Australia"
+  },
   "auth": {
     "login": "Login",
     "feature1": "Easy booking for SA attractions",
@@ -503,11 +507,99 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last Updated: January 2024"
+    "lastUpdated": "Last Updated: January 2024",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "content": "Welcome to EnjoySA. By accessing or using our website and services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.\n\nWe reserve the right to modify these terms at any time. Modified terms will be effective immediately upon posting on the website. Continued use of our services constitutes acceptance of the modified terms."
+      },
+      "description": {
+        "title": "2. Service Description",
+        "content": "EnjoySA is a travel booking platform providing tourism product booking services in the South Australia region, including but not limited to: day tours, multi-day tours, tickets, and transfer services.\n\nWe act as an intermediary platform connecting users with tourism service providers. Actual travel services are provided by third-party service providers; we do not directly participate in service execution."
+      },
+      "account": {
+        "title": "3. User Accounts",
+        "content": "Using certain services may require account registration. You agree to:\n• Provide accurate and complete registration information\n• Protect your account security and not share login credentials\n• Be responsible for all activities under your account\n• Notify us immediately upon discovering unauthorized use\n\nWe reserve the right to suspend or terminate accounts upon detecting violations."
+      },
+      "booking": {
+        "title": "4. Booking and Payment",
+        "content": "4.1 Booking Confirmation\nAfter submitting a booking and completing payment, you will receive a confirmation email. Only receipt of a confirmation email indicates a successful booking.\n\n4.2 Prices and Fees\nAll prices are displayed in Australian Dollars (AUD). Prices may change; the price at the time of booking applies.\n\n4.3 Payment Security\nWe use secure third-party payment processing services. We do not store your complete payment information."
+      },
+      "cancellation": {
+        "title": "5. Cancellation and Refunds",
+        "content": "5.1 User Cancellation\nCancellation policies vary by product. Please refer to the specific product's cancellation policy. General rules:\n• 7+ days before departure: Full refund\n• 3-7 days before departure: 50% refund\n• Within 72 hours of departure: No refund\n\n5.2 Provider Cancellation\nIf a provider cancels, you may choose to reschedule or request a full refund.\n\n5.3 Force Majeure\nFor cancellations due to weather, natural disasters, or other force majeure events, we will assist with rescheduling or refunds."
+      },
+      "conduct": {
+        "title": "6. User Conduct",
+        "content": "When using our services, you agree to:\n• Comply with all applicable laws and regulations\n• Respect other users and service providers\n• Not post false, misleading, or harmful information\n• Not engage in any behavior that may harm platform operations\n• Not abuse promotions, discounts, or reward mechanisms\n\nViolation of these guidelines may result in account suspension or termination."
+      },
+      "ip": {
+        "title": "7. Intellectual Property",
+        "content": "All content on the website, including but not limited to text, images, icons, and interface designs, is protected by intellectual property laws.\n\nWithout our written permission, you may not copy, modify, distribute, or otherwise use this content. For user-submitted reviews and content, you grant us a non-exclusive license to use."
+      },
+      "disclaimer": {
+        "title": "8. Disclaimer",
+        "content": "8.1 Service Provided 'As Is'\nWe strive to ensure service availability and accuracy but do not guarantee uninterrupted or error-free service.\n\n8.2 Third-Party Services\nWe are not directly responsible for the quality of third-party service providers' services. We will assist in mediating disputes.\n\n8.3 Limitation of Liability\nTo the extent permitted by law, our liability is limited to the booking fees you paid."
+      },
+      "dispute": {
+        "title": "9. Dispute Resolution",
+        "content": "In case of disputes, parties should first attempt amicable resolution. If unsuccessful, disputes should be submitted to a court of competent jurisdiction in South Australia, Australia.\n\nThese terms are governed by and construed in accordance with the laws of South Australia, Australia."
+      },
+      "contact": {
+        "title": "10. Contact Us",
+        "content": "If you have any questions about these Terms of Service, please contact us:\n\nEmail: legal@enjoysa.com.au\nAddress: Adelaide, South Australia, Australia\nPhone: +61 8 XXXX XXXX"
+      }
+    }
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last Updated: January 2024"
+    "lastUpdated": "Last Updated: January 2024",
+    "sections": {
+      "overview": {
+        "title": "Overview",
+        "content": "EnjoySA understands the importance of personal privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information.\n\nBy using our services, you agree to the data processing practices described in this Privacy Policy. We encourage you to read this policy carefully. If you have any questions, please contact us."
+      },
+      "collection": {
+        "title": "1. Information We Collect",
+        "content": "We may collect the following types of personal information:\n\n1.1 Information You Provide\n• Registration information: name, email, phone number\n• Booking information: travel dates, number of participants, special requirements\n• Payment information: payment method, transaction records (we do not store complete card details)\n• Communications: conversations with customer service, reviews and feedback\n\n1.2 Automatically Collected Information\n• Device information: device type, operating system, browser type\n• Log information: access time, page views, IP address\n• Information collected through cookies and similar technologies"
+      },
+      "usage": {
+        "title": "2. How We Use Information",
+        "content": "We use your information to:\n\n• Process your bookings and provide services\n• Send booking confirmations, trip reminders, and important notifications\n• Improve our products and services\n• Provide customer support\n• Send marketing communications (opt-out available)\n• Prevent fraud and ensure security\n• Comply with legal obligations"
+      },
+      "sharing": {
+        "title": "3. Information Sharing",
+        "content": "We may share your information in the following circumstances:\n\n3.1 Service Providers\nTo complete your booking, we share necessary information with tourism service providers (pickup times, group size, etc.).\n\n3.2 Payment Processors\nProcessing payments requires sharing relevant information with third-party payment service providers.\n\n3.3 Legal Requirements\nWe may disclose your information when required by law or upon lawful government requests.\n\n3.4 Business Transfers\nIn the event of a merger or acquisition, your information may be transferred as a business asset.\n\nWe do not sell your personal information to third parties."
+      },
+      "cookies": {
+        "title": "4. Cookies and Tracking Technologies",
+        "content": "We use cookies and similar technologies to:\n\n• Remember your preferences and settings\n• Analyze website traffic and usage\n• Provide personalized content and advertising\n• Improve user experience\n\nYou can manage cookie preferences through your browser settings. Disabling cookies may affect certain features."
+      },
+      "security": {
+        "title": "5. Data Security",
+        "content": "We implement various security measures to protect your information:\n\n• SSL/TLS encryption for data transmission\n• Encrypted storage of sensitive data\n• Regular security audits and updates\n• Employee training and access controls\n• Secure data center hosting\n\nWhile we strive to protect your information, internet transmission cannot be guaranteed to be 100% secure."
+      },
+      "retention": {
+        "title": "6. Data Retention",
+        "content": "We retain your personal information only for as long as necessary:\n\n• Account information: during account existence and a reasonable period after closure\n• Transaction records: as required by financial and legal requirements\n• Log data: typically no longer than 12 months\n\nYou may request deletion of your personal information at any time, though some information may need to be retained for legal reasons."
+      },
+      "rights": {
+        "title": "7. Your Rights",
+        "content": "Under applicable privacy laws, you may have the following rights:\n\n• Access: request access to your personal information we hold\n• Rectification: request correction of inaccurate information\n• Deletion: request deletion of your personal information\n• Restriction: request restriction of processing\n• Data Portability: request your data in a machine-readable format\n• Objection: object to certain data processing activities\n\nTo exercise these rights, please contact us using the information below."
+      },
+      "children": {
+        "title": "8. Children's Privacy",
+        "content": "Our services are not directed at children under 16. We do not knowingly collect personal information from children. If you discover that we have inadvertently collected children's information, please contact us immediately and we will promptly delete it."
+      },
+      "changes": {
+        "title": "9. Policy Changes",
+        "content": "We may update this Privacy Policy from time to time. Significant changes will be notified through website notices or email. We recommend regularly reviewing this page for the latest privacy practices."
+      },
+      "contact": {
+        "title": "10. Contact Us",
+        "content": "If you have any questions about this Privacy Policy or need to exercise your rights, please contact us:\n\nEmail: privacy@enjoysa.com.au\nAddress: Adelaide, South Australia, Australia\nPhone: +61 8 XXXX XXXX\n\nWe will respond within 30 days of receiving your request."
+      }
+    }
   },
   "footer": {
     "about": "About Us",
@@ -518,6 +610,7 @@
     "faq": "FAQ",
     "serviceAgreement": "Terms of Service",
     "privacyPolicy": "Privacy Policy",
+    "supplierPortal": "Supplier Portal",
     "followUs": "Follow Us",
     "wechat": "WeChat",
     "weibo": "Weibo",
@@ -547,6 +640,130 @@
     "unauthorized": "Please login first",
     "forbidden": "Access denied",
     "validationError": "Invalid input, please check"
+  },
+  "admin": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "suppliers": "Suppliers",
+      "products": "Products",
+      "orders": "Orders",
+      "users": "Users",
+      "finance": "Finance",
+      "settings": "Settings"
+    },
+    "logout": "Logout",
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin",
+      "operator": "Operator"
+    },
+    "login": {
+      "platformName": "Platform Admin",
+      "description": "Comprehensive management dashboard for EnjoySA platform",
+      "feature1": "User Management",
+      "feature2": "Supplier Management",
+      "feature3": "Product Review",
+      "feature4": "Data Analytics",
+      "title": "Admin Login",
+      "welcomeBack": "Welcome Back",
+      "subtitle": "Sign in to access the admin dashboard",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "loginButton": "Sign In",
+      "loggingIn": "Signing in...",
+      "securityNote": "This is a secure admin area. Unauthorized access is prohibited.",
+      "errorRequired": "Please enter email and password",
+      "errorInvalid": "Invalid email or password",
+      "errorNetwork": "Network error, please try again"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "totalUsers": "Total Users",
+      "newUsersToday": "New Today",
+      "totalOrders": "Total Orders",
+      "ordersToday": "Orders Today",
+      "revenue": "Total Revenue",
+      "revenueToday": "Revenue Today",
+      "totalSuppliers": "Suppliers",
+      "pendingReview": "Pending Review",
+      "recentOrders": "Recent Orders",
+      "topProducts": "Top Products"
+    },
+    "suppliers": {
+      "title": "Supplier Management",
+      "search": "Search suppliers...",
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "suspended": "Suspended",
+      "name": "Name",
+      "type": "Type",
+      "contact": "Contact",
+      "status": "Status",
+      "joinDate": "Join Date",
+      "actions": "Actions",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject",
+      "suspend": "Suspend"
+    },
+    "products": {
+      "title": "Product Review",
+      "search": "Search products...",
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "productName": "Product Name",
+      "supplier": "Supplier",
+      "price": "Price",
+      "status": "Status",
+      "submitDate": "Submit Date",
+      "actions": "Actions",
+      "view": "View",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "orders": {
+      "title": "Order Management",
+      "search": "Search orders...",
+      "orderNo": "Order No.",
+      "customer": "Customer",
+      "supplier": "Supplier",
+      "product": "Product",
+      "amount": "Amount",
+      "status": "Status",
+      "orderDate": "Order Date",
+      "actions": "Actions"
+    },
+    "users": {
+      "title": "User Management",
+      "search": "Search users...",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "status": "Status",
+      "registerDate": "Register Date",
+      "orders": "Orders",
+      "actions": "Actions"
+    },
+    "finance": {
+      "title": "Finance",
+      "overview": "Overview",
+      "totalRevenue": "Total Revenue",
+      "pendingSettlement": "Pending Settlement",
+      "commissionEarned": "Commission Earned",
+      "withdrawals": "Withdrawals"
+    },
+    "settings": {
+      "title": "Settings",
+      "general": "General",
+      "payments": "Payments",
+      "notifications": "Notifications",
+      "security": "Security"
+    }
   },
   "supplier": {
     "dashboard": {
@@ -647,6 +864,38 @@
       "orders": "Orders",
       "settlement": "Settlement",
       "settings": "Settings"
+    },
+    "login": {
+      "brandTitle": "Supplier Portal",
+      "feature1": "Hotel / B&B Management",
+      "feature2": "Attraction Ticket Listing",
+      "feature3": "Car Rental Services",
+      "feature4": "Order Data Analytics",
+      "feature5": "Easy Settlement",
+      "backToHome": "Back to Home",
+      "title": "Supplier Login",
+      "welcomeBack": "Welcome Back",
+      "subtitle": "Login to manage your products, orders and settlements",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Login",
+      "loggingIn": "Logging in...",
+      "noAccount": "Don't have a supplier account?",
+      "applyNow": "Apply Now",
+      "supportTypes": "Supported Supplier Types",
+      "errorRequired": "Please enter email and password",
+      "errorInvalid": "Invalid email or password",
+      "errorNetwork": "Network error, please try again"
+    },
+    "types": {
+      "travelAgency": "Travel Agency",
+      "hotel": "Hotel",
+      "scenic": "Attraction",
+      "restaurant": "Restaurant",
+      "carRental": "Car Rental"
     }
   }
 }

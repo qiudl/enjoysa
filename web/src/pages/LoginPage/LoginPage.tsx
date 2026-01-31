@@ -57,8 +57,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         {/* Left Side - Branding */}
         <div className={styles.brandingSide}>
           <div className={styles.brandingContent}>
-            <h1 className={styles.logo}>畅游南澳</h1>
-            <p className={styles.tagline}>Enjoy South Australia</p>
+            <h1 className={styles.logo}>{t('brand.name')}</h1>
+            <p className={styles.tagline}>{t('brand.tagline')}</p>
             <ul className={styles.features}>
               <li>🎫 {t('auth.feature1')}</li>
               <li>💳 {t('auth.feature2')}</li>

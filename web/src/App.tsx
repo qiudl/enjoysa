@@ -17,8 +17,19 @@ import {
   FaqPage,
   TermsPage,
   PrivacyPage,
+  // B端供应商页面
+  SupplierDashboardPage,
+  SupplierProductListPage,
+  SupplierOrderListPage,
+  SupplierSettlementPage,
+  SupplierLoginPage,
+  // 平台管理端页面
+  AdminLoginPage,
 } from './pages';
-import { CartProvider, useCart } from './contexts';
+import { CartProvider, useCart, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
+import { SupplierAuthGuard } from './components/Common/SupplierAuthGuard';
+import { AdminAuthGuard } from './components/Common/AdminAuthGuard';
+import { AdminLayout } from './components/Admin';
 import './App.css';
 
 // 包装组件：HomePage
@@ -307,6 +318,203 @@ function PrivacyPageWrapper() {
   );
 }
 
+// =====================
+// B端供应商页面包装组件
+// =====================
+
+// 包装组件：SupplierLoginPage
+function SupplierLoginPageWrapper() {
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useSupplierAuth();
+
+  // If already logged in, redirect to dashboard
+  if (isAuthenticated) {
+    navigate('/supplier', { replace: true });
+  }
+
+  const handleLoginSuccess = async (email: string, password: string) => {
+    const success = await login(email, password);
+    if (success) {
+      navigate('/supplier');
+    }
+    return success;
+  };
+
+  return (
+    <SupplierLoginPage
+      onLoginSuccess={() => navigate('/supplier')}
+      onApplyClick={() => navigate('/supplier/register')}
+      onNavigateHome={() => navigate('/')}
+      onLogin={handleLoginSuccess}
+    />
+  );
+}
+
+// 包装组件：SupplierDashboardPage
+function SupplierDashboardPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierDashboardPage
+      supplierName={supplier?.name || '供应商'}
+      supplierType={supplier?.type || 'travel_agency'}
+      pendingOrders={5}
+      todayOrders={12}
+      monthSales={28650}
+      pendingSettlement={15800}
+      productCount={24}
+      activeProducts={18}
+    />
+  );
+}
+
+// 包装组件：SupplierProductListPage
+function SupplierProductListPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierProductListPage
+      supplierName={supplier?.name || '供应商'}
+    />
+  );
+}
+
+// 包装组件：SupplierOrderListPage
+function SupplierOrderListPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierOrderListPage
+      supplierName={supplier?.name || '供应商'}
+    />
+  );
+}
+
+// 包装组件：SupplierSettlementPage
+function SupplierSettlementPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierSettlementPage
+      supplierName={supplier?.name || '供应商'}
+    />
+  );
+}
+
+// =====================
+// 平台管理端页面包装组件
+// =====================
+
+// 包装组件：AdminLoginPage
+function AdminLoginPageWrapper() {
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAdminAuth();
+
+  // If already logged in, redirect to dashboard
+  if (isAuthenticated) {
+    navigate('/admin', { replace: true });
+  }
+
+  const handleLoginSuccess = async (email: string, password: string) => {
+    const success = await login(email, password);
+    if (success) {
+      navigate('/admin');
+    }
+    return success;
+  };
+
+  return (
+    <AdminLoginPage
+      onLoginSuccess={() => navigate('/admin')}
+      onLogin={handleLoginSuccess}
+    />
+  );
+}
+
+// 包装组件：AdminDashboardWrapper（使用 AdminLayout）
+function AdminDashboardWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Dashboard Content</h2>
+        <p>Dashboard statistics and overview will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminSuppliersWrapper
+function AdminSuppliersWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Supplier Management</h2>
+        <p>Supplier list and management features will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminProductsWrapper
+function AdminProductsWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Product Review</h2>
+        <p>Products pending review will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminOrdersWrapper
+function AdminOrdersWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Order Management</h2>
+        <p>Order list and management features will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminUsersWrapper
+function AdminUsersWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>User Management</h2>
+        <p>User list and management features will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminFinanceWrapper
+function AdminFinanceWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Finance</h2>
+        <p>Financial overview and settlement features will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminSettingsWrapper
+function AdminSettingsWrapper() {
+  return (
+    <AdminLayout>
+      <div style={{ padding: '1rem' }}>
+        <h2>Settings</h2>
+        <p>Platform settings will be displayed here.</p>
+      </div>
+    </AdminLayout>
+  );
+}
+
 // 404 Page
 function NotFoundPage() {
   const navigate = useNavigate();
@@ -344,6 +552,8 @@ function App() {
   return (
     <BrowserRouter>
       <CartProvider>
+      <SupplierAuthProvider>
+      <AdminAuthProvider>
       <Routes>
         {/* 首页 */}
         <Route path="/" element={<HomePageWrapper />} />
@@ -383,9 +593,34 @@ function App() {
         <Route path="/cart" element={<CartPageWrapper />} />
         <Route path="/favorites" element={<FavoritesPageWrapper />} />
 
+        {/* B端供应商后台 - 登录页无需保护 */}
+        <Route path="/supplier/login" element={<SupplierLoginPageWrapper />} />
+
+        {/* B端供应商后台 - 需要登录保护 */}
+        <Route path="/supplier" element={<SupplierAuthGuard><SupplierDashboardPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/dashboard" element={<SupplierAuthGuard><SupplierDashboardPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/products" element={<SupplierAuthGuard><SupplierProductListPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/orders" element={<SupplierAuthGuard><SupplierOrderListPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
+
+        {/* 平台管理端 - 登录页无需保护 */}
+        <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
+
+        {/* 平台管理端 - 需要登录保护 */}
+        <Route path="/admin" element={<AdminAuthGuard><AdminDashboardWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/dashboard" element={<AdminAuthGuard><AdminDashboardWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/suppliers" element={<AdminAuthGuard><AdminSuppliersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products" element={<AdminAuthGuard><AdminProductsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/orders" element={<AdminAuthGuard><AdminOrdersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/users" element={<AdminAuthGuard><AdminUsersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/finance" element={<AdminAuthGuard><AdminFinanceWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/settings" element={<AdminAuthGuard><AdminSettingsWrapper /></AdminAuthGuard>} />
+
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </AdminAuthProvider>
+      </SupplierAuthProvider>
       </CartProvider>
     </BrowserRouter>
   );

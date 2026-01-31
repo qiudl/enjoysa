@@ -22,3 +22,6 @@ export * from './AdminDashboardPage';
 
 // B端供应商页面
 export * from './Supplier';
+
+// 平台管理端页面
+export * from './Admin';

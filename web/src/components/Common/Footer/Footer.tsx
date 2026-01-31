@@ -39,6 +39,7 @@ const serviceLinks = [
   { key: 'serviceAgreement', path: '/terms' },
   { key: 'privacyPolicy', path: '/privacy' },
   { key: 'contactUs', path: '/contact' },
+  { key: 'supplierPortal', path: '/supplier/login' },
 ];
 
 export const Footer: React.FC<FooterProps> = ({

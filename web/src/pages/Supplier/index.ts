@@ -9,3 +9,6 @@ export type { SupplierOrderListPageProps, SupplierOrder } from './SupplierOrderL
 
 export { SupplierSettlementPage } from './SupplierSettlementPage';
 export type { SupplierSettlementPageProps, Settlement } from './SupplierSettlementPage';
+
+export { SupplierLoginPage } from './SupplierLoginPage';
+export type { SupplierLoginPageProps } from './SupplierLoginPage';
