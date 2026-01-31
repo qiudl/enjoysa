@@ -1,10 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button } from '../../../components/Common';
 import styles from './SupplierDashboardPage.module.css';
 
 export interface SupplierDashboardPageProps {
-  /** 当前语言 */
-  language?: 'zh' | 'en';
   /** 供应商名称 */
   supplierName?: string;
   /** 供应商类型 */
@@ -21,90 +20,9 @@ export interface SupplierDashboardPageProps {
   productCount?: number;
   /** 上架产品数 */
   activeProducts?: number;
+  /** 导航到指定路径 */
+  onNavigate?: (path: string) => void;
 }
-
-const texts = {
-  zh: {
-    title: '供应商后台',
-    welcome: '欢迎回来',
-    overview: '数据概览',
-    pendingOrders: '待处理订单',
-    todayOrders: '今日订单',
-    monthSales: '本月销售额',
-    pendingSettlement: '待结算金额',
-    quickActions: '快捷操作',
-    productManage: '产品管理',
-    orderManage: '订单管理',
-    settlement: '财务结算',
-    inventory: '库存管理',
-    recentOrders: '最近订单',
-    viewAll: '查看全部',
-    orderNo: '订单号',
-    product: '产品',
-    customer: '客户',
-    amount: '金额',
-    status: '状态',
-    action: '操作',
-    confirm: '确认',
-    productStats: '产品统计',
-    totalProducts: '全部产品',
-    activeProducts: '已上架',
-    pendingReview: '待审核',
-    supplierTypes: {
-      travel_agency: '旅行社',
-      hotel: '酒店',
-      attraction: '景区',
-      restaurant: '餐厅',
-      car_rental: '租车公司',
-    },
-    orderStatus: {
-      pending: '待处理',
-      confirmed: '已确认',
-      completed: '已完成',
-      cancelled: '已取消',
-    },
-  },
-  en: {
-    title: 'Supplier Dashboard',
-    welcome: 'Welcome back',
-    overview: 'Overview',
-    pendingOrders: 'Pending Orders',
-    todayOrders: "Today's Orders",
-    monthSales: 'Monthly Sales',
-    pendingSettlement: 'Pending Settlement',
-    quickActions: 'Quick Actions',
-    productManage: 'Products',
-    orderManage: 'Orders',
-    settlement: 'Settlement',
-    inventory: 'Inventory',
-    recentOrders: 'Recent Orders',
-    viewAll: 'View All',
-    orderNo: 'Order No.',
-    product: 'Product',
-    customer: 'Customer',
-    amount: 'Amount',
-    status: 'Status',
-    action: 'Action',
-    confirm: 'Confirm',
-    productStats: 'Product Stats',
-    totalProducts: 'Total Products',
-    activeProducts: 'Active',
-    pendingReview: 'Pending Review',
-    supplierTypes: {
-      travel_agency: 'Travel Agency',
-      hotel: 'Hotel',
-      attraction: 'Attraction',
-      restaurant: 'Restaurant',
-      car_rental: 'Car Rental',
-    },
-    orderStatus: {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-    },
-  },
-};
 
 // Mock recent orders
 const mockRecentOrders = [
@@ -138,7 +56,6 @@ const mockRecentOrders = [
 ];
 
 export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
-  language = 'zh',
   supplierName = '祥龙旅行社',
   supplierType = 'travel_agency',
   pendingOrders = 5,
@@ -147,21 +64,21 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
   pendingSettlement = 15800,
   productCount = 24,
   activeProducts = 18,
+  onNavigate,
 }) => {
-  const txt = texts[language];
+  const { t } = useTranslation();
 
   const stats = [
-    { key: 'pending', label: txt.pendingOrders, value: pendingOrders, icon: '📋', color: '#f59e0b' },
-    { key: 'today', label: txt.todayOrders, value: todayOrders, icon: '📦', color: '#3b82f6' },
-    { key: 'sales', label: txt.monthSales, value: `¥${monthSales.toLocaleString()}`, icon: '💰', color: '#10b981' },
-    { key: 'settlement', label: txt.pendingSettlement, value: `¥${pendingSettlement.toLocaleString()}`, icon: '🏦', color: '#8b5cf6' },
+    { key: 'pending', label: t('supplier.dashboard.pendingOrders'), value: pendingOrders, icon: '📋', color: '#f59e0b' },
+    { key: 'today', label: t('supplier.dashboard.todayOrders'), value: todayOrders, icon: '📦', color: '#3b82f6' },
+    { key: 'sales', label: t('supplier.dashboard.monthSales'), value: `¥${monthSales.toLocaleString()}`, icon: '💰', color: '#10b981' },
+    { key: 'settlement', label: t('supplier.dashboard.pendingSettlement'), value: `¥${pendingSettlement.toLocaleString()}`, icon: '🏦', color: '#8b5cf6' },
   ];
 
   const quickActions = [
-    { key: 'products', label: txt.productManage, icon: '📦', path: '/supplier/products' },
-    { key: 'orders', label: txt.orderManage, icon: '📋', path: '/supplier/orders' },
-    { key: 'settlement', label: txt.settlement, icon: '💳', path: '/supplier/settlement' },
-    { key: 'inventory', label: txt.inventory, icon: '📊', path: '/supplier/inventory' },
+    { key: 'products', label: t('supplier.dashboard.productManage'), icon: '📦', path: '/supplier/products' },
+    { key: 'orders', label: t('supplier.dashboard.orderManage'), icon: '📋', path: '/supplier/orders' },
+    { key: 'settlement', label: t('supplier.dashboard.settlement'), icon: '💳', path: '/supplier/settlement' },
   ];
 
   const getStatusStyle = (status: string) => {
@@ -184,17 +101,17 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
           <section className={styles.welcomeSection}>
             <div className={styles.welcomeContent}>
               <h1 className={styles.welcomeTitle}>
-                {txt.welcome}, {supplierName}
+                {t('supplier.dashboard.welcome')}, {supplierName}
               </h1>
               <p className={styles.supplierType}>
-                {txt.supplierTypes[supplierType]}
+                {t(`supplier.types.${supplierType}`)}
               </p>
             </div>
           </section>
 
           {/* Stats Overview */}
           <section className={styles.statsSection}>
-            <h2 className={styles.sectionTitle}>{txt.overview}</h2>
+            <h2 className={styles.sectionTitle}>{t('supplier.dashboard.overview')}</h2>
             <div className={styles.statsGrid}>
               {stats.map((stat) => (
                 <div key={stat.key} className={styles.statCard}>
@@ -214,10 +131,14 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
 
           {/* Quick Actions */}
           <section className={styles.actionsSection}>
-            <h2 className={styles.sectionTitle}>{txt.quickActions}</h2>
+            <h2 className={styles.sectionTitle}>{t('supplier.dashboard.quickActions')}</h2>
             <div className={styles.actionsGrid}>
               {quickActions.map((action) => (
-                <button key={action.key} className={styles.actionCard}>
+                <button
+                  key={action.key}
+                  className={styles.actionCard}
+                  onClick={() => onNavigate?.(action.path)}
+                >
                   <span className={styles.actionIcon}>{action.icon}</span>
                   <span className={styles.actionLabel}>{action.label}</span>
                 </button>
@@ -229,17 +150,22 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
             {/* Recent Orders */}
             <section className={styles.ordersSection}>
               <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>{txt.recentOrders}</h2>
-                <button className={styles.viewAllBtn}>{txt.viewAll} →</button>
+                <h2 className={styles.sectionTitle}>{t('supplier.dashboard.recentOrders')}</h2>
+                <button
+                  className={styles.viewAllBtn}
+                  onClick={() => onNavigate?.('/supplier/orders')}
+                >
+                  {t('supplier.dashboard.viewAll')} →
+                </button>
               </div>
               <div className={styles.ordersTable}>
                 <div className={styles.tableHeader}>
-                  <span>{txt.orderNo}</span>
-                  <span>{txt.product}</span>
-                  <span>{txt.customer}</span>
-                  <span>{txt.amount}</span>
-                  <span>{txt.status}</span>
-                  <span>{txt.action}</span>
+                  <span>{t('supplier.dashboard.orderNo')}</span>
+                  <span>{t('supplier.dashboard.product')}</span>
+                  <span>{t('supplier.dashboard.customer')}</span>
+                  <span>{t('supplier.dashboard.amount')}</span>
+                  <span>{t('supplier.dashboard.status')}</span>
+                  <span>{t('supplier.dashboard.action')}</span>
                 </div>
                 {mockRecentOrders.map((order) => {
                   const statusStyle = getStatusStyle(order.status);
@@ -247,7 +173,7 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
                     <div key={order.id} className={styles.tableRow}>
                       <span className={styles.orderId}>{order.id}</span>
                       <span className={styles.productName}>
-                        {language === 'en' ? order.productEn : order.product}
+                        {order.product}
                       </span>
                       <span>{order.customer}</span>
                       <span className={styles.amount}>¥{order.amount}</span>
@@ -255,12 +181,12 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
                         className={styles.status}
                         style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
                       >
-                        {txt.orderStatus[order.status as keyof typeof txt.orderStatus]}
+                        {t(`supplier.dashboard.orderStatus.${order.status}`)}
                       </span>
                       <span>
                         {order.status === 'pending' && (
                           <Button size="sm" variant="primary">
-                            {txt.confirm}
+                            {t('supplier.dashboard.confirm')}
                           </Button>
                         )}
                       </span>
@@ -272,23 +198,23 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
 
             {/* Product Stats */}
             <section className={styles.productStatsSection}>
-              <h2 className={styles.sectionTitle}>{txt.productStats}</h2>
+              <h2 className={styles.sectionTitle}>{t('supplier.dashboard.productStats')}</h2>
               <div className={styles.productStats}>
                 <div className={styles.productStatItem}>
                   <span className={styles.productStatValue}>{productCount}</span>
-                  <span className={styles.productStatLabel}>{txt.totalProducts}</span>
+                  <span className={styles.productStatLabel}>{t('supplier.dashboard.totalProducts')}</span>
                 </div>
                 <div className={styles.productStatItem}>
                   <span className={styles.productStatValue} style={{ color: '#10b981' }}>
                     {activeProducts}
                   </span>
-                  <span className={styles.productStatLabel}>{txt.activeProducts}</span>
+                  <span className={styles.productStatLabel}>{t('supplier.dashboard.activeProducts')}</span>
                 </div>
                 <div className={styles.productStatItem}>
                   <span className={styles.productStatValue} style={{ color: '#f59e0b' }}>
                     {productCount - activeProducts}
                   </span>
-                  <span className={styles.productStatLabel}>{txt.pendingReview}</span>
+                  <span className={styles.productStatLabel}>{t('supplier.dashboard.pendingReview')}</span>
                 </div>
               </div>
             </section>

@@ -22,12 +22,7 @@ const meta: Meta<typeof SupplierProductListPage> = {
       </I18nextProvider>
     ),
   ],
-  argTypes: {
-    language: {
-      control: 'radio',
-      options: ['zh', 'en'],
-    },
-  },
+  argTypes: {},
 };
 
 export default meta;
@@ -36,7 +31,6 @@ type Story = StoryObj<typeof SupplierProductListPage>;
 /** 默认 */
 export const Default: Story = {
   args: {
-    language: 'zh',
     supplierName: '祥龙旅行社',
   },
 };
@@ -44,7 +38,6 @@ export const Default: Story = {
 /** 英文版 */
 export const English: Story = {
   args: {
-    language: 'en',
     supplierName: 'Adelaide Tours Co.',
   },
 };

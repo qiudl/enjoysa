@@ -22,12 +22,7 @@ const meta: Meta<typeof SupplierSettlementPage> = {
       </I18nextProvider>
     ),
   ],
-  argTypes: {
-    language: {
-      control: 'radio',
-      options: ['zh', 'en'],
-    },
-  },
+  argTypes: {},
 };
 
 export default meta;
@@ -36,7 +31,6 @@ type Story = StoryObj<typeof SupplierSettlementPage>;
 /** 默认 */
 export const Default: Story = {
   args: {
-    language: 'zh',
     supplierName: '祥龙旅行社',
     pendingAmount: 32112,
     settledAmount: 156800,
@@ -47,7 +41,6 @@ export const Default: Story = {
 /** 英文版 */
 export const English: Story = {
   args: {
-    language: 'en',
     supplierName: 'Adelaide Tours Co.',
     pendingAmount: 32112,
     settledAmount: 156800,
@@ -58,7 +51,6 @@ export const English: Story = {
 /** 高额结算 */
 export const HighAmount: Story = {
   args: {
-    language: 'zh',
     supplierName: '南澳精品旅游',
     pendingAmount: 128500,
     settledAmount: 1568000,

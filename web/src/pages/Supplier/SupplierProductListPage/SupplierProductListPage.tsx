@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
 import styles from './SupplierProductListPage.module.css';
 
@@ -15,80 +16,11 @@ export interface SupplierProduct {
 }
 
 export interface SupplierProductListPageProps {
-  /** 当前语言 */
-  language?: 'zh' | 'en';
   /** 供应商名称 */
   supplierName?: string;
+  /** 导航回调 */
+  onNavigate?: (path: string) => void;
 }
-
-const texts = {
-  zh: {
-    title: '产品管理',
-    addProduct: '发布产品',
-    search: '搜索产品...',
-    filter: '筛选',
-    all: '全部',
-    active: '已上架',
-    inactive: '已下架',
-    pending: '待审核',
-    rejected: '已驳回',
-    productName: '产品名称',
-    price: '价格',
-    stock: '库存',
-    status: '状态',
-    soldCount: '已售',
-    actions: '操作',
-    edit: '编辑',
-    view: '查看',
-    offline: '下架',
-    online: '上架',
-    delete: '删除',
-    deleteConfirm: '确定要删除该产品吗？',
-    cancel: '取消',
-    confirm: '确定',
-    noProducts: '暂无产品',
-    addFirstProduct: '点击上方「发布产品」按钮添加第一个产品',
-    statusLabels: {
-      active: '已上架',
-      inactive: '已下架',
-      pending: '待审核',
-      rejected: '已驳回',
-    },
-  },
-  en: {
-    title: 'Product Management',
-    addProduct: 'Add Product',
-    search: 'Search products...',
-    filter: 'Filter',
-    all: 'All',
-    active: 'Active',
-    inactive: 'Inactive',
-    pending: 'Pending',
-    rejected: 'Rejected',
-    productName: 'Product Name',
-    price: 'Price',
-    stock: 'Stock',
-    status: 'Status',
-    soldCount: 'Sold',
-    actions: 'Actions',
-    edit: 'Edit',
-    view: 'View',
-    offline: 'Deactivate',
-    online: 'Activate',
-    delete: 'Delete',
-    deleteConfirm: 'Are you sure you want to delete this product?',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-    noProducts: 'No products yet',
-    addFirstProduct: 'Click "Add Product" button above to add your first product',
-    statusLabels: {
-      active: 'Active',
-      inactive: 'Inactive',
-      pending: 'Pending',
-      rejected: 'Rejected',
-    },
-  },
-};
 
 // Mock products
 const mockProducts: SupplierProduct[] = [
@@ -139,20 +71,20 @@ const mockProducts: SupplierProduct[] = [
 ];
 
 export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = ({
-  language = 'zh',
   supplierName = '祥龙旅行社',
+  onNavigate,
 }) => {
-  const txt = texts[language];
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SupplierProduct | null>(null);
 
   const filters = [
-    { key: 'all', label: txt.all },
-    { key: 'active', label: txt.active },
-    { key: 'inactive', label: txt.inactive },
-    { key: 'pending', label: txt.pending },
+    { key: 'all', label: t('supplier.products.all') },
+    { key: 'active', label: t('supplier.products.active') },
+    { key: 'inactive', label: t('supplier.products.inactive') },
+    { key: 'pending', label: t('supplier.products.pending') },
   ];
 
   const filteredProducts = mockProducts.filter((product) => {
@@ -196,9 +128,9 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
         <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>{txt.title}</h1>
-            <Button variant="primary">
-              + {txt.addProduct}
+            <h1 className={styles.pageTitle}>{t('supplier.products.title')}</h1>
+            <Button variant="primary" onClick={() => onNavigate?.('/supplier/products/new')}>
+              + {t('supplier.products.addProduct')}
             </Button>
           </div>
 
@@ -218,7 +150,7 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
             <div className={styles.search}>
               <input
                 type="text"
-                placeholder={txt.search}
+                placeholder={t('supplier.products.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={styles.searchInput}
@@ -230,12 +162,12 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
           {filteredProducts.length > 0 ? (
             <div className={styles.productList}>
               <div className={styles.listHeader}>
-                <span className={styles.colProduct}>{txt.productName}</span>
-                <span className={styles.colPrice}>{txt.price}</span>
-                <span className={styles.colStock}>{txt.stock}</span>
-                <span className={styles.colSold}>{txt.soldCount}</span>
-                <span className={styles.colStatus}>{txt.status}</span>
-                <span className={styles.colActions}>{txt.actions}</span>
+                <span className={styles.colProduct}>{t('supplier.products.productName')}</span>
+                <span className={styles.colPrice}>{t('supplier.products.price')}</span>
+                <span className={styles.colStock}>{t('supplier.products.stock')}</span>
+                <span className={styles.colSold}>{t('supplier.products.soldCount')}</span>
+                <span className={styles.colStatus}>{t('supplier.products.status')}</span>
+                <span className={styles.colActions}>{t('supplier.products.actions')}</span>
               </div>
               {filteredProducts.map((product) => {
                 const statusStyle = getStatusStyle(product.status);
@@ -249,7 +181,7 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                       />
                       <div className={styles.productInfo}>
                         <span className={styles.productTitle}>
-                          {language === 'en' ? product.titleEn : product.title}
+                          {product.title}
                         </span>
                         <span className={styles.productDate}>
                           {product.createdAt}
@@ -266,21 +198,26 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                         className={styles.statusBadge}
                         style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
                       >
-                        {txt.statusLabels[product.status]}
+                        {t(`supplier.products.statusLabels.${product.status}`)}
                       </span>
                     </span>
                     <div className={styles.colActions}>
-                      <button className={styles.actionBtn}>{txt.edit}</button>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => onNavigate?.(`/supplier/products/${product.id}/edit`)}
+                      >
+                        {t('supplier.products.edit')}
+                      </button>
                       {product.status === 'active' ? (
-                        <button className={styles.actionBtn}>{txt.offline}</button>
+                        <button className={styles.actionBtn}>{t('supplier.products.setOffline')}</button>
                       ) : product.status === 'inactive' ? (
-                        <button className={styles.actionBtn}>{txt.online}</button>
+                        <button className={styles.actionBtn}>{t('supplier.products.setOnline')}</button>
                       ) : null}
                       <button
                         className={`${styles.actionBtn} ${styles.deleteBtn}`}
                         onClick={() => handleDelete(product)}
                       >
-                        {txt.delete}
+                        {t('supplier.products.delete')}
                       </button>
                     </div>
                   </div>
@@ -290,8 +227,8 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
           ) : (
             <div className={styles.emptyState}>
               <span className={styles.emptyIcon}>📦</span>
-              <p className={styles.emptyText}>{txt.noProducts}</p>
-              <p className={styles.emptyHint}>{txt.addFirstProduct}</p>
+              <p className={styles.emptyText}>{t('supplier.products.noProducts')}</p>
+              <p className={styles.emptyHint}>{t('supplier.products.addFirst')}</p>
             </div>
           )}
         </div>
@@ -302,16 +239,15 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
       {/* Delete Confirmation Modal */}
       <Modal
         open={showDeleteModal}
-        title={txt.delete}
+        title={t('supplier.products.delete')}
         size="sm"
-        language={language}
         onClose={() => setShowDeleteModal(false)}
         onOk={confirmDelete}
       >
-        <p>{txt.deleteConfirm}</p>
+        <p>{t('supplier.products.confirmDelete')}</p>
         {selectedProduct && (
           <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-            {language === 'en' ? selectedProduct.titleEn : selectedProduct.title}
+            {selectedProduct.title}
           </p>
         )}
       </Modal>

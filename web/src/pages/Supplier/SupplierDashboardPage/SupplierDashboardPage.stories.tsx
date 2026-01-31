@@ -23,10 +23,6 @@ const meta: Meta<typeof SupplierDashboardPage> = {
     ),
   ],
   argTypes: {
-    language: {
-      control: 'radio',
-      options: ['zh', 'en'],
-    },
     supplierType: {
       control: 'select',
       options: ['travel_agency', 'hotel', 'attraction', 'restaurant', 'car_rental'],
@@ -40,7 +36,6 @@ type Story = StoryObj<typeof SupplierDashboardPage>;
 /** 默认 - 旅行社 */
 export const Default: Story = {
   args: {
-    language: 'zh',
     supplierName: '祥龙旅行社',
     supplierType: 'travel_agency',
     pendingOrders: 5,
@@ -85,7 +80,6 @@ export const Attraction: Story = {
 /** 英文版 */
 export const English: Story = {
   args: {
-    language: 'en',
     supplierName: 'Adelaide Tours Co.',
     supplierType: 'travel_agency',
     pendingOrders: 5,

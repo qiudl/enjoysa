@@ -23,6 +23,7 @@ import {
   SupplierOrderListPage,
   SupplierSettlementPage,
   SupplierLoginPage,
+  SupplierRegisterPage,
   // 平台管理端页面
   AdminLoginPage,
 } from './pages';
@@ -350,9 +351,26 @@ function SupplierLoginPageWrapper() {
   );
 }
 
+// 包装组件：SupplierRegisterPage
+function SupplierRegisterPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierRegisterPage
+      onRegisterSuccess={() => {
+        // Show success message and redirect to login
+        navigate('/supplier/login');
+      }}
+      onBackToLogin={() => navigate('/supplier/login')}
+      onNavigateHome={() => navigate('/')}
+    />
+  );
+}
+
 // 包装组件：SupplierDashboardPage
 function SupplierDashboardPageWrapper() {
   const { supplier } = useSupplierAuth();
+  const navigate = useNavigate();
 
   return (
     <SupplierDashboardPage
@@ -364,6 +382,7 @@ function SupplierDashboardPageWrapper() {
       pendingSettlement={15800}
       productCount={24}
       activeProducts={18}
+      onNavigate={(path) => navigate(path)}
     />
   );
 }
@@ -371,10 +390,12 @@ function SupplierDashboardPageWrapper() {
 // 包装组件：SupplierProductListPage
 function SupplierProductListPageWrapper() {
   const { supplier } = useSupplierAuth();
+  const navigate = useNavigate();
 
   return (
     <SupplierProductListPage
       supplierName={supplier?.name || '供应商'}
+      onNavigate={(path) => navigate(path)}
     />
   );
 }
@@ -382,10 +403,12 @@ function SupplierProductListPageWrapper() {
 // 包装组件：SupplierOrderListPage
 function SupplierOrderListPageWrapper() {
   const { supplier } = useSupplierAuth();
+  const navigate = useNavigate();
 
   return (
     <SupplierOrderListPage
       supplierName={supplier?.name || '供应商'}
+      onNavigate={(path) => navigate(path)}
     />
   );
 }
@@ -393,10 +416,12 @@ function SupplierOrderListPageWrapper() {
 // 包装组件：SupplierSettlementPage
 function SupplierSettlementPageWrapper() {
   const { supplier } = useSupplierAuth();
+  const navigate = useNavigate();
 
   return (
     <SupplierSettlementPage
       supplierName={supplier?.name || '供应商'}
+      onNavigate={(path) => navigate(path)}
     />
   );
 }
@@ -593,8 +618,9 @@ function App() {
         <Route path="/cart" element={<CartPageWrapper />} />
         <Route path="/favorites" element={<FavoritesPageWrapper />} />
 
-        {/* B端供应商后台 - 登录页无需保护 */}
+        {/* B端供应商后台 - 登录/注册页无需保护 */}
         <Route path="/supplier/login" element={<SupplierLoginPageWrapper />} />
+        <Route path="/supplier/register" element={<SupplierRegisterPageWrapper />} />
 
         {/* B端供应商后台 - 需要登录保护 */}
         <Route path="/supplier" element={<SupplierAuthGuard><SupplierDashboardPageWrapper /></SupplierAuthGuard>} />

@@ -12,3 +12,6 @@ export type { SupplierSettlementPageProps, Settlement } from './SupplierSettleme
 
 export { SupplierLoginPage } from './SupplierLoginPage';
 export type { SupplierLoginPageProps } from './SupplierLoginPage';
+
+export { SupplierRegisterPage } from './SupplierRegisterPage';
+export type { SupplierRegisterPageProps } from './SupplierRegisterPage';

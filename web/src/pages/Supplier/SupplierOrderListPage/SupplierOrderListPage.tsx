@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
 import styles from './SupplierOrderListPage.module.css';
 
@@ -16,90 +17,11 @@ export interface SupplierOrder {
 }
 
 export interface SupplierOrderListPageProps {
-  /** 当前语言 */
-  language?: 'zh' | 'en';
   /** 供应商名称 */
   supplierName?: string;
+  /** 导航回调 */
+  onNavigate?: (path: string) => void;
 }
-
-const texts = {
-  zh: {
-    title: '订单管理',
-    search: '搜索订单号或客户...',
-    all: '全部',
-    pending: '待处理',
-    confirmed: '已确认',
-    completed: '已完成',
-    cancelled: '已取消',
-    refunding: '退款中',
-    orderNo: '订单号',
-    product: '产品',
-    customer: '客户',
-    travelDate: '出行日期',
-    quantity: '人数',
-    amount: '金额',
-    status: '状态',
-    actions: '操作',
-    confirm: '确认订单',
-    complete: '完成',
-    viewDetail: '详情',
-    handleRefund: '处理退款',
-    confirmOrder: '确认订单',
-    confirmOrderDesc: '确认后将向客户发送确认通知',
-    cancel: '取消',
-    approve: '同意退款',
-    reject: '拒绝退款',
-    refundReason: '退款原因',
-    customerInfo: '客户信息',
-    phone: '电话',
-    noOrders: '暂无订单',
-    statusLabels: {
-      pending: '待处理',
-      confirmed: '已确认',
-      completed: '已完成',
-      cancelled: '已取消',
-      refunding: '退款中',
-    },
-  },
-  en: {
-    title: 'Order Management',
-    search: 'Search order or customer...',
-    all: 'All',
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-    refunding: 'Refunding',
-    orderNo: 'Order No.',
-    product: 'Product',
-    customer: 'Customer',
-    travelDate: 'Travel Date',
-    quantity: 'Guests',
-    amount: 'Amount',
-    status: 'Status',
-    actions: 'Actions',
-    confirm: 'Confirm',
-    complete: 'Complete',
-    viewDetail: 'Detail',
-    handleRefund: 'Handle Refund',
-    confirmOrder: 'Confirm Order',
-    confirmOrderDesc: 'Customer will receive confirmation notification',
-    cancel: 'Cancel',
-    approve: 'Approve Refund',
-    reject: 'Reject Refund',
-    refundReason: 'Refund Reason',
-    customerInfo: 'Customer Info',
-    phone: 'Phone',
-    noOrders: 'No orders yet',
-    statusLabels: {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-      refunding: 'Refunding',
-    },
-  },
-};
 
 // Mock orders
 const mockOrders: SupplierOrder[] = [
@@ -154,10 +76,9 @@ const mockOrders: SupplierOrder[] = [
 ];
 
 export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
-  language = 'zh',
   supplierName = '祥龙旅行社',
 }) => {
-  const txt = texts[language];
+  const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -165,11 +86,11 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(null);
 
   const filters = [
-    { key: 'all', label: txt.all },
-    { key: 'pending', label: txt.pending },
-    { key: 'confirmed', label: txt.confirmed },
-    { key: 'completed', label: txt.completed },
-    { key: 'refunding', label: txt.refunding },
+    { key: 'all', label: t('supplier.orders.all') },
+    { key: 'pending', label: t('supplier.orders.pending') },
+    { key: 'confirmed', label: t('supplier.orders.confirmed') },
+    { key: 'completed', label: t('supplier.orders.completed') },
+    { key: 'refunding', label: t('supplier.orders.refunding') },
   ];
 
   const filteredOrders = mockOrders.filter((order) => {
@@ -213,7 +134,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
         <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>{txt.title}</h1>
+            <h1 className={styles.pageTitle}>{t('supplier.orders.title')}</h1>
           </div>
 
           {/* Filters and Search */}
@@ -232,7 +153,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
             <div className={styles.search}>
               <input
                 type="text"
-                placeholder={txt.search}
+                placeholder={t('supplier.orders.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={styles.searchInput}
@@ -253,17 +174,17 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                         className={styles.orderStatus}
                         style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
                       >
-                        {txt.statusLabels[order.status]}
+                        {t(`supplier.orders.statusLabels.${order.status}`)}
                       </span>
                     </div>
                     <div className={styles.orderBody}>
                       <div className={styles.orderInfo}>
                         <h3 className={styles.productTitle}>
-                          {language === 'en' ? order.productTitleEn : order.productTitle}
+                          {i18n.language === 'en' ? order.productTitleEn : order.productTitle}
                         </h3>
                         <div className={styles.orderMeta}>
-                          <span>{txt.travelDate}: {order.travelDate}</span>
-                          <span>{txt.quantity}: {order.quantity}{language === 'zh' ? '人' : ' guests'}</span>
+                          <span>{t('supplier.orders.travelDate')}: {order.travelDate}</span>
+                          <span>{t('supplier.orders.quantity')}: {order.quantity} {t('supplier.orders.guests')}</span>
                         </div>
                         <div className={styles.customerInfo}>
                           <span>{order.customerName}</span>
@@ -271,7 +192,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                         </div>
                       </div>
                       <div className={styles.orderAmount}>
-                        <span className={styles.amountLabel}>{txt.amount}</span>
+                        <span className={styles.amountLabel}>{t('supplier.orders.amount')}</span>
                         <span className={styles.amountValue}>¥{order.amount}</span>
                       </div>
                     </div>
@@ -279,21 +200,21 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                       <span className={styles.orderTime}>{order.createdAt}</span>
                       <div className={styles.orderActions}>
                         <Button size="sm" variant="outline">
-                          {txt.viewDetail}
+                          {t('supplier.orders.viewDetail')}
                         </Button>
                         {order.status === 'pending' && (
                           <Button size="sm" variant="primary" onClick={() => handleConfirm(order)}>
-                            {txt.confirm}
+                            {t('supplier.orders.confirm')}
                           </Button>
                         )}
                         {order.status === 'confirmed' && (
                           <Button size="sm" variant="primary">
-                            {txt.complete}
+                            {t('supplier.orders.complete')}
                           </Button>
                         )}
                         {order.status === 'refunding' && (
                           <Button size="sm" variant="danger" onClick={() => handleRefund(order)}>
-                            {txt.handleRefund}
+                            {t('supplier.orders.handleRefund')}
                           </Button>
                         )}
                       </div>
@@ -305,7 +226,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
           ) : (
             <div className={styles.emptyState}>
               <span className={styles.emptyIcon}>📋</span>
-              <p className={styles.emptyText}>{txt.noOrders}</p>
+              <p className={styles.emptyText}>{t('supplier.orders.noOrders')}</p>
             </div>
           )}
         </div>
@@ -316,20 +237,19 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
       {/* Confirm Order Modal */}
       <Modal
         open={showConfirmModal}
-        title={txt.confirmOrder}
+        title={t('supplier.orders.confirmOrder')}
         size="sm"
-        language={language}
         onClose={() => setShowConfirmModal(false)}
         onOk={() => setShowConfirmModal(false)}
       >
-        <p>{txt.confirmOrderDesc}</p>
+        <p>{t('supplier.orders.confirmOrderDesc')}</p>
         {selectedOrder && (
           <div style={{ marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
             <p style={{ margin: '0 0 0.5rem', fontWeight: 500 }}>
-              {language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
+              {i18n.language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
             </p>
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-              {txt.customer}: {selectedOrder.customerName} | {txt.travelDate}: {selectedOrder.travelDate}
+              {t('supplier.orders.customer')}: {selectedOrder.customerName} | {t('supplier.orders.travelDate')}: {selectedOrder.travelDate}
             </p>
           </div>
         )}
@@ -338,20 +258,19 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
       {/* Handle Refund Modal */}
       <Modal
         open={showRefundModal}
-        title={txt.handleRefund}
+        title={t('supplier.orders.handleRefund')}
         size="sm"
-        language={language}
         onClose={() => setShowRefundModal(false)}
         footer={
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <Button variant="outline" onClick={() => setShowRefundModal(false)}>
-              {txt.cancel}
+              {t('supplier.orders.cancel')}
             </Button>
             <Button variant="danger" onClick={() => setShowRefundModal(false)}>
-              {txt.reject}
+              {t('supplier.orders.reject')}
             </Button>
             <Button variant="primary" onClick={() => setShowRefundModal(false)}>
-              {txt.approve}
+              {t('supplier.orders.approve')}
             </Button>
           </div>
         }
@@ -360,18 +279,18 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
           <>
             <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
               <p style={{ margin: '0 0 0.5rem', fontWeight: 500 }}>
-                {language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
+                {i18n.language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
               </p>
               <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-                {txt.amount}: ¥{selectedOrder.amount}
+                {t('supplier.orders.amount')}: ¥{selectedOrder.amount}
               </p>
             </div>
             <div>
               <p style={{ margin: '0 0 0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>
-                {txt.refundReason}:
+                {t('supplier.orders.refundReason')}:
               </p>
               <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-                {language === 'zh' ? '行程有变，无法出行' : 'Schedule changed, unable to travel'}
+                {i18n.language === 'zh' ? '行程有变，无法出行' : 'Schedule changed, unable to travel'}
               </p>
             </div>
           </>

@@ -39,7 +39,11 @@ const serviceLinks = [
   { key: 'serviceAgreement', path: '/terms' },
   { key: 'privacyPolicy', path: '/privacy' },
   { key: 'contactUs', path: '/contact' },
+];
+
+const partnerLinks = [
   { key: 'supplierPortal', path: '/supplier/login' },
+  { key: 'adminPortal', path: '/admin/login' },
 ];
 
 export const Footer: React.FC<FooterProps> = ({
@@ -125,6 +129,23 @@ export const Footer: React.FC<FooterProps> = ({
             <h4 className={styles.linkTitle}>{t('footer.customerService')}</h4>
             <ul className={styles.linkList}>
               {serviceLinks.map((link) => (
+                <li key={link.key}>
+                  <button
+                    className={styles.link}
+                    onClick={() => handleNavClick(link.path)}
+                  >
+                    {t(`footer.${link.key}`)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Partner Links */}
+          <div className={styles.linkSection}>
+            <h4 className={styles.linkTitle}>{t('footer.partnerPortal')}</h4>
+            <ul className={styles.linkList}>
+              {partnerLinks.map((link) => (
                 <li key={link.key}>
                   <button
                     className={styles.link}
