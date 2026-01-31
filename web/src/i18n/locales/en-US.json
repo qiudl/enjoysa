@@ -1010,6 +1010,37 @@
       "errorPasswordMismatch": "Passwords do not match",
       "errorAgreeTerms": "Please agree to the supplier agreement",
       "errorNetwork": "Network error, please try again"
+    },
+    "productForm": {
+      "basicInfo": "Basic Information",
+      "titleZh": "Product Name (Chinese)",
+      "titleZhPlaceholder": "Enter product name in Chinese",
+      "titleEn": "Product Name (English)",
+      "titleEnPlaceholder": "Enter product name in English",
+      "descriptionZh": "Description (Chinese)",
+      "descriptionEn": "Description (English)",
+      "descriptionPlaceholder": "Enter product description...",
+      "category": "Category",
+      "selectCategory": "Select category",
+      "categories": {
+        "dayTour": "Day Tour",
+        "multiDay": "Multi-day Tour",
+        "activity": "Activity",
+        "ticket": "Attraction Ticket"
+      },
+      "duration": "Duration",
+      "durationPlaceholder": "e.g. 8 hours",
+      "pricing": "Pricing & Inventory",
+      "price": "Price (AUD)",
+      "stock": "Stock",
+      "details": "Tour Details",
+      "meetingPoint": "Meeting Point",
+      "meetingPointPlaceholder": "Enter meeting point",
+      "includes": "Inclusions",
+      "includesPlaceholder": "One per line, e.g. Hotel pickup, Chinese guide...",
+      "excludes": "Exclusions",
+      "excludesPlaceholder": "One per line, e.g. Personal expenses, Tips...",
+      "publish": "Submit for Review"
     }
   }
 }

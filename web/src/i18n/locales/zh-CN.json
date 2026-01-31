@@ -1010,6 +1010,37 @@
       "orders": "订单管理",
       "settlement": "财务结算",
       "settings": "店铺设置"
+    },
+    "productForm": {
+      "basicInfo": "基本信息",
+      "titleZh": "产品名称（中文）",
+      "titleZhPlaceholder": "请输入中文产品名称",
+      "titleEn": "产品名称（英文）",
+      "titleEnPlaceholder": "Please enter product name in English",
+      "descriptionZh": "产品描述（中文）",
+      "descriptionEn": "产品描述（英文）",
+      "descriptionPlaceholder": "请输入产品描述...",
+      "category": "产品分类",
+      "selectCategory": "请选择分类",
+      "categories": {
+        "dayTour": "一日游",
+        "multiDay": "多日游",
+        "activity": "活动体验",
+        "ticket": "景点门票"
+      },
+      "duration": "行程时长",
+      "durationPlaceholder": "如：8小时",
+      "pricing": "价格库存",
+      "price": "销售价格（AUD）",
+      "stock": "库存数量",
+      "details": "行程详情",
+      "meetingPoint": "集合地点",
+      "meetingPointPlaceholder": "请输入集合地点",
+      "includes": "费用包含",
+      "includesPlaceholder": "每行一项，如：酒店接送、中文导游...",
+      "excludes": "费用不含",
+      "excludesPlaceholder": "每行一项，如：个人消费、小费...",
+      "publish": "提交审核"
     }
   }
 }
