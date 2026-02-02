@@ -16,8 +16,8 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({
   onLanguageChange,
 }) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@enjoysa.com');
+  const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
