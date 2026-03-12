@@ -38,7 +38,7 @@ export interface ProductListPageProps {
 const destinations: Destination[] = [
   { id: '1', name: '阿德莱德', nameEn: 'Adelaide', region: '南澳大利亚', regionEn: 'South Australia' },
   { id: '2', name: '袋鼠岛', nameEn: 'Kangaroo Island', region: '南澳大利亚', regionEn: 'South Australia' },
-  { id: '3', name: '巴罗莎谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
+  { id: '3', name: '巴罗萨谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
   { id: '4', name: '格雷尔', nameEn: 'Glenelg', region: '南澳大利亚', regionEn: 'South Australia' },
 ];
 
@@ -78,7 +78,7 @@ const mockProducts: Product[] = [
   },
   {
     id: '2',
-    title: '巴罗莎谷酒庄之旅',
+    title: '巴罗萨谷酒庄之旅',
     titleEn: 'Barossa Valley Winery Tour',
     description: '品味世界级葡萄酒',
     images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'],

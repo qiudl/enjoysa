@@ -83,7 +83,7 @@ const mockRecentOrders: Order[] = [
     items: [{
       id: 'item-2',
       productId: '2',
-      productTitle: '巴罗莎谷酒庄之旅',
+      productTitle: '巴罗萨谷酒庄之旅',
       productTitleEn: 'Barossa Valley Winery Tour',
       productImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
       quantity: 4,

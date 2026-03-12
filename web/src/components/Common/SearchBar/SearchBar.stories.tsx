@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../../../i18n';
 import { useState } from 'react';
 
-const mockRecentSearches = ['袋鼠岛', '巴罗莎谷', '阿德莱德市区'];
+const mockRecentSearches = ['袋鼠岛', '巴罗萨谷', '阿德莱德市区'];
 const mockHotSearches = ['袋鼠岛一日游', '酒庄品酒', '海鲜之旅', '野生动物园', '日落游船'];
 
 const meta: Meta<typeof SearchBar> = {

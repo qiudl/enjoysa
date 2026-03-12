@@ -81,7 +81,7 @@ const featuredProducts: Product[] = [
   },
   {
     id: '2',
-    title: '巴罗莎谷酒庄之旅',
+    title: '巴罗萨谷酒庄之旅',
     titleEn: 'Barossa Valley Winery Tour',
     description: '品味世界级葡萄酒',
     images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'],
@@ -97,7 +97,7 @@ const featuredProducts: Product[] = [
     exclusions: ['个人消费', '酒品购买'],
     tags: ['discount', 'food'],
     category: { ...sharedCategory, id: 'wine-tour', name: '酒庄之旅', nameEn: 'Wine Tour' },
-    destination: { id: 'barossa', name: '巴罗莎谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
+    destination: { id: 'barossa', name: '巴罗萨谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
     availability: 'available',
     instantConfirmation: true,
     freeCancellation: true,

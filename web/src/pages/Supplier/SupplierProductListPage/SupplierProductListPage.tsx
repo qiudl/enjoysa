@@ -37,7 +37,7 @@ const mockProducts: SupplierProduct[] = [
   },
   {
     id: '2',
-    title: '巴罗莎谷酒庄之旅',
+    title: '巴罗萨谷酒庄之旅',
     titleEn: 'Barossa Valley Winery Tour',
     image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
     price: 299,

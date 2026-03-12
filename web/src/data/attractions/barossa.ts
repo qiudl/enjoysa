@@ -16,7 +16,7 @@ export const barossaAttractions: Attraction[] = [
     priceFrom: 350,
     currency: 'AUD',
     highlights: [
-      { title: '\u5e84\u56ed\u5f0f\u4f4f\u5bbf', titleEn: 'Estate Accommodation', description: '\u5165\u4f4f\u82ad\u8431\u8389\u8461\u8404\u56ed\u4e2d\u7684\u7cbe\u54c1\u5e84\u56ed\uff0c\u7f6e\u8eab\u8461\u8404\u56ed\u4e4b\u4e2d\u3002', descriptionEn: 'Stay in a boutique estate nestled among Barossa vineyards.' },
+      { title: '\u5e84\u56ed\u5f0f\u4f4f\u5bbf', titleEn: 'Estate Accommodation', description: '\u5165\u4f4f巴罗萨\u8461\u8404\u56ed\u4e2d\u7684\u7cbe\u54c1\u5e84\u56ed\uff0c\u7f6e\u8eab\u8461\u8404\u56ed\u4e4b\u4e2d\u3002', descriptionEn: 'Stay in a boutique estate nestled among Barossa vineyards.' },
       { title: '\u914d\u9152\u7f8e\u98df', titleEn: 'Wine-Paired Dining', description: 'Appellation \u65e9\u9910\u548c\u665a\u9910\u5747\u642d\u914d\u5e84\u56ed\u7cbe\u9009\u8461\u8404\u9152\u3002', descriptionEn: 'Appellation breakfast and dinner both paired with estate wines.' },
     ],
     duration: '1 \u665a 2 \u5929',
@@ -33,7 +33,7 @@ export const barossaAttractions: Attraction[] = [
     ],
     voucherInfo: '\u9884\u8ba2\u786e\u8ba4\u540e\u53d1\u9001\u7535\u5b50\u786e\u8ba4\u5355\uff0c\u542b\u8be6\u7ec6\u5165\u4f4f\u4fe1\u606f\u3002',
     voucherInfoEn: 'Booking confirmation with detailed check-in information sent via email.',
-    directions: '\u4f4d\u4e8e\u82ad\u8431\u8389\u5c71\u8c37\uff0c\u8ddd\u79bb\u963f\u5fb7\u83b1\u5fb7\u5e02\u4e2d\u5fc3\u7ea6 1 \u5c0f\u65f6\u8f66\u7a0b\u3002',
+    directions: '\u4f4d\u4e8e巴罗萨\u5c71\u8c37\uff0c\u8ddd\u79bb\u963f\u5fb7\u83b1\u5fb7\u5e02\u4e2d\u5fc3\u7ea6 1 \u5c0f\u65f6\u8f66\u7a0b\u3002',
     directionsEn: 'Located in the Barossa Valley, about 1 hour drive from Adelaide CBD.',
     faqs: [
       { question: '\u53ef\u4ee5\u53ea\u8ba2\u665a\u9910\u4e0d\u4f4f\u5bbf\u5417\uff1f', questionEn: 'Can I book dinner without accommodation?', answer: '\u8fd9\u4e2a\u5957\u9910\u662f\u4f4f\u5bbf+\u9910\u996e\u6253\u5305\u4f53\u9a8c\uff0c\u65e0\u6cd5\u5355\u72ec\u9884\u8ba2\u665a\u9910\u3002', answerEn: 'This is a bundled accommodation + dining experience and cannot be booked separately.' },
@@ -48,10 +48,10 @@ export const barossaAttractions: Attraction[] = [
   {
     id: 'barossa-balloons',
     regionId: 'barossa',
-    name: '\u82ad\u8431\u8389\u70ed\u6c14\u7403',
+    name: '巴罗萨\u70ed\u6c14\u7403',
     nameEn: 'Barossa Valley Balloons',
     supplierName: 'Barossa Valley Balloons',
-    subtitle: '\u6668\u95f4\u70ed\u6c14\u7403\u4fd8\u77b0\u82ad\u8431\u8389\u8461\u8404\u56ed\uff0c\u5357\u6fb3\u6700\u9ad8\u7aef\u7684\u65c5\u6e38\u9879\u76ee\u4e4b\u4e00',
+    subtitle: '\u6668\u95f4\u70ed\u6c14\u7403\u4fd8\u77b0巴罗萨\u8461\u8404\u56ed\uff0c\u5357\u6fb3\u6700\u9ad8\u7aef\u7684\u65c5\u6e38\u9879\u76ee\u4e4b\u4e00',
     subtitleEn: 'Morning balloon flight over Barossa vineyards - one of SA\'s most premium experiences',
     images: ['https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=800'],
     tags: ['bestseller', 'photo_spot'],
@@ -67,7 +67,7 @@ export const barossaAttractions: Attraction[] = [
     durationEn: 'Approx. 4 hours (including transfers and breakfast)',
     departureTime: '\u65e5\u51fa\u524d\u96c6\u5408\uff08\u7ea6 5:00-6:00\uff0c\u89c6\u5b63\u8282\u800c\u5b9a\uff09',
     departureTimeEn: 'Pre-dawn meeting (approx. 5:00-6:00, varies by season)',
-    meetingPoint: '\u82ad\u8431\u8389\u6307\u5b9a\u96c6\u5408\u70b9\uff08\u9884\u8ba2\u540e\u901a\u77e5\uff09',
+    meetingPoint: '巴罗萨\u6307\u5b9a\u96c6\u5408\u70b9\uff08\u9884\u8ba2\u540e\u901a\u77e5\uff09',
     meetingPointEn: 'Barossa meeting point (confirmed after booking)',
     inclusions: ['\u70ed\u6c14\u7403\u98de\u884c\u7ea6 1 \u5c0f\u65f6', '\u9999\u69df\u65e9\u9910', '\u98de\u884c\u8bc1\u4e66', '\u4fdd\u9669'],
     inclusionsEn: ['Approx. 1 hour balloon flight', 'Champagne breakfast', 'Flight certificate', 'Insurance'],
@@ -76,7 +76,7 @@ export const barossaAttractions: Attraction[] = [
     ],
     voucherInfo: '\u9884\u8ba2\u786e\u8ba4\u540e\u53d1\u9001\u96c6\u5408\u70b9\u548c\u65f6\u95f4\u8be6\u60c5\u3002',
     voucherInfoEn: 'Meeting point and time details sent after booking confirmation.',
-    directions: '\u63d0\u4f9b\u82ad\u8431\u8389\u5c71\u8c37\u5185\u6307\u5b9a\u9152\u5e97\u63a5\u9001\u670d\u52a1\u3002',
+    directions: '\u63d0\u4f9b巴罗萨\u5c71\u8c37\u5185\u6307\u5b9a\u9152\u5e97\u63a5\u9001\u670d\u52a1\u3002',
     directionsEn: 'Hotel pickup available within the Barossa Valley.',
     faqs: [
       { question: '\u5929\u6c14\u4e0d\u597d\u600e\u4e48\u529e\uff1f', questionEn: 'What if the weather is bad?', answer: '\u70ed\u6c14\u7403\u98de\u884c\u53d7\u5929\u6c14\u5f71\u54cd\u8f83\u5927\u3002\u5982\u679b\u5929\u6c14\u4e0d\u9002\u5408\u98de\u884c\uff0c\u4f1a\u63d0\u524d\u901a\u77e5\u5e76\u5b89\u6392\u6539\u671f\u6216\u5168\u989d\u9000\u6b3e\u3002', answerEn: 'Balloon flights are weather-dependent. If conditions are unsuitable, you\'ll be notified in advance and offered a reschedule or full refund.' },
@@ -120,7 +120,7 @@ export const barossaAttractions: Attraction[] = [
     ],
     voucherInfo: '\u7535\u5b50\u786e\u8ba4\u5355\u5373\u65f6\u53d1\u9001\u3002',
     voucherInfoEn: 'E-voucher sent instantly.',
-    directions: '\u4f4d\u4e8e\u82ad\u8431\u8389\u5c71\u8c37 Seppeltsfield Road\uff0c\u8ddd\u79bb\u963f\u5fb7\u83b1\u5fb7\u7ea6 1 \u5c0f\u65f6\u8f66\u7a0b\u3002',
+    directions: '\u4f4d\u4e8e巴罗萨\u5c71\u8c37 Seppeltsfield Road\uff0c\u8ddd\u79bb\u963f\u5fb7\u83b1\u5fb7\u7ea6 1 \u5c0f\u65f6\u8f66\u7a0b\u3002',
     directionsEn: 'Located on Seppeltsfield Road in the Barossa Valley, about 1 hour from Adelaide.',
     faqs: [
       { question: '\u6bcf\u4e2a\u5e74\u4efd\u7684\u9152\u90fd\u6709\u5417\uff1f', questionEn: 'Do you have wine for every year?', answer: 'Seppeltsfield \u62e5\u6709\u4ece 1878 \u5e74\u81f3\u4eca\u7684\u8fde\u7eed\u5e74\u4efd\u6ce2\u7279\u9152\u85cf\u54c1\uff0c\u51e0\u4e4e\u6db5\u76d6\u6240\u6709\u5e74\u4efd\u3002', answerEn: 'Seppeltsfield has a continuous collection of port wines from 1878 to present, covering almost every year.' },

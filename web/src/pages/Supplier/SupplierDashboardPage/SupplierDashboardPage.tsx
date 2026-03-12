@@ -37,7 +37,7 @@ const mockRecentOrders = [
   },
   {
     id: 'ORD-20260130-0002',
-    product: '巴罗莎谷酒庄之旅',
+    product: '巴罗萨谷酒庄之旅',
     productEn: 'Barossa Valley Winery Tour',
     customer: '李四',
     amount: 1196,

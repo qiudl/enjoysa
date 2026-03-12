@@ -37,7 +37,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
 
   const defaultImages: Record<string, string> = {
     '袋鼠岛': 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=800&h=600&fit=crop',
-    '巴罗莎谷': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
+    '巴罗萨谷': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
     '阿德莱德市区': 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=800&h=600&fit=crop',
     '弗林德斯山脉': 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop',
     '艾尔半岛': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',

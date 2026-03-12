@@ -86,7 +86,7 @@ const mockOrders: Order[] = [
     id: 'ORD-20260220-0002',
     orderNumber: 'ORD-20260220-0002',
     userId: 'user-1',
-    items: [createMockOrderItem('2', '巴罗莎谷酒庄之旅', 'Barossa Valley Winery Tour', 4, 299)],
+    items: [createMockOrderItem('2', '巴罗萨谷酒庄之旅', 'Barossa Valley Winery Tour', 4, 299)],
     status: 'confirmed',
     totalAmount: 1196,
     currency: 'CNY',

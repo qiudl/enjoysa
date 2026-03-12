@@ -45,7 +45,7 @@ const confirmedOrder: Order = {
     {
       id: 'i2',
       productId: 'p2',
-      productTitle: '巴罗莎谷酒庄品酒之旅',
+      productTitle: '巴罗萨谷酒庄品酒之旅',
       productTitleEn: 'Barossa Valley Wine Tasting Tour',
       productImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
       travelDate: '2026-02-20',
@@ -160,7 +160,7 @@ const multiItemOrder: Order = {
     {
       id: 'i6',
       productId: 'p2',
-      productTitle: '巴罗莎谷酒庄品酒之旅',
+      productTitle: '巴罗萨谷酒庄品酒之旅',
       productTitleEn: 'Barossa Valley Wine Tasting Tour',
       productImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
       travelDate: '2026-02-16',

@@ -27,7 +27,7 @@ const mockProducts: ProductReview[] = [
   },
   {
     id: '2',
-    name: '巴罗莎谷品酒之旅',
+    name: '巴罗萨谷品酒之旅',
     nameEn: 'Barossa Valley Wine Tour',
     category: 'day_tour',
     supplierId: '1',

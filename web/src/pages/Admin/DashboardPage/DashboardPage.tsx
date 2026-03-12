@@ -33,7 +33,7 @@ const mockRecentOrders: RecentOrder[] = [
   {
     id: '2',
     orderNo: 'ORD202602020002',
-    productName: '巴罗莎谷品酒之旅',
+    productName: '巴罗萨谷品酒之旅',
     productNameEn: 'Barossa Valley Wine Tour',
     customerName: 'John Smith',
     amount: 756,
@@ -83,7 +83,7 @@ const mockTopProducts: TopProduct[] = [
   },
   {
     id: '2',
-    name: '巴罗莎谷品酒之旅',
+    name: '巴罗萨谷品酒之旅',
     nameEn: 'Barossa Valley Wine Tour',
     sales: 128,
     revenue: 48640,

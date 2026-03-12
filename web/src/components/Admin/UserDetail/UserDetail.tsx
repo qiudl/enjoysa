@@ -176,7 +176,7 @@ export const UserDetail: React.FC<UserDetailProps> = ({
                   {/* Mock order history */}
                   {[
                     { id: '1', orderNo: 'ORD202602010001', product: '袋鼠岛一日游', amount: 598, status: 'completed', date: '2026-02-01' },
-                    { id: '2', orderNo: 'ORD202601280002', product: '巴罗莎谷品酒之旅', amount: 756, status: 'completed', date: '2026-01-28' },
+                    { id: '2', orderNo: 'ORD202601280002', product: '巴罗萨谷品酒之旅', amount: 756, status: 'completed', date: '2026-01-28' },
                     { id: '3', orderNo: 'ORD202601150003', product: '阿德莱德城市观光', amount: 267, status: 'cancelled', date: '2026-01-15' },
                   ].slice(0, Math.min(user.orderCount, 3)).map((order) => (
                     <div key={order.id} className={styles.orderItem}>

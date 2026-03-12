@@ -15,7 +15,7 @@ const mockCategories: ProductCategory[] = [
 
 const mockDestinations: Destination[] = [
   { id: '1', name: '袋鼠岛', nameEn: 'Kangaroo Island', region: '南澳', regionEn: 'SA' },
-  { id: '2', name: '巴罗莎谷', nameEn: 'Barossa Valley', region: '南澳', regionEn: 'SA' },
+  { id: '2', name: '巴罗萨谷', nameEn: 'Barossa Valley', region: '南澳', regionEn: 'SA' },
   { id: '3', name: '阿德莱德市区', nameEn: 'Adelaide City', region: '南澳', regionEn: 'SA' },
   { id: '4', name: '弗林德斯山脉', nameEn: 'Flinders Ranges', region: '南澳', regionEn: 'SA' },
   { id: '5', name: '艾尔半岛', nameEn: 'Eyre Peninsula', region: '南澳', regionEn: 'SA' },

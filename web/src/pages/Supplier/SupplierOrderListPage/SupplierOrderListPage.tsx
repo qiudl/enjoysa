@@ -39,7 +39,7 @@ const mockOrders: SupplierOrder[] = [
   },
   {
     id: 'ORD-20260130-0002',
-    productTitle: '巴罗莎谷酒庄之旅',
+    productTitle: '巴罗萨谷酒庄之旅',
     productTitleEn: 'Barossa Valley Winery Tour',
     customerName: '李四',
     customerPhone: '139****9000',

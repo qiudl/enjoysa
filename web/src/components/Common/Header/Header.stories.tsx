@@ -136,7 +136,7 @@ export const WithPageContent: Story = {
         <section style={{ marginBottom: '3rem' }}>
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>探索南澳大利亚</h1>
           <p style={{ color: '#64748b', lineHeight: 1.6 }}>
-            发现阿德莱德和南澳大利亚的精彩旅程，从袋鼠岛的野生动物到巴罗莎谷的醇美葡萄酒。
+            发现阿德莱德和南澳大利亚的精彩旅程，从袋鼠岛的野生动物到巴罗萨谷的醇美葡萄酒。
           </p>
         </section>
 
@@ -149,7 +149,7 @@ export const WithPageContent: Story = {
               gap: '1rem',
             }}
           >
-            {['袋鼠岛', '巴罗莎谷', '阿德莱德市区', '维克多港'].map((name) => (
+            {['袋鼠岛', '巴罗萨谷', '阿德莱德市区', '维克多港'].map((name) => (
               <div
                 key={name}
                 style={{

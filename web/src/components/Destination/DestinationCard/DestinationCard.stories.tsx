@@ -16,7 +16,7 @@ const mockDestinations: Destination[] = [
   },
   {
     id: '2',
-    name: '巴罗莎谷',
+    name: '巴罗萨谷',
     nameEn: 'Barossa Valley',
     region: '南澳',
     regionEn: 'South Australia',

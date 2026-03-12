@@ -44,7 +44,7 @@ const destinations: Destination[] = [
   },
   {
     id: '2',
-    name: '巴罗莎谷',
+    name: '巴罗萨谷',
     nameEn: 'Barossa Valley',
     region: '南澳大利亚',
     regionEn: 'South Australia',

@@ -50,7 +50,7 @@ const mockRecentOrders: RecentOrder[] = [
     id: '2',
     orderNo: 'ORD-20260215-0002',
     customerName: '李四',
-    productName: '巴罗莎谷酒庄之旅',
+    productName: '巴罗萨谷酒庄之旅',
     productNameEn: 'Barossa Valley Tour',
     amount: 1196,
     status: 'confirmed',
@@ -100,7 +100,7 @@ const mockTopProducts: TopProduct[] = [
   },
   {
     id: '2',
-    name: '巴罗莎谷酒庄之旅',
+    name: '巴罗萨谷酒庄之旅',
     nameEn: 'Barossa Valley Tour',
     image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100',
     sales: 245,

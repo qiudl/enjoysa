@@ -34,7 +34,7 @@ const mockOrders: Order[] = [
     customerPhone: '+61 412 000 002',
     customerEmail: 'li@example.com',
     productId: '2',
-    productName: '巴罗莎谷品酒之旅',
+    productName: '巴罗萨谷品酒之旅',
     supplierId: '1',
     supplierName: '祥龙旅行社',
     travelDate: '2026-02-10',

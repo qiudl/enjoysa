@@ -25,7 +25,7 @@ export const regions: Region[] = [
   },
   {
     id: 'barossa',
-    name: '\u82ad\u8431\u8389',
+    name: '巴罗萨',
     nameEn: 'Barossa',
     description: '\u4e16\u754c\u9876\u7ea7\u8461\u8404\u9152\u4ea7\u533a\uff0c\u6c47\u805a\u4e86\u6fb3\u6d32\u6700\u8457\u540d\u7684\u9152\u5e84\u3002\u6668\u95f4\u70ed\u6c14\u7403\u4fd8\u77b0\u8461\u8404\u56ed\uff0c\u54c1\u5c1d\u51fa\u751f\u5e74\u4efd\u7684\u9648\u5e74\u6ce2\u7279\u9152\uff0c\u4eab\u53d7\u5e84\u56ed\u5f0f\u4f4f\u5bbf\u3002',
     descriptionEn: 'A world-class wine region home to Australia\'s most famous wineries. Morning balloon rides over vineyards, birth-year port tastings, and estate-style accommodations.',
