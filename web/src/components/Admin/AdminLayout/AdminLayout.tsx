@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Users,
   DollarSign,
+  Shield,
   Settings,
   LogOut,
   Menu,
@@ -38,6 +39,7 @@ const menuItems: MenuItem[] = [
   { key: 'orders', path: '/admin/orders', icon: <ShoppingCart size={20} />, labelKey: 'admin.menu.orders', permission: 'orders.view' },
   { key: 'users', path: '/admin/users', icon: <Users size={20} />, labelKey: 'admin.menu.users', permission: 'users.view' },
   { key: 'finance', path: '/admin/finance', icon: <DollarSign size={20} />, labelKey: 'admin.menu.finance', permission: 'finance.view' },
+  { key: 'admins', path: '/admin/admins', icon: <Shield size={20} />, labelKey: 'admin.menu.admins', permission: 'admins.view' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
 ];
 

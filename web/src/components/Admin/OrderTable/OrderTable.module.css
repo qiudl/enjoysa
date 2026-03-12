@@ -1,0 +1,211 @@
+.tableWrapper {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+.table th,
+.table td {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.table tbody tr.selected {
+  background: #eff6ff;
+}
+
+.checkboxCell {
+  width: 48px;
+  text-align: center;
+}
+
+.checkboxCell input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Order No */
+.orderNo {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+/* Customer Info */
+.customerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.customerName {
+  font-weight: 500;
+  color: #111827;
+}
+
+.customerPhone {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Product */
+.productName {
+  color: #374151;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Supplier */
+.supplierName {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Travel Info */
+.travelInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.quantity {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Amount */
+.amount {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Status Badge */
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.statusBadge.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.statusBadge.confirmed {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.statusBadge.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.statusBadge.cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.statusBadge.refunding {
+  background: #faf5ff;
+  color: #9333ea;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionBtn {
+  padding: 0.375rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.actionBtn.confirm:hover {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.actionBtn.cancel:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.actionBtn.refund:hover {
+  background: #faf5ff;
+  color: #9333ea;
+}
+
+/* Empty State */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+/* Skeleton Loading */
+.skeletonRow td {
+  padding: 1rem;
+}
+
+.skeleton {
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
