@@ -13,7 +13,7 @@ export const bannerSlides: BannerSlide[] = [
   {
     id: 'banner-2',
     image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920',
-    title: '芭萝莉 · 晨间热气球之旅',
+    title: '巴罗萨 · 晨间热气球之旅',
     titleEn: 'Barossa · Morning Balloon Flight',
     tags: ['热气球', '葡萄园', '浪漫体验'],
     tagsEn: ['Hot Air Balloon', 'Vineyards', 'Romantic'],
