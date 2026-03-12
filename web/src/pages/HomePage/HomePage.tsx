@@ -5,11 +5,15 @@ import {
   Footer,
   SearchBar,
   CardSkeleton,
+  HeroBanner,
+  RegionCard,
 } from '../../components/Common';
 import { ProductCard } from '../../components/Product';
-import { DestinationCard } from '../../components/Destination';
 import { CategoryCard } from '../../components/Category';
-import type { Product, Destination, ProductCategory } from '../../types';
+import type { Product, ProductCategory } from '../../types';
+import type { Region } from '../../data/types';
+import { regions } from '../../data/regions';
+import { bannerSlides } from '../../data/bannerSlides';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -27,8 +31,10 @@ export interface HomePageProps {
   onSearch?: (keyword: string) => void;
   /** 产品点击 */
   onProductClick?: (product: Product) => void;
-  /** 目的地点击 */
-  onDestinationClick?: (destination: Destination) => void;
+  /** 区域点击 */
+  onRegionClick?: (region: Region) => void;
+  /** 景点点击（Banner） */
+  onAttractionClick?: (attractionId: string) => void;
   /** 分类点击 */
   onCategoryClick?: (category: ProductCategory) => void;
   /** 登录点击 */
@@ -40,14 +46,6 @@ export interface HomePageProps {
 }
 
 // Shared destination and category data for products
-const sharedDestination: Destination = {
-  id: 'adelaide',
-  name: '阿德莱德',
-  nameEn: 'Adelaide',
-  region: '南澳大利亚',
-  regionEn: 'South Australia',
-};
-
 const sharedCategory: ProductCategory = {
   id: 'day-tour',
   name: '一日游',
@@ -73,7 +71,7 @@ const featuredProducts: Product[] = [
     exclusions: ['个人消费'],
     tags: ['hot', 'recommended'],
     category: sharedCategory,
-    destination: { ...sharedDestination, id: 'kangaroo-island', name: '袋鼠岛', nameEn: 'Kangaroo Island' },
+    destination: { id: 'kangaroo-island', name: '袋鼠岛', nameEn: 'Kangaroo Island', region: '南澳大利亚', regionEn: 'South Australia' },
     availability: 'available',
     instantConfirmation: true,
     freeCancellation: true,
@@ -99,7 +97,7 @@ const featuredProducts: Product[] = [
     exclusions: ['个人消费', '酒品购买'],
     tags: ['discount', 'food'],
     category: { ...sharedCategory, id: 'wine-tour', name: '酒庄之旅', nameEn: 'Wine Tour' },
-    destination: { ...sharedDestination, id: 'barossa', name: '巴罗莎谷', nameEn: 'Barossa Valley' },
+    destination: { id: 'barossa', name: '巴罗莎谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
     availability: 'available',
     instantConfirmation: true,
     freeCancellation: true,
@@ -124,7 +122,7 @@ const featuredProducts: Product[] = [
     exclusions: ['交通', '餐饮'],
     tags: ['family'],
     category: { ...sharedCategory, id: 'cruise', name: '水上活动', nameEn: 'Water Activities' },
-    destination: { ...sharedDestination, id: 'glenelg', name: '格雷尔', nameEn: 'Glenelg' },
+    destination: { id: 'glenelg', name: '格雷尔', nameEn: 'Glenelg', region: '南澳大利亚', regionEn: 'South Australia' },
     availability: 'available',
     instantConfirmation: true,
     freeCancellation: false,
@@ -149,57 +147,13 @@ const featuredProducts: Product[] = [
     exclusions: ['午餐', '个人消费'],
     tags: ['hot', 'culture'],
     category: { ...sharedCategory, id: 'city-tour', name: '城市观光', nameEn: 'City Tour' },
-    destination: sharedDestination,
+    destination: { id: 'adelaide', name: '阿德莱德', nameEn: 'Adelaide', region: '南澳大利亚', regionEn: 'South Australia' },
     availability: 'available',
     instantConfirmation: true,
     freeCancellation: true,
     supplierId: 'sup-4',
     createdAt: '2025-01-01',
     updatedAt: '2025-01-01',
-  },
-];
-
-// Mock data - Destinations
-const destinations: Destination[] = [
-  {
-    id: '1',
-    name: '袋鼠岛',
-    nameEn: 'Kangaroo Island',
-    region: '南澳大利亚',
-    regionEn: 'South Australia',
-    description: '野生动物天堂，自然奇观',
-    descriptionEn: 'Wildlife paradise with natural wonders',
-    image: 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400',
-  },
-  {
-    id: '2',
-    name: '巴罗莎谷',
-    nameEn: 'Barossa Valley',
-    region: '南澳大利亚',
-    regionEn: 'South Australia',
-    description: '世界级葡萄酒产区',
-    descriptionEn: 'World-class wine region',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
-  },
-  {
-    id: '3',
-    name: '阿德莱德',
-    nameEn: 'Adelaide',
-    region: '南澳大利亚',
-    regionEn: 'South Australia',
-    description: '南澳首府，文化之都',
-    descriptionEn: 'Capital of SA, cultural hub',
-    image: 'https://images.unsplash.com/photo-1540202403-b7abd6747a18?w=400',
-  },
-  {
-    id: '4',
-    name: '弗林德斯山脉',
-    nameEn: 'Flinders Ranges',
-    region: '南澳大利亚',
-    regionEn: 'South Australia',
-    description: '古老山脉，内陆探险',
-    descriptionEn: 'Ancient ranges, outback adventure',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
   },
 ];
 
@@ -212,11 +166,6 @@ const categories: ProductCategory[] = [
   { id: '5', name: '亲子活动', nameEn: 'Family Fun', icon: '👨‍👩‍👧‍👦' },
   { id: '6', name: '文化体验', nameEn: 'Culture', icon: '🎭' },
 ];
-
-// Product count by destination/category
-const destinationProductCounts: Record<string, number> = {
-  '1': 28, '2': 15, '3': 42, '4': 12,
-};
 
 const categoryProductCounts: Record<string, number> = {
   '1': 35, '2': 28, '3': 22, '4': 18, '5': 25, '6': 15,
@@ -231,7 +180,8 @@ export const HomePage: React.FC<HomePageProps> = ({
   loading = false,
   onSearch,
   onProductClick,
-  onDestinationClick,
+  onRegionClick,
+  onAttractionClick,
   onCategoryClick,
   onLoginClick,
   onRegisterClick,
@@ -259,19 +209,37 @@ export const HomePage: React.FC<HomePageProps> = ({
         onSearch={onSearch}
       />
 
-      {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroOverlay} />
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>{t('home.heroTitle')}</h1>
-          <p className={styles.heroSubtitle}>{t('home.heroSubtitle')}</p>
-          <div className={styles.heroSearch}>
-            <SearchBar
-              placeholder={t('home.searchPlaceholder')}
-              size="lg"
-              onSearch={handleSearch}
+      {/* Hero Banner */}
+      <HeroBanner
+        slides={bannerSlides}
+        onSlideClick={onAttractionClick}
+      />
+
+      {/* Search Bar */}
+      <section className={styles.searchSection}>
+        <div className={styles.searchContainer}>
+          <SearchBar
+            placeholder={t('home.searchPlaceholder')}
+            size="lg"
+            onSearch={handleSearch}
+          />
+        </div>
+      </section>
+
+      {/* Region Navigation */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>{t('region.title')}</h2>
+          <p className={styles.sectionSubtitle}>{t('region.subtitle')}</p>
+        </div>
+        <div className={styles.regionsGrid}>
+          {regions.map((region) => (
+            <RegionCard
+              key={region.id}
+              region={region}
+              onClick={onRegionClick}
             />
-          </div>
+          ))}
         </div>
       </section>
 
@@ -296,26 +264,6 @@ export const HomePage: React.FC<HomePageProps> = ({
               />
             ))
           )}
-        </div>
-      </section>
-
-      {/* Destinations */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t('home.popularDestinations')}</h2>
-          <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
-        </div>
-        <div className={styles.destinationsGrid}>
-          {destinations.map((dest) => (
-            <DestinationCard
-              key={dest.id}
-              destination={dest}
-              productCount={destinationProductCounts[dest.id]}
-              coverImage={dest.image}
-              language={currentLang}
-              onClick={onDestinationClick}
-            />
-          ))}
         </div>
       </section>
 

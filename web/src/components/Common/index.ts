@@ -31,3 +31,9 @@ export type { PaginationProps } from './Pagination';
 
 export { ErrorBoundary, ErrorFallback } from './ErrorBoundary';
 export type { ErrorBoundaryProps, ErrorFallbackProps } from './ErrorBoundary';
+
+export { HeroBanner } from './HeroBanner';
+export type { HeroBannerProps, BannerSlide } from './HeroBanner';
+
+export { RegionCard } from './RegionCard';
+export type { RegionCardProps } from './RegionCard';

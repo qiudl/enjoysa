@@ -20,7 +20,8 @@
     "close": "关闭",
     "viewAll": "查看全部",
     "noData": "暂无数据",
-    "required": "必填"
+    "required": "必填",
+    "refresh": "刷新"
   },
   "nav": {
     "home": "首页",
@@ -635,6 +636,11 @@
     "support247": "全天候服务",
     "support247Desc": "中文客服团队，随时解答您的问题"
   },
+  "region": {
+    "attractionCount": "{{count}} 个景点",
+    "title": "探索南澳区域",
+    "subtitle": "七大区域，各有精彩"
+  },
   "error": {
     "networkError": "网络错误，请稍后重试",
     "serverError": "服务器错误",
@@ -651,6 +657,7 @@
       "orders": "订单管理",
       "users": "用户管理",
       "finance": "财务管理",
+      "admins": "管理员",
       "settings": "系统设置"
     },
     "logout": "退出登录",
@@ -696,75 +703,470 @@
     "suppliers": {
       "title": "供应商管理",
       "search": "搜索供应商...",
-      "all": "全部",
-      "pending": "待审核",
-      "approved": "已通过",
-      "suspended": "已暂停",
-      "name": "供应商名称",
-      "type": "类型",
-      "contact": "联系方式",
-      "status": "状态",
-      "joinDate": "入驻时间",
-      "actions": "操作",
-      "view": "查看",
-      "approve": "通过",
-      "reject": "拒绝",
-      "suspend": "暂停"
+      "add": "添加供应商",
+      "export": "导出",
+      "empty": "暂无供应商数据",
+      "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
+      "stats": {
+        "total": "总供应商数",
+        "pending": "待审核",
+        "approved": "已通过",
+        "suspended": "已暂停"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待审核",
+        "approved": "已通过",
+        "suspended": "已暂停"
+      },
+      "table": {
+        "name": "供应商名称",
+        "type": "类型",
+        "contact": "联系方式",
+        "products": "产品数",
+        "orders": "订单数",
+        "status": "状态",
+        "joinDate": "入驻时间",
+        "actions": "操作"
+      },
+      "status": {
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已拒绝",
+        "suspended": "已暂停"
+      },
+      "actions": {
+        "view": "查看",
+        "approve": "通过",
+        "reject": "拒绝",
+        "suspend": "暂停",
+        "unsuspend": "恢复"
+      },
+      "detail": {
+        "title": "供应商详情",
+        "tabs": {
+          "info": "基本信息",
+          "products": "产品列表",
+          "orders": "订单记录"
+        },
+        "contactInfo": "联系信息",
+        "email": "邮箱",
+        "phone": "电话",
+        "contactPerson": "联系人",
+        "joinDate": "入驻日期",
+        "products": "产品",
+        "orders": "订单",
+        "productsPlaceholder": "产品列表功能开发中...",
+        "ordersPlaceholder": "订单记录功能开发中..."
+      },
+      "reject": {
+        "title": "拒绝供应商",
+        "message": "请填写拒绝原因，将发送给供应商",
+        "placeholder": "请输入拒绝原因..."
+      },
+      "suspend": {
+        "title": "暂停供应商",
+        "message": "请填写暂停原因，暂停后该供应商产品将下架",
+        "placeholder": "请输入暂停原因..."
+      },
+      "form": {
+        "createTitle": "添加供应商",
+        "editTitle": "编辑供应商",
+        "basicInfo": "基本信息",
+        "name": "企业名称",
+        "namePlaceholder": "请输入企业名称",
+        "nameEn": "企业英文名",
+        "nameEnPlaceholder": "Please enter company name in English",
+        "type": "供应商类型",
+        "businessLicense": "营业执照号",
+        "businessLicensePlaceholder": "请输入营业执照号",
+        "contactInfo": "联系信息",
+        "contactName": "联系人",
+        "contactNamePlaceholder": "请输入联系人姓名",
+        "contactPhone": "联系电话",
+        "contactPhonePlaceholder": "请输入联系电话",
+        "contactEmail": "联系邮箱",
+        "contactEmailPlaceholder": "请输入联系邮箱",
+        "address": "地址",
+        "addressPlaceholder": "请输入地址",
+        "commissionSettings": "佣金设置",
+        "commissionRate": "佣金比例",
+        "description": "简介",
+        "descriptionZh": "中文简介",
+        "descriptionEn": "英文简介",
+        "descriptionPlaceholder": "请输入供应商简介...",
+        "descriptionEnPlaceholder": "Please enter supplier description...",
+        "errors": {
+          "nameRequired": "请输入企业名称",
+          "contactNameRequired": "请输入联系人姓名",
+          "phoneRequired": "请输入联系电话",
+          "emailRequired": "请输入联系邮箱",
+          "emailInvalid": "邮箱格式不正确"
+        }
+      }
     },
     "products": {
       "title": "产品审核",
       "search": "搜索产品...",
-      "all": "全部",
-      "pending": "待审核",
-      "approved": "已通过",
-      "rejected": "已拒绝",
-      "productName": "产品名称",
-      "supplier": "供应商",
-      "price": "价格",
-      "status": "状态",
-      "submitDate": "提交时间",
-      "actions": "操作",
-      "view": "查看",
-      "approve": "通过",
-      "reject": "拒绝"
+      "export": "导出",
+      "empty": "暂无产品数据",
+      "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
+      "stats": {
+        "total": "总产品数",
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已驳回",
+        "today": "今日新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已驳回"
+      },
+      "table": {
+        "product": "产品",
+        "category": "分类",
+        "supplier": "供应商",
+        "price": "价格",
+        "status": "状态",
+        "submitDate": "提交时间",
+        "actions": "操作"
+      },
+      "categories": {
+        "dayTour": "一日游",
+        "multiDay": "多日游",
+        "activity": "活动体验",
+        "ticket": "景点门票"
+      },
+      "status": {
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已驳回"
+      },
+      "actions": {
+        "view": "查看",
+        "approve": "通过",
+        "reject": "驳回"
+      },
+      "detail": {
+        "title": "产品详情",
+        "tabs": {
+          "info": "基本信息",
+          "images": "产品图片",
+          "itinerary": "行程安排"
+        },
+        "supplier": "供应商",
+        "submitDate": "提交时间",
+        "duration": "行程时长",
+        "hours": "小时",
+        "location": "目的地",
+        "price": "价格",
+        "description": "产品描述",
+        "noDescription": "暂无描述",
+        "includes": "费用包含",
+        "includeItem1": "酒店接送",
+        "includeItem2": "中文导游",
+        "includeItem3": "景点门票",
+        "excludes": "费用不含",
+        "excludeItem1": "个人消费",
+        "excludeItem2": "旅游保险",
+        "pickup": "酒店接送",
+        "pickupDesc": "从阿德莱德市区酒店出发",
+        "activity1": "景点游览",
+        "activity1Desc": "参观主要景点，了解当地历史文化",
+        "lunch": "午餐",
+        "lunchDesc": "在当地特色餐厅享用午餐",
+        "return": "返程",
+        "returnDesc": "返回阿德莱德市区酒店",
+        "approvedMessage": "该产品已审核通过",
+        "rejectedMessage": "该产品已被驳回"
+      },
+      "reject": {
+        "title": "驳回产品",
+        "message": "请填写驳回原因，将发送给供应商",
+        "placeholder": "请输入驳回原因..."
+      }
     },
     "orders": {
       "title": "订单管理",
       "search": "搜索订单...",
-      "orderNo": "订单号",
-      "customer": "客户",
-      "supplier": "供应商",
-      "product": "产品",
-      "amount": "金额",
-      "status": "状态",
-      "orderDate": "下单时间",
-      "actions": "操作"
+      "export": "导出",
+      "empty": "暂无订单数据",
+      "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
+      "stats": {
+        "total": "总订单数",
+        "pending": "待处理",
+        "confirmed": "已确认",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "today": "今日新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待处理",
+        "confirmed": "已确认",
+        "completed": "已完成",
+        "cancelled": "已取消"
+      },
+      "table": {
+        "orderNo": "订单号",
+        "customer": "客户",
+        "product": "产品",
+        "supplier": "供应商",
+        "travelDate": "出行日期",
+        "amount": "金额",
+        "status": "状态",
+        "orderDate": "下单时间",
+        "actions": "操作",
+        "guests": "人"
+      },
+      "status": {
+        "pending": "待处理",
+        "confirmed": "已确认",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "refunding": "退款中"
+      },
+      "actions": {
+        "view": "查看",
+        "confirm": "确认",
+        "cancel": "取消",
+        "handleRefund": "处理退款",
+        "approveRefund": "同意退款",
+        "rejectRefund": "拒绝退款",
+        "confirmCancel": "确认取消"
+      },
+      "detail": {
+        "title": "订单详情",
+        "tabs": {
+          "info": "订单信息",
+          "customer": "客户信息",
+          "timeline": "订单状态"
+        },
+        "orderAmount": "订单金额",
+        "productInfo": "产品信息",
+        "supplierInfo": "供应商信息",
+        "supplierName": "供应商名称",
+        "orderTime": "订单时间",
+        "createdAt": "下单时间",
+        "paidAt": "支付时间",
+        "guests": "人",
+        "customerName": "客户姓名",
+        "customerPhone": "联系电话",
+        "customerEmail": "邮箱",
+        "timeline": {
+          "created": "订单创建",
+          "paid": "支付成功",
+          "confirmed": "订单确认",
+          "completed": "行程完成",
+          "cancelled": "订单取消"
+        }
+      },
+      "cancel": {
+        "title": "取消订单",
+        "message": "请填写取消原因",
+        "placeholder": "请输入取消原因..."
+      },
+      "rejectRefund": {
+        "title": "拒绝退款",
+        "message": "请填写拒绝原因",
+        "placeholder": "请输入拒绝退款原因..."
+      }
     },
     "users": {
       "title": "用户管理",
       "search": "搜索用户...",
-      "name": "姓名",
-      "email": "邮箱",
-      "phone": "手机",
-      "status": "状态",
-      "registerDate": "注册时间",
-      "orders": "订单数",
-      "actions": "操作"
+      "export": "导出",
+      "empty": "暂无用户数据",
+      "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
+      "stats": {
+        "total": "总用户数",
+        "active": "活跃用户",
+        "inactive": "非活跃用户",
+        "newToday": "今日新增",
+        "newMonth": "本月新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "active": "活跃",
+        "inactive": "非活跃",
+        "banned": "已封禁"
+      },
+      "table": {
+        "user": "用户",
+        "email": "邮箱",
+        "phone": "手机",
+        "orders": "订单数",
+        "spent": "消费金额",
+        "status": "状态",
+        "registerDate": "注册时间",
+        "actions": "操作"
+      },
+      "status": {
+        "active": "活跃",
+        "inactive": "非活跃",
+        "banned": "已封禁"
+      },
+      "actions": {
+        "view": "查看",
+        "ban": "封禁",
+        "unban": "解封"
+      },
+      "detail": {
+        "title": "用户详情",
+        "tabs": {
+          "info": "基本信息",
+          "orders": "订单记录"
+        },
+        "email": "邮箱",
+        "phone": "手机号",
+        "registerDate": "注册日期",
+        "lastLogin": "最后登录",
+        "orders": "订单",
+        "spent": "消费",
+        "ordersPlaceholder": "订单记录功能开发中..."
+      },
+      "ban": {
+        "title": "封禁用户",
+        "message": "请填写封禁原因",
+        "placeholder": "请输入封禁原因..."
+      }
     },
     "finance": {
       "title": "财务管理",
-      "overview": "财务概览",
-      "totalRevenue": "总收入",
-      "pendingSettlement": "待结算",
-      "commissionEarned": "佣金收入",
-      "withdrawals": "已提现"
+      "search": "搜索结算单...",
+      "export": "导出",
+      "empty": "暂无结算数据",
+      "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
+      "stats": {
+        "totalRevenue": "总收入",
+        "pendingSettlement": "待结算",
+        "settledAmount": "已结算",
+        "commissionEarned": "佣金收入",
+        "today": "今日",
+        "month": "本月"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待处理",
+        "processing": "处理中",
+        "completed": "已完成"
+      },
+      "table": {
+        "settlementNo": "结算单号",
+        "supplier": "供应商",
+        "period": "结算周期",
+        "orders": "订单数",
+        "totalAmount": "总金额",
+        "commission": "佣金",
+        "netAmount": "结算金额",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "status": {
+        "pending": "待处理",
+        "processing": "处理中",
+        "completed": "已完成",
+        "failed": "失败"
+      },
+      "actions": {
+        "view": "查看",
+        "download": "下载",
+        "process": "处理"
+      },
+      "detail": {
+        "title": "结算详情",
+        "tabs": {
+          "info": "基本信息",
+          "orders": "订单明细"
+        },
+        "supplier": "供应商",
+        "period": "结算周期",
+        "orderCount": "订单数量",
+        "orders": "单",
+        "createdAt": "创建时间",
+        "paidAt": "打款时间",
+        "netAmount": "结算金额",
+        "breakdown": "金额明细",
+        "totalAmount": "订单总额",
+        "commission": "平台佣金",
+        "ordersPlaceholder": "订单明细功能开发中..."
+      }
     },
     "settings": {
       "title": "系统设置",
+      "subtitle": "管理平台配置和偏好设置",
+      "save": "保存设置",
+      "saving": "保存中...",
+      "reset": "重置",
       "general": "基本设置",
       "payments": "支付设置",
       "notifications": "通知设置",
-      "security": "安全设置"
+      "security": "安全设置",
+      "generalSettings": {
+        "siteInfo": "网站信息",
+        "siteName": "网站名称",
+        "siteNameEn": "网站英文名",
+        "siteUrl": "网站地址",
+        "contact": "联系方式",
+        "contactEmail": "联系邮箱",
+        "contactPhone": "联系电话",
+        "regional": "地区设置",
+        "defaultLanguage": "默认语言",
+        "timezone": "时区",
+        "currency": "货币"
+      },
+      "paymentSettings": {
+        "methods": "支付方式",
+        "wechat": "微信支付",
+        "wechatDesc": "启用微信支付收款",
+        "alipay": "支付宝",
+        "alipayDesc": "启用支付宝收款",
+        "stripe": "信用卡/借记卡",
+        "stripeDesc": "通过 Stripe 处理银行卡支付",
+        "paypal": "PayPal",
+        "paypalDesc": "启用 PayPal 收款",
+        "settlement": "结算设置",
+        "commissionRate": "默认佣金比例",
+        "minWithdrawal": "最低提现金额",
+        "settlementCycle": "结算周期",
+        "weekly": "每周",
+        "biweekly": "每两周",
+        "monthly": "每月"
+      },
+      "notificationSettings": {
+        "email": "邮件通知",
+        "newOrder": "新订单通知",
+        "newOrderDesc": "有新订单时发送邮件通知",
+        "orderStatus": "订单状态变更",
+        "orderStatusDesc": "订单状态变更时发送邮件通知",
+        "newSupplier": "新供应商注册",
+        "newSupplierDesc": "有新供应商申请入驻时发送通知",
+        "dailyReport": "每日报表",
+        "dailyReportDesc": "每天发送运营数据汇总",
+        "sms": "短信通知",
+        "smsNewOrder": "新订单短信",
+        "smsNewOrderDesc": "有新订单时发送短信通知",
+        "smsOrderStatus": "订单状态短信",
+        "smsOrderStatusDesc": "订单状态变更时发送短信通知"
+      },
+      "securitySettings": {
+        "authentication": "身份验证",
+        "twoFactor": "双重验证",
+        "twoFactorDesc": "要求管理员启用双重身份验证",
+        "sessionTimeout": "会话超时时间",
+        "minutes": "分钟",
+        "password": "密码策略",
+        "minLength": "最小密码长度",
+        "characters": "字符",
+        "requireSpecial": "要求特殊字符",
+        "requireSpecialDesc": "密码必须包含特殊字符",
+        "access": "访问控制",
+        "ipWhitelist": "IP 白名单",
+        "ipWhitelistPlaceholder": "每行一个 IP 地址，留空允许所有",
+        "ipWhitelistHint": "限制可访问管理后台的 IP 地址"
+      }
     }
   },
   "supplier": {

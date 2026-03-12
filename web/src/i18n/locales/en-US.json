@@ -20,7 +20,8 @@
     "close": "Close",
     "viewAll": "View All",
     "noData": "No Data",
-    "required": "Required"
+    "required": "Required",
+    "refresh": "Refresh"
   },
   "nav": {
     "home": "Home",
@@ -635,6 +636,11 @@
     "support247": "24/7 Support",
     "support247Desc": "Chinese customer service team, always ready to help"
   },
+  "region": {
+    "attractionCount": "{{count}} attractions",
+    "title": "Explore SA Regions",
+    "subtitle": "Seven regions, each with unique charm"
+  },
   "error": {
     "networkError": "Network error, please try again",
     "serverError": "Server error",
@@ -651,6 +657,7 @@
       "orders": "Orders",
       "users": "Users",
       "finance": "Finance",
+      "admins": "Admins",
       "settings": "Settings"
     },
     "logout": "Logout",
@@ -696,75 +703,470 @@
     "suppliers": {
       "title": "Supplier Management",
       "search": "Search suppliers...",
-      "all": "All",
-      "pending": "Pending",
-      "approved": "Approved",
-      "suspended": "Suspended",
-      "name": "Name",
-      "type": "Type",
-      "contact": "Contact",
-      "status": "Status",
-      "joinDate": "Join Date",
-      "actions": "Actions",
-      "view": "View",
-      "approve": "Approve",
-      "reject": "Reject",
-      "suspend": "Suspend"
+      "add": "Add Supplier",
+      "export": "Export",
+      "empty": "No suppliers found",
+      "showing": "Showing {{from}}-{{to}} of {{total}} suppliers",
+      "stats": {
+        "total": "Total Suppliers",
+        "pending": "Pending Review",
+        "approved": "Approved",
+        "suspended": "Suspended"
+      },
+      "tabs": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "suspended": "Suspended"
+      },
+      "table": {
+        "name": "Supplier Name",
+        "type": "Type",
+        "contact": "Contact",
+        "products": "Products",
+        "orders": "Orders",
+        "status": "Status",
+        "joinDate": "Join Date",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "suspended": "Suspended"
+      },
+      "actions": {
+        "view": "View",
+        "approve": "Approve",
+        "reject": "Reject",
+        "suspend": "Suspend",
+        "unsuspend": "Restore"
+      },
+      "detail": {
+        "title": "Supplier Details",
+        "tabs": {
+          "info": "Basic Info",
+          "products": "Products",
+          "orders": "Orders"
+        },
+        "contactInfo": "Contact Information",
+        "email": "Email",
+        "phone": "Phone",
+        "contactPerson": "Contact Person",
+        "joinDate": "Join Date",
+        "products": "Products",
+        "orders": "Orders",
+        "productsPlaceholder": "Product list feature coming soon...",
+        "ordersPlaceholder": "Order history feature coming soon..."
+      },
+      "reject": {
+        "title": "Reject Supplier",
+        "message": "Please provide a reason for rejection. This will be sent to the supplier.",
+        "placeholder": "Enter rejection reason..."
+      },
+      "suspend": {
+        "title": "Suspend Supplier",
+        "message": "Please provide a reason for suspension. All products will be taken offline.",
+        "placeholder": "Enter suspension reason..."
+      },
+      "form": {
+        "createTitle": "Add Supplier",
+        "editTitle": "Edit Supplier",
+        "basicInfo": "Basic Information",
+        "name": "Company Name",
+        "namePlaceholder": "Enter company name",
+        "nameEn": "Company Name (English)",
+        "nameEnPlaceholder": "Enter company name in English",
+        "type": "Supplier Type",
+        "businessLicense": "Business License",
+        "businessLicensePlaceholder": "Enter business license number",
+        "contactInfo": "Contact Information",
+        "contactName": "Contact Person",
+        "contactNamePlaceholder": "Enter contact person name",
+        "contactPhone": "Phone",
+        "contactPhonePlaceholder": "Enter phone number",
+        "contactEmail": "Email",
+        "contactEmailPlaceholder": "Enter email address",
+        "address": "Address",
+        "addressPlaceholder": "Enter address",
+        "commissionSettings": "Commission Settings",
+        "commissionRate": "Commission Rate",
+        "description": "Description",
+        "descriptionZh": "Chinese Description",
+        "descriptionEn": "English Description",
+        "descriptionPlaceholder": "Enter supplier description...",
+        "descriptionEnPlaceholder": "Enter supplier description in English...",
+        "errors": {
+          "nameRequired": "Company name is required",
+          "contactNameRequired": "Contact person is required",
+          "phoneRequired": "Phone number is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Invalid email format"
+        }
+      }
     },
     "products": {
       "title": "Product Review",
       "search": "Search products...",
-      "all": "All",
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "productName": "Product Name",
-      "supplier": "Supplier",
-      "price": "Price",
-      "status": "Status",
-      "submitDate": "Submit Date",
-      "actions": "Actions",
-      "view": "View",
-      "approve": "Approve",
-      "reject": "Reject"
+      "export": "Export",
+      "empty": "No products found",
+      "showing": "Showing {{from}}-{{to}} of {{total}} products",
+      "stats": {
+        "total": "Total Products",
+        "pending": "Pending Review",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "today": "today"
+      },
+      "tabs": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "table": {
+        "product": "Product",
+        "category": "Category",
+        "supplier": "Supplier",
+        "price": "Price",
+        "status": "Status",
+        "submitDate": "Submit Date",
+        "actions": "Actions"
+      },
+      "categories": {
+        "dayTour": "Day Tour",
+        "multiDay": "Multi-day Tour",
+        "activity": "Activity",
+        "ticket": "Ticket"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "actions": {
+        "view": "View",
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "detail": {
+        "title": "Product Details",
+        "tabs": {
+          "info": "Basic Info",
+          "images": "Images",
+          "itinerary": "Itinerary"
+        },
+        "supplier": "Supplier",
+        "submitDate": "Submit Date",
+        "duration": "Duration",
+        "hours": "hours",
+        "location": "Location",
+        "price": "Price",
+        "description": "Description",
+        "noDescription": "No description available",
+        "includes": "What's Included",
+        "includeItem1": "Hotel pickup",
+        "includeItem2": "Chinese guide",
+        "includeItem3": "Entry tickets",
+        "excludes": "What's Not Included",
+        "excludeItem1": "Personal expenses",
+        "excludeItem2": "Travel insurance",
+        "pickup": "Hotel Pickup",
+        "pickupDesc": "Depart from Adelaide CBD hotels",
+        "activity1": "Sightseeing",
+        "activity1Desc": "Visit main attractions and learn about local history",
+        "lunch": "Lunch",
+        "lunchDesc": "Enjoy lunch at a local restaurant",
+        "return": "Return",
+        "returnDesc": "Return to Adelaide CBD hotels",
+        "approvedMessage": "This product has been approved",
+        "rejectedMessage": "This product has been rejected"
+      },
+      "reject": {
+        "title": "Reject Product",
+        "message": "Please provide a reason for rejection. This will be sent to the supplier.",
+        "placeholder": "Enter rejection reason..."
+      }
     },
     "orders": {
       "title": "Order Management",
       "search": "Search orders...",
-      "orderNo": "Order No.",
-      "customer": "Customer",
-      "supplier": "Supplier",
-      "product": "Product",
-      "amount": "Amount",
-      "status": "Status",
-      "orderDate": "Order Date",
-      "actions": "Actions"
+      "export": "Export",
+      "empty": "No orders found",
+      "showing": "Showing {{from}}-{{to}} of {{total}} orders",
+      "stats": {
+        "total": "Total Orders",
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "today": "today"
+      },
+      "tabs": {
+        "all": "All",
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "table": {
+        "orderNo": "Order No.",
+        "customer": "Customer",
+        "product": "Product",
+        "supplier": "Supplier",
+        "travelDate": "Travel Date",
+        "amount": "Amount",
+        "status": "Status",
+        "orderDate": "Order Date",
+        "actions": "Actions",
+        "guests": "guests"
+      },
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "refunding": "Refunding"
+      },
+      "actions": {
+        "view": "View",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "handleRefund": "Handle Refund",
+        "approveRefund": "Approve Refund",
+        "rejectRefund": "Reject Refund",
+        "confirmCancel": "Confirm Cancel"
+      },
+      "detail": {
+        "title": "Order Details",
+        "tabs": {
+          "info": "Order Info",
+          "customer": "Customer",
+          "timeline": "Timeline"
+        },
+        "orderAmount": "Order Amount",
+        "productInfo": "Product Info",
+        "supplierInfo": "Supplier Info",
+        "supplierName": "Supplier Name",
+        "orderTime": "Order Time",
+        "createdAt": "Created At",
+        "paidAt": "Paid At",
+        "guests": "guests",
+        "customerName": "Customer Name",
+        "customerPhone": "Phone",
+        "customerEmail": "Email",
+        "timeline": {
+          "created": "Order Created",
+          "paid": "Payment Received",
+          "confirmed": "Order Confirmed",
+          "completed": "Trip Completed",
+          "cancelled": "Order Cancelled"
+        }
+      },
+      "cancel": {
+        "title": "Cancel Order",
+        "message": "Please provide a reason for cancellation",
+        "placeholder": "Enter cancellation reason..."
+      },
+      "rejectRefund": {
+        "title": "Reject Refund",
+        "message": "Please provide a reason for rejection",
+        "placeholder": "Enter rejection reason..."
+      }
     },
     "users": {
       "title": "User Management",
       "search": "Search users...",
-      "name": "Name",
-      "email": "Email",
-      "phone": "Phone",
-      "status": "Status",
-      "registerDate": "Register Date",
-      "orders": "Orders",
-      "actions": "Actions"
+      "export": "Export",
+      "empty": "No users found",
+      "showing": "Showing {{from}}-{{to}} of {{total}} users",
+      "stats": {
+        "total": "Total Users",
+        "active": "Active Users",
+        "inactive": "Inactive Users",
+        "newToday": "New Today",
+        "newMonth": "New This Month"
+      },
+      "tabs": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive",
+        "banned": "Banned"
+      },
+      "table": {
+        "user": "User",
+        "email": "Email",
+        "phone": "Phone",
+        "orders": "Orders",
+        "spent": "Total Spent",
+        "status": "Status",
+        "registerDate": "Register Date",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "banned": "Banned"
+      },
+      "actions": {
+        "view": "View",
+        "ban": "Ban",
+        "unban": "Unban"
+      },
+      "detail": {
+        "title": "User Details",
+        "tabs": {
+          "info": "Basic Info",
+          "orders": "Orders"
+        },
+        "email": "Email",
+        "phone": "Phone",
+        "registerDate": "Register Date",
+        "lastLogin": "Last Login",
+        "orders": "Orders",
+        "spent": "Spent",
+        "ordersPlaceholder": "Order history feature coming soon..."
+      },
+      "ban": {
+        "title": "Ban User",
+        "message": "Please provide a reason for banning this user",
+        "placeholder": "Enter ban reason..."
+      }
     },
     "finance": {
       "title": "Finance",
-      "overview": "Overview",
-      "totalRevenue": "Total Revenue",
-      "pendingSettlement": "Pending Settlement",
-      "commissionEarned": "Commission Earned",
-      "withdrawals": "Withdrawals"
+      "search": "Search settlements...",
+      "export": "Export",
+      "empty": "No settlement records",
+      "showing": "Showing {{from}}-{{to}} of {{total}} records",
+      "stats": {
+        "totalRevenue": "Total Revenue",
+        "pendingSettlement": "Pending Settlement",
+        "settledAmount": "Settled Amount",
+        "commissionEarned": "Commission Earned",
+        "today": "Today",
+        "month": "This Month"
+      },
+      "tabs": {
+        "all": "All",
+        "pending": "Pending",
+        "processing": "Processing",
+        "completed": "Completed"
+      },
+      "table": {
+        "settlementNo": "Settlement No.",
+        "supplier": "Supplier",
+        "period": "Period",
+        "orders": "Orders",
+        "totalAmount": "Total Amount",
+        "commission": "Commission",
+        "netAmount": "Net Amount",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "processing": "Processing",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "actions": {
+        "view": "View",
+        "download": "Download",
+        "process": "Process"
+      },
+      "detail": {
+        "title": "Settlement Details",
+        "tabs": {
+          "info": "Basic Info",
+          "orders": "Order Details"
+        },
+        "supplier": "Supplier",
+        "period": "Period",
+        "orderCount": "Order Count",
+        "orders": "orders",
+        "createdAt": "Created At",
+        "paidAt": "Paid At",
+        "netAmount": "Net Amount",
+        "breakdown": "Amount Breakdown",
+        "totalAmount": "Total Amount",
+        "commission": "Platform Commission",
+        "ordersPlaceholder": "Order details feature coming soon..."
+      }
     },
     "settings": {
       "title": "Settings",
+      "subtitle": "Manage platform configuration and preferences",
+      "save": "Save Settings",
+      "saving": "Saving...",
+      "reset": "Reset",
       "general": "General",
       "payments": "Payments",
       "notifications": "Notifications",
-      "security": "Security"
+      "security": "Security",
+      "generalSettings": {
+        "siteInfo": "Site Information",
+        "siteName": "Site Name",
+        "siteNameEn": "Site Name (English)",
+        "siteUrl": "Site URL",
+        "contact": "Contact Information",
+        "contactEmail": "Contact Email",
+        "contactPhone": "Contact Phone",
+        "regional": "Regional Settings",
+        "defaultLanguage": "Default Language",
+        "timezone": "Timezone",
+        "currency": "Currency"
+      },
+      "paymentSettings": {
+        "methods": "Payment Methods",
+        "wechat": "WeChat Pay",
+        "wechatDesc": "Enable WeChat Pay for payments",
+        "alipay": "Alipay",
+        "alipayDesc": "Enable Alipay for payments",
+        "stripe": "Credit/Debit Card",
+        "stripeDesc": "Process card payments via Stripe",
+        "paypal": "PayPal",
+        "paypalDesc": "Enable PayPal for payments",
+        "settlement": "Settlement Settings",
+        "commissionRate": "Default Commission Rate",
+        "minWithdrawal": "Minimum Withdrawal",
+        "settlementCycle": "Settlement Cycle",
+        "weekly": "Weekly",
+        "biweekly": "Bi-weekly",
+        "monthly": "Monthly"
+      },
+      "notificationSettings": {
+        "email": "Email Notifications",
+        "newOrder": "New Order Notification",
+        "newOrderDesc": "Send email notification for new orders",
+        "orderStatus": "Order Status Changes",
+        "orderStatusDesc": "Send email when order status changes",
+        "newSupplier": "New Supplier Registration",
+        "newSupplierDesc": "Send notification for new supplier applications",
+        "dailyReport": "Daily Report",
+        "dailyReportDesc": "Send daily operations summary",
+        "sms": "SMS Notifications",
+        "smsNewOrder": "New Order SMS",
+        "smsNewOrderDesc": "Send SMS notification for new orders",
+        "smsOrderStatus": "Order Status SMS",
+        "smsOrderStatusDesc": "Send SMS when order status changes"
+      },
+      "securitySettings": {
+        "authentication": "Authentication",
+        "twoFactor": "Two-Factor Authentication",
+        "twoFactorDesc": "Require 2FA for admin accounts",
+        "sessionTimeout": "Session Timeout",
+        "minutes": "minutes",
+        "password": "Password Policy",
+        "minLength": "Minimum Password Length",
+        "characters": "characters",
+        "requireSpecial": "Require Special Characters",
+        "requireSpecialDesc": "Password must contain special characters",
+        "access": "Access Control",
+        "ipWhitelist": "IP Whitelist",
+        "ipWhitelistPlaceholder": "One IP address per line, leave empty to allow all",
+        "ipWhitelistHint": "Restrict admin access to specific IP addresses"
+      }
     }
   },
   "supplier": {

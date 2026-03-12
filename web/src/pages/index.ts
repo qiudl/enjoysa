@@ -19,6 +19,8 @@ export * from './FaqPage';
 export * from './TermsPage';
 export * from './PrivacyPage';
 export * from './AdminDashboardPage';
+export * from './RegionPage';
+export * from './AttractionDetailPage';
 
 // B端供应商页面
 export * from './Supplier';

@@ -25,8 +25,18 @@ import {
   SupplierSettlementPage,
   SupplierLoginPage,
   SupplierRegisterPage,
+  RegionPage,
+  AttractionDetailPage,
   // 平台管理端页面
   AdminLoginPage,
+  DashboardPage,
+  SupplierList,
+  ProductReviewList,
+  OrderList,
+  UserList,
+  FinanceList,
+  AdminList,
+  SettingsPage,
 } from './pages';
 import { CartProvider, useCart, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { SupplierAuthGuard } from './components/Common/SupplierAuthGuard';
@@ -43,12 +53,53 @@ function HomePageWrapper() {
     <HomePage
       cartCount={getCartCount()}
       onProductClick={(product) => navigate(`/product/${product.id}`)}
-      onDestinationClick={(dest) => navigate(`/destinations/${dest.id}`)}
+      onRegionClick={(region) => navigate(`/regions/${region.id}`)}
+      onAttractionClick={(attractionId) => navigate(`/attractions/${attractionId}`)}
       onCategoryClick={(cat) => navigate(`/categories/${cat.id}`)}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
       onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：RegionPage
+function RegionPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getCartCount } = useCart();
+
+  return (
+    <RegionPage
+      regionId={id}
+      cartCount={getCartCount()}
+      onAttractionClick={(attractionId) => navigate(`/attractions/${attractionId}`)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onNavClick={(path) => navigate(path)}
+      onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
+      onBack={() => navigate(-1)}
+    />
+  );
+}
+
+// 包装组件：AttractionDetailPage
+function AttractionDetailPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getCartCount } = useCart();
+
+  return (
+    <AttractionDetailPage
+      attractionId={id}
+      cartCount={getCartCount()}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onNavClick={(path) => navigate(path)}
+      onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
+      onBack={() => navigate(-1)}
+      onRegionClick={(regionId) => navigate(`/regions/${regionId}`)}
     />
   );
 }
@@ -489,10 +540,7 @@ function AdminLoginPageWrapper() {
 function AdminDashboardWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Dashboard Content</h2>
-        <p>Dashboard statistics and overview will be displayed here.</p>
-      </div>
+      <DashboardPage />
     </AdminLayout>
   );
 }
@@ -501,10 +549,7 @@ function AdminDashboardWrapper() {
 function AdminSuppliersWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Supplier Management</h2>
-        <p>Supplier list and management features will be displayed here.</p>
-      </div>
+      <SupplierList />
     </AdminLayout>
   );
 }
@@ -513,10 +558,7 @@ function AdminSuppliersWrapper() {
 function AdminProductsWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Product Review</h2>
-        <p>Products pending review will be displayed here.</p>
-      </div>
+      <ProductReviewList />
     </AdminLayout>
   );
 }
@@ -525,10 +567,7 @@ function AdminProductsWrapper() {
 function AdminOrdersWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Order Management</h2>
-        <p>Order list and management features will be displayed here.</p>
-      </div>
+      <OrderList />
     </AdminLayout>
   );
 }
@@ -537,10 +576,7 @@ function AdminOrdersWrapper() {
 function AdminUsersWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>User Management</h2>
-        <p>User list and management features will be displayed here.</p>
-      </div>
+      <UserList />
     </AdminLayout>
   );
 }
@@ -549,10 +585,16 @@ function AdminUsersWrapper() {
 function AdminFinanceWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Finance</h2>
-        <p>Financial overview and settlement features will be displayed here.</p>
-      </div>
+      <FinanceList />
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminAdminsWrapper
+function AdminAdminsWrapper() {
+  return (
+    <AdminLayout>
+      <AdminList />
     </AdminLayout>
   );
 }
@@ -561,10 +603,7 @@ function AdminFinanceWrapper() {
 function AdminSettingsWrapper() {
   return (
     <AdminLayout>
-      <div style={{ padding: '1rem' }}>
-        <h2>Settings</h2>
-        <p>Platform settings will be displayed here.</p>
-      </div>
+      <SettingsPage />
     </AdminLayout>
   );
 }
@@ -615,6 +654,10 @@ function App() {
         {/* 认证页面 */}
         <Route path="/login" element={<LoginPageWrapper />} />
         <Route path="/register" element={<RegisterPageWrapper />} />
+
+        {/* 区域与景点页面 */}
+        <Route path="/regions/:id" element={<RegionPageWrapper />} />
+        <Route path="/attractions/:id" element={<AttractionDetailPageWrapper />} />
 
         {/* 产品页面 */}
         <Route path="/products" element={<ProductListPageWrapper />} />
@@ -671,6 +714,7 @@ function App() {
         <Route path="/admin/orders" element={<AdminAuthGuard><AdminOrdersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/users" element={<AdminAuthGuard><AdminUsersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/finance" element={<AdminAuthGuard><AdminFinanceWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/admins" element={<AdminAuthGuard><AdminAdminsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/settings" element={<AdminAuthGuard><AdminSettingsWrapper /></AdminAuthGuard>} />
 
         {/* 404 */}
