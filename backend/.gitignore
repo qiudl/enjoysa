@@ -1,0 +1,16 @@
+# Binary
+server
+*.exe
+
+# Uploads
+uploads/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Env
+.env

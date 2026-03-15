@@ -1,0 +1,249 @@
+package handler
+
+import (
+	"strconv"
+	"time"
+
+	ordermodel "enjoysa-backend/internal/order/model"
+	"enjoysa-backend/internal/order/store"
+	"enjoysa-backend/internal/payment/gateway"
+	"enjoysa-backend/pkg/response"
+
+	"github.com/gin-gonic/gin"
+)
+
+type SupplierOrderHandler struct {
+	orderStore     *store.OrderStore
+	paymentGateway gateway.PaymentGateway
+}
+
+func NewSupplierOrderHandler(orderStore *store.OrderStore, paymentGateway gateway.PaymentGateway) *SupplierOrderHandler {
+	return &SupplierOrderHandler{
+		orderStore:     orderStore,
+		paymentGateway: paymentGateway,
+	}
+}
+
+func (h *SupplierOrderHandler) ListOrders(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	orders, total, err := h.orderStore.List(store.OrderFilter{
+		SupplierID: supplierID,
+		Status:     c.Query("status"),
+		Keyword:    c.Query("keyword"),
+		StartDate:  c.Query("start_date"),
+		EndDate:    c.Query("end_date"),
+		Page:       page,
+		PageSize:   pageSize,
+	})
+	if err != nil {
+		response.ServerError(c, "Failed to list orders")
+		return
+	}
+
+	response.Paginated(c, orders, total, page, pageSize)
+}
+
+func (h *SupplierOrderHandler) GetOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	response.Success(c, order)
+}
+
+func (h *SupplierOrderHandler) GetStats(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+
+	stats, err := h.orderStore.GetStats(supplierID)
+	if err != nil {
+		response.ServerError(c, "Failed to get stats")
+		return
+	}
+
+	response.Success(c, stats)
+}
+
+func (h *SupplierOrderHandler) AcceptOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	supplierUserID := c.MustGet("supplier_user_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+	if order.Status != ordermodel.OrderStatusPaid {
+		response.BadRequest(c, "Order can only be accepted when paid")
+		return
+	}
+
+	now := time.Now()
+	order.Status = ordermodel.OrderStatusAccepted
+	order.AcceptedAt = &now
+	order.AcceptedBy = &supplierUserID
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to accept order")
+		return
+	}
+
+	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   ordermodel.OrderStatusPaid,
+		ToStatus:     ordermodel.OrderStatusAccepted,
+		OperatorID:   &supplierUserID,
+		OperatorType: "supplier",
+		Remark:       "Order accepted",
+	})
+
+	response.SuccessMessage(c, "Order accepted")
+}
+
+func (h *SupplierOrderHandler) RejectOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	supplierUserID := c.MustGet("supplier_user_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+	if order.Status != ordermodel.OrderStatusPaid {
+		response.BadRequest(c, "Order can only be rejected when paid")
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Reason is required")
+		return
+	}
+
+	now := time.Now()
+	order.Status = ordermodel.OrderStatusCancelled
+	order.RejectedAt = &now
+	order.RejectReason = req.Reason
+
+	// Trigger refund
+	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
+		amountCents := int64(order.TotalPrice * 100)
+		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err == nil {
+			order.Status = ordermodel.OrderStatusRefunded
+			order.RefundedAt = &now
+			order.RefundAmount = order.TotalPrice
+		}
+	}
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to reject order")
+		return
+	}
+
+	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   ordermodel.OrderStatusPaid,
+		ToStatus:     order.Status,
+		OperatorID:   &supplierUserID,
+		OperatorType: "supplier",
+		Remark:       "Rejected: " + req.Reason,
+	})
+
+	response.SuccessMessage(c, "Order rejected")
+}
+
+func (h *SupplierOrderHandler) CompleteOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	supplierUserID := c.MustGet("supplier_user_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+	if order.Status != ordermodel.OrderStatusAccepted && order.Status != ordermodel.OrderStatusProcessing {
+		response.BadRequest(c, "Order can only be completed when accepted or processing")
+		return
+	}
+
+	oldStatus := order.Status
+	now := time.Now()
+	order.Status = ordermodel.OrderStatusCompleted
+	order.CompletedAt = &now
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to complete order")
+		return
+	}
+
+	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   oldStatus,
+		ToStatus:     ordermodel.OrderStatusCompleted,
+		OperatorID:   &supplierUserID,
+		OperatorType: "supplier",
+		Remark:       "Order completed",
+	})
+
+	response.SuccessMessage(c, "Order completed")
+}
+
+func (h *SupplierOrderHandler) GetHistory(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	history, err := h.orderStore.GetHistory(uint(id))
+	if err != nil {
+		response.ServerError(c, "Failed to get history")
+		return
+	}
+
+	response.Success(c, history)
+}

@@ -1,0 +1,39 @@
+server:
+  port: 8088
+  mode: debug  # debug, release, test
+  frontend_url: "http://localhost:5173"
+
+database:
+  host: localhost
+  port: 5432
+  user: donglinlai
+  password: ""
+  dbname: enjoysa
+  sslmode: disable
+  max_idle_conns: 10
+  max_open_conns: 100
+
+log:
+  level: debug  # debug, info, warn, error
+  format: console  # console, json
+
+jwt:
+  secret: "enjoysa-dev-jwt-secret-key-2026"
+  access_expire: 24   # hours
+  refresh_expire: 168 # hours (7 days)
+
+google:
+  client_id: ""
+
+stripe:
+  secret_key: ""
+  webhook_secret: ""
+
+upload:
+  dir: "./uploads"
+  max_size: 10  # MB
+  allowed_types:
+    - image/jpeg
+    - image/png
+    - image/webp
+    - application/pdf

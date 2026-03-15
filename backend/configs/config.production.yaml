@@ -1,0 +1,39 @@
+server:
+  port: 8080
+  mode: release
+  frontend_url: "http://43.134.28.147:6066"
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  dbname: enjoysa
+  sslmode: disable
+  max_idle_conns: 10
+  max_open_conns: 50
+
+log:
+  level: info
+  format: json
+
+jwt:
+  secret: change-me-in-production
+  access_expire: 24
+  refresh_expire: 168
+
+google:
+  client_id: ""
+
+stripe:
+  secret_key: ""
+  webhook_secret: ""
+
+upload:
+  dir: "./uploads"
+  max_size: 10
+  allowed_types:
+    - image/jpeg
+    - image/png
+    - image/webp
+    - application/pdf
