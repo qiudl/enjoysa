@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
+import { listSupplierOrders, acceptOrder, type Order as ApiOrder } from '../../../services/orderService';
 import styles from './SupplierOrderListPage.module.css';
 
 export interface SupplierOrder {
@@ -23,67 +24,48 @@ export interface SupplierOrderListPageProps {
   onNavigate?: (path: string) => void;
 }
 
-// Mock orders
-const mockOrders: SupplierOrder[] = [
-  {
-    id: 'ORD-20260130-0001',
-    productTitle: '袋鼠岛一日游',
-    productTitleEn: 'Kangaroo Island Day Tour',
-    customerName: '张三',
-    customerPhone: '138****8000',
-    travelDate: '2026-02-05',
-    quantity: 2,
-    amount: 778,
-    status: 'pending',
-    createdAt: '2026-01-30 09:30',
-  },
-  {
-    id: 'ORD-20260130-0002',
-    productTitle: '巴罗萨谷酒庄之旅',
-    productTitleEn: 'Barossa Valley Winery Tour',
-    customerName: '李四',
-    customerPhone: '139****9000',
-    travelDate: '2026-02-08',
-    quantity: 4,
-    amount: 1196,
-    status: 'confirmed',
-    createdAt: '2026-01-30 08:15',
-  },
-  {
-    id: 'ORD-20260129-0003',
-    productTitle: '阿德莱德市区观光',
-    productTitleEn: 'Adelaide City Tour',
-    customerName: 'John Doe',
-    customerPhone: '+61 4****5678',
-    travelDate: '2026-01-29',
-    quantity: 2,
-    amount: 318,
-    status: 'completed',
-    createdAt: '2026-01-28 14:20',
-  },
-  {
-    id: 'ORD-20260128-0004',
-    productTitle: '袋鼠岛一日游',
-    productTitleEn: 'Kangaroo Island Day Tour',
-    customerName: '王五',
-    customerPhone: '137****7000',
-    travelDate: '2026-02-01',
-    quantity: 3,
-    amount: 1167,
-    status: 'refunding',
-    createdAt: '2026-01-28 10:00',
-  },
-];
+const statusMap: Record<string, SupplierOrder['status']> = {
+  pending: 'pending',
+  paid: 'pending',
+  accepted: 'confirmed',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  refunded: 'refunding',
+};
+
+function transformOrder(o: ApiOrder): SupplierOrder {
+  return {
+    id: o.order_no || String(o.id),
+    productTitle: o.product_name,
+    productTitleEn: o.product_name,
+    customerName: o.contact_name,
+    customerPhone: o.contact_phone,
+    travelDate: o.booking_date,
+    quantity: o.quantity || o.guest_count,
+    amount: o.total_price,
+    status: statusMap[o.status] || 'pending',
+    createdAt: o.created_at?.replace('T', ' ').slice(0, 16) || '',
+  };
+}
 
 export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   supplierName = '祥龙旅行社',
 }) => {
   const { t, i18n } = useTranslation();
+  const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(null);
+
+  useEffect(() => {
+    listSupplierOrders({ page: 1, page_size: 50 })
+      .then((result) => {
+        setOrders((result.orders || []).map(transformOrder));
+      })
+      .catch(() => {});
+  }, []);
 
   const filters = [
     { key: 'all', label: t('supplier.orders.all') },
@@ -93,7 +75,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
     { key: 'refunding', label: t('supplier.orders.refunding') },
   ];
 
-  const filteredOrders = mockOrders.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     if (filter !== 'all' && order.status !== filter) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -240,7 +222,17 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
         title={t('supplier.orders.confirmOrder')}
         size="sm"
         onClose={() => setShowConfirmModal(false)}
-        onOk={() => setShowConfirmModal(false)}
+        onOk={async () => {
+          if (selectedOrder) {
+            try {
+              // Extract numeric ID from order_no or use id directly
+              const numId = Number(selectedOrder.id.replace(/\D/g, '').slice(-4)) || 0;
+              await acceptOrder(numId);
+              setOrders((prev) => prev.map((o) => o.id === selectedOrder.id ? { ...o, status: 'confirmed' as const } : o));
+            } catch { /* ignore */ }
+          }
+          setShowConfirmModal(false);
+        }}
       >
         <p>{t('supplier.orders.confirmOrderDesc')}</p>
         {selectedOrder && (

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
+import { get, del } from '../../../services/api';
+import type { ApiProduct } from '../../../services/productService';
 import styles from './SupplierProductListPage.module.css';
 
 export interface SupplierProduct {
@@ -22,63 +24,47 @@ export interface SupplierProductListPageProps {
   onNavigate?: (path: string) => void;
 }
 
-// Mock products
-const mockProducts: SupplierProduct[] = [
-  {
-    id: '1',
-    title: '袋鼠岛一日游',
-    titleEn: 'Kangaroo Island Day Tour',
-    image: 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400',
-    price: 389,
-    stock: 50,
-    status: 'active',
-    soldCount: 126,
-    createdAt: '2026-01-15',
-  },
-  {
-    id: '2',
-    title: '巴罗萨谷酒庄之旅',
-    titleEn: 'Barossa Valley Winery Tour',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
-    price: 299,
-    stock: 30,
-    status: 'active',
-    soldCount: 89,
-    createdAt: '2026-01-10',
-  },
-  {
-    id: '3',
-    title: '阿德莱德市区观光',
-    titleEn: 'Adelaide City Tour',
-    image: 'https://images.unsplash.com/photo-1540202403-b7abd6747a18?w=400',
-    price: 159,
+const statusMap: Record<string, SupplierProduct['status']> = {
+  approved: 'active',
+  offline: 'inactive',
+  pending: 'pending',
+  rejected: 'rejected',
+  draft: 'inactive',
+};
+
+function transformProduct(p: ApiProduct): SupplierProduct {
+  const cover = p.images?.find((img) => img.is_cover) || p.images?.[0];
+  return {
+    id: String(p.id),
+    title: p.name_zh,
+    titleEn: p.name_en,
+    image: cover?.url || '',
+    price: p.price_from,
     stock: 0,
-    status: 'inactive',
-    soldCount: 234,
-    createdAt: '2026-01-05',
-  },
-  {
-    id: '4',
-    title: '维克多港海豚巡游',
-    titleEn: 'Victor Harbor Dolphin Cruise',
-    image: 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400',
-    price: 199,
-    stock: 20,
-    status: 'pending',
+    status: statusMap[p.status] || 'inactive',
     soldCount: 0,
-    createdAt: '2026-01-28',
-  },
-];
+    createdAt: p.created_at?.split('T')[0] || '',
+  };
+}
 
 export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = ({
   supplierName = '祥龙旅行社',
   onNavigate,
 }) => {
   const { t } = useTranslation();
+  const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SupplierProduct | null>(null);
+
+  useEffect(() => {
+    get<{ items: ApiProduct[] }>('/supplier/products?page=1&page_size=50', 'supplier')
+      .then((result) => {
+        setProducts((result.items || []).map(transformProduct));
+      })
+      .catch(() => {});
+  }, []);
 
   const filters = [
     { key: 'all', label: t('supplier.products.all') },
@@ -87,7 +73,7 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
     { key: 'pending', label: t('supplier.products.pending') },
   ];
 
-  const filteredProducts = mockProducts.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     if (filter !== 'all' && product.status !== filter) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -114,8 +100,13 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    // Handle delete logic
+  const confirmDelete = async () => {
+    if (selectedProduct) {
+      try {
+        await del(`/supplier/products/${selectedProduct.id}`, 'supplier');
+        setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
+      } catch { /* ignore */ }
+    }
     setShowDeleteModal(false);
     setSelectedProduct(null);
   };

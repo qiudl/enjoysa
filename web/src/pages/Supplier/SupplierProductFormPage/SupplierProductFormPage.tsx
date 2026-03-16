@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button } from '../../../components/Common';
+import { post, put } from '../../../services/api';
 import styles from './SupplierProductFormPage.module.css';
 
 export interface SupplierProductFormPageProps {
@@ -39,11 +40,32 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Submit form data
-    console.log('Form submitted:', formData);
-    onNavigate?.('/supplier/products');
+    setSubmitting(true);
+    try {
+      const payload = {
+        name_zh: formData.title,
+        name_en: formData.titleEn,
+        description_zh: formData.description,
+        description_en: formData.descriptionEn,
+        price_from: parseFloat(formData.price) || 0,
+        duration: formData.duration,
+        address_zh: formData.meetingPoint,
+      };
+      if (isEditMode && productId) {
+        await put(`/supplier/products/${productId}`, payload, 'supplier');
+      } else {
+        await post('/supplier/products', payload, 'supplier');
+      }
+      onNavigate?.('/supplier/products');
+    } catch {
+      // submission failed
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -238,7 +260,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
               >
                 {t('common.cancel')}
               </Button>
-              <Button variant="primary" type="submit">
+              <Button variant="primary" type="submit" disabled={submitting} loading={submitting}>
                 {isEditMode ? t('common.save') : t('supplier.productForm.publish')}
               </Button>
             </div>

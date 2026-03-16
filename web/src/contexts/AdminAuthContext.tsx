@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { adminAuth, isTokenPresent, type AdminInfo } from '../services/authService';
 
-export interface AdminInfo {
-  id: string;
-  name: string;
-  email: string;
-  role: 'super_admin' | 'admin' | 'operator';
-  avatar?: string;
-  permissions: string[];
-}
+export type { AdminInfo };
 
 interface AdminAuthContextType {
   admin: AdminInfo | null;
@@ -26,55 +20,46 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [admin, setAdmin] = useState<AdminInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on init
+  // On init, check for existing token and load profile
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
-      if (saved) {
-        setAdmin(JSON.parse(saved));
+    const init = async () => {
+      // Try cached data first for instant display
+      try {
+        const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
+        if (saved) {
+          setAdmin(JSON.parse(saved));
+        }
+      } catch {
+        // Ignore parse errors
       }
-    } catch {
-      // Ignore parse errors
-    }
-    setIsLoading(false);
-  }, []);
 
-  // Save to localStorage when admin changes
-  useEffect(() => {
-    if (admin) {
-      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(admin));
-    } else {
-      localStorage.removeItem(ADMIN_STORAGE_KEY);
-    }
-  }, [admin]);
+      // If we have a token, validate by fetching profile
+      if (isTokenPresent('admin')) {
+        try {
+          const profile = await adminAuth.getProfile();
+          setAdmin(profile);
+          localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(profile));
+        } catch {
+          // Token expired or invalid, clear everything
+          adminAuth.logout();
+          localStorage.removeItem(ADMIN_STORAGE_KEY);
+          setAdmin(null);
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    init();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Demo: Accept admin login
-      if (email && password.length >= 6) {
-        const mockAdmin: AdminInfo = {
-          id: 'admin_001',
-          name: email.split('@')[0],
-          email,
-          role: 'super_admin',
-          permissions: [
-            'dashboard.view',
-            'suppliers.view', 'suppliers.edit', 'suppliers.approve',
-            'products.view', 'products.edit', 'products.approve',
-            'orders.view', 'orders.edit',
-            'users.view', 'users.edit',
-            'finance.view', 'finance.edit',
-            'settings.view', 'settings.edit',
-          ],
-        };
-        setAdmin(mockAdmin);
-        return true;
-      }
-      return false;
+      const adminInfo = await adminAuth.login(email, password);
+      setAdmin(adminInfo);
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(adminInfo));
+      return true;
     } catch {
       return false;
     } finally {
@@ -83,13 +68,16 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    adminAuth.logout();
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
     setAdmin(null);
   };
 
   const hasPermission = (permission: string): boolean => {
     if (!admin) return false;
     if (admin.role === 'super_admin') return true;
-    return admin.permissions.includes(permission);
+    // For now, admin role has all permissions in MVP
+    return !!permission;
   };
 
   return (

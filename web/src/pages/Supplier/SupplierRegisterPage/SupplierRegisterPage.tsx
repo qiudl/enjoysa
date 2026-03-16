@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Building2, Mail, Lock, Eye, EyeOff, ArrowLeft, User, Phone, FileText } from 'lucide-react';
 import { LanguageSwitcher } from '../../../components/Common';
+import { post } from '../../../services/api';
 import styles from './SupplierRegisterPage.module.css';
 
 export interface SupplierRegisterPageProps {
@@ -101,8 +102,15 @@ export const SupplierRegisterPage: React.FC<SupplierRegisterPageProps> = ({
 
     setIsLoading(true);
     try {
-      // Mock registration
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await post('/supplier/register', {
+        name: formData.companyName,
+        type: formData.supplierType,
+        contact_name: formData.contactName,
+        phone: formData.phone,
+        email: formData.email,
+        password: formData.password,
+        business_license: formData.businessLicense || undefined,
+      });
       onRegisterSuccess?.({
         companyName: formData.companyName,
         email: formData.email,

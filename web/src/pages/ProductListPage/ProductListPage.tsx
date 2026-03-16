@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -9,6 +9,8 @@ import {
 } from '../../components/Common';
 import { ProductCard, ProductFilter } from '../../components/Product';
 import type { Product, Destination, ProductCategory, ProductFilter as FilterType } from '../../types';
+import { productService, transformApiProduct } from '../../services/productService';
+import { regionService } from '../../services/regionService';
 import styles from './ProductListPage.module.css';
 
 export interface ProductListPageProps {
@@ -34,141 +36,13 @@ export interface ProductListPageProps {
   onProductClick?: (product: Product) => void;
 }
 
-// Shared data for products
-const destinations: Destination[] = [
-  { id: '1', name: '阿德莱德', nameEn: 'Adelaide', region: '南澳大利亚', regionEn: 'South Australia' },
-  { id: '2', name: '袋鼠岛', nameEn: 'Kangaroo Island', region: '南澳大利亚', regionEn: 'South Australia' },
-  { id: '3', name: '巴罗萨谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
-  { id: '4', name: '格雷尔', nameEn: 'Glenelg', region: '南澳大利亚', regionEn: 'South Australia' },
-];
-
-const categories: ProductCategory[] = [
-  { id: '1', name: '一日游', nameEn: 'Day Tours' },
-  { id: '2', name: '酒庄之旅', nameEn: 'Wine Tours' },
-  { id: '3', name: '水上活动', nameEn: 'Water Activities' },
-  { id: '4', name: '城市观光', nameEn: 'City Tours' },
-];
-
-// Mock products data
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    title: '袋鼠岛一日游',
-    titleEn: 'Kangaroo Island Day Tour',
-    description: '探索南澳最著名的野生动物天堂',
-    images: ['https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400'],
-    price: 389,
-    currency: 'CNY',
-    rating: 4.8,
-    reviewCount: 126,
-    location: '阿德莱德出发',
-    locationEn: 'Depart from Adelaide',
-    highlights: ['野生动物', '海豹湾', '神奇岩石'],
-    inclusions: ['往返交通', '午餐', '导游'],
-    exclusions: ['个人消费'],
-    tags: ['hot', 'recommended'],
-    category: categories[0],
-    destination: destinations[1],
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-1',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '2',
-    title: '巴罗萨谷酒庄之旅',
-    titleEn: 'Barossa Valley Winery Tour',
-    description: '品味世界级葡萄酒',
-    images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'],
-    price: 299,
-    originalPrice: 399,
-    currency: 'CNY',
-    rating: 4.9,
-    reviewCount: 89,
-    location: '阿德莱德出发',
-    locationEn: 'Depart from Adelaide',
-    highlights: ['品酒体验', '酒庄参观', '美食午餐'],
-    inclusions: ['往返交通', '品酒费用', '午餐'],
-    exclusions: ['个人消费', '酒品购买'],
-    tags: ['discount'],
-    category: categories[1],
-    destination: destinations[2],
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-2',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '3',
-    title: '海豚巡航体验',
-    titleEn: 'Dolphin Cruise Experience',
-    description: '与海豚近距离接触',
-    images: ['https://images.unsplash.com/photo-1540202403-b7abd6747a18?w=400'],
-    price: 159,
-    currency: 'CNY',
-    rating: 4.7,
-    reviewCount: 234,
-    location: '格雷尔海滩',
-    locationEn: 'Glenelg Beach',
-    highlights: ['海豚观赏', '海景巡航'],
-    inclusions: ['船票', '解说服务'],
-    exclusions: ['交通', '餐饮'],
-    tags: ['family'],
-    category: categories[2],
-    destination: destinations[3],
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: false,
-    supplierId: 'sup-3',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '4',
-    title: '阿德莱德城市观光',
-    titleEn: 'Adelaide City Sightseeing',
-    description: '探索南澳首府的魅力',
-    images: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
-    price: 129,
-    currency: 'CNY',
-    rating: 4.6,
-    reviewCount: 156,
-    location: '市中心',
-    locationEn: 'City Center',
-    highlights: ['城市地标', '博物馆', '购物区'],
-    inclusions: ['导游', '门票'],
-    exclusions: ['午餐', '个人消费'],
-    tags: ['hot'],
-    category: categories[3],
-    destination: destinations[0],
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-4',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-];
-
-// Generate more products for pagination demo
-const allProducts: Product[] = [
-  ...mockProducts,
-  ...mockProducts.map((p) => ({ ...p, id: `${parseInt(p.id) + 4}` })),
-  ...mockProducts.map((p) => ({ ...p, id: `${parseInt(p.id) + 8}` })),
-];
-
-
 export const ProductListPage: React.FC<ProductListPageProps> = ({
   language = 'zh',
   isLoggedIn = false,
   userName,
   cartCount = 0,
   initialKeyword = '',
-  loading = false,
+  loading: externalLoading = false,
   onLoginClick,
   onRegisterClick,
   onNavClick,
@@ -180,6 +54,46 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [filters, setFilters] = useState<Partial<FilterType>>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  // Fetch filter data
+  useEffect(() => {
+    regionService.getAll().then((regions) => {
+      setDestinations(regions.map((r) => ({
+        id: r.id, name: r.name, nameEn: r.nameEn || '', region: '南澳大利亚', regionEn: 'South Australia',
+      })));
+    }).catch(() => {});
+    regionService.getCategories().then((cats) => {
+      setCategories(cats.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameEn })));
+    }).catch(() => {});
+  }, []);
+
+  // Fetch products
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await productService.list({
+        page: currentPage,
+        page_size: pageSize,
+        keyword: keyword || undefined,
+      });
+      setProducts((result.items || []).map(transformApiProduct));
+      setTotalProducts(result.total || 0);
+    } catch {
+      setProducts([]);
+      setTotalProducts(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, keyword]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleSearch = (value: string) => {
     setKeyword(value);
@@ -201,9 +115,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
     onProductClick?.(product);
   };
 
-  // Filter and sort products (mock implementation)
-  const filteredProducts = allProducts;
-  const totalProducts = allProducts.length;
+  const isLoading = loading || externalLoading;
 
   return (
     <div className={styles.page}>
@@ -266,16 +178,16 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
           </div>
 
           {/* Products Grid */}
-          {loading ? (
+          {isLoading ? (
             <div className={styles.productsGrid}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <CardSkeleton key={i} />
               ))}
             </div>
-          ) : filteredProducts.length > 0 ? (
+          ) : products.length > 0 ? (
             <>
               <div className={styles.productsGrid}>
-                {filteredProducts.slice(0, pageSize).map((product) => (
+                {products.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}

@@ -27,8 +27,8 @@ export const SupplierLoginPage: React.FC<SupplierLoginPageProps> = ({
   onLanguageChange,
 }) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('supplier@enjoysa.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('supplier@test.com');
+  const [password, setPassword] = useState('Test1234!');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

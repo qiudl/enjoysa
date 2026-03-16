@@ -9,10 +9,14 @@ export interface LoginPageProps {
   language?: 'zh' | 'en';
   /** 初始模式 */
   initialMode?: 'login' | 'register';
+  /** 登录函数 */
+  onLogin?: (email: string, password: string) => Promise<boolean>;
+  /** 注册函数 */
+  onRegister?: (email: string, password: string, name: string) => Promise<boolean>;
   /** 登录成功回调 */
-  onLoginSuccess?: (user: { identifier: string; type: 'email' | 'phone' }) => void;
+  onLoginSuccess?: (user?: { identifier: string; type: 'email' | 'phone' }) => void;
   /** 注册成功回调 */
-  onRegisterSuccess?: (user: { identifier: string; type: 'email' | 'phone'; nickname: string }) => void;
+  onRegisterSuccess?: (user?: { identifier: string; type: 'email' | 'phone'; nickname: string }) => void;
   /** 语言切换 */
   onLanguageChange?: (lang: 'zh' | 'en') => void;
   /** 返回首页回调 */
@@ -21,6 +25,8 @@ export interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   initialMode = 'login',
+  onLogin,
+  onRegister,
   onLoginSuccess,
   onRegisterSuccess,
   onLanguageChange,
@@ -32,14 +38,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const handleLanguageChange = (lang: string) => {
     const typedLang = lang as 'zh' | 'en';
     onLanguageChange?.(typedLang);
-  };
-
-  const handleLoginSuccess = (data: { identifier: string; type: 'email' | 'phone' }) => {
-    onLoginSuccess?.(data);
-  };
-
-  const handleRegisterSuccess = (data: { identifier: string; type: 'email' | 'phone'; nickname: string }) => {
-    onRegisterSuccess?.(data);
   };
 
   return (
@@ -60,10 +58,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <h1 className={styles.logo}>{t('brand.name')}</h1>
             <p className={styles.tagline}>{t('brand.tagline')}</p>
             <ul className={styles.features}>
-              <li>🎫 {t('auth.feature1')}</li>
-              <li>💳 {t('auth.feature2')}</li>
-              <li>🇨🇳 {t('auth.feature3')}</li>
-              <li>⭐ {t('auth.feature4')}</li>
+              <li>{t('auth.feature1')}</li>
+              <li>{t('auth.feature2')}</li>
+              <li>{t('auth.feature3')}</li>
+              <li>{t('auth.feature4')}</li>
             </ul>
           </div>
           <div className={styles.brandingOverlay} />
@@ -75,7 +73,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             {/* Clickable Logo */}
             <div className={styles.formLogo} onClick={onNavigateHome}>
               <span className={styles.formLogoText}>EnjoySA</span>
-              <span className={styles.formLogoSubtext}>畅游南澳</span>
+              <span className={styles.formLogoSubtext}>{t('brand.subtitle', '畅游南澳')}</span>
             </div>
 
             <div className={styles.formHeader}>
@@ -89,12 +87,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
             {mode === 'login' ? (
               <LoginForm
-                onSuccess={handleLoginSuccess}
+                onLogin={onLogin}
+                onSuccess={(data) => onLoginSuccess?.(data)}
                 onSwitchToRegister={() => setMode('register')}
               />
             ) : (
               <RegisterForm
-                onSuccess={handleRegisterSuccess}
+                onRegister={onRegister}
+                onSuccess={(data) => onRegisterSuccess?.(data)}
                 onSwitchToLogin={() => setMode('login')}
               />
             )}

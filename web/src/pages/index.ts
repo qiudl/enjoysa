@@ -18,7 +18,6 @@ export * from './FavoritesPage';
 export * from './FaqPage';
 export * from './TermsPage';
 export * from './PrivacyPage';
-export * from './AdminDashboardPage';
 export * from './RegionPage';
 export * from './AttractionDetailPage';
 

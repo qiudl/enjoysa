@@ -9,7 +9,7 @@ export const regions: Region[] = [
     descriptionEn: 'South Australia\'s capital city blends urban exploration, vibrant nightlife, and historic port charm. From mobile bars to stadium rooftop climbs, from Penfolds to dolphin cruises.',
     tagline: '\u57ce\u5e02\u6f2b\u6e38\u3001\u591c\u751f\u6d3b\u4e0e\u5386\u53f2\u6e2f\u53e3',
     taglineEn: 'City life, nightlife & historic port',
-    image: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=800',
+    image: 'https://southaustralia.com/media/ljspq4wg/adelaide_peel-street_friends_1920x800.jpg?width=800&quality=90',
     attractionCount: 5,
   },
   {
@@ -20,7 +20,7 @@ export const regions: Region[] = [
     descriptionEn: 'A green retreat just 20 minutes from the city. German village walks, koala encounters, Jurlique farm tours, and seasonal strawberry picking - perfect for families.',
     tagline: '\u5fb7\u56fd\u5c0f\u9547\u4e0e\u91c7\u6458',
     taglineEn: 'German village & farm experiences',
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+    image: 'https://southaustralia.com/media/drsbv2sx/new-brand_adl-hills_ngeringa-farms_1920x800.jpg?width=800&quality=90',
     attractionCount: 4,
   },
   {
@@ -31,7 +31,7 @@ export const regions: Region[] = [
     descriptionEn: 'A world-class wine region home to Australia\'s most famous wineries. Morning balloon rides over vineyards, birth-year port tastings, and estate-style accommodations.',
     tagline: '\u9876\u7ea7\u9152\u5e84\u4e0e\u70ed\u6c14\u7403',
     taglineEn: 'Premium wineries & hot air balloons',
-    image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800',
+    image: 'https://southaustralia.com/media/u4jlqhy4/new-brand_barossa_staguni_1920x800.jpg?width=800&quality=90',
     attractionCount: 3,
   },
   {
@@ -42,7 +42,7 @@ export const regions: Region[] = [
     descriptionEn: 'Where surreal architecture meets the Southern Ocean coastline. Wine blending at the Cube, wild dolphin swims, sea lion speedboat tours, and alpaca farm segway rides.',
     tagline: '\u827a\u672f\u9152\u5e84\u4e0e\u6d77\u6ee9',
     taglineEn: 'Art wineries & beaches',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
+    image: 'https://southaustralia.com/media/airg4sx0/untitled-11.jpg?width=800&quality=90',
     attractionCount: 4,
   },
   {
@@ -53,7 +53,7 @@ export const regions: Region[] = [
     descriptionEn: 'Australia\'s third-largest island and a wildlife paradise. Swim with dolphins, blend your own gin, and book ferry crossings to explore South Australia\'s wildest landscapes.',
     tagline: '\u91ce\u751f\u52a8\u7269\u5947\u89c2',
     taglineEn: 'Wildlife wonders',
-    image: 'https://images.unsplash.com/photo-1494233892892-84542a694e72?w=800',
+    image: 'https://southaustralia.com/media/kz0loxjp/kangaroo-island_1920x800px.jpg?width=800&quality=90',
     attractionCount: 3,
   },
   {
@@ -64,7 +64,7 @@ export const regions: Region[] = [
     descriptionEn: 'Along Australia\'s longest river, experience unique safari resort stays and classic paddle steamer cruises. Wake to lion roars and watch deer play outside your window.',
     tagline: '\u91ce\u751f\u52a8\u7269\u56ed\u4e0e\u6cb3\u6d41\u5de1\u6e38',
     taglineEn: 'Safari parks & river cruises',
-    image: 'https://images.unsplash.com/photo-1500259571355-332da5cb07aa?w=800',
+    image: 'https://southaustralia.com/media/w00niv1k/murray-river-lakes-and-coorong_1920x800px.jpg?width=800&quality=90',
     attractionCount: 3,
   },
   {
@@ -75,7 +75,7 @@ export const regions: Region[] = [
     descriptionEn: 'South Australia\'s most mysterious geological wonders. Underground cave adventures and snorkeling in the famous blue sinkhole at Mount Gambier.',
     tagline: '\u5730\u4e0b\u5ca9\u6d1e\u4e0e\u5929\u5751\u6d6e\u6f5c',
     taglineEn: 'Caves & sinkhole snorkeling',
-    image: 'https://images.unsplash.com/photo-1504870712474-3df7ea449ac9?w=800',
+    image: 'https://southaustralia.com/media/minevpyu/banner-final.jpg?width=800&quality=90',
     attractionCount: 2,
   },
 ];

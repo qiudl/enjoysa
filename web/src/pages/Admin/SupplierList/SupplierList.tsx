@@ -9,84 +9,31 @@ import type { Supplier, SupplierStatus } from '../../../components/Admin/Supplie
 import { SupplierDetail } from '../../../components/Admin/SupplierDetail';
 import { SupplierForm } from '../../../components/Admin/SupplierForm';
 import type { SupplierFormData } from '../../../components/Admin/SupplierForm';
+import { adminService, type ApiSupplier } from '../../../services/adminService';
 import styles from './SupplierList.module.css';
 
-// Mock data for demonstration
-const mockSuppliers: Supplier[] = [
-  {
-    id: '1',
-    name: '祥龙旅行社',
-    nameEn: 'Xianglong Travel',
-    type: 'travel_agency',
-    contactName: '张三',
-    contactPhone: '+61 412 345 678',
-    contactEmail: 'zhang@xianglong.com',
-    status: 'approved',
-    productCount: 15,
-    orderCount: 128,
-    createdAt: '2025-06-15T10:30:00Z',
-    logo: '',
-  },
-  {
-    id: '2',
-    name: '阳光酒店',
-    nameEn: 'Sunshine Hotel',
-    type: 'hotel',
-    contactName: '李四',
-    contactPhone: '+61 423 456 789',
-    contactEmail: 'li@sunshine.com',
-    status: 'pending',
-    productCount: 8,
-    orderCount: 45,
-    createdAt: '2026-01-20T14:20:00Z',
-  },
-  {
-    id: '3',
-    name: '袋鼠岛景区',
-    nameEn: 'Kangaroo Island Scenic',
-    type: 'attraction',
-    contactName: '王五',
-    contactPhone: '+61 434 567 890',
-    contactEmail: 'wang@ki-scenic.com',
-    status: 'approved',
-    productCount: 6,
-    orderCount: 256,
-    createdAt: '2025-03-10T09:00:00Z',
-  },
-  {
-    id: '4',
-    name: '悦来餐厅',
-    nameEn: 'Yue Lai Restaurant',
-    type: 'restaurant',
-    contactName: '赵六',
-    contactPhone: '+61 445 678 901',
-    contactEmail: 'zhao@yuelai.com',
-    status: 'suspended',
-    productCount: 3,
-    orderCount: 89,
-    createdAt: '2025-08-22T16:45:00Z',
-  },
-  {
-    id: '5',
-    name: '自由租车',
-    nameEn: 'Freedom Car Rental',
-    type: 'car_rental',
-    contactName: '孙七',
-    contactPhone: '+61 456 789 012',
-    contactEmail: 'sun@freedom.com',
-    status: 'pending',
-    productCount: 12,
-    orderCount: 67,
-    createdAt: '2026-01-28T11:30:00Z',
-  },
-];
+function transformSupplier(s: ApiSupplier): Supplier {
+  return {
+    id: String(s.id),
+    name: s.name,
+    type: s.type as Supplier['type'],
+    contactName: s.name,
+    contactPhone: s.phone,
+    contactEmail: s.email,
+    status: s.status as SupplierStatus,
+    productCount: 0,
+    orderCount: 0,
+    createdAt: s.created_at,
+    logo: s.logo,
+  };
+}
 
-const mockStats: SupplierStatsData = {
-  total: 156,
-  pending: 12,
-  approved: 138,
-  suspended: 6,
-  todayNew: 3,
+const defaultStats: SupplierStatsData = {
+  total: 0,
+  pending: 0,
+  approved: 0,
+  suspended: 0,
+  todayNew: 0,
 };
 
 type TabKey = 'all' | 'pending' | 'approved' | 'suspended';
@@ -95,7 +42,7 @@ export const SupplierList: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [stats, setStats] = useState<SupplierStatsData>(mockStats);
+  const [stats, setStats] = useState<SupplierStatsData>(defaultStats);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -110,11 +57,19 @@ export const SupplierList: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSuppliers(mockSuppliers);
-    setStats(mockStats);
-    setLoading(false);
+    try {
+      const result = await adminService.listSuppliers({ page: 1, page_size: 50 });
+      const items = (result.items || []).map(transformSupplier);
+      setSuppliers(items);
+      const pending = items.filter((s) => s.status === 'pending').length;
+      const approved = items.filter((s) => s.status === 'approved').length;
+      const suspended = items.filter((s) => s.status === 'suspended').length;
+      setStats({ total: result.total, pending, approved, suspended, todayNew: 0 });
+    } catch {
+      // fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
@@ -148,39 +103,42 @@ export const SupplierList: React.FC = () => {
   };
 
   const handleApprove = async (supplier: Supplier) => {
-    // API call to approve
-    console.log('Approve supplier:', supplier.id);
-    // Update local state
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === supplier.id ? { ...s, status: 'approved' as SupplierStatus } : s))
-    );
+    try {
+      await adminService.approveSupplier(Number(supplier.id));
+      setSuppliers((prev) =>
+        prev.map((s) => (s.id === supplier.id ? { ...s, status: 'approved' as SupplierStatus } : s))
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 
   const handleReject = async (supplier: Supplier, reason: string) => {
-    // API call to reject
-    console.log('Reject supplier:', supplier.id, 'Reason:', reason);
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === supplier.id ? { ...s, status: 'rejected' as SupplierStatus } : s))
-    );
+    try {
+      await adminService.rejectSupplier(Number(supplier.id), reason);
+      setSuppliers((prev) =>
+        prev.map((s) => (s.id === supplier.id ? { ...s, status: 'rejected' as SupplierStatus } : s))
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 
-  const handleSuspend = async (supplier: Supplier, reason: string) => {
-    // API call to suspend
-    console.log('Suspend supplier:', supplier.id, 'Reason:', reason);
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === supplier.id ? { ...s, status: 'suspended' as SupplierStatus } : s))
-    );
+  const handleSuspend = async (supplier: Supplier, _reason: string) => {
+    try {
+      await adminService.suspendSupplier(Number(supplier.id));
+      setSuppliers((prev) =>
+        prev.map((s) => (s.id === supplier.id ? { ...s, status: 'suspended' as SupplierStatus } : s))
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 
   const handleUnsuspend = async (supplier: Supplier) => {
-    // API call to unsuspend
-    console.log('Unsuspend supplier:', supplier.id);
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === supplier.id ? { ...s, status: 'approved' as SupplierStatus } : s))
-    );
+    try {
+      await adminService.approveSupplier(Number(supplier.id));
+      setSuppliers((prev) =>
+        prev.map((s) => (s.id === supplier.id ? { ...s, status: 'approved' as SupplierStatus } : s))
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 
@@ -190,10 +148,9 @@ export const SupplierList: React.FC = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = async (data: SupplierFormData) => {
-    console.log('Form submit:', data);
-    // API call to create/update supplier
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handleFormSubmit = async (_data: SupplierFormData) => {
+    // TODO: API call to create/update supplier when endpoint is available
+    setFormOpen(false);
     loadData();
   };
 

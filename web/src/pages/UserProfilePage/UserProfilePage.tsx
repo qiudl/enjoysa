@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -6,7 +6,8 @@ import {
   Button,
   Modal,
 } from '../../components/Common';
-import type { Order, ContactInfo } from '../../types';
+import type { Order, OrderStatus } from '../../types';
+import { listOrders, type Order as ApiOrder } from '../../services/orderService';
 import styles from './UserProfilePage.module.css';
 
 export interface UserProfilePageProps {
@@ -42,68 +43,50 @@ export interface UserProfilePageProps {
   onNavClick?: (path: string) => void;
 }
 
-// Mock order data
-const mockContactInfo: ContactInfo = {
-  name: '张三',
-  phone: '13800138000',
-  email: 'zhangsan@example.com',
+const statusMap: Record<string, OrderStatus> = {
+  pending: 'pending_payment',
+  paid: 'paid',
+  accepted: 'confirmed',
+  processing: 'in_progress',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
 };
 
-const mockRecentOrders: Order[] = [
-  {
-    id: 'ORD-20260215-0001',
-    orderNumber: 'ORD-20260215-0001',
-    userId: 'user-1',
+function transformOrder(o: ApiOrder): Order {
+  return {
+    id: o.order_no || String(o.id),
+    orderNumber: o.order_no || String(o.id),
+    userId: String(o.user_id),
     items: [{
-      id: 'item-1',
-      productId: '1',
-      productTitle: '袋鼠岛一日游',
-      productTitleEn: 'Kangaroo Island Day Tour',
-      productImage: 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400',
-      quantity: 2,
-      unitPrice: 389,
-      subtotal: 778,
-      travelDate: '2026-02-20',
-      participants: [{ type: 'adult', name: '张三', count: 2 }],
+      id: `item-${o.id}`,
+      productId: String(o.product_id),
+      productTitle: o.product_name,
+      productTitleEn: o.product_name,
+      productImage: '',
+      quantity: o.quantity || o.guest_count,
+      unitPrice: o.unit_price,
+      subtotal: o.total_price,
+      travelDate: o.booking_date,
+      participants: [{ type: 'adult' as const, count: o.guest_count || o.quantity }],
     }],
-    status: 'confirmed',
-    totalAmount: 778,
-    currency: 'CNY',
-    paymentMethod: 'wechat',
-    paymentStatus: 'paid',
-    contactInfo: mockContactInfo,
-    createdAt: '2026-02-15T10:30:00Z',
-    updatedAt: '2026-02-15T10:35:00Z',
-    paidAt: '2026-02-15T10:32:00Z',
-  },
-  {
-    id: 'ORD-20260210-0002',
-    orderNumber: 'ORD-20260210-0002',
-    userId: 'user-1',
-    items: [{
-      id: 'item-2',
-      productId: '2',
-      productTitle: '巴罗萨谷酒庄之旅',
-      productTitleEn: 'Barossa Valley Winery Tour',
-      productImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
-      quantity: 4,
-      unitPrice: 299,
-      subtotal: 1196,
-      travelDate: '2026-02-12',
-      participants: [{ type: 'adult', name: '李四', count: 4 }],
-    }],
-    status: 'completed',
-    totalAmount: 1196,
-    currency: 'CNY',
-    paymentMethod: 'alipay',
-    paymentStatus: 'paid',
-    contactInfo: mockContactInfo,
-    createdAt: '2026-02-08T14:20:00Z',
-    updatedAt: '2026-02-12T18:00:00Z',
-    paidAt: '2026-02-08T14:25:00Z',
-    completedAt: '2026-02-12T18:00:00Z',
-  },
-];
+    status: statusMap[o.status] || 'pending_payment',
+    totalAmount: o.total_price,
+    currency: (o.currency || 'AUD') as 'AUD' | 'CNY',
+    paymentMethod: o.payment_method as Order['paymentMethod'],
+    paymentStatus: o.payment_time ? 'paid' : 'unpaid',
+    contactInfo: {
+      name: o.contact_name,
+      phone: o.contact_phone,
+      email: o.contact_email,
+    },
+    createdAt: o.created_at,
+    updatedAt: o.updated_at,
+    paidAt: o.payment_time,
+    completedAt: o.completed_at,
+    cancelledAt: o.cancelled_at,
+  };
+}
 
 export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   language = 'zh',
@@ -125,6 +108,15 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   const { t, i18n } = useTranslation();
   const currentLang = language || (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    listOrders({ page: 1, page_size: 5 })
+      .then((result) => {
+        setRecentOrders((result.orders || []).map(transformOrder));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     setShowLogoutModal(false);
@@ -215,9 +207,9 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           {/* Recent Orders */}
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{t('user.recentOrders')}</h2>
-            {mockRecentOrders.length > 0 ? (
+            {recentOrders.length > 0 ? (
               <div className={styles.orderList}>
-                {mockRecentOrders.map((order) => (
+                {recentOrders.map((order) => (
                   <div key={order.id} className={styles.orderCard}>
                     <div className={styles.orderHeader}>
                       <span className={styles.orderNumber}>{order.orderNumber}</span>

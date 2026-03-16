@@ -7,85 +7,31 @@ import type { ProductReviewStatsData } from '../../../components/Admin/ProductRe
 import { ProductReviewTable } from '../../../components/Admin/ProductReviewTable';
 import type { ProductReview, ProductReviewStatus } from '../../../components/Admin/ProductReviewTable';
 import { ProductReviewDetail } from '../../../components/Admin/ProductReviewDetail';
+import { adminService, type ApiAdminProduct } from '../../../services/adminService';
 import styles from './ProductReviewList.module.css';
 
-// Mock data for demonstration
-const mockProducts: ProductReview[] = [
-  {
-    id: '1',
-    name: '袋鼠岛一日游',
-    nameEn: 'Kangaroo Island Day Tour',
-    category: 'day_tour',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    price: 299,
-    originalPrice: 359,
-    status: 'pending',
-    submittedAt: '2026-01-30T10:30:00Z',
-    thumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200',
-    description: '探索袋鼠岛的野生动物和自然美景，包含海豹湾、神奇岩石等景点。',
-  },
-  {
-    id: '2',
-    name: '巴罗萨谷品酒之旅',
-    nameEn: 'Barossa Valley Wine Tour',
-    category: 'day_tour',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    price: 189,
-    status: 'approved',
-    submittedAt: '2026-01-28T14:20:00Z',
-    reviewedAt: '2026-01-29T09:00:00Z',
-    thumbnail: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=200',
-    description: '品尝世界级葡萄酒，游览历史悠久的酒庄。',
-  },
-  {
-    id: '3',
-    name: '阿德莱德城市观光',
-    nameEn: 'Adelaide City Highlights',
-    category: 'activity',
-    supplierId: '2',
-    supplierName: '阳光旅游',
-    price: 89,
-    status: 'pending',
-    submittedAt: '2026-01-31T09:00:00Z',
-    description: '探索阿德莱德市中心的历史建筑和文化景点。',
-  },
-  {
-    id: '4',
-    name: '克莱兰德野生动物园门票',
-    nameEn: 'Cleland Wildlife Park Ticket',
-    category: 'ticket',
-    supplierId: '3',
-    supplierName: '袋鼠岛景区',
-    price: 35,
-    originalPrice: 45,
-    status: 'rejected',
-    submittedAt: '2026-01-25T11:30:00Z',
-    reviewedAt: '2026-01-26T15:00:00Z',
-    reviewNote: '价格信息不完整，请补充儿童票和家庭票价格。',
-  },
-  {
-    id: '5',
-    name: '蓝湖一日游',
-    nameEn: 'Blue Lake Day Trip',
-    category: 'day_tour',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    price: 259,
-    status: 'pending',
-    submittedAt: '2026-02-01T08:00:00Z',
-    thumbnail: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=200',
-    description: '前往甘比尔山探索神秘的蓝湖，观赏季节性变色奇观。',
-  },
-];
+function transformProduct(p: ApiAdminProduct): ProductReview {
+  const coverImg = p.images?.find((img) => img.is_cover) || p.images?.[0];
+  return {
+    id: String(p.id),
+    name: p.name_zh,
+    nameEn: p.name_en,
+    category: (p.category?.slug || 'other') as ProductReview['category'],
+    supplierId: String(p.supplier_id),
+    supplierName: p.supplier?.name || '',
+    price: p.price_from,
+    status: p.status as ProductReviewStatus,
+    submittedAt: p.created_at,
+    thumbnail: coverImg?.url,
+  };
+}
 
-const mockStats: ProductReviewStatsData = {
-  total: 86,
-  pending: 12,
-  approved: 68,
-  rejected: 6,
-  todayNew: 3,
+const defaultStats: ProductReviewStatsData = {
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+  todayNew: 0,
 };
 
 type TabKey = 'all' | 'pending' | 'approved' | 'rejected';
@@ -94,7 +40,7 @@ export const ProductReviewList: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<ProductReview[]>([]);
-  const [stats, setStats] = useState<ProductReviewStatsData>(mockStats);
+  const [stats, setStats] = useState<ProductReviewStatsData>(defaultStats);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -107,11 +53,19 @@ export const ProductReviewList: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setProducts(mockProducts);
-    setStats(mockStats);
-    setLoading(false);
+    try {
+      const result = await adminService.listProducts({ page: 1, page_size: 50 });
+      const items = (result.items || []).map(transformProduct);
+      setProducts(items);
+      const pending = items.filter((p) => p.status === 'pending').length;
+      const approved = items.filter((p) => p.status === 'approved').length;
+      const rejected = items.filter((p) => p.status === 'rejected').length;
+      setStats({ total: result.total, pending, approved, rejected, todayNew: 0 });
+    } catch {
+      // fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
@@ -144,25 +98,26 @@ export const ProductReviewList: React.FC = () => {
   };
 
   const handleApprove = async (product: ProductReview) => {
-    // API call to approve
-    console.log('Approve product:', product.id);
-    // Update local state
-    setProducts((prev) =>
-      prev.map((p) => (p.id === product.id ? { ...p, status: 'approved' as ProductReviewStatus } : p))
-    );
+    try {
+      await adminService.approveProduct(Number(product.id));
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, status: 'approved' as ProductReviewStatus } : p))
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 
   const handleReject = async (product: ProductReview, reason: string) => {
-    // API call to reject
-    console.log('Reject product:', product.id, 'Reason:', reason);
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === product.id
-          ? { ...p, status: 'rejected' as ProductReviewStatus, reviewNote: reason }
-          : p
-      )
-    );
+    try {
+      await adminService.rejectProduct(Number(product.id));
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id
+            ? { ...p, status: 'rejected' as ProductReviewStatus, reviewNote: reason }
+            : p
+        )
+      );
+    } catch { /* ignore */ }
     setDetailOpen(false);
   };
 

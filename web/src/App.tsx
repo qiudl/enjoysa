@@ -38,7 +38,7 @@ import {
   AdminList,
   SettingsPage,
 } from './pages';
-import { CartProvider, useCart, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
+import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { SupplierAuthGuard } from './components/Common/SupplierAuthGuard';
 import { AdminAuthGuard } from './components/Common/AdminAuthGuard';
 import { AdminLayout } from './components/Admin';
@@ -48,9 +48,12 @@ import './App.css';
 function HomePageWrapper() {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
+  const { user, isAuthenticated } = useUserAuth();
 
   return (
     <HomePage
+      isLoggedIn={isAuthenticated}
+      userName={user?.name}
       cartCount={getCartCount()}
       onProductClick={(product) => navigate(`/product/${product.id}`)}
       onRegionClick={(region) => navigate(`/regions/${region.id}`)}
@@ -107,10 +110,12 @@ function AttractionDetailPageWrapper() {
 // 包装组件：LoginPage
 function LoginPageWrapper() {
   const navigate = useNavigate();
+  const { login } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="login"
+      onLogin={login}
       onLoginSuccess={() => navigate('/')}
       onRegisterSuccess={() => navigate('/')}
       onNavigateHome={() => navigate('/')}
@@ -121,10 +126,12 @@ function LoginPageWrapper() {
 // 包装组件：RegisterPage
 function RegisterPageWrapper() {
   const navigate = useNavigate();
+  const { register } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="register"
+      onRegister={register}
       onLoginSuccess={() => navigate('/')}
       onRegisterSuccess={() => navigate('/')}
       onNavigateHome={() => navigate('/')}
@@ -426,14 +433,8 @@ function SupplierDashboardPageWrapper() {
 
   return (
     <SupplierDashboardPage
-      supplierName={supplier?.name || '供应商'}
-      supplierType={supplier?.type || 'travel_agency'}
-      pendingOrders={5}
-      todayOrders={12}
-      monthSales={28650}
-      pendingSettlement={15800}
-      productCount={24}
-      activeProducts={18}
+      supplierName={supplier?.supplier?.name || supplier?.name || '供应商'}
+      supplierType={(supplier?.supplier?.type || 'travel_agency') as 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental'}
       onNavigate={(path) => navigate(path)}
     />
   );
@@ -645,6 +646,7 @@ function App() {
   return (
     <BrowserRouter>
       <CartProvider>
+      <UserAuthProvider>
       <SupplierAuthProvider>
       <AdminAuthProvider>
       <Routes>
@@ -722,6 +724,7 @@ function App() {
       </Routes>
       </AdminAuthProvider>
       </SupplierAuthProvider>
+      </UserAuthProvider>
       </CartProvider>
     </BrowserRouter>
   );

@@ -3,7 +3,7 @@ import type { BannerSlide } from '../components/Common/HeroBanner/HeroBanner';
 export const bannerSlides: BannerSlide[] = [
   {
     id: 'banner-1',
-    image: 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=1920',
+    image: 'https://southaustralia.com/media/kz0loxjp/kangaroo-island_1920x800px.jpg',
     title: '袋鼠岛 · 与海豚同游',
     titleEn: 'Kangaroo Island · Swim with Dolphins',
     tags: ['野生动物', '海洋探险', '亲子推荐'],
@@ -12,7 +12,7 @@ export const bannerSlides: BannerSlide[] = [
   },
   {
     id: 'banner-2',
-    image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920',
+    image: 'https://southaustralia.com/media/u4jlqhy4/new-brand_barossa_staguni_1920x800.jpg',
     title: '巴罗萨 · 晨间热气球之旅',
     titleEn: 'Barossa · Morning Balloon Flight',
     tags: ['热气球', '葡萄园', '浪漫体验'],
@@ -21,7 +21,7 @@ export const bannerSlides: BannerSlide[] = [
   },
   {
     id: 'banner-3',
-    image: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=1920',
+    image: 'https://southaustralia.com/media/ljspq4wg/adelaide_peel-street_friends_1920x800.jpg',
     title: '阿德莱德 · 板球场攀登',
     titleEn: 'Adelaide · Stadium RoofClimb',
     tags: ['城市探险', '高空体验', '网红打卡'],
@@ -30,7 +30,7 @@ export const bannerSlides: BannerSlide[] = [
   },
   {
     id: 'banner-4',
-    image: 'https://images.unsplash.com/photo-1504870712474-3df7ea449ac9?w=1920',
+    image: 'https://southaustralia.com/media/minevpyu/banner-final.jpg',
     title: '石灰岩海岸 · 蓝色天坑浮潜',
     titleEn: 'Limestone Coast · Blue Sinkhole Snorkeling',
     tags: ['地质奇观', '浮潜', '小众秘境'],
@@ -39,7 +39,7 @@ export const bannerSlides: BannerSlide[] = [
   },
   {
     id: 'banner-5',
-    image: 'https://images.unsplash.com/photo-1500259571355-332da5cb07aa?w=1920',
+    image: 'https://southaustralia.com/media/w00niv1k/murray-river-lakes-and-coorong_1920x800px.jpg',
     title: '墨累河 · 野生动物园住宿',
     titleEn: 'Murray River · Safari Resort Stay',
     tags: ['野生动物园', '特色住宿', '亲子首选'],

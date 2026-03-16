@@ -70,29 +70,34 @@
   gap: var(--space-4);
 }
 
-.codeInput {
+.errorBanner {
+  padding: var(--space-3) var(--space-4);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  color: #dc2626;
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.passwordInput {
   position: relative;
 }
 
-.codeButton {
-  padding: var(--space-2) var(--space-3);
+.togglePassword {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
   background: transparent;
   border: none;
-  color: var(--color-primary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
   cursor: pointer;
-  white-space: nowrap;
   transition: color var(--duration-fast) var(--ease-out);
 }
 
-.codeButton:hover:not(:disabled) {
-  color: var(--color-primary-dark);
-}
-
-.codeButton:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
+.togglePassword:hover {
+  color: var(--color-text);
 }
 
 /* Forgot Password */

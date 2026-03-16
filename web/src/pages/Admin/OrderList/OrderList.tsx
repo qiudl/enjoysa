@@ -7,109 +7,40 @@ import type { OrderStatsData } from '../../../components/Admin/OrderStats';
 import { OrderTable } from '../../../components/Admin/OrderTable';
 import type { Order, OrderStatus } from '../../../components/Admin/OrderTable';
 import { OrderDetail } from '../../../components/Admin/OrderDetail';
+import { adminService, type ApiOrder } from '../../../services/adminService';
 import styles from './OrderList.module.css';
 
-// Mock data for demonstration
-const mockOrders: Order[] = [
-  {
-    id: '1',
-    orderNo: 'ORD202602010001',
-    customerName: '张三',
-    customerPhone: '+86 138 0000 0001',
-    customerEmail: 'zhang@example.com',
-    productId: '1',
-    productName: '袋鼠岛一日游',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    travelDate: '2026-02-15',
-    quantity: 2,
-    amount: 598,
-    status: 'pending',
-    createdAt: '2026-02-01T10:30:00Z',
-  },
-  {
-    id: '2',
-    orderNo: 'ORD202601300002',
-    customerName: '李四',
-    customerPhone: '+61 412 000 002',
-    customerEmail: 'li@example.com',
-    productId: '2',
-    productName: '巴罗萨谷品酒之旅',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    travelDate: '2026-02-10',
-    quantity: 4,
-    amount: 756,
-    status: 'confirmed',
-    createdAt: '2026-01-30T14:20:00Z',
-    paidAt: '2026-01-30T14:25:00Z',
-    confirmedAt: '2026-01-30T15:00:00Z',
-  },
-  {
-    id: '3',
-    orderNo: 'ORD202601280003',
-    customerName: '王五',
-    customerPhone: '+86 139 0000 0003',
-    customerEmail: 'wang@example.com',
-    productId: '3',
-    productName: '阿德莱德城市观光',
-    supplierId: '2',
-    supplierName: '阳光旅游',
-    travelDate: '2026-01-29',
-    quantity: 3,
-    amount: 267,
-    status: 'completed',
-    createdAt: '2026-01-28T09:00:00Z',
-    paidAt: '2026-01-28T09:05:00Z',
-    confirmedAt: '2026-01-28T10:00:00Z',
-    completedAt: '2026-01-29T18:00:00Z',
-  },
-  {
-    id: '4',
-    orderNo: 'ORD202601250004',
-    customerName: '赵六',
-    customerPhone: '+61 423 000 004',
-    customerEmail: 'zhao@example.com',
-    productId: '1',
-    productName: '袋鼠岛一日游',
-    supplierId: '1',
-    supplierName: '祥龙旅行社',
-    travelDate: '2026-01-28',
-    quantity: 2,
-    amount: 598,
-    status: 'cancelled',
-    createdAt: '2026-01-25T11:30:00Z',
-    paidAt: '2026-01-25T11:35:00Z',
-    cancelledAt: '2026-01-26T09:00:00Z',
-    cancelReason: '客户行程变更',
-  },
-  {
-    id: '5',
-    orderNo: 'ORD202602020005',
-    customerName: '孙七',
-    customerPhone: '+86 137 0000 0005',
-    customerEmail: 'sun@example.com',
-    productId: '4',
-    productName: '克莱兰德野生动物园门票',
-    supplierId: '3',
-    supplierName: '袋鼠岛景区',
-    travelDate: '2026-02-05',
-    quantity: 5,
-    amount: 175,
-    status: 'refunding',
-    createdAt: '2026-02-02T08:00:00Z',
-    paidAt: '2026-02-02T08:05:00Z',
-    confirmedAt: '2026-02-02T09:00:00Z',
-  },
-];
+function transformOrder(o: ApiOrder): Order {
+  return {
+    id: String(o.id),
+    orderNo: o.order_no,
+    customerName: o.contact_name || o.user_name,
+    customerPhone: o.contact_phone || o.user_phone,
+    customerEmail: o.contact_email || o.user_email,
+    productId: String(o.product_id),
+    productName: o.product_name,
+    supplierId: String(o.supplier_id),
+    supplierName: o.supplier_name,
+    travelDate: o.booking_date,
+    quantity: o.quantity,
+    amount: o.total_price,
+    status: o.status as OrderStatus,
+    createdAt: o.created_at,
+    paidAt: o.payment_time,
+    confirmedAt: o.accepted_at,
+    completedAt: o.completed_at,
+    cancelledAt: o.cancelled_at,
+    cancelReason: o.cancel_reason,
+  };
+}
 
-const mockStats: OrderStatsData = {
-  total: 1256,
-  pending: 23,
-  confirmed: 89,
-  completed: 1108,
-  cancelled: 36,
-  todayOrders: 12,
+const defaultStats: OrderStatsData = {
+  total: 0,
+  pending: 0,
+  confirmed: 0,
+  completed: 0,
+  cancelled: 0,
+  todayOrders: 0,
 };
 
 type TabKey = 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'refunding';
@@ -118,7 +49,7 @@ export const OrderList: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<OrderStatsData>(mockStats);
+  const [stats, setStats] = useState<OrderStatsData>(defaultStats);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -131,11 +62,20 @@ export const OrderList: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setOrders(mockOrders);
-    setStats(mockStats);
-    setLoading(false);
+    try {
+      const result = await adminService.listOrders({ page: 1, page_size: 50 });
+      const items = (result.items || []).map(transformOrder);
+      setOrders(items);
+      const pending = items.filter((o) => o.status === 'pending').length;
+      const confirmed = items.filter((o) => o.status === 'confirmed').length;
+      const completed = items.filter((o) => o.status === 'completed').length;
+      const cancelled = items.filter((o) => o.status === 'cancelled').length;
+      setStats({ total: result.total, pending, confirmed, completed, cancelled, todayOrders: 0 });
+    } catch {
+      // fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [

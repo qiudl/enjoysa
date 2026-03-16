@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { Mail, Phone, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../Common/Button';
 import { Input } from '../../Common/Input';
 import styles from './LoginForm.module.css';
 
 export interface LoginFormProps {
+  /** 登录函数 */
+  onLogin?: (email: string, password: string) => Promise<boolean>;
   /** 登录成功回调 */
   onSuccess?: (data: { identifier: string; type: 'email' | 'phone' }) => void;
   /** 切换到注册 */
@@ -18,150 +20,111 @@ export interface LoginFormProps {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
+  onLogin,
   onSuccess,
   onSwitchToRegister,
   onForgotPassword,
   onThirdPartyLogin,
 }) => {
   const { t } = useTranslation();
-  const [loginType, setLoginType] = useState<'phone' | 'email'>('phone');
-  const [identifier, setIdentifier] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [countdown, setCountdown] = useState(0);
-  const [errors, setErrors] = useState<{ identifier?: string; code?: string }>({});
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
-    if (!identifier) {
-      newErrors.identifier = loginType === 'phone'
-        ? t('auth.phoneRequired')
-        : t('auth.emailRequired');
-    } else if (loginType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
-      newErrors.identifier = t('auth.emailInvalid');
-    } else if (loginType === 'phone' && !/^\d{10,15}$/.test(identifier.replace(/\D/g, ''))) {
-      newErrors.identifier = t('auth.phoneInvalid');
+    if (!email) {
+      newErrors.email = t('auth.emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = t('auth.emailInvalid');
     }
 
-    if (!verificationCode) {
-      newErrors.code = t('auth.codeRequired');
-    } else if (!/^\d{4,6}$/.test(verificationCode)) {
-      newErrors.code = t('auth.codeInvalid');
+    if (!password) {
+      newErrors.password = t('auth.passwordRequired', 'Please enter your password');
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSendCode = () => {
-    if (!identifier) {
-      setErrors({
-        identifier: loginType === 'phone'
-          ? t('auth.phoneRequired')
-          : t('auth.emailRequired'),
-      });
-      return;
-    }
-
-    // 模拟发送验证码
-    setCountdown(60);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({});
+
     try {
-      // 模拟登录请求
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      onSuccess?.({ identifier, type: loginType });
-    } catch (error) {
-      console.error('Login failed:', error);
+      if (onLogin) {
+        const success = await onLogin(email, password);
+        if (success) {
+          onSuccess?.({ identifier: email, type: 'email' });
+        } else {
+          setErrors({ general: t('auth.loginFailed', 'Invalid email or password') });
+        }
+      } else {
+        // Fallback for storybook/demo
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        onSuccess?.({ identifier: email, type: 'email' });
+      }
+    } catch {
+      setErrors({ general: t('auth.networkError', 'Network error, please try again') });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTypeSwitch = (type: 'phone' | 'email') => {
-    setLoginType(type);
-    setIdentifier('');
-    setVerificationCode('');
-    setErrors({});
-  };
-
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>{t('auth.loginTitle')}</h1>
-        <p className={styles.subtitle}>{t('auth.loginSubtitle')}</p>
-      </div>
-
-      {/* 登录方式切换 */}
-      <div className={styles.tabContainer}>
-        <button
-          className={clsx(styles.tab, { [styles.active]: loginType === 'phone' })}
-          onClick={() => handleTypeSwitch('phone')}
-        >
-          <Phone size={18} />
-          {t('auth.phoneLogin')}
-        </button>
-        <button
-          className={clsx(styles.tab, { [styles.active]: loginType === 'email' })}
-          onClick={() => handleTypeSwitch('email')}
-        >
-          <Mail size={18} />
-          {t('auth.emailLogin')}
-        </button>
-      </div>
-
       <form onSubmit={handleSubmit} className={styles.form}>
+        {errors.general && (
+          <div className={styles.errorBanner}>{errors.general}</div>
+        )}
+
         <Input
-          label={loginType === 'phone' ? t('auth.phone') : t('auth.email')}
-          type={loginType === 'email' ? 'email' : 'tel'}
-          placeholder={loginType === 'phone' ? '+86 138 0000 0000' : 'example@email.com'}
-          leftIcon={loginType === 'phone' ? <Phone size={18} /> : <Mail size={18} />}
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          error={errors.identifier}
+          label={t('auth.email')}
+          type="email"
+          placeholder="example@email.com"
+          leftIcon={<Mail size={18} />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
           required
         />
 
-        <div className={styles.codeInput}>
+        <div className={styles.passwordInput}>
           <Input
-            label={t('auth.verificationCode')}
-            type="text"
-            placeholder="000000"
-            maxLength={6}
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-            error={errors.code}
+            label={t('auth.password', 'Password')}
+            type={showPassword ? 'text' : 'password'}
+            placeholder={t('auth.passwordPlaceholder', 'Enter your password')}
+            leftIcon={<Lock size={18} />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={errors.password}
             required
             rightElement={
               <button
                 type="button"
-                className={styles.codeButton}
-                onClick={handleSendCode}
-                disabled={countdown > 0}
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
               >
-                {countdown > 0
-                  ? t('auth.countdown', { seconds: countdown })
-                  : t('auth.getCode')
-                }
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             }
           />
+        </div>
+
+        <div className={styles.forgotPassword}>
+          <button
+            type="button"
+            className={styles.link}
+            onClick={onForgotPassword}
+          >
+            {t('auth.forgotPassword')}
+          </button>
         </div>
 
         <Button
@@ -175,16 +138,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {t('auth.login')}
         </Button>
       </form>
-
-      <div className={styles.forgotPassword}>
-        <button
-          type="button"
-          className={styles.link}
-          onClick={onForgotPassword}
-        >
-          {t('auth.forgotPassword')}
-        </button>
-      </div>
 
       {/* 第三方登录 */}
       <div className={styles.divider}>

@@ -12,6 +12,7 @@ import {
   ParticipantForm,
 } from '../../components/Order';
 import type { Product, Destination, ProductCategory, ParticipantDetail, PaymentMethod } from '../../types';
+import { createOrder } from '../../services/orderService';
 import styles from './CheckoutPage.module.css';
 
 export interface CheckoutPageProps {
@@ -157,25 +158,37 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
     setSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const order = await createOrder({
+        product_id: Number(product.id),
+        package_id: 0,
+        quantity: adultCount,
+        booking_date: travelDate,
+        contact_name: participants[0]?.firstName
+          ? `${participants[0].firstName} ${participants[0].lastName}`
+          : '',
+        contact_phone: participants[0]?.phone || '',
+        contact_email: participants[0]?.email || '',
+      });
 
-    setSubmitting(false);
+      const orderId = order.order_no || String(order.id);
 
-    // Generate mock order ID
-    const orderId = `ORD-${Date.now()}`;
+      onSubmit?.({
+        product,
+        participants,
+        paymentMethod,
+        travelDate,
+      });
 
-    onSubmit?.({
-      product,
-      participants,
-      paymentMethod,
-      travelDate,
-    });
-
-    if (onOrderSuccess) {
-      onOrderSuccess(orderId);
-    } else {
-      setShowSuccess(true);
+      if (onOrderSuccess) {
+        onOrderSuccess(orderId);
+      } else {
+        setShowSuccess(true);
+      }
+    } catch {
+      // order creation failed — could show error
+    } finally {
+      setSubmitting(false);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -12,8 +12,10 @@ import { ProductCard } from '../../components/Product';
 import { CategoryCard } from '../../components/Category';
 import type { Product, ProductCategory } from '../../types';
 import type { Region } from '../../data/types';
-import { regions } from '../../data/regions';
+import { regions as staticRegions } from '../../data/regions';
 import { bannerSlides } from '../../data/bannerSlides';
+import { regionService } from '../../services/regionService';
+import { productService, transformApiProduct } from '../../services/productService';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -45,120 +47,9 @@ export interface HomePageProps {
   onNavClick?: (path: string) => void;
 }
 
-// Shared destination and category data for products
-const sharedCategory: ProductCategory = {
-  id: 'day-tour',
-  name: '一日游',
-  nameEn: 'Day Tours',
-};
 
-// Mock data - Products
-const featuredProducts: Product[] = [
-  {
-    id: '1',
-    title: '袋鼠岛一日游',
-    titleEn: 'Kangaroo Island Day Tour',
-    description: '探索南澳最著名的野生动物天堂',
-    images: ['https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400'],
-    price: 389,
-    currency: 'CNY',
-    rating: 4.8,
-    reviewCount: 126,
-    location: '阿德莱德出发',
-    locationEn: 'Depart from Adelaide',
-    highlights: ['野生动物', '海豹湾', '神奇岩石'],
-    inclusions: ['往返交通', '午餐', '导游'],
-    exclusions: ['个人消费'],
-    tags: ['hot', 'recommended'],
-    category: sharedCategory,
-    destination: { id: 'kangaroo-island', name: '袋鼠岛', nameEn: 'Kangaroo Island', region: '南澳大利亚', regionEn: 'South Australia' },
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-1',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '2',
-    title: '巴罗萨谷酒庄之旅',
-    titleEn: 'Barossa Valley Winery Tour',
-    description: '品味世界级葡萄酒',
-    images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400'],
-    price: 299,
-    originalPrice: 399,
-    currency: 'CNY',
-    rating: 4.9,
-    reviewCount: 89,
-    location: '阿德莱德出发',
-    locationEn: 'Depart from Adelaide',
-    highlights: ['品酒体验', '酒庄参观', '美食午餐'],
-    inclusions: ['往返交通', '品酒费用', '午餐'],
-    exclusions: ['个人消费', '酒品购买'],
-    tags: ['discount', 'food'],
-    category: { ...sharedCategory, id: 'wine-tour', name: '酒庄之旅', nameEn: 'Wine Tour' },
-    destination: { id: 'barossa', name: '巴罗萨谷', nameEn: 'Barossa Valley', region: '南澳大利亚', regionEn: 'South Australia' },
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-2',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '3',
-    title: '海豚巡航体验',
-    titleEn: 'Dolphin Cruise Experience',
-    description: '与海豚近距离接触',
-    images: ['https://images.unsplash.com/photo-1540202403-b7abd6747a18?w=400'],
-    price: 159,
-    currency: 'CNY',
-    rating: 4.7,
-    reviewCount: 234,
-    location: '格雷尔海滩',
-    locationEn: 'Glenelg Beach',
-    highlights: ['海豚观赏', '海景巡航'],
-    inclusions: ['船票', '解说服务'],
-    exclusions: ['交通', '餐饮'],
-    tags: ['family'],
-    category: { ...sharedCategory, id: 'cruise', name: '水上活动', nameEn: 'Water Activities' },
-    destination: { id: 'glenelg', name: '格雷尔', nameEn: 'Glenelg', region: '南澳大利亚', regionEn: 'South Australia' },
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: false,
-    supplierId: 'sup-3',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-  {
-    id: '4',
-    title: '阿德莱德城市观光',
-    titleEn: 'Adelaide City Sightseeing',
-    description: '探索南澳首府的魅力',
-    images: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
-    price: 129,
-    currency: 'CNY',
-    rating: 4.6,
-    reviewCount: 156,
-    location: '市中心',
-    locationEn: 'City Center',
-    highlights: ['城市地标', '博物馆', '购物区'],
-    inclusions: ['导游', '门票'],
-    exclusions: ['午餐', '个人消费'],
-    tags: ['hot', 'culture'],
-    category: { ...sharedCategory, id: 'city-tour', name: '城市观光', nameEn: 'City Tour' },
-    destination: { id: 'adelaide', name: '阿德莱德', nameEn: 'Adelaide', region: '南澳大利亚', regionEn: 'South Australia' },
-    availability: 'available',
-    instantConfirmation: true,
-    freeCancellation: true,
-    supplierId: 'sup-4',
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  },
-];
-
-// Mock data - Categories
-const categories: ProductCategory[] = [
+// Default categories (overridden by API data when available)
+const defaultCategories: ProductCategory[] = [
   { id: '1', name: '野生动物', nameEn: 'Wildlife', icon: '🦘' },
   { id: '2', name: '美食美酒', nameEn: 'Food & Wine', icon: '🍷' },
   { id: '3', name: '海滨休闲', nameEn: 'Beach & Coastal', icon: '🏖️' },
@@ -190,6 +81,49 @@ export const HomePage: React.FC<HomePageProps> = ({
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
   const [, setSearchKeyword] = useState('');
+  const [regions, setRegions] = useState<Region[]>(staticRegions);
+  const [categories, setCategories] = useState<ProductCategory[]>(defaultCategories);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  // Fetch regions from API
+  useEffect(() => {
+    regionService.getAll().then((apiRegions) => {
+      if (apiRegions.length > 0) {
+        setRegions(apiRegions);
+      }
+    }).catch(() => {
+      // Fallback to static data on error
+    });
+  }, []);
+
+  // Fetch categories from API
+  useEffect(() => {
+    regionService.getCategories().then((apiCategories) => {
+      if (apiCategories.length > 0) {
+        setCategories(apiCategories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          nameEn: c.nameEn,
+          icon: c.icon,
+        })));
+      }
+    }).catch(() => {
+      // Fallback to static data on error
+    });
+  }, []);
+
+  // Fetch featured products from API
+  useEffect(() => {
+    setProductsLoading(true);
+    productService.featured().then((apiProducts) => {
+      setFeaturedProducts(apiProducts.map(transformApiProduct));
+    }).catch(() => {
+      // Fallback: empty list on error
+    }).finally(() => {
+      setProductsLoading(false);
+    });
+  }, []);
 
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword);
@@ -250,10 +184,12 @@ export const HomePage: React.FC<HomePageProps> = ({
           <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
         </div>
         <div className={styles.productsGrid}>
-          {loading ? (
+          {(loading || productsLoading) ? (
             Array.from({ length: 4 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))
+          ) : featuredProducts.length === 0 ? (
+            <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8' }}>{t('common.noData', 'No products yet')}</p>
           ) : (
             featuredProducts.map((product) => (
               <ProductCard

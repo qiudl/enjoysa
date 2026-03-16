@@ -7,66 +7,21 @@ import type { AdminUser, AdminRole, AdminStatus } from '../../../components/Admi
 import { AdminForm } from '../../../components/Admin/AdminForm';
 import type { AdminFormData } from '../../../components/Admin/AdminForm';
 import { RolePermissions } from '../../../components/Admin/RolePermissions';
+import { adminService, type ApiAdmin } from '../../../services/adminService';
 import styles from './AdminList.module.css';
 
-// Mock data for demonstration
-const mockAdmins: AdminUser[] = [
-  {
-    id: '1',
-    name: '系统管理员',
-    email: 'admin@enjoysa.com',
-    phone: '+61 400 000 001',
-    role: 'super_admin',
-    status: 'active',
-    permissions: ['all'],
-    createdAt: '2025-01-01T00:00:00Z',
-    lastLoginAt: '2026-02-02T09:00:00Z',
-  },
-  {
-    id: '2',
-    name: '张运营',
-    email: 'ops@enjoysa.com',
-    phone: '+86 138 0000 0002',
-    role: 'admin',
-    status: 'active',
-    permissions: ['dashboard', 'suppliers', 'products', 'orders', 'users', 'finance'],
-    createdAt: '2025-06-15T10:30:00Z',
-    lastLoginAt: '2026-02-01T14:20:00Z',
-  },
-  {
-    id: '3',
-    name: 'Sarah Manager',
-    email: 'sarah@enjoysa.com',
-    phone: '+61 412 000 003',
-    role: 'operator',
-    status: 'active',
-    permissions: ['dashboard', 'products', 'orders'],
-    createdAt: '2025-09-01T08:00:00Z',
-    lastLoginAt: '2026-02-02T08:15:00Z',
-  },
-  {
-    id: '4',
-    name: '李审核',
-    email: 'reviewer@enjoysa.com',
-    phone: '+86 139 0000 0004',
-    role: 'viewer',
-    status: 'inactive',
-    permissions: ['dashboard', 'products'],
-    createdAt: '2025-11-20T15:45:00Z',
-    lastLoginAt: '2025-12-15T10:30:00Z',
-  },
-  {
-    id: '5',
-    name: 'Mike Chen',
-    email: 'mike@enjoysa.com',
-    phone: '+61 423 000 005',
-    role: 'operator',
-    status: 'suspended',
-    permissions: ['dashboard', 'orders'],
-    createdAt: '2025-08-10T11:00:00Z',
-    lastLoginAt: '2025-10-20T16:00:00Z',
-  },
-];
+function transformAdmin(a: ApiAdmin): AdminUser {
+  return {
+    id: String(a.id),
+    name: a.name,
+    email: a.email,
+    role: (a.role || 'admin') as AdminUser['role'],
+    status: (a.status || 'active') as AdminStatus,
+    permissions: a.role === 'super_admin' ? ['all'] : ['dashboard'],
+    createdAt: a.created_at,
+    lastLoginAt: a.last_login_at,
+  };
+}
 
 type TabKey = 'list' | 'roles';
 type FilterTab = 'all' | 'active' | 'inactive' | 'suspended';
@@ -90,8 +45,10 @@ export const AdminList: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setAdmins(mockAdmins);
+    try {
+      const result = await adminService.listAdmins({ page: 1, page_size: 50 });
+      setAdmins((result.items || []).map(transformAdmin));
+    } catch { /* ignore */ }
     setLoading(false);
   };
 
@@ -151,9 +108,9 @@ export const AdminList: React.FC = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = (data: AdminFormData) => {
+  const handleFormSubmit = async (data: AdminFormData) => {
     if (editingAdmin) {
-      // Update existing admin
+      // Update existing admin (local only for now — backend lacks update endpoint)
       setAdmins((prev) =>
         prev.map((a) =>
           a.id === editingAdmin.id
@@ -162,13 +119,16 @@ export const AdminList: React.FC = () => {
         )
       );
     } else {
-      // Create new admin
-      const newAdmin: AdminUser = {
-        id: String(Date.now()),
-        ...data,
-        createdAt: new Date().toISOString(),
-      };
-      setAdmins((prev) => [newAdmin, ...prev]);
+      // Create new admin via API
+      try {
+        const created = await adminService.createAdmin({
+          email: data.email,
+          password: 'Admin123!', // default password, admin should change it
+          name: data.name,
+          role: data.role,
+        });
+        setAdmins((prev) => [transformAdmin(created), ...prev]);
+      } catch { /* ignore */ }
     }
     setFormOpen(false);
     setEditingAdmin(null);

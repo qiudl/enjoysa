@@ -2,125 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dashboard } from '../../../components/Admin/Dashboard';
 import type { DashboardStats, RecentOrder, TopProduct } from '../../../components/Admin/Dashboard';
+import { get } from '../../../services/api';
 
-// Mock data for demonstration
-const mockStats: DashboardStats = {
-  totalUsers: 3256,
-  newUsersToday: 12,
-  userGrowth: 8.5,
-  totalOrders: 1256,
-  ordersToday: 23,
-  orderGrowth: 12.3,
-  revenue: 256800,
-  revenueToday: 8560,
-  revenueGrowth: 15.2,
-  totalProducts: 186,
-  activeProducts: 142,
-  productGrowth: 5.8,
+// 后端 admin dashboard 响应
+interface AdminStatsResponse {
+  users: number;
+  suppliers: number;
+  products: number;
+  orders: number;
+  total_revenue: number;
+  pending_suppliers: number;
+  pending_products: number;
+}
+
+// 后端订单
+interface AdminOrder {
+  id: number;
+  order_no: string;
+  product_name: string;
+  user_name: string;
+  contact_name: string;
+  total_price: number;
+  status: string;
+  created_at: string;
+}
+
+// 后端订单列表分页
+interface AdminOrderList {
+  items: AdminOrder[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+const defaultStats: DashboardStats = {
+  totalUsers: 0,
+  newUsersToday: 0,
+  userGrowth: 0,
+  totalOrders: 0,
+  ordersToday: 0,
+  orderGrowth: 0,
+  revenue: 0,
+  revenueToday: 0,
+  revenueGrowth: 0,
+  totalProducts: 0,
+  activeProducts: 0,
+  productGrowth: 0,
 };
-
-const mockRecentOrders: RecentOrder[] = [
-  {
-    id: '1',
-    orderNo: 'ORD202602020001',
-    productName: '袋鼠岛一日游',
-    productNameEn: 'Kangaroo Island Day Tour',
-    customerName: '张三',
-    amount: 598,
-    status: 'pending',
-    createdAt: '2026-02-02T10:30:00Z',
-  },
-  {
-    id: '2',
-    orderNo: 'ORD202602020002',
-    productName: '巴罗萨谷品酒之旅',
-    productNameEn: 'Barossa Valley Wine Tour',
-    customerName: 'John Smith',
-    amount: 756,
-    status: 'confirmed',
-    createdAt: '2026-02-02T09:15:00Z',
-  },
-  {
-    id: '3',
-    orderNo: 'ORD202602010003',
-    productName: '阿德莱德城市观光',
-    productNameEn: 'Adelaide City Tour',
-    customerName: '李四',
-    amount: 267,
-    status: 'completed',
-    createdAt: '2026-02-01T14:20:00Z',
-  },
-  {
-    id: '4',
-    orderNo: 'ORD202602010004',
-    productName: '克莱兰德野生动物园门票',
-    productNameEn: 'Cleland Wildlife Park Ticket',
-    customerName: 'Sarah Johnson',
-    amount: 175,
-    status: 'completed',
-    createdAt: '2026-02-01T11:45:00Z',
-  },
-  {
-    id: '5',
-    orderNo: 'ORD202601310005',
-    productName: '阿德莱德山一日游',
-    productNameEn: 'Adelaide Hills Day Tour',
-    customerName: '王五',
-    amount: 389,
-    status: 'cancelled',
-    createdAt: '2026-01-31T16:30:00Z',
-  },
-];
-
-const mockTopProducts: TopProduct[] = [
-  {
-    id: '1',
-    name: '袋鼠岛两日游',
-    nameEn: 'Kangaroo Island 2-Day Tour',
-    sales: 156,
-    revenue: 93400,
-    rating: 4.9,
-  },
-  {
-    id: '2',
-    name: '巴罗萨谷品酒之旅',
-    nameEn: 'Barossa Valley Wine Tour',
-    sales: 128,
-    revenue: 48640,
-    rating: 4.8,
-  },
-  {
-    id: '3',
-    name: '袋鼠岛一日游',
-    nameEn: 'Kangaroo Island Day Tour',
-    sales: 98,
-    revenue: 29400,
-    rating: 4.7,
-  },
-  {
-    id: '4',
-    name: '阿德莱德城市观光',
-    nameEn: 'Adelaide City Tour',
-    sales: 86,
-    revenue: 12900,
-    rating: 4.6,
-  },
-  {
-    id: '5',
-    name: '克莱兰德野生动物园门票',
-    nameEn: 'Cleland Wildlife Park Ticket',
-    sales: 72,
-    revenue: 5040,
-    rating: 4.5,
-  },
-];
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>(mockStats);
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topProducts] = useState<TopProduct[]>([]);
 
   useEffect(() => {
     loadData();
@@ -128,12 +64,44 @@ export const DashboardPage: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setStats(mockStats);
-    setRecentOrders(mockRecentOrders);
-    setTopProducts(mockTopProducts);
-    setLoading(false);
+    try {
+      const [apiStats, orderList] = await Promise.all([
+        get<AdminStatsResponse>('/admin/dashboard/stats', 'admin'),
+        get<AdminOrderList>('/admin/orders?page=1&page_size=5', 'admin'),
+      ]);
+
+      setStats({
+        totalUsers: apiStats.users,
+        newUsersToday: 0,
+        userGrowth: 0,
+        totalOrders: apiStats.orders,
+        ordersToday: 0,
+        orderGrowth: 0,
+        revenue: apiStats.total_revenue,
+        revenueToday: 0,
+        revenueGrowth: 0,
+        totalProducts: apiStats.products,
+        activeProducts: apiStats.products - apiStats.pending_products,
+        productGrowth: 0,
+      });
+
+      setRecentOrders(
+        (orderList.items || []).map((o) => ({
+          id: String(o.id),
+          orderNo: o.order_no,
+          productName: o.product_name,
+          productNameEn: o.product_name,
+          customerName: o.contact_name || o.user_name,
+          amount: o.total_price,
+          status: o.status as RecentOrder['status'],
+          createdAt: o.created_at,
+        })),
+      );
+    } catch {
+      // Fallback: keep defaults
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleViewOrder = (order: RecentOrder) => {

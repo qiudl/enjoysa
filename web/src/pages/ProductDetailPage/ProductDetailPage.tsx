@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -6,7 +6,8 @@ import {
   Button,
   Loading,
 } from '../../components/Common';
-import type { Product, Destination, ProductCategory } from '../../types';
+import type { Product} from '../../types';
+import { productService, transformApiProduct } from '../../services/productService';
 import styles from './ProductDetailPage.module.css';
 
 export interface ProductDetailPageProps {
@@ -34,79 +35,13 @@ export interface ProductDetailPageProps {
   onAddToCart?: (product: Product, selectedDate?: string, selectedTime?: string) => void;
 }
 
-// Mock destination and category
-const mockDestination: Destination = {
-  id: 'kangaroo-island',
-  name: '袋鼠岛',
-  nameEn: 'Kangaroo Island',
-  region: '南澳大利亚',
-  regionEn: 'South Australia',
-};
-
-const mockCategory: ProductCategory = {
-  id: 'day-tour',
-  name: '一日游',
-  nameEn: 'Day Tours',
-};
-
-// Mock product data
-const mockProduct: Product = {
-  id: '1',
-  title: '袋鼠岛一日游 - 野生动物探索之旅',
-  titleEn: 'Kangaroo Island Day Tour - Wildlife Discovery',
-  description: '探索南澳最著名的野生动物天堂，近距离观赏袋鼠、考拉、海豹等珍稀动物。',
-  images: [
-    'https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=800',
-    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800',
-    'https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=800',
-  ],
-  price: 389,
-  originalPrice: 459,
-  currency: 'CNY',
-  rating: 4.8,
-  reviewCount: 126,
-  location: '阿德莱德出发',
-  locationEn: 'Depart from Adelaide',
-  duration: '约12小时',
-  durationEn: 'Approx. 12 hours',
-  highlights: [
-    '近距离观赏野生袋鼠和考拉',
-    '海豹湾与海豹亲密接触',
-    '神奇岩石打卡拍照',
-    '品尝当地特色午餐',
-    '专业中文导游全程讲解',
-  ],
-  inclusions: [
-    '阿德莱德往返接送',
-    '渡轮船票',
-    '景点门票',
-    '午餐',
-    '中文导游服务',
-  ],
-  exclusions: [
-    '个人消费',
-    '旅游保险',
-    '酒店住宿',
-  ],
-  tags: ['hot', 'recommended'],
-  category: mockCategory,
-  destination: mockDestination,
-  availability: 'available',
-  instantConfirmation: true,
-  freeCancellation: true,
-  meetingPoint: '阿德莱德市中心指定酒店',
-  supplierId: 'sup-1',
-  createdAt: '2025-01-01',
-  updatedAt: '2025-01-01',
-};
-
-
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   language,
   isLoggedIn = false,
   userName,
   cartCount = 0,
-  loading = false,
+  productId,
+  loading: externalLoading = false,
   onLoginClick,
   onRegisterClick,
   onNavClick,
@@ -118,7 +53,42 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [selectedDate, setSelectedDate] = useState('');
   const [quantity, setQuantity] = useState(2);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const product = mockProduct;
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!productId) return;
+    setLoading(true);
+    productService.getById(Number(productId))
+      .then((apiProduct) => {
+        setProduct(transformApiProduct(apiProduct));
+      })
+      .catch(() => {
+        // product not found
+      })
+      .finally(() => setLoading(false));
+  }, [productId]);
+
+  const isLoading = loading || externalLoading || !product;
+
+  if (isLoading) {
+    return (
+      <div className={styles.page}>
+        <Header
+          isLoggedIn={isLoggedIn}
+          userName={userName}
+          cartCount={cartCount}
+          onLoginClick={onLoginClick}
+          onRegisterClick={onRegisterClick}
+          onNavClick={onNavClick}
+        />
+        <div className={styles.loadingContainer}>
+          <Loading size="lg" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const title = currentLang === 'en' && product.titleEn ? product.titleEn : product.title;
   const location = currentLang === 'en' && product.locationEn ? product.locationEn : product.location;
@@ -160,25 +130,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   };
 
   const availableDates = getAvailableDates();
-
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <Header
-          isLoggedIn={isLoggedIn}
-          userName={userName}
-          cartCount={cartCount}
-          onLoginClick={onLoginClick}
-          onRegisterClick={onRegisterClick}
-          onNavClick={onNavClick}
-        />
-        <div className={styles.loadingContainer}>
-          <Loading size="lg" />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className={styles.page}>

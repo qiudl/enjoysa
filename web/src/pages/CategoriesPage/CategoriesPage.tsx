@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -6,6 +6,7 @@ import {
 } from '../../components/Common';
 import { CategoryCard } from '../../components/Category';
 import type { ProductCategory } from '../../types';
+import { regionService } from '../../services/regionService';
 import styles from './CategoriesPage.module.css';
 
 export interface CategoriesPageProps {
@@ -29,29 +30,6 @@ export interface CategoriesPageProps {
   onSearch?: (keyword: string) => void;
 }
 
-// Mock categories data
-const categories: ProductCategory[] = [
-  { id: '1', name: '野生动物', nameEn: 'Wildlife', icon: '🦘' },
-  { id: '2', name: '美食美酒', nameEn: 'Food & Wine', icon: '🍷' },
-  { id: '3', name: '海滨休闲', nameEn: 'Beach & Coastal', icon: '🏖️' },
-  { id: '4', name: '自驾路线', nameEn: 'Self-Drive', icon: '🚗' },
-  { id: '5', name: '亲子活动', nameEn: 'Family Fun', icon: '👨‍👩‍👧‍👦' },
-  { id: '6', name: '文化体验', nameEn: 'Culture', icon: '🎭' },
-  { id: '7', name: '一日游', nameEn: 'Day Tours', icon: '📅' },
-  { id: '8', name: '多日游', nameEn: 'Multi-day Tours', icon: '🗺️' },
-  { id: '9', name: '户外探险', nameEn: 'Adventure', icon: '🏔️' },
-  { id: '10', name: '水上活动', nameEn: 'Water Activities', icon: '🚤' },
-  { id: '11', name: '摄影之旅', nameEn: 'Photography', icon: '📷' },
-  { id: '12', name: '酒庄之旅', nameEn: 'Wine Tours', icon: '🍇' },
-];
-
-// Product count by category
-const categoryProductCounts: Record<string, number> = {
-  '1': 35, '2': 28, '3': 22, '4': 18, '5': 25, '6': 15,
-  '7': 42, '8': 12, '9': 20, '10': 16, '11': 8, '12': 24,
-};
-
-
 export const CategoriesPage: React.FC<CategoriesPageProps> = ({
   isLoggedIn = false,
   userName,
@@ -65,6 +43,18 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+
+  useEffect(() => {
+    regionService.getCategories().then((cats) => {
+      setCategories(cats.map((c) => ({
+        id: c.id,
+        name: c.name,
+        nameEn: c.nameEn,
+        icon: c.icon,
+      })));
+    }).catch(() => {});
+  }, []);
 
   // Split categories: first 6 are popular, rest are more
   const popularCategories = categories.slice(0, 6);
@@ -103,7 +93,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  productCount={categoryProductCounts[category.id]}
+                  productCount={0}
                   icon={category.icon}
                   language={currentLang}
                   onClick={onCategoryClick}
@@ -120,7 +110,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  productCount={categoryProductCounts[category.id]}
+                  productCount={0}
                   icon={category.icon}
                   language={currentLang}
                   onClick={onCategoryClick}

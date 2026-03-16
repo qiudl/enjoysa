@@ -1,2 +1,10 @@
+export * from './api';
+export * from './authService';
+export * from './regionService';
+export { default as regionService } from './regionService';
 export * from './orderService';
 export { default as orderService } from './orderService';
+export * from './productService';
+export { default as productService } from './productService';
+export * from './adminService';
+export { default as adminService } from './adminService';

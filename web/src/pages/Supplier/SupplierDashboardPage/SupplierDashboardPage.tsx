@@ -1,78 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button } from '../../../components/Common';
+import { get } from '../../../services/api';
+import { listSupplierOrders, type Order } from '../../../services/orderService';
 import styles from './SupplierDashboardPage.module.css';
+
+// 后端 dashboard 响应
+interface DashboardData {
+  order_stats: {
+    total: number;
+    pending: number;
+    paid: number;
+    accepted: number;
+    completed: number;
+    cancelled: number;
+    total_amount: number;
+  };
+  products: {
+    total: number;
+    approved: number;
+    pending: number;
+  };
+}
 
 export interface SupplierDashboardPageProps {
   /** 供应商名称 */
   supplierName?: string;
   /** 供应商类型 */
   supplierType?: 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental';
-  /** 待处理订单数 */
-  pendingOrders?: number;
-  /** 今日订单数 */
-  todayOrders?: number;
-  /** 本月销售额 */
-  monthSales?: number;
-  /** 待结算金额 */
-  pendingSettlement?: number;
-  /** 产品数量 */
-  productCount?: number;
-  /** 上架产品数 */
-  activeProducts?: number;
   /** 导航到指定路径 */
   onNavigate?: (path: string) => void;
 }
 
-// Mock recent orders
-const mockRecentOrders = [
-  {
-    id: 'ORD-20260130-0001',
-    product: '袋鼠岛一日游',
-    productEn: 'Kangaroo Island Day Tour',
-    customer: '张三',
-    amount: 778,
-    status: 'pending',
-    date: '2026-01-30',
-  },
-  {
-    id: 'ORD-20260130-0002',
-    product: '巴罗萨谷酒庄之旅',
-    productEn: 'Barossa Valley Winery Tour',
-    customer: '李四',
-    amount: 1196,
-    status: 'confirmed',
-    date: '2026-01-30',
-  },
-  {
-    id: 'ORD-20260129-0003',
-    product: '阿德莱德市区观光',
-    productEn: 'Adelaide City Tour',
-    customer: 'John Doe',
-    amount: 299,
-    status: 'completed',
-    date: '2026-01-29',
-  },
-];
-
 export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
-  supplierName = '祥龙旅行社',
+  supplierName = '供应商',
   supplierType = 'travel_agency',
-  pendingOrders = 5,
-  todayOrders = 12,
-  monthSales = 28650,
-  pendingSettlement = 15800,
-  productCount = 24,
-  activeProducts = 18,
   onNavigate,
 }) => {
   const { t } = useTranslation();
+  const [dashData, setDashData] = useState<DashboardData | null>(null);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [dash, orderResult] = await Promise.all([
+          get<DashboardData>('/supplier/dashboard', 'supplier'),
+          listSupplierOrders({ page: 1, page_size: 5 }),
+        ]);
+        setDashData(dash);
+        setRecentOrders(orderResult.orders || []);
+      } catch {
+        // Fallback: keep defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const pendingOrders = dashData?.order_stats.pending ?? 0;
+  const totalAmount = dashData?.order_stats.total_amount ?? 0;
+  const totalOrders = dashData?.order_stats.total ?? 0;
+  const productCount = dashData?.products.total ?? 0;
+  const activeProducts = dashData?.products.approved ?? 0;
 
   const stats = [
     { key: 'pending', label: t('supplier.dashboard.pendingOrders'), value: pendingOrders, icon: '📋', color: '#f59e0b' },
-    { key: 'today', label: t('supplier.dashboard.todayOrders'), value: todayOrders, icon: '📦', color: '#3b82f6' },
-    { key: 'sales', label: t('supplier.dashboard.monthSales'), value: `¥${monthSales.toLocaleString()}`, icon: '💰', color: '#10b981' },
-    { key: 'settlement', label: t('supplier.dashboard.pendingSettlement'), value: `¥${pendingSettlement.toLocaleString()}`, icon: '🏦', color: '#8b5cf6' },
+    { key: 'today', label: t('supplier.dashboard.todayOrders'), value: totalOrders, icon: '📦', color: '#3b82f6' },
+    { key: 'sales', label: t('supplier.dashboard.monthSales'), value: `$${totalAmount.toLocaleString()}`, icon: '💰', color: '#10b981' },
+    { key: 'settlement', label: t('supplier.dashboard.pendingSettlement'), value: `$${0}`, icon: '🏦', color: '#8b5cf6' },
   ];
 
   const quickActions = [
@@ -167,16 +165,20 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
                   <span>{t('supplier.dashboard.status')}</span>
                   <span>{t('supplier.dashboard.action')}</span>
                 </div>
-                {mockRecentOrders.map((order) => {
+                {loading ? (
+                  <div className={styles.tableRow}><span>Loading...</span></div>
+                ) : recentOrders.length === 0 ? (
+                  <div className={styles.tableRow}><span>{t('common.noData', 'No data')}</span></div>
+                ) : recentOrders.map((order) => {
                   const statusStyle = getStatusStyle(order.status);
                   return (
                     <div key={order.id} className={styles.tableRow}>
-                      <span className={styles.orderId}>{order.id}</span>
+                      <span className={styles.orderId}>{order.order_no}</span>
                       <span className={styles.productName}>
-                        {order.product}
+                        {order.product_name}
                       </span>
-                      <span>{order.customer}</span>
-                      <span className={styles.amount}>¥{order.amount}</span>
+                      <span>{order.contact_name}</span>
+                      <span className={styles.amount}>${order.total_price}</span>
                       <span
                         className={styles.status}
                         style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}

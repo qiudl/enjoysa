@@ -7,78 +7,30 @@ import type { UserStatsData } from '../../../components/Admin/UserStats';
 import { UserTable } from '../../../components/Admin/UserTable';
 import type { UserData, UserStatus } from '../../../components/Admin/UserTable';
 import { UserDetail } from '../../../components/Admin/UserDetail';
+import { adminService, type ApiUser } from '../../../services/adminService';
 import styles from './UserList.module.css';
 
-// Mock data for demonstration
-const mockUsers: UserData[] = [
-  {
-    id: '1',
-    name: '张三',
-    email: 'zhang@example.com',
-    phone: '+86 138 0000 0001',
-    avatar: '',
-    status: 'active',
-    orderCount: 12,
-    totalSpent: 2580,
-    createdAt: '2025-06-15T10:30:00Z',
-    lastLoginAt: '2026-02-01T14:20:00Z',
-  },
-  {
-    id: '2',
-    name: 'John Smith',
-    email: 'john@example.com',
-    phone: '+61 412 000 002',
-    avatar: '',
-    status: 'active',
-    orderCount: 8,
-    totalSpent: 1890,
-    createdAt: '2025-08-20T09:00:00Z',
-    lastLoginAt: '2026-02-02T08:15:00Z',
-  },
-  {
-    id: '3',
-    name: '李四',
-    email: 'li@example.com',
-    phone: '+86 139 0000 0003',
-    avatar: '',
-    status: 'inactive',
-    orderCount: 3,
-    totalSpent: 456,
-    createdAt: '2025-10-05T11:45:00Z',
-    lastLoginAt: '2025-12-01T16:30:00Z',
-  },
-  {
-    id: '4',
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '+61 423 000 004',
-    avatar: '',
-    status: 'banned',
+function transformUser(u: ApiUser): UserData {
+  return {
+    id: String(u.id),
+    name: u.name,
+    email: u.email,
+    phone: u.phone,
+    avatar: u.avatar,
+    status: (u.status || 'active') as UserStatus,
     orderCount: 0,
     totalSpent: 0,
-    createdAt: '2025-11-10T08:00:00Z',
-    lastLoginAt: '2025-11-15T09:00:00Z',
-  },
-  {
-    id: '5',
-    name: '王五',
-    email: 'wang@example.com',
-    phone: '+86 137 0000 0005',
-    avatar: '',
-    status: 'active',
-    orderCount: 25,
-    totalSpent: 5680,
-    createdAt: '2025-03-01T15:20:00Z',
-    lastLoginAt: '2026-02-02T10:45:00Z',
-  },
-];
+    createdAt: u.created_at,
+    lastLoginAt: u.updated_at,
+  };
+}
 
-const mockStats: UserStatsData = {
-  total: 3256,
-  active: 2890,
-  inactive: 354,
-  newToday: 12,
-  newThisMonth: 156,
+const defaultStats: UserStatsData = {
+  total: 0,
+  active: 0,
+  inactive: 0,
+  newToday: 0,
+  newThisMonth: 0,
 };
 
 type TabKey = 'all' | 'active' | 'inactive' | 'banned';
@@ -87,7 +39,7 @@ export const UserList: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
-  const [stats, setStats] = useState<UserStatsData>(mockStats);
+  const [stats, setStats] = useState<UserStatsData>(defaultStats);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -100,11 +52,18 @@ export const UserList: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setUsers(mockUsers);
-    setStats(mockStats);
-    setLoading(false);
+    try {
+      const result = await adminService.listUsers({ page: 1, page_size: 50 });
+      const items = (result.items || []).map(transformUser);
+      setUsers(items);
+      const active = items.filter((u) => u.status === 'active').length;
+      const inactive = items.filter((u) => u.status === 'inactive').length;
+      setStats({ total: result.total, active, inactive, newToday: 0, newThisMonth: 0 });
+    } catch {
+      // fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [

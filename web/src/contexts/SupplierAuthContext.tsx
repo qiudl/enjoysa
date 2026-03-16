@@ -1,15 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { supplierAuth, isTokenPresent, type SupplierUserInfo, type SupplierInfo } from '../services/authService';
 
-export interface SupplierInfo {
-  id: string;
-  name: string;
-  email: string;
-  type: 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental';
-  status: 'pending' | 'approved' | 'suspended';
-}
+export type { SupplierInfo };
 
 interface SupplierAuthContextType {
-  supplier: SupplierInfo | null;
+  supplier: SupplierUserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
@@ -21,51 +16,49 @@ const SupplierAuthContext = createContext<SupplierAuthContextType | undefined>(u
 const SUPPLIER_STORAGE_KEY = 'enjoysa_supplier';
 
 export const SupplierAuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [supplier, setSupplier] = useState<SupplierInfo | null>(null);
+  const [supplier, setSupplier] = useState<SupplierUserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on init
+  // On init, check for existing token and load profile
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(SUPPLIER_STORAGE_KEY);
-      if (saved) {
-        setSupplier(JSON.parse(saved));
+    const init = async () => {
+      // Try cached data first for instant display
+      try {
+        const saved = localStorage.getItem(SUPPLIER_STORAGE_KEY);
+        if (saved) {
+          setSupplier(JSON.parse(saved));
+        }
+      } catch {
+        // Ignore parse errors
       }
-    } catch {
-      // Ignore parse errors
-    }
-    setIsLoading(false);
-  }, []);
 
-  // Save to localStorage when supplier changes
-  useEffect(() => {
-    if (supplier) {
-      localStorage.setItem(SUPPLIER_STORAGE_KEY, JSON.stringify(supplier));
-    } else {
-      localStorage.removeItem(SUPPLIER_STORAGE_KEY);
-    }
-  }, [supplier]);
+      // If we have a token, validate by fetching profile
+      if (isTokenPresent('supplier')) {
+        try {
+          const profile = await supplierAuth.getProfile();
+          setSupplier(profile);
+          localStorage.setItem(SUPPLIER_STORAGE_KEY, JSON.stringify(profile));
+        } catch {
+          // Token expired or invalid, clear everything
+          supplierAuth.logout();
+          localStorage.removeItem(SUPPLIER_STORAGE_KEY);
+          setSupplier(null);
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    init();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // Simulating API call for demo
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Demo: Accept any login with valid format
-      if (email && password.length >= 6) {
-        const mockSupplier: SupplierInfo = {
-          id: 'supplier_001',
-          name: email.split('@')[0],
-          email,
-          type: 'travel_agency',
-          status: 'approved',
-        };
-        setSupplier(mockSupplier);
-        return true;
-      }
-      return false;
+      const supplierUser = await supplierAuth.login(email, password);
+      setSupplier(supplierUser);
+      localStorage.setItem(SUPPLIER_STORAGE_KEY, JSON.stringify(supplierUser));
+      return true;
     } catch {
       return false;
     } finally {
@@ -74,6 +67,8 @@ export const SupplierAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   const logout = () => {
+    supplierAuth.logout();
+    localStorage.removeItem(SUPPLIER_STORAGE_KEY);
     setSupplier(null);
   };
 
