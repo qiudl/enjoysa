@@ -5,6 +5,7 @@ import {
   Footer,
   Button,
 } from '../../components/Common';
+import { post } from '../../services/api';
 import styles from './ContactPage.module.css';
 
 export interface ContactPageProps {
@@ -72,12 +73,15 @@ export const ContactPage: React.FC<ContactPageProps> = ({
     e.preventDefault();
     setSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setSubmitting(false);
-    setSubmitted(true);
-    setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    try {
+      await post('/contact', formData);
+      setSubmitted(true);
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch {
+      // submission failed
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

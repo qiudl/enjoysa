@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button } from '../../../components/Common';
+import { get } from '../../../services/api';
+import type { PaginatedResponse } from '../../../services/api';
 import styles from './SupplierSettlementPage.module.css';
 
 export interface Settlement {
@@ -13,6 +15,41 @@ export interface Settlement {
   status: 'pending' | 'processing' | 'completed';
   createdAt: string;
   paidAt?: string;
+}
+
+interface ApiSettlement {
+  id: number;
+  settlement_no: string;
+  supplier_id: number;
+  supplier_name: string;
+  period_start: string;
+  period_end: string;
+  order_count: number;
+  gross_amount: number;
+  commission: number;
+  net_amount: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SettlementStats {
+  pending_amount: number;
+  settled_amount: number;
+  month_sales: number;
+}
+
+function transformSettlement(s: ApiSettlement): Settlement {
+  return {
+    id: s.settlement_no || String(s.id),
+    period: `${s.period_start} ~ ${s.period_end}`,
+    orderCount: s.order_count,
+    totalAmount: s.gross_amount,
+    commission: s.commission,
+    netAmount: s.net_amount,
+    status: (s.status || 'pending') as Settlement['status'],
+    createdAt: s.created_at?.split('T')[0] || '',
+  };
 }
 
 export interface SupplierSettlementPageProps {
@@ -28,52 +65,36 @@ export interface SupplierSettlementPageProps {
   onNavigate?: (path: string) => void;
 }
 
-// Mock settlements
-const mockSettlements: Settlement[] = [
-  {
-    id: 'STL-202601-001',
-    period: '2026年1月上半月',
-    orderCount: 45,
-    totalAmount: 35680,
-    commission: 3568,
-    netAmount: 32112,
-    status: 'pending',
-    createdAt: '2026-01-16',
-  },
-  {
-    id: 'STL-202512-002',
-    period: '2025年12月下半月',
-    orderCount: 62,
-    totalAmount: 48920,
-    commission: 4892,
-    netAmount: 44028,
-    status: 'completed',
-    createdAt: '2026-01-01',
-    paidAt: '2026-01-05',
-  },
-  {
-    id: 'STL-202512-001',
-    period: '2025年12月上半月',
-    orderCount: 38,
-    totalAmount: 29500,
-    commission: 2950,
-    netAmount: 26550,
-    status: 'completed',
-    createdAt: '2025-12-16',
-    paidAt: '2025-12-20',
-  },
-];
-
 export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
   supplierName = '祥龙旅行社',
-  pendingAmount = 32112,
-  settledAmount = 156800,
-  monthSales = 35680,
+  pendingAmount: defaultPending = 0,
+  settledAmount: defaultSettled = 0,
+  monthSales: defaultMonth = 0,
 }) => {
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'completed'>('all');
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [pendingAmount, setPendingAmount] = useState(defaultPending);
+  const [settledAmount, setSettledAmount] = useState(defaultSettled);
+  const [monthSales, setMonthSales] = useState(defaultMonth);
 
-  const filteredSettlements = mockSettlements.filter((s) => {
+  useEffect(() => {
+    get<PaginatedResponse<ApiSettlement>>('/supplier/settlements?page=1&page_size=50', 'supplier')
+      .then((result) => {
+        setSettlements(result.items.map(transformSettlement));
+      })
+      .catch(() => {});
+
+    get<SettlementStats>('/supplier/settlements/stats', 'supplier')
+      .then((stats) => {
+        setPendingAmount(stats.pending_amount || 0);
+        setSettledAmount(stats.settled_amount || 0);
+        setMonthSales(stats.month_sales || 0);
+      })
+      .catch(() => {});
+  }, []);
+
+  const filteredSettlements = settlements.filter((s) => {
     if (selectedTab === 'all') return true;
     if (selectedTab === 'pending') return s.status === 'pending' || s.status === 'processing';
     return s.status === 'completed';

@@ -7,6 +7,8 @@ import (
 	"enjoysa-backend/internal/auth"
 	authhandler "enjoysa-backend/internal/auth/handler"
 	authstore "enjoysa-backend/internal/auth/store"
+	contacthandler "enjoysa-backend/internal/contact/handler"
+	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
 	"enjoysa-backend/internal/core/middleware"
 	orderhandler "enjoysa-backend/internal/order/handler"
@@ -15,6 +17,10 @@ import (
 	paymenthandler "enjoysa-backend/internal/payment/handler"
 	producthandler "enjoysa-backend/internal/product/handler"
 	productstore "enjoysa-backend/internal/product/store"
+	settlementhandler "enjoysa-backend/internal/settlement/handler"
+	settlementstore "enjoysa-backend/internal/settlement/store"
+	settingshandler "enjoysa-backend/internal/settings/handler"
+	settingsstore "enjoysa-backend/internal/settings/store"
 	supplierhandler "enjoysa-backend/internal/supplier/handler"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 
@@ -57,6 +63,10 @@ func Setup(cfg Config) *gin.Engine {
 	scheduleStore := productstore.NewScheduleStore(cfg.DB)
 	oStore := orderstore.NewOrderStore(cfg.DB)
 
+	cStore := contactstore.NewContactStore(cfg.DB)
+	stStore := settingsstore.NewSettingsStore(cfg.DB)
+	slStore := settlementstore.NewSettlementStore(cfg.DB)
+
 	// === Payment gateway ===
 	var pg gateway.PaymentGateway
 	if cfg.StripeConfig.SecretKey != "" {
@@ -75,6 +85,9 @@ func Setup(cfg Config) *gin.Engine {
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, oStore, pStore, regionStore)
+	contactHandler := contacthandler.NewContactHandler(cStore)
+	settingsHandler := settingshandler.NewSettingsHandler(stStore)
+	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
 
 	// Auth middleware
 	userAuth := middleware.UserAuth(cfg.JWTService, cfg.DB)
@@ -146,6 +159,9 @@ func Setup(cfg Config) *gin.Engine {
 	v1.GET("/products/:id/schedules", publicProductHandler.GetSchedules)
 	v1.GET("/banners", adminHandler.ListBanners)
 
+	// Contact (public)
+	v1.POST("/contact", contactHandler.Submit)
+
 	// ========================================
 	// Supplier routes
 	// ========================================
@@ -188,6 +204,14 @@ func Setup(cfg Config) *gin.Engine {
 		supplierOrders.POST("/:id/reject", supplierOrderHandler.RejectOrder)
 		supplierOrders.POST("/:id/complete", supplierOrderHandler.CompleteOrder)
 		supplierOrders.GET("/:id/history", supplierOrderHandler.GetHistory)
+	}
+
+	// Supplier settlement routes
+	supplierSettlements := v1.Group("/supplier/settlements")
+	supplierSettlements.Use(supplierAuth)
+	{
+		supplierSettlements.GET("", settlementHandler.SupplierList)
+		supplierSettlements.GET("/stats", settlementHandler.SupplierStats)
 	}
 
 	// ========================================
@@ -239,6 +263,20 @@ func Setup(cfg Config) *gin.Engine {
 
 		// User management
 		adminGroup.GET("/users", adminHandler.ListUsers)
+
+		// Settlements / Finance
+		adminGroup.GET("/settlements", settlementHandler.AdminList)
+		adminGroup.GET("/settlements/stats", settlementHandler.AdminStats)
+		adminGroup.POST("/settlements/:id/process", settlementHandler.AdminProcess)
+
+		// Contact messages
+		adminGroup.GET("/contacts", contactHandler.List)
+		adminGroup.POST("/contacts/:id/read", contactHandler.MarkRead)
+
+		// Settings
+		adminGroup.GET("/settings", settingsHandler.GetAll)
+		adminGroup.GET("/settings/:group", settingsHandler.GetByGroup)
+		adminGroup.PUT("/settings/:group", settingsHandler.Update)
 
 		// Admin management (super_admin only)
 		superAdmin := adminGroup.Group("")

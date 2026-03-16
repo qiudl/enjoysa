@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Settings,
@@ -10,6 +10,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { get, put } from '../../../services/api';
 import styles from './SettingsPage.module.css';
 
 type TabKey = 'general' | 'payments' | 'notifications' | 'security';
@@ -106,18 +107,77 @@ export const SettingsPage: React.FC = () => {
     { key: 'security', label: t('admin.settings.security'), icon: <Shield size={18} /> },
   ];
 
+  useEffect(() => {
+    get<Record<string, Record<string, string>>>('/admin/settings', 'admin')
+      .then((data) => {
+        if (data.general) {
+          setGeneralSettings((prev) => ({ ...prev, ...data.general }));
+        }
+        if (data.payments) {
+          setPaymentSettings((prev) => ({
+            ...prev,
+            ...Object.fromEntries(
+              Object.entries(data.payments).map(([k, v]) => [
+                k,
+                v === 'true' ? true : v === 'false' ? false : isNaN(Number(v)) ? v : Number(v),
+              ])
+            ),
+          } as PaymentSettings));
+        }
+        if (data.notifications) {
+          setNotificationSettings((prev) => ({
+            ...prev,
+            ...Object.fromEntries(
+              Object.entries(data.notifications).map(([k, v]) => [k, v === 'true'])
+            ),
+          } as NotificationSettings));
+        }
+        if (data.security) {
+          setSecuritySettings((prev) => ({
+            ...prev,
+            ...Object.fromEntries(
+              Object.entries(data.security).map(([k, v]) => [
+                k,
+                v === 'true' ? true : v === 'false' ? false : isNaN(Number(v)) ? v : Number(v),
+              ])
+            ),
+          } as SecuritySettings));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const getCurrentSettings = (): Record<string, string> => {
+    const settingsMap: Record<TabKey, object> = {
+      general: generalSettings,
+      payments: paymentSettings,
+      notifications: notificationSettings,
+      security: securitySettings,
+    };
+    const current = settingsMap[activeTab];
+    return Object.fromEntries(
+      Object.entries(current).map(([k, v]) => [k, String(v)])
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    // Show success message
-    console.log('Settings saved');
+    try {
+      await put(`/admin/settings/${activeTab}`, { settings: getCurrentSettings() }, 'admin');
+    } catch {
+      // save failed
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
-    // Reset to default values
-    console.log('Settings reset');
+    // Reload from server
+    loadData();
+  };
+
+  const loadData = () => {
+    get<Record<string, Record<string, string>>>('/admin/settings', 'admin').catch(() => {});
   };
 
   const renderGeneralSettings = () => (
