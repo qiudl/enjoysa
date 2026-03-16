@@ -6,8 +6,9 @@ import {
   Button,
   Loading,
 } from '../../components/Common';
-import type { Product} from '../../types';
+import type { Product } from '../../types';
 import { productService, transformApiProduct } from '../../services/productService';
+import type { ApiProductSchedule } from '../../services/productService';
 import styles from './ProductDetailPage.module.css';
 
 export interface ProductDetailPageProps {
@@ -55,14 +56,20 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [schedules, setSchedules] = useState<ApiProductSchedule[]>([]);
 
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
-    productService.getById(Number(productId))
-      .then((apiProduct) => {
+    const numId = Number(productId);
+    Promise.all([
+      productService.getById(numId).then((apiProduct) => {
         setProduct(transformApiProduct(apiProduct));
-      })
+      }),
+      productService.getSchedules(numId).then((s) => {
+        setSchedules(s || []);
+      }).catch(() => {}),
+    ])
       .catch(() => {
         // product not found
       })
@@ -109,21 +116,28 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
-  // Generate next 7 days for date selection
+  // Generate next 7 days for date selection, using real schedule data when available
   const getAvailableDates = () => {
     const dates = [];
     const today = new Date();
+    const scheduleDates = new Set(schedules.map((s) => s.date));
     for (let i = 1; i <= 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      // Available if: no schedules exist yet (open booking) or schedule exists with remaining slots
+      const schedule = schedules.find((s) => s.date === dateStr);
+      const available = scheduleDates.size === 0
+        ? true
+        : schedule ? (schedule.total_slots - schedule.booked_slots > 0 && schedule.status === 'active') : false;
       dates.push({
-        value: date.toISOString().split('T')[0],
+        value: dateStr,
         label: date.toLocaleDateString(currentLang === 'zh' ? 'zh-CN' : 'en-US', {
           month: 'short',
           day: 'numeric',
           weekday: 'short',
         }),
-        available: i !== 3, // Mock: day 3 is sold out
+        available,
       });
     }
     return dates;
