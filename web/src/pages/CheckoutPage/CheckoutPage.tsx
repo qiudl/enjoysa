@@ -13,6 +13,7 @@ import {
 } from '../../components/Order';
 import type { Product, Destination, ProductCategory, ParticipantDetail, PaymentMethod } from '../../types';
 import { createOrder } from '../../services/orderService';
+import { post } from '../../services/api';
 import styles from './CheckoutPage.module.css';
 
 export interface CheckoutPageProps {
@@ -172,6 +173,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       });
 
       const orderId = order.order_no || String(order.id);
+      const orderNumericId = order.id;
 
       onSubmit?.({
         product,
@@ -179,6 +181,23 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         paymentMethod,
         travelDate,
       });
+
+      // Attempt Stripe checkout if payment gateway is available
+      if (paymentMethod === 'stripe' || paymentMethod === 'credit_card') {
+        try {
+          const checkoutResult = await post<{ session_id: string; checkout_url: string }>(
+            '/checkout/create-session',
+            { order_id: orderNumericId },
+            'user',
+          );
+          if (checkoutResult.checkout_url) {
+            window.location.href = checkoutResult.checkout_url;
+            return;
+          }
+        } catch {
+          // Stripe not configured — fall through to success page
+        }
+      }
 
       if (onOrderSuccess) {
         onOrderSuccess(orderId);

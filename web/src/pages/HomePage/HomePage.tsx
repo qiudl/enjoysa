@@ -12,8 +12,10 @@ import { ProductCard } from '../../components/Product';
 import { CategoryCard } from '../../components/Category';
 import type { Product, ProductCategory } from '../../types';
 import type { Region } from '../../data/types';
+import type { BannerSlide } from '../../components/Common/HeroBanner/HeroBanner';
 import { regions as staticRegions } from '../../data/regions';
-import { bannerSlides } from '../../data/bannerSlides';
+import { bannerSlides as staticBannerSlides } from '../../data/bannerSlides';
+import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import styles from './HomePage.module.css';
@@ -58,9 +60,29 @@ const defaultCategories: ProductCategory[] = [
   { id: '6', name: '文化体验', nameEn: 'Culture', icon: '🎭' },
 ];
 
-const categoryProductCounts: Record<string, number> = {
-  '1': 35, '2': 28, '3': 22, '4': 18, '5': 25, '6': 15,
-};
+interface ApiBanner {
+  id: number;
+  title_zh: string;
+  title_en: string;
+  subtitle_zh: string;
+  subtitle_en: string;
+  image: string;
+  link_url: string;
+  sort_order: number;
+  status: string;
+}
+
+function transformBanner(b: ApiBanner): BannerSlide {
+  return {
+    id: `banner-${b.id}`,
+    image: b.image,
+    title: b.title_zh,
+    titleEn: b.title_en,
+    tags: b.subtitle_zh ? b.subtitle_zh.split(',').map((s) => s.trim()) : [],
+    tagsEn: b.subtitle_en ? b.subtitle_en.split(',').map((s) => s.trim()) : [],
+    attractionId: b.link_url || '',
+  };
+}
 
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -83,8 +105,20 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [, setSearchKeyword] = useState('');
   const [regions, setRegions] = useState<Region[]>(staticRegions);
   const [categories, setCategories] = useState<ProductCategory[]>(defaultCategories);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>(staticBannerSlides);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+
+  // Fetch banners from API
+  useEffect(() => {
+    get<ApiBanner[]>('/banners').then((apiBanners) => {
+      if (apiBanners.length > 0) {
+        setBannerSlides(apiBanners.map(transformBanner));
+      }
+    }).catch(() => {
+      // Fallback to static banners
+    });
+  }, []);
 
   // Fetch regions from API
   useEffect(() => {
@@ -211,7 +245,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <CategoryCard
               key={cat.id}
               category={cat}
-              productCount={categoryProductCounts[cat.id]}
+              productCount={0}
               icon={cat.icon}
               language={currentLang}
               onClick={onCategoryClick}
