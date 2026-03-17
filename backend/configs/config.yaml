@@ -1,11 +1,11 @@
 server:
-  port: 8088
+  port: 6080
   mode: debug  # debug, release, test
   frontend_url: "http://localhost:5173"
 
 database:
   host: localhost
-  port: 5432
+  port: 6054
   user: donglinlai
   password: ""
   dbname: enjoysa

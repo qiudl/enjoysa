@@ -76,6 +76,14 @@ func Load(configPath string) (*Config, error) {
 	v.SetEnvPrefix("ENJOYSA")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	// Bind environment variables to nested config keys
+	_ = v.BindEnv("database.host", "ENJOYSA_DB_HOST")
+	_ = v.BindEnv("database.password", "ENJOYSA_DB_PASSWORD")
+	_ = v.BindEnv("jwt.secret", "ENJOYSA_JWT_SECRET")
+	_ = v.BindEnv("stripe.secret_key", "ENJOYSA_STRIPE_SECRET")
+	_ = v.BindEnv("stripe.webhook_secret", "ENJOYSA_STRIPE_WEBHOOK")
+	_ = v.BindEnv("server.frontend_url", "ENJOYSA_FRONTEND_URL")
+
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}

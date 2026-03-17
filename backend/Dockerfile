@@ -19,6 +19,6 @@ COPY configs/ configs/
 
 RUN mkdir -p uploads
 
-EXPOSE 8080
+EXPOSE 6080
 
 CMD ["./server", "-config", "configs/config.production.yaml"]

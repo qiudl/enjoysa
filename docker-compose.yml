@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enjoysa
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-enjoysa2026}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:6054:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ENJOYSA_DB_HOST=postgres
+      - ENJOYSA_DB_PASSWORD=${DB_PASSWORD:-enjoysa2026}
+      - ENJOYSA_JWT_SECRET=${JWT_SECRET:-enjoysa-prod-jwt-secret-2026}
+      - ENJOYSA_STRIPE_SECRET=${STRIPE_SECRET_KEY:-}
+      - ENJOYSA_STRIPE_WEBHOOK=${STRIPE_WEBHOOK_SECRET:-}
+    ports:
+      - "127.0.0.1:6080:6080"
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:
+  uploads:

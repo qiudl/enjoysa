@@ -1,13 +1,13 @@
 server:
-  port: 8080
+  port: 6080
   mode: release
   frontend_url: "http://43.134.28.147:6066"
 
 database:
-  host: localhost
+  host: postgres
   port: 5432
   user: postgres
-  password: postgres
+  password: enjoysa2026
   dbname: enjoysa
   sslmode: disable
   max_idle_conns: 10
@@ -18,7 +18,7 @@ log:
   format: json
 
 jwt:
-  secret: change-me-in-production
+  secret: enjoysa-prod-jwt-secret-2026
   access_expire: 24
   refresh_expire: 168
 
