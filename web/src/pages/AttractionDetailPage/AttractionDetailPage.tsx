@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Star,
@@ -9,11 +9,16 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  AlertTriangle,
   Info,
 } from 'lucide-react';
 import { Header, Footer } from '../../components/Common';
-import { getAttractionById, getRegionById } from '../../data';
+import { productService } from '../../services/productService';
+import type {
+  ApiProduct,
+  ApiProductHighlight,
+  ApiProductPackage,
+  ApiProductFAQ,
+} from '../../services/productService';
 import styles from './AttractionDetailPage.module.css';
 
 export interface AttractionDetailPageProps {
@@ -38,6 +43,17 @@ const tagLabels: Record<string, { zh: string; en: string }> = {
   bestseller: { zh: '畅销', en: 'Bestseller' },
 };
 
+function parseTags(tags: string | string[] | undefined): string[] {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags;
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
   attractionId,
   cartCount = 0,
@@ -51,13 +67,41 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith('zh');
 
-  const attraction = attractionId ? getAttractionById(attractionId) : undefined;
-  const region = attraction ? getRegionById(attraction.regionId) : undefined;
-
+  const [product, setProduct] = useState<ApiProduct | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  if (!attraction) {
+  useEffect(() => {
+    if (!attractionId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    productService
+      .getById(Number(attractionId))
+      .then((data) => setProduct(data))
+      .catch(() => setProduct(null))
+      .finally(() => setLoading(false));
+  }, [attractionId]);
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Header
+          cartCount={cartCount}
+          onLoginClick={onLoginClick}
+          onRegisterClick={onRegisterClick}
+          onNavClick={onNavClick}
+          onSearch={onSearch}
+        />
+        <div className={styles.loading}>{t('common.loading')}</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) {
     return (
       <div className={styles.page}>
         <Header
@@ -76,9 +120,20 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
     );
   }
 
-  const images = attraction.images;
-  const goNextImage = () => setCurrentImage((currentImage + 1) % images.length);
-  const goPrevImage = () => setCurrentImage((currentImage - 1 + images.length) % images.length);
+  const images = product.images?.map((img) => img.url) || [];
+  const highlights = product.highlights || [];
+  const packages = product.packages || [];
+  const faqs = product.faqs || [];
+  const tags = parseTags(product.tags);
+  const region = product.region;
+  const supplier = product.supplier;
+
+  const goNextImage = () => {
+    if (images.length > 0) setCurrentImage((currentImage + 1) % images.length);
+  };
+  const goPrevImage = () => {
+    if (images.length > 0) setCurrentImage((currentImage - 1 + images.length) % images.length);
+  };
 
   return (
     <div className={styles.page}>
@@ -96,14 +151,14 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
         <span>/</span>
         {region && (
           <>
-            <button onClick={() => onRegionClick?.(region.id)}>
-              {isZh ? region.name : region.nameEn}
+            <button onClick={() => onRegionClick?.(region.slug)}>
+              {isZh ? region.name_zh : region.name_en}
             </button>
             <span>/</span>
           </>
         )}
         <span className={styles.breadcrumbCurrent}>
-          {isZh ? attraction.name : attraction.nameEn}
+          {isZh ? product.name_zh : product.name_en}
         </span>
       </div>
 
@@ -111,154 +166,166 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
         {/* Left Column */}
         <div className={styles.mainCol}>
           {/* Image Gallery */}
-          <div className={styles.gallery}>
-            <div
-              className={styles.mainImage}
-              style={{ backgroundImage: `url(${images[currentImage]})` }}
-            >
-              {images.length > 1 && (
-                <>
-                  <button className={`${styles.galleryArrow} ${styles.galleryArrowLeft}`} onClick={goPrevImage}>
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button className={`${styles.galleryArrow} ${styles.galleryArrowRight}`} onClick={goNextImage}>
-                    <ChevronRight size={20} />
-                  </button>
-                </>
-              )}
-              <div className={styles.imageCounter}>
-                {currentImage + 1} / {images.length}
+          {images.length > 0 && (
+            <div className={styles.gallery}>
+              <div
+                className={styles.mainImage}
+                style={{ backgroundImage: `url(${images[currentImage]})` }}
+              >
+                {images.length > 1 && (
+                  <>
+                    <button className={`${styles.galleryArrow} ${styles.galleryArrowLeft}`} onClick={goPrevImage}>
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button className={`${styles.galleryArrow} ${styles.galleryArrowRight}`} onClick={goNextImage}>
+                      <ChevronRight size={20} />
+                    </button>
+                  </>
+                )}
+                <div className={styles.imageCounter}>
+                  {currentImage + 1} / {images.length}
+                </div>
               </div>
+              {images.length > 1 && (
+                <div className={styles.thumbnails}>
+                  {images.map((img, i) => (
+                    <div
+                      key={i}
+                      className={`${styles.thumb} ${i === currentImage ? styles.thumbActive : ''}`}
+                      style={{ backgroundImage: `url(${img})` }}
+                      onClick={() => setCurrentImage(i)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-            {images.length > 1 && (
-              <div className={styles.thumbnails}>
-                {images.map((img, i) => (
-                  <div
-                    key={i}
-                    className={`${styles.thumb} ${i === currentImage ? styles.thumbActive : ''}`}
-                    style={{ backgroundImage: `url(${img})` }}
-                    onClick={() => setCurrentImage(i)}
-                  />
+          )}
+
+          {/* Title & Meta */}
+          <div className={styles.titleSection}>
+            <h1 className={styles.title}>
+              {isZh ? product.name_zh : product.name_en}
+            </h1>
+            {(product.summary_zh || product.summary_en) && (
+              <p className={styles.subtitle}>
+                {isZh ? product.summary_zh : product.summary_en}
+              </p>
+            )}
+            <div className={styles.metaRow}>
+              <div className={styles.rating}>
+                <Star size={16} className={styles.starIcon} />
+                <span className={styles.ratingValue}>{product.rating}</span>
+                <span className={styles.reviewCount}>({product.review_count} {t('product.reviews')})</span>
+              </div>
+              {supplier && (
+                <span className={styles.supplier}>{supplier.name}</span>
+              )}
+            </div>
+            {tags.length > 0 && (
+              <div className={styles.tags}>
+                {tags.map((tag) => (
+                  <span key={tag} className={styles.tag}>
+                    {isZh ? tagLabels[tag]?.zh : tagLabels[tag]?.en}
+                  </span>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Title & Meta */}
-          <div className={styles.titleSection}>
-            <h1 className={styles.title}>
-              {isZh ? attraction.name : attraction.nameEn}
-            </h1>
-            <p className={styles.subtitle}>
-              {isZh ? attraction.subtitle : attraction.subtitleEn}
-            </p>
-            <div className={styles.metaRow}>
-              <div className={styles.rating}>
-                <Star size={16} className={styles.starIcon} />
-                <span className={styles.ratingValue}>{attraction.rating}</span>
-                <span className={styles.reviewCount}>({attraction.reviewCount} {t('product.reviews')})</span>
-              </div>
-              <span className={styles.supplier}>{attraction.supplierName}</span>
-            </div>
-            <div className={styles.tags}>
-              {attraction.tags.map((tag) => (
-                <span key={tag} className={styles.tag}>
-                  {isZh ? tagLabels[tag]?.zh : tagLabels[tag]?.en}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Module 1: Highlights */}
-          <section className={styles.moduleSection}>
-            <h2 className={styles.moduleTitle}>{t('product.highlights')}</h2>
-            <div className={styles.highlights}>
-              {attraction.highlights.map((h, i) => (
-                <div key={i} className={styles.highlightItem}>
-                  <CheckCircle size={18} className={styles.highlightIcon} />
-                  <div>
-                    <strong>{isZh ? h.title : h.titleEn}</strong>
-                    <p>{isZh ? h.description : h.descriptionEn}</p>
+          {/* Highlights */}
+          {highlights.length > 0 && (
+            <section className={styles.moduleSection}>
+              <h2 className={styles.moduleTitle}>{t('product.highlights')}</h2>
+              <div className={styles.highlights}>
+                {highlights.map((h: ApiProductHighlight) => (
+                  <div key={h.id} className={styles.highlightItem}>
+                    <CheckCircle size={18} className={styles.highlightIcon} />
+                    <div>
+                      <strong>{isZh ? h.title_zh : h.title_en}</strong>
+                      {(h.desc_zh || h.desc_en) && (
+                        <p>{isZh ? h.desc_zh : h.desc_en}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Module 2: Trip Details */}
-          <section className={styles.moduleSection}>
-            <h2 className={styles.moduleTitle}>
-              {isZh ? '行程信息' : 'Trip Details'}
-            </h2>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}>
-                <Clock size={16} />
-                <div>
-                  <span className={styles.detailLabel}>{t('product.duration')}</span>
-                  <span>{isZh ? attraction.duration : attraction.durationEn}</span>
-                </div>
-              </div>
-              <div className={styles.detailItem}>
-                <MapPin size={16} />
-                <div>
-                  <span className={styles.detailLabel}>{t('product.meetingPoint')}</span>
-                  <span>{isZh ? attraction.meetingPoint : attraction.meetingPointEn}</span>
-                </div>
-              </div>
-            </div>
-            <div className={styles.inclusions}>
-              <h3>{t('product.inclusions')}</h3>
-              <ul>
-                {(isZh ? attraction.inclusions : attraction.inclusionsEn).map((item, i) => (
-                  <li key={i}>
-                    <CheckCircle size={14} className={styles.inclusionIcon} />
-                    {item}
-                  </li>
                 ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* Module 3: Voucher & Directions */}
-          <section className={styles.moduleSection}>
-            <h2 className={styles.moduleTitle}>
-              {isZh ? '到达与凭证' : 'Getting There & Voucher'}
-            </h2>
-            <div className={styles.infoBlock}>
-              <Info size={16} className={styles.infoIcon} />
-              <div>
-                <h4>{isZh ? '电子凭证' : 'E-Voucher'}</h4>
-                <p>{isZh ? attraction.voucherInfo : attraction.voucherInfoEn}</p>
               </div>
-            </div>
-            <div className={styles.infoBlock}>
-              <MapPin size={16} className={styles.infoIcon} />
-              <div>
-                <h4>{isZh ? '如何到达' : 'How to Get There'}</h4>
-                <p>{isZh ? attraction.directions : attraction.directionsEn}</p>
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
-          {/* Module 4: FAQs */}
-          {attraction.faqs.length > 0 && (
+          {/* Trip Details */}
+          {(product.duration || product.address_zh || product.address_en) && (
+            <section className={styles.moduleSection}>
+              <h2 className={styles.moduleTitle}>
+                {isZh ? '行程信息' : 'Trip Details'}
+              </h2>
+              <div className={styles.detailGrid}>
+                {product.duration && (
+                  <div className={styles.detailItem}>
+                    <Clock size={16} />
+                    <div>
+                      <span className={styles.detailLabel}>{t('product.duration')}</span>
+                      <span>{product.duration}</span>
+                    </div>
+                  </div>
+                )}
+                {(product.address_zh || product.address_en) && (
+                  <div className={styles.detailItem}>
+                    <MapPin size={16} />
+                    <div>
+                      <span className={styles.detailLabel}>{t('product.meetingPoint')}</span>
+                      <span>{isZh ? product.address_zh : product.address_en}</span>
+                    </div>
+                  </div>
+                )}
+                {product.group_size && (
+                  <div className={styles.detailItem}>
+                    <Info size={16} />
+                    <div>
+                      <span className={styles.detailLabel}>{isZh ? '团组规模' : 'Group Size'}</span>
+                      <span>{product.group_size}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Description */}
+          {(product.description_zh || product.description_en) && (
+            <section className={styles.moduleSection}>
+              <h2 className={styles.moduleTitle}>
+                {isZh ? '详细介绍' : 'Description'}
+              </h2>
+              <div className={styles.descriptionContent}>
+                {(isZh ? product.description_zh : product.description_en)
+                  .split('\n')
+                  .filter(Boolean)
+                  .map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* FAQs */}
+          {faqs.length > 0 && (
             <section className={styles.moduleSection}>
               <h2 className={styles.moduleTitle}>
                 {isZh ? '常见问题' : 'FAQ'}
               </h2>
               <div className={styles.faqList}>
-                {attraction.faqs.map((faq, i) => (
-                  <div key={i} className={styles.faqItem}>
+                {faqs.map((faq: ApiProductFAQ, i: number) => (
+                  <div key={faq.id} className={styles.faqItem}>
                     <button
                       className={styles.faqQuestion}
                       onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
                     >
-                      <span>{isZh ? faq.question : faq.questionEn}</span>
+                      <span>{isZh ? faq.question_zh : faq.question_en}</span>
                       {expandedFaq === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </button>
                     {expandedFaq === i && (
                       <div className={styles.faqAnswer}>
-                        {isZh ? faq.answer : faq.answerEn}
+                        {isZh ? faq.answer_zh : faq.answer_en}
                       </div>
                     )}
                   </div>
@@ -266,40 +333,6 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
               </div>
             </section>
           )}
-
-          {/* Module 5: Important Info */}
-          <section className={styles.moduleSection}>
-            <h2 className={styles.moduleTitle}>
-              {isZh ? '用户须知' : 'Important Information'}
-            </h2>
-            {attraction.whatToBring.length > 0 && (
-              <div className={styles.infoBlock}>
-                <Info size={16} className={styles.infoIcon} />
-                <div>
-                  <h4>{isZh ? '请携带' : 'What to Bring'}</h4>
-                  <ul className={styles.bringList}>
-                    {(isZh ? attraction.whatToBring : attraction.whatToBringEn).map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-            <div className={styles.infoBlock}>
-              <AlertTriangle size={16} className={styles.warningIcon} />
-              <div>
-                <h4>{isZh ? '健康要求' : 'Health Requirements'}</h4>
-                <p>{isZh ? attraction.healthRestrictions : attraction.healthRestrictionsEn}</p>
-              </div>
-            </div>
-            <div className={styles.infoBlock}>
-              <Info size={16} className={styles.infoIcon} />
-              <div>
-                <h4>{isZh ? '取消政策' : 'Cancellation Policy'}</h4>
-                <p>{isZh ? attraction.cancellationPolicy : attraction.cancellationPolicyEn}</p>
-              </div>
-            </div>
-          </section>
         </div>
 
         {/* Right Column - Sticky Booking */}
@@ -307,23 +340,27 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
           <div className={styles.bookingCard}>
             <div className={styles.bookingPrice}>
               <span className={styles.priceLabel}>{isZh ? '起' : 'from'}</span>
-              <span className={styles.priceAmount}>A${attraction.priceFrom}</span>
+              <span className={styles.priceAmount}>A${product.price_from}</span>
               <span className={styles.pricePer}>{isZh ? '/人' : '/person'}</span>
             </div>
 
-            <div className={styles.packageList}>
-              {attraction.packages.map((pkg) => (
-                <div key={pkg.id} className={styles.packageItem}>
-                  <div className={styles.packageInfo}>
-                    <h4>{isZh ? pkg.name : pkg.nameEn}</h4>
-                    <p>{isZh ? pkg.description : pkg.descriptionEn}</p>
+            {packages.length > 0 && (
+              <div className={styles.packageList}>
+                {packages.map((pkg: ApiProductPackage) => (
+                  <div key={pkg.id} className={styles.packageItem}>
+                    <div className={styles.packageInfo}>
+                      <h4>{isZh ? pkg.name_zh : pkg.name_en}</h4>
+                      {(pkg.desc_zh || pkg.desc_en) && (
+                        <p>{isZh ? pkg.desc_zh : pkg.desc_en}</p>
+                      )}
+                    </div>
+                    <div className={styles.packagePrice}>
+                      A${pkg.price}
+                    </div>
                   </div>
-                  <div className={styles.packagePrice}>
-                    A${pkg.price}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <button className={styles.bookBtn}>
               {t('product.buyNow')}

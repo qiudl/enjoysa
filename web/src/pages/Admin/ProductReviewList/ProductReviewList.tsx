@@ -109,7 +109,7 @@ export const ProductReviewList: React.FC = () => {
 
   const handleReject = async (product: ProductReview, reason: string) => {
     try {
-      await adminService.rejectProduct(Number(product.id));
+      await adminService.rejectProduct(Number(product.id), reason);
       setProducts((prev) =>
         prev.map((p) =>
           p.id === product.id

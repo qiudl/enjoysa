@@ -21,6 +21,7 @@ import {
   SupplierDashboardPage,
   SupplierProductListPage,
   SupplierProductFormPage,
+  SupplierSchedulePage,
   SupplierOrderListPage,
   SupplierSettlementPage,
   SupplierLoginPage,
@@ -481,6 +482,21 @@ function SupplierProductEditPageWrapper() {
   );
 }
 
+// 包装组件：SupplierSchedulePage
+function SupplierSchedulePageWrapper() {
+  const { supplier } = useSupplierAuth();
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  return (
+    <SupplierSchedulePage
+      productId={id}
+      supplierName={supplier?.name || ''}
+      onNavigate={(path) => navigate(path)}
+    />
+  );
+}
+
 // 包装组件：SupplierOrderListPage
 function SupplierOrderListPageWrapper() {
   const { supplier } = useSupplierAuth();
@@ -702,6 +718,7 @@ function App() {
         <Route path="/supplier/products" element={<SupplierAuthGuard><SupplierProductListPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/new" element={<SupplierAuthGuard><SupplierProductNewPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/:id/edit" element={<SupplierAuthGuard><SupplierProductEditPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/products/:id/schedules" element={<SupplierAuthGuard><SupplierSchedulePageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/orders" element={<SupplierAuthGuard><SupplierOrderListPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
 

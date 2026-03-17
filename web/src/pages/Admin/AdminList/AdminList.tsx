@@ -88,19 +88,29 @@ export const AdminList: React.FC = () => {
     setFormOpen(true);
   };
 
-  const handleDelete = (admin: AdminUser) => {
+  const handleDelete = async (admin: AdminUser) => {
     if (confirm(isZh ? `确定要删除管理员 "${admin.name}" 吗？` : `Are you sure you want to delete admin "${admin.name}"?`)) {
-      setAdmins((prev) => prev.filter((a) => a.id !== admin.id));
+      try {
+        await adminService.deleteAdmin(Number(admin.id));
+        setAdmins((prev) => prev.filter((a) => a.id !== admin.id));
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Failed to delete admin');
+      }
     }
   };
 
-  const handleToggleStatus = (admin: AdminUser) => {
+  const handleToggleStatus = async (admin: AdminUser) => {
     const newStatus: AdminStatus = admin.status === 'active' ? 'suspended' : 'active';
-    setAdmins((prev) =>
-      prev.map((a) =>
-        a.id === admin.id ? { ...a, status: newStatus } : a
-      )
-    );
+    try {
+      await adminService.toggleAdminStatus(Number(admin.id), newStatus);
+      setAdmins((prev) =>
+        prev.map((a) =>
+          a.id === admin.id ? { ...a, status: newStatus } : a
+        )
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update status');
+    }
   };
 
   const handleAddAdmin = () => {
@@ -109,26 +119,36 @@ export const AdminList: React.FC = () => {
   };
 
   const handleFormSubmit = async (data: AdminFormData) => {
-    if (editingAdmin) {
-      // Update existing admin (local only for now — backend lacks update endpoint)
-      setAdmins((prev) =>
-        prev.map((a) =>
-          a.id === editingAdmin.id
-            ? { ...a, ...data }
-            : a
-        )
-      );
-    } else {
-      // Create new admin via API
-      try {
+    try {
+      if (editingAdmin) {
+        // Update existing admin via API
+        const updated = await adminService.updateAdmin(Number(editingAdmin.id), {
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          status: data.status,
+        });
+        setAdmins((prev) =>
+          prev.map((a) =>
+            a.id === editingAdmin.id ? transformAdmin(updated) : a
+          )
+        );
+        // If password was provided, reset it
+        if (data.password) {
+          await adminService.resetAdminPassword(Number(editingAdmin.id), data.password);
+        }
+      } else {
+        // Create new admin via API (password is required in form validation)
         const created = await adminService.createAdmin({
           email: data.email,
-          password: 'Admin123!', // default password, admin should change it
+          password: data.password || 'Admin123!',
           name: data.name,
           role: data.role,
         });
         setAdmins((prev) => [transformAdmin(created), ...prev]);
-      } catch { /* ignore */ }
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Operation failed');
     }
     setFormOpen(false);
     setEditingAdmin(null);

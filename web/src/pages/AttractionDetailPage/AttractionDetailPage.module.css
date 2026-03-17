@@ -493,6 +493,32 @@
   margin: 0.75rem 0 0;
 }
 
+/* Loading */
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* Description */
+.descriptionContent {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--color-text, #1a1a2e);
+}
+
+.descriptionContent p {
+  margin: 0 0 0.75rem;
+}
+
+.descriptionContent p:last-child {
+  margin-bottom: 0;
+}
+
 /* Not Found */
 .notFound {
   flex: 1;

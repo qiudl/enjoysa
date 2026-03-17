@@ -78,7 +78,7 @@ func Setup(cfg Config) *gin.Engine {
 	supplierAuthHandler := authhandler.NewSupplierAuthHandler(supplierUserStore, cfg.JWTService)
 	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService)
 	publicProductHandler := producthandler.NewPublicProductHandler(pStore, regionStore, categoryStore, scheduleStore)
-	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore)
+	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
@@ -144,6 +144,7 @@ func Setup(cfg Config) *gin.Engine {
 		adminAuthProtected.Use(adminAuth)
 		{
 			adminAuthProtected.GET("/me", adminAuthHandler.GetProfile)
+			adminAuthProtected.PUT("/password", adminAuthHandler.ChangePassword)
 		}
 	}
 
@@ -284,6 +285,11 @@ func Setup(cfg Config) *gin.Engine {
 		{
 			superAdmin.GET("/admins", adminHandler.ListAdmins)
 			superAdmin.POST("/admins", adminHandler.CreateAdmin)
+			superAdmin.GET("/admins/:id", adminHandler.GetAdmin)
+			superAdmin.PUT("/admins/:id", adminHandler.UpdateAdmin)
+			superAdmin.DELETE("/admins/:id", adminHandler.DeleteAdmin)
+			superAdmin.POST("/admins/:id/status", adminHandler.ToggleAdminStatus)
+			superAdmin.POST("/admins/:id/reset-password", adminHandler.ResetAdminPassword)
 		}
 	}
 

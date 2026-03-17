@@ -3,7 +3,7 @@
  * 管理后台 API（需要 admin 认证）
  */
 
-import { get, post } from './api';
+import { get, post, put, del } from './api';
 
 // 通用分页响应
 interface PaginatedResponse<T> {
@@ -140,8 +140,8 @@ export const adminService = {
     return post<void>(`/admin/products/${id}/approve`, undefined, 'admin');
   },
 
-  async rejectProduct(id: number) {
-    return post<void>(`/admin/products/${id}/reject`, undefined, 'admin');
+  async rejectProduct(id: number, reason?: string) {
+    return post<void>(`/admin/products/${id}/reject`, { reason }, 'admin');
   },
 
   // === Admins ===
@@ -154,6 +154,30 @@ export const adminService = {
 
   async createAdmin(data: { email: string; password: string; name: string; role: string }) {
     return post<ApiAdmin>('/admin/admins', data, 'admin');
+  },
+
+  async getAdmin(id: number) {
+    return get<ApiAdmin>(`/admin/admins/${id}`, 'admin');
+  },
+
+  async updateAdmin(id: number, data: { name?: string; email?: string; role?: string; status?: string }) {
+    return put<ApiAdmin>(`/admin/admins/${id}`, data, 'admin');
+  },
+
+  async deleteAdmin(id: number) {
+    return del<void>(`/admin/admins/${id}`, 'admin');
+  },
+
+  async toggleAdminStatus(id: number, status: 'active' | 'suspended') {
+    return post<void>(`/admin/admins/${id}/status`, { status }, 'admin');
+  },
+
+  async resetAdminPassword(id: number, password: string) {
+    return post<void>(`/admin/admins/${id}/reset-password`, { password }, 'admin');
+  },
+
+  async changePassword(oldPassword: string, newPassword: string) {
+    return put<void>('/admin/auth/password', { old_password: oldPassword, new_password: newPassword }, 'admin');
   },
 };
 

@@ -92,3 +92,39 @@ func (h *AdminAuthHandler) GetProfile(c *gin.Context) {
 
 	response.Success(c, admin.(*authmodel.Admin))
 }
+
+type AdminChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+func (h *AdminAuthHandler) ChangePassword(c *gin.Context) {
+	adminID := c.MustGet("admin_id").(uint)
+
+	var req AdminChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Old password and new password (min 8 chars) are required")
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(adminID)
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(req.OldPassword)); err != nil {
+		response.BadRequest(c, "Old password is incorrect")
+		return
+	}
+
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	admin.Password = string(hashedPwd)
+
+	if err := h.adminStore.Update(admin); err != nil {
+		response.ServerError(c, "Failed to change password")
+		return
+	}
+
+	response.SuccessMessage(c, "Password changed successfully")
+}

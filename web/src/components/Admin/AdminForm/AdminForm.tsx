@@ -72,7 +72,7 @@ export const AdminForm: React.FC<AdminFormProps> = ({
         email: '',
         phone: '',
         password: '',
-        role: 'operator',
+        role: 'admin',
         status: 'active',
         permissions: ['dashboard'],
       });
@@ -222,8 +222,6 @@ export const AdminForm: React.FC<AdminFormProps> = ({
                   >
                     <option value="super_admin">{isZh ? '超级管理员' : 'Super Admin'}</option>
                     <option value="admin">{isZh ? '管理员' : 'Admin'}</option>
-                    <option value="operator">{isZh ? '运营' : 'Operator'}</option>
-                    <option value="viewer">{isZh ? '只读' : 'Viewer'}</option>
                   </select>
                 </div>
 

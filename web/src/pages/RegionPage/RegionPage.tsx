@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Star, Clock } from 'lucide-react';
 import { Header, Footer } from '../../components/Common';
-import { getRegionById } from '../../data';
-import { getAttractionsByRegion } from '../../data';
-import type { Attraction } from '../../data/types';
+import { regionService } from '../../services/regionService';
+import type { Region } from '../../data/types';
+import type { ApiProduct } from '../../services/productService';
 import styles from './RegionPage.module.css';
 
 export interface RegionPageProps {
@@ -29,6 +29,17 @@ const tagLabels: Record<string, { zh: string; en: string }> = {
   bestseller: { zh: '畅销', en: 'Bestseller' },
 };
 
+function parseTags(tags: string | string[] | undefined): string[] {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags;
+  try {
+    const parsed = JSON.parse(tags);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export const RegionPage: React.FC<RegionPageProps> = ({
   regionId,
   cartCount = 0,
@@ -42,8 +53,44 @@ export const RegionPage: React.FC<RegionPageProps> = ({
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith('zh');
 
-  const region = regionId ? getRegionById(regionId) : undefined;
-  const attractions = regionId ? getAttractionsByRegion(regionId) : [];
+  const [region, setRegion] = useState<Region | null>(null);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!regionId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    regionService
+      .getBySlug(regionId)
+      .then((data) => {
+        setRegion(data.region);
+        setProducts(data.products);
+      })
+      .catch(() => {
+        setRegion(null);
+        setProducts([]);
+      })
+      .finally(() => setLoading(false));
+  }, [regionId]);
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <Header
+          cartCount={cartCount}
+          onLoginClick={onLoginClick}
+          onRegisterClick={onRegisterClick}
+          onNavClick={onNavClick}
+          onSearch={onSearch}
+        />
+        <div className={styles.loading}>{t('common.loading')}</div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!region) {
     return (
@@ -100,18 +147,24 @@ export const RegionPage: React.FC<RegionPageProps> = ({
         </div>
       </section>
 
-      {/* Attraction List */}
+      {/* Product List */}
       <section className={styles.attractionSection}>
-        <div className={styles.attractionList}>
-          {attractions.map((attraction) => (
-            <AttractionCard
-              key={attraction.id}
-              attraction={attraction}
-              isZh={isZh}
-              onClick={() => onAttractionClick?.(attraction.id)}
-            />
-          ))}
-        </div>
+        {products.length > 0 ? (
+          <div className={styles.attractionList}>
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isZh={isZh}
+                onClick={() => onAttractionClick?.(String(product.id))}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.emptyProducts}>
+            <p>{isZh ? '该区域暂无产品' : 'No products in this region yet'}</p>
+          </div>
+        )}
       </section>
 
       <Footer />
@@ -119,20 +172,24 @@ export const RegionPage: React.FC<RegionPageProps> = ({
   );
 };
 
-interface AttractionCardProps {
-  attraction: Attraction;
+interface ProductCardProps {
+  product: ApiProduct;
   isZh: boolean;
   onClick?: () => void;
 }
 
-const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, isZh, onClick }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, isZh, onClick }) => {
+  const cover = product.images?.find((img) => img.is_cover) || product.images?.[0];
+  const coverUrl = cover?.url || '';
+  const tags = parseTags(product.tags);
+
   return (
     <div className={styles.card} onClick={onClick}>
       <div
         className={styles.cardImage}
-        style={{ backgroundImage: `url(${attraction.images[0]})` }}
+        style={{ backgroundImage: coverUrl ? `url(${coverUrl})` : undefined }}
       >
-        {attraction.tags.includes('bestseller') && (
+        {tags.includes('bestseller') && (
           <span className={styles.badge}>
             {isZh ? '畅销' : 'Bestseller'}
           </span>
@@ -140,24 +197,26 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, isZh, onCli
       </div>
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>
-          {isZh ? attraction.name : attraction.nameEn}
+          {isZh ? product.name_zh : product.name_en}
         </h3>
         <p className={styles.cardSubtitle}>
-          {isZh ? attraction.subtitle : attraction.subtitleEn}
+          {isZh ? product.summary_zh : product.summary_en}
         </p>
         <div className={styles.cardMeta}>
           <div className={styles.cardRating}>
             <Star size={14} className={styles.starIcon} />
-            <span>{attraction.rating}</span>
-            <span className={styles.reviewCount}>({attraction.reviewCount})</span>
+            <span>{product.rating}</span>
+            <span className={styles.reviewCount}>({product.review_count})</span>
           </div>
-          <div className={styles.cardDuration}>
-            <Clock size={14} />
-            <span>{isZh ? attraction.duration : attraction.durationEn}</span>
-          </div>
+          {product.duration && (
+            <div className={styles.cardDuration}>
+              <Clock size={14} />
+              <span>{product.duration}</span>
+            </div>
+          )}
         </div>
         <div className={styles.cardTags}>
-          {attraction.tags.slice(0, 3).map((tag) => (
+          {tags.slice(0, 3).map((tag) => (
             <span key={tag} className={styles.cardTag}>
               {isZh ? tagLabels[tag]?.zh : tagLabels[tag]?.en}
             </span>
@@ -169,7 +228,7 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, isZh, onCli
               {isZh ? '起' : 'from'}
             </span>
             <span className={styles.priceAmount}>
-              A${attraction.priceFrom}
+              A${product.price_from}
             </span>
           </div>
         </div>

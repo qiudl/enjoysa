@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   X,
@@ -11,9 +11,14 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  Package,
+  Star,
+  HelpCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { ProductReview, ProductReviewStatus, ProductCategory } from '../ProductReviewTable';
+import { productService } from '../../../services/productService';
+import type { ApiProduct, ApiProductImage, ApiProductPackage, ApiProductHighlight, ApiProductFAQ } from '../../../services/productService';
 import styles from './ProductReviewDetail.module.css';
 
 export interface ProductReviewDetailProps {
@@ -32,21 +37,43 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
   onReject,
 }) => {
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'info' | 'images' | 'itinerary'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'images' | 'details'>('info');
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Full product data from API
+  const [fullProduct, setFullProduct] = useState<ApiProduct | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
   const isZh = i18n.language === 'zh' || i18n.language === 'zh-CN';
 
-  // Mock images for demonstration
-  const mockImages = [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800',
-    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800',
-  ];
+  // Fetch full product details when drawer opens
+  useEffect(() => {
+    if (!open || !product) {
+      setFullProduct(null);
+      setCurrentImageIndex(0);
+      setActiveTab('info');
+      return;
+    }
+    (async () => {
+      setLoadingDetail(true);
+      try {
+        const data = await productService.getById(Number(product.id));
+        setFullProduct(data);
+      } catch {
+        // fallback: no full data
+      }
+      setLoadingDetail(false);
+    })();
+  }, [open, product?.id]);
 
   if (!open || !product) return null;
+
+  const images: ApiProductImage[] = fullProduct?.images || [];
+  const packages: ApiProductPackage[] = fullProduct?.packages || [];
+  const highlights: ApiProductHighlight[] = fullProduct?.highlights || [];
+  const faqs: ApiProductFAQ[] = fullProduct?.faqs || [];
 
   const getStatusLabel = (status: ProductReviewStatus) => {
     const labels: Record<ProductReviewStatus, string> = {
@@ -58,27 +85,26 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
   };
 
   const getCategoryLabel = (category: ProductCategory) => {
-    const labels: Record<ProductCategory, string> = {
+    // Use real category name from API if available
+    if (fullProduct?.category) {
+      return isZh ? fullProduct.category.name_zh : fullProduct.category.name_en;
+    }
+    const labels: Record<string, string> = {
       day_tour: t('admin.products.categories.dayTour'),
       multi_day: t('admin.products.categories.multiDay'),
       activity: t('admin.products.categories.activity'),
       ticket: t('admin.products.categories.ticket'),
     };
-    return labels[category];
+    return labels[category] || category;
   };
 
-  const formatPrice = (price: number) => {
-    return `A$${price.toFixed(2)}`;
-  };
+  const formatPrice = (price: number) => `A$${price.toFixed(2)}`;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString(isZh ? 'zh-CN' : 'en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
@@ -91,17 +117,17 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : mockImages.length - 1));
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev < mockImages.length - 1 ? prev + 1 : 0));
+    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
   };
 
   const tabs = [
     { key: 'info', label: t('admin.products.detail.tabs.info') },
-    { key: 'images', label: t('admin.products.detail.tabs.images') },
-    { key: 'itinerary', label: t('admin.products.detail.tabs.itinerary') },
+    { key: 'images', label: `${t('admin.products.detail.tabs.images')} (${images.length})` },
+    { key: 'details', label: isZh ? '套餐与亮点' : 'Packages & More' },
   ];
 
   return (
@@ -141,9 +167,6 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
           <div className={styles.priceBox}>
             <span className={styles.priceLabel}>{t('admin.products.detail.price')}</span>
             <span className={styles.price}>{formatPrice(product.price)}</span>
-            {product.originalPrice && product.originalPrice > product.price && (
-              <span className={styles.originalPrice}>{formatPrice(product.originalPrice)}</span>
-            )}
           </div>
         </div>
 
@@ -160,6 +183,12 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
         </div>
 
         <div className={styles.content}>
+          {loadingDetail && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+              {t('common.loading')}
+            </div>
+          )}
+
           {activeTab === 'info' && (
             <div className={styles.infoSection}>
               <div className={styles.infoGrid}>
@@ -167,7 +196,9 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
                   <span className={styles.infoIcon}><User size={16} /></span>
                   <div>
                     <span className={styles.infoLabel}>{t('admin.products.detail.supplier')}</span>
-                    <span className={styles.infoValue}>{product.supplierName}</span>
+                    <span className={styles.infoValue}>
+                      {fullProduct?.supplier?.name || product.supplierName}
+                    </span>
                   </div>
                 </div>
                 <div className={styles.infoItem}>
@@ -181,14 +212,18 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
                   <span className={styles.infoIcon}><Clock size={16} /></span>
                   <div>
                     <span className={styles.infoLabel}>{t('admin.products.detail.duration')}</span>
-                    <span className={styles.infoValue}>8 {t('admin.products.detail.hours')}</span>
+                    <span className={styles.infoValue}>
+                      {fullProduct?.duration || '-'}
+                    </span>
                   </div>
                 </div>
                 <div className={styles.infoItem}>
                   <span className={styles.infoIcon}><MapPin size={16} /></span>
                   <div>
                     <span className={styles.infoLabel}>{t('admin.products.detail.location')}</span>
-                    <span className={styles.infoValue}>Adelaide, SA</span>
+                    <span className={styles.infoValue}>
+                      {(isZh ? fullProduct?.address_zh : fullProduct?.address_en) || (isZh ? fullProduct?.region?.name_zh : fullProduct?.region?.name_en) || '-'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -196,102 +231,197 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
               <div className={styles.descriptionSection}>
                 <h4 className={styles.sectionTitle}>{t('admin.products.detail.description')}</h4>
                 <p className={styles.description}>
-                  {product.description || t('admin.products.detail.noDescription')}
+                  {(isZh ? fullProduct?.description_zh : fullProduct?.description_en) || product.description || t('admin.products.detail.noDescription')}
                 </p>
               </div>
 
-              <div className={styles.includesSection}>
-                <h4 className={styles.sectionTitle}>{t('admin.products.detail.includes')}</h4>
-                <ul className={styles.includesList}>
-                  <li>{t('admin.products.detail.includeItem1')}</li>
-                  <li>{t('admin.products.detail.includeItem2')}</li>
-                  <li>{t('admin.products.detail.includeItem3')}</li>
-                </ul>
-              </div>
+              {/* Highlights as includes */}
+              {highlights.length > 0 && (
+                <div className={styles.includesSection}>
+                  <h4 className={styles.sectionTitle}>
+                    <Star size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
+                    {isZh ? '产品亮点' : 'Highlights'} ({highlights.length})
+                  </h4>
+                  <ul className={styles.includesList}>
+                    {highlights.map((h) => (
+                      <li key={h.id}>
+                        <strong>{isZh ? h.title_zh : h.title_en}</strong>
+                        {(isZh ? h.desc_zh : h.desc_en) && (
+                          <> — {isZh ? h.desc_zh : h.desc_en}</>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-              <div className={styles.excludesSection}>
-                <h4 className={styles.sectionTitle}>{t('admin.products.detail.excludes')}</h4>
-                <ul className={styles.excludesList}>
-                  <li>{t('admin.products.detail.excludeItem1')}</li>
-                  <li>{t('admin.products.detail.excludeItem2')}</li>
-                </ul>
-              </div>
+              {/* FAQs */}
+              {faqs.length > 0 && (
+                <div className={styles.excludesSection}>
+                  <h4 className={styles.sectionTitle}>
+                    <HelpCircle size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
+                    FAQ ({faqs.length})
+                  </h4>
+                  <div>
+                    {faqs.map((f) => (
+                      <div key={f.id} style={{ marginBottom: '0.75rem' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>
+                          Q: {isZh ? f.question_zh : f.question_en}
+                        </div>
+                        <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: 2 }}>
+                          A: {isZh ? f.answer_zh : f.answer_en}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'images' && (
             <div className={styles.imagesSection}>
-              <div className={styles.imageGallery}>
-                <img
-                  src={mockImages[currentImageIndex]}
-                  alt=""
-                  className={styles.mainImage}
-                />
-                <button className={clsx(styles.navBtn, styles.prevBtn)} onClick={handlePrevImage}>
-                  <ChevronLeft size={24} />
-                </button>
-                <button className={clsx(styles.navBtn, styles.nextBtn)} onClick={handleNextImage}>
-                  <ChevronRight size={24} />
-                </button>
-                <div className={styles.imageCounter}>
-                  {currentImageIndex + 1} / {mockImages.length}
+              {images.length > 0 ? (
+                <>
+                  <div className={styles.imageGallery}>
+                    <img
+                      src={images[currentImageIndex]?.url}
+                      alt=""
+                      className={styles.mainImage}
+                    />
+                    {images.length > 1 && (
+                      <>
+                        <button className={clsx(styles.navBtn, styles.prevBtn)} onClick={handlePrevImage}>
+                          <ChevronLeft size={24} />
+                        </button>
+                        <button className={clsx(styles.navBtn, styles.nextBtn)} onClick={handleNextImage}>
+                          <ChevronRight size={24} />
+                        </button>
+                      </>
+                    )}
+                    <div className={styles.imageCounter}>
+                      {currentImageIndex + 1} / {images.length}
+                    </div>
+                  </div>
+                  <div className={styles.thumbnails}>
+                    {images.map((img, index) => (
+                      <button
+                        key={img.id}
+                        className={clsx(styles.thumbnailBtn, index === currentImageIndex && styles.active)}
+                        onClick={() => setCurrentImageIndex(index)}
+                      >
+                        <img src={img.url} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                  <Image size={48} style={{ marginBottom: '0.5rem' }} />
+                  <p>{isZh ? '暂无产品图片' : 'No product images'}</p>
                 </div>
-              </div>
-              <div className={styles.thumbnails}>
-                {mockImages.map((img, index) => (
-                  <button
-                    key={index}
-                    className={clsx(styles.thumbnailBtn, index === currentImageIndex && styles.active)}
-                    onClick={() => setCurrentImageIndex(index)}
-                  >
-                    <img src={img} alt="" />
-                  </button>
-                ))}
-              </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'itinerary' && (
-            <div className={styles.itinerarySection}>
-              <div className={styles.itineraryItem}>
-                <div className={styles.timePoint}>
-                  <span className={styles.time}>08:00</span>
-                  <span className={styles.dot} />
-                </div>
-                <div className={styles.itineraryContent}>
-                  <h5>{t('admin.products.detail.pickup')}</h5>
-                  <p>{t('admin.products.detail.pickupDesc')}</p>
-                </div>
+          {activeTab === 'details' && (
+            <div>
+              {/* Packages */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 className={styles.sectionTitle}>
+                  <Package size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
+                  {isZh ? '套餐价格' : 'Packages'} ({packages.length})
+                </h4>
+                {packages.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {packages.map((pkg) => (
+                      <div key={pkg.id} style={{
+                        background: '#f8fafc', borderRadius: '0.5rem', padding: '0.75rem 1rem',
+                        border: '1px solid #e2e8f0',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}>
+                              {isZh ? pkg.name_zh : pkg.name_en}
+                            </div>
+                            {(isZh ? pkg.desc_zh : pkg.desc_en) && (
+                              <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: 2 }}>
+                                {isZh ? pkg.desc_zh : pkg.desc_en}
+                              </div>
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 700, color: '#059669', fontSize: '1rem', flexShrink: 0 }}>
+                            A${pkg.price}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                    {isZh ? '暂无套餐' : 'No packages'}
+                  </p>
+                )}
               </div>
-              <div className={styles.itineraryItem}>
-                <div className={styles.timePoint}>
-                  <span className={styles.time}>10:00</span>
-                  <span className={styles.dot} />
-                </div>
-                <div className={styles.itineraryContent}>
-                  <h5>{t('admin.products.detail.activity1')}</h5>
-                  <p>{t('admin.products.detail.activity1Desc')}</p>
-                </div>
+
+              {/* Highlights */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h4 className={styles.sectionTitle}>
+                  <Star size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
+                  {isZh ? '产品亮点' : 'Highlights'} ({highlights.length})
+                </h4>
+                {highlights.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {highlights.map((h) => (
+                      <div key={h.id} style={{
+                        background: '#f0fdf4', borderRadius: '0.5rem', padding: '0.75rem 1rem',
+                        border: '1px solid #dcfce7',
+                      }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#166534' }}>
+                          {isZh ? h.title_zh : h.title_en}
+                        </div>
+                        {(isZh ? h.desc_zh : h.desc_en) && (
+                          <div style={{ fontSize: '0.8125rem', color: '#4b5563', marginTop: 2 }}>
+                            {isZh ? h.desc_zh : h.desc_en}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                    {isZh ? '暂无亮点' : 'No highlights'}
+                  </p>
+                )}
               </div>
-              <div className={styles.itineraryItem}>
-                <div className={styles.timePoint}>
-                  <span className={styles.time}>12:30</span>
-                  <span className={styles.dot} />
-                </div>
-                <div className={styles.itineraryContent}>
-                  <h5>{t('admin.products.detail.lunch')}</h5>
-                  <p>{t('admin.products.detail.lunchDesc')}</p>
-                </div>
-              </div>
-              <div className={styles.itineraryItem}>
-                <div className={styles.timePoint}>
-                  <span className={styles.time}>16:00</span>
-                  <span className={styles.dot} />
-                </div>
-                <div className={styles.itineraryContent}>
-                  <h5>{t('admin.products.detail.return')}</h5>
-                  <p>{t('admin.products.detail.returnDesc')}</p>
-                </div>
+
+              {/* FAQ */}
+              <div>
+                <h4 className={styles.sectionTitle}>
+                  <HelpCircle size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
+                  FAQ ({faqs.length})
+                </h4>
+                {faqs.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {faqs.map((f) => (
+                      <div key={f.id} style={{
+                        background: '#eff6ff', borderRadius: '0.5rem', padding: '0.75rem 1rem',
+                        border: '1px solid #dbeafe',
+                      }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e40af' }}>
+                          Q: {isZh ? f.question_zh : f.question_en}
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: '#4b5563', marginTop: 4 }}>
+                          A: {isZh ? f.answer_zh : f.answer_en}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                    {isZh ? '暂无常见问题' : 'No FAQ'}
+                  </p>
+                )}
               </div>
             </div>
           )}

@@ -30,7 +30,8 @@ type Product struct {
 	SupplierID uint          `gorm:"index;not null" json:"supplier_id"`
 	RegionID   uint          `gorm:"index" json:"region_id"`
 	CategoryID uint          `gorm:"index" json:"category_id"`
-	Status     ProductStatus `gorm:"size:20;default:draft" json:"status"`
+	Status       ProductStatus `gorm:"size:20;default:draft" json:"status"`
+	RejectReason string        `gorm:"size:500" json:"reject_reason,omitempty"`
 
 	// 价格
 	PriceFrom float64 `gorm:"type:decimal(10,2)" json:"price_from"`

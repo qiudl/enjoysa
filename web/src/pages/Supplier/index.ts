@@ -18,3 +18,6 @@ export type { SupplierRegisterPageProps } from './SupplierRegisterPage';
 
 export { SupplierProductFormPage } from './SupplierProductFormPage';
 export type { SupplierProductFormPageProps } from './SupplierProductFormPage';
+
+export { SupplierSchedulePage } from './SupplierSchedulePage';
+export type { SupplierSchedulePageProps } from './SupplierSchedulePage';

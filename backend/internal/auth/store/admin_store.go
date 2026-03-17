@@ -38,6 +38,16 @@ func (s *AdminStore) Update(admin *model.Admin) error {
 	return s.db.Save(admin).Error
 }
 
+func (s *AdminStore) Delete(id uint) error {
+	return s.db.Delete(&model.Admin{}, id).Error
+}
+
+func (s *AdminStore) CountActiveSuperAdmins() (int64, error) {
+	var count int64
+	err := s.db.Model(&model.Admin{}).Where("role = ? AND status = ?", "super_admin", "active").Count(&count).Error
+	return count, err
+}
+
 func (s *AdminStore) List(page, pageSize int) ([]model.Admin, int64, error) {
 	var admins []model.Admin
 	var total int64

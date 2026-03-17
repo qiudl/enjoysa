@@ -125,6 +125,13 @@ func (s *ProductStore) UpdateStatus(id uint, status model.ProductStatus) error {
 	return s.db.Model(&model.Product{}).Where("id = ?", id).Update("status", status).Error
 }
 
+func (s *ProductStore) RejectWithReason(id uint, reason string) error {
+	return s.db.Model(&model.Product{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":        model.ProductStatusRejected,
+		"reject_reason": reason,
+	}).Error
+}
+
 // DeleteRelated deletes all related entities for a product
 func (s *ProductStore) DeleteRelated(productID uint) error {
 	s.db.Where("product_id = ?", productID).Delete(&model.ProductImage{})

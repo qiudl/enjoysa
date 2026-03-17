@@ -242,9 +242,25 @@ func (h *AdminHandler) RejectProduct(c *gin.Context) {
 		return
 	}
 
-	if err := h.productStore.UpdateStatus(uint(id), productmodel.ProductStatusRejected); err != nil {
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	c.ShouldBindJSON(&req)
+
+	product, err := h.productStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	if err := h.productStore.RejectWithReason(product.ID, req.Reason); err != nil {
 		response.ServerError(c, "Failed to reject product")
 		return
+	}
+
+	// Update region attraction count (product was potentially approved before)
+	if product.RegionID > 0 {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
 	}
 
 	response.SuccessMessage(c, "Product rejected")
@@ -345,6 +361,221 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 	}
 
 	response.Created(c, admin)
+}
+
+// === Get Single Admin ===
+
+func (h *AdminHandler) GetAdmin(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid admin ID")
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	response.Success(c, admin)
+}
+
+// === Update Admin ===
+
+type UpdateAdminRequest struct {
+	Name   *string `json:"name"`
+	Email  *string `json:"email"`
+	Role   *string `json:"role"`
+	Status *string `json:"status"`
+}
+
+func (h *AdminHandler) UpdateAdmin(c *gin.Context) {
+	currentAdminID := c.MustGet("admin_id").(uint)
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid admin ID")
+		return
+	}
+
+	var req UpdateAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	// Cannot change own role
+	if req.Role != nil && admin.ID == currentAdminID {
+		response.BadRequest(c, "Cannot change your own role")
+		return
+	}
+
+	// Prevent demoting last super_admin
+	if req.Role != nil && *req.Role != "super_admin" && admin.Role == "super_admin" {
+		count, _ := h.adminStore.CountActiveSuperAdmins()
+		if count <= 1 {
+			response.BadRequest(c, "Cannot demote the last super admin")
+			return
+		}
+	}
+
+	if req.Name != nil {
+		admin.Name = *req.Name
+	}
+	if req.Email != nil {
+		// Check email uniqueness
+		existing, _ := h.adminStore.GetByEmail(*req.Email)
+		if existing != nil && existing.ID != admin.ID {
+			response.BadRequest(c, "Email already in use")
+			return
+		}
+		admin.Email = *req.Email
+	}
+	if req.Role != nil {
+		admin.Role = *req.Role
+	}
+	if req.Status != nil {
+		admin.Status = *req.Status
+	}
+
+	if err := h.adminStore.Update(admin); err != nil {
+		response.ServerError(c, "Failed to update admin")
+		return
+	}
+
+	response.Success(c, admin)
+}
+
+// === Delete Admin (soft delete) ===
+
+func (h *AdminHandler) DeleteAdmin(c *gin.Context) {
+	currentAdminID := c.MustGet("admin_id").(uint)
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid admin ID")
+		return
+	}
+
+	if uint(id) == currentAdminID {
+		response.BadRequest(c, "Cannot delete yourself")
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	// Prevent deleting last super_admin
+	if admin.Role == "super_admin" {
+		count, _ := h.adminStore.CountActiveSuperAdmins()
+		if count <= 1 {
+			response.BadRequest(c, "Cannot delete the last super admin")
+			return
+		}
+	}
+
+	if err := h.adminStore.Delete(uint(id)); err != nil {
+		response.ServerError(c, "Failed to delete admin")
+		return
+	}
+
+	response.SuccessMessage(c, "Admin deleted")
+}
+
+// === Toggle Admin Status ===
+
+type ToggleStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=active suspended"`
+}
+
+func (h *AdminHandler) ToggleAdminStatus(c *gin.Context) {
+	currentAdminID := c.MustGet("admin_id").(uint)
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid admin ID")
+		return
+	}
+
+	if uint(id) == currentAdminID {
+		response.BadRequest(c, "Cannot change your own status")
+		return
+	}
+
+	var req ToggleStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: status must be 'active' or 'suspended'")
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	// Prevent suspending last active super_admin
+	if req.Status == "suspended" && admin.Role == "super_admin" {
+		count, _ := h.adminStore.CountActiveSuperAdmins()
+		if count <= 1 {
+			response.BadRequest(c, "Cannot suspend the last active super admin")
+			return
+		}
+	}
+
+	admin.Status = req.Status
+	if err := h.adminStore.Update(admin); err != nil {
+		response.ServerError(c, "Failed to update admin status")
+		return
+	}
+
+	response.SuccessMessage(c, "Admin status updated")
+}
+
+// === Reset Admin Password ===
+
+type ResetPasswordRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+func (h *AdminHandler) ResetAdminPassword(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid admin ID")
+		return
+	}
+
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Password must be at least 8 characters")
+		return
+	}
+
+	admin, err := h.adminStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Admin not found")
+		return
+	}
+
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	admin.Password = string(hashedPwd)
+
+	if err := h.adminStore.Update(admin); err != nil {
+		response.ServerError(c, "Failed to reset password")
+		return
+	}
+
+	response.SuccessMessage(c, "Password reset successfully")
 }
 
 // === Banners ===

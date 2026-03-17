@@ -5,9 +5,10 @@
 
 import { get } from './api';
 import type { Region } from '../data/types';
+import type { ApiProduct } from './productService';
 
-// 后端 Region 响应类型
-interface ApiRegion {
+// 后端 Region 响应类型（导出供表单使用）
+export interface ApiRegion {
   id: number;
   slug: string;
   name_zh: string;
@@ -21,8 +22,8 @@ interface ApiRegion {
   attraction_count: number;
 }
 
-// 后端 Category 响应类型
-interface ApiCategory {
+// 后端 Category 响应类型（导出供表单使用）
+export interface ApiCategory {
   id: number;
   slug: string;
   name_zh: string;
@@ -72,9 +73,19 @@ export const regionService = {
     return data.map(transformRegion);
   },
 
+  /** 获取区域原始数据（含数字 ID，供表单下拉选择用） */
+  async getAllRaw(): Promise<ApiRegion[]> {
+    return get<ApiRegion[]>('/regions');
+  },
+
+  /** 获取分类原始数据（含数字 ID，供表单下拉选择用） */
+  async getCategoriesRaw(): Promise<ApiCategory[]> {
+    return get<ApiCategory[]>('/categories');
+  },
+
   /** 获取区域详情（含产品） */
-  async getBySlug(slug: string): Promise<{ region: Region; products: unknown[] }> {
-    const data = await get<{ region: ApiRegion; products: unknown[] }>(`/regions/${slug}`);
+  async getBySlug(slug: string): Promise<{ region: Region; products: ApiProduct[] }> {
+    const data = await get<{ region: ApiRegion; products: ApiProduct[] }>(`/regions/${slug}`);
     return {
       region: transformRegion(data.region),
       products: data.products || [],

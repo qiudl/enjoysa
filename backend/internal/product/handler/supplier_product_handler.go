@@ -14,15 +14,18 @@ import (
 type SupplierProductHandler struct {
 	productStore  *store.ProductStore
 	scheduleStore *store.ScheduleStore
+	regionStore   *store.RegionStore
 }
 
 func NewSupplierProductHandler(
 	productStore *store.ProductStore,
 	scheduleStore *store.ScheduleStore,
+	regionStore *store.RegionStore,
 ) *SupplierProductHandler {
 	return &SupplierProductHandler{
 		productStore:  productStore,
 		scheduleStore: scheduleStore,
+		regionStore:   regionStore,
 	}
 }
 
@@ -315,10 +318,17 @@ func (h *SupplierProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
+	regionID := product.RegionID
+
 	h.productStore.DeleteRelated(product.ID)
 	if err := h.productStore.Delete(product.ID); err != nil {
 		response.ServerError(c, "Failed to delete product")
 		return
+	}
+
+	// Update region attraction count
+	if regionID > 0 {
+		h.regionStore.UpdateAttractionCount(regionID)
 	}
 
 	response.SuccessMessage(c, "Product deleted")
@@ -377,6 +387,11 @@ func (h *SupplierProductHandler) Offline(c *gin.Context) {
 		return
 	}
 
+	// Update region attraction count
+	if product.RegionID > 0 {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
+	}
+
 	response.SuccessMessage(c, "Product set offline")
 }
 
@@ -405,6 +420,11 @@ func (h *SupplierProductHandler) Online(c *gin.Context) {
 	if err := h.productStore.UpdateStatus(product.ID, model.ProductStatusApproved); err != nil {
 		response.ServerError(c, "Failed to set product online")
 		return
+	}
+
+	// Update region attraction count
+	if product.RegionID > 0 {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
 	}
 
 	response.SuccessMessage(c, "Product set online")

@@ -10,11 +10,6 @@ export function getRegionById(id: string): Region | undefined {
 }
 
 export { regions } from './regions';
-export {
-  getAllAttractions,
-  getAttractionsByRegion,
-  getAttractionById,
-} from './attractions';
 export type {
   Region,
   Attraction,

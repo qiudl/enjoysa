@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
-import { get, del } from '../../../services/api';
 import type { ApiProduct } from '../../../services/productService';
+import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierProductListPage.module.css';
 
 export interface SupplierProduct {
@@ -58,12 +58,15 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SupplierProduct | null>(null);
 
+  const loadProducts = async () => {
+    try {
+      const result = await supplierProductService.list({ page: 1, page_size: 50 });
+      setProducts((result.items || []).map(transformProduct));
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
-    get<{ items: ApiProduct[] }>('/supplier/products?page=1&page_size=50', 'supplier')
-      .then((result) => {
-        setProducts((result.items || []).map(transformProduct));
-      })
-      .catch(() => {});
+    loadProducts();
   }, []);
 
   const filters = [
@@ -103,12 +106,30 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const confirmDelete = async () => {
     if (selectedProduct) {
       try {
-        await del(`/supplier/products/${selectedProduct.id}`, 'supplier');
+        await supplierProductService.remove(Number(selectedProduct.id));
         setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
       } catch { /* ignore */ }
     }
     setShowDeleteModal(false);
     setSelectedProduct(null);
+  };
+
+  const handleToggleStatus = async (product: SupplierProduct) => {
+    try {
+      if (product.status === 'active') {
+        await supplierProductService.offline(Number(product.id));
+        setProducts((prev) => prev.map((p) =>
+          p.id === product.id ? { ...p, status: 'inactive' as const } : p,
+        ));
+      } else if (product.status === 'inactive') {
+        await supplierProductService.online(Number(product.id));
+        setProducts((prev) => prev.map((p) =>
+          p.id === product.id ? { ...p, status: 'active' as const } : p,
+        ));
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Operation failed');
+    }
   };
 
   return (
@@ -179,7 +200,7 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                         </span>
                       </div>
                     </div>
-                    <span className={styles.colPrice}>¥{product.price}</span>
+                    <span className={styles.colPrice}>A${product.price}</span>
                     <span className={`${styles.colStock} ${product.stock === 0 ? styles.outOfStock : ''}`}>
                       {product.stock}
                     </span>
@@ -199,10 +220,16 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                       >
                         {t('supplier.products.edit')}
                       </button>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => onNavigate?.(`/supplier/products/${product.id}/schedules`)}
+                      >
+                        {t('supplier.products.schedules')}
+                      </button>
                       {product.status === 'active' ? (
-                        <button className={styles.actionBtn}>{t('supplier.products.setOffline')}</button>
+                        <button className={styles.actionBtn} onClick={() => handleToggleStatus(product)}>{t('supplier.products.setOffline')}</button>
                       ) : product.status === 'inactive' ? (
-                        <button className={styles.actionBtn}>{t('supplier.products.setOnline')}</button>
+                        <button className={styles.actionBtn} onClick={() => handleToggleStatus(product)}>{t('supplier.products.setOnline')}</button>
                       ) : null}
                       <button
                         className={`${styles.actionBtn} ${styles.deleteBtn}`}
