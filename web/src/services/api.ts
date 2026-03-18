@@ -41,11 +41,13 @@ export function getRefreshToken(userType: UserType): string | null {
 }
 
 export function setTokens(userType: UserType, accessToken: string, refreshToken: string): void {
+  console.log(`[API] setTokens(${userType}) | token=${accessToken.substring(0, 20)}...`);
   localStorage.setItem(TOKEN_KEYS[userType].access, accessToken);
   localStorage.setItem(TOKEN_KEYS[userType].refresh, refreshToken);
 }
 
 export function clearTokens(userType: UserType): void {
+  console.warn(`[API] clearTokens(${userType}) called`, new Error().stack);
   localStorage.removeItem(TOKEN_KEYS[userType].access);
   localStorage.removeItem(TOKEN_KEYS[userType].refresh);
 }
@@ -77,6 +79,7 @@ export async function request<T>(
   // 添加 Authorization header
   if (userType) {
     const token = getAccessToken(userType);
+    console.log(`[API] ${endpoint} | userType=${userType} | token=${token ? token.substring(0, 20) + '...' : 'NULL'}`);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -89,6 +92,8 @@ export async function request<T>(
 
   // 处理 401 未授权
   if (response.status === 401 && userType) {
+    const body = await response.clone().text();
+    console.warn(`[API] 401 on ${endpoint} | body=${body}`);
     clearTokens(userType);
     throw new ApiError('Unauthorized', 401);
   }

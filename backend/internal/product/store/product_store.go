@@ -109,6 +109,7 @@ func (s *ProductStore) list(filter ProductFilter) ([]model.Product, int64, error
 
 	offset := (page - 1) * pageSize
 	if err := query.
+		Preload("Supplier").
 		Preload("Region").
 		Preload("Category").
 		Preload("Images", func(db *gorm.DB) *gorm.DB { return db.Where("is_cover = ?", true).Limit(1) }).

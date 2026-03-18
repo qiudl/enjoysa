@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, Ban, Unlock, User } from 'lucide-react';
+import { Eye, Ban, Unlock, User, Edit2, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './UserTable.module.css';
 
@@ -25,6 +25,8 @@ export interface UserTableProps {
   selectedIds?: string[];
   onSelect?: (ids: string[]) => void;
   onView?: (user: UserData) => void;
+  onEdit?: (user: UserData) => void;
+  onDelete?: (user: UserData) => void;
   onBan?: (user: UserData) => void;
   onUnban?: (user: UserData) => void;
 }
@@ -35,6 +37,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   selectedIds = [],
   onSelect,
   onView,
+  onEdit,
+  onDelete,
   onBan,
   onUnban,
 }) => {
@@ -195,6 +199,13 @@ export const UserTable: React.FC<UserTableProps> = ({
                   >
                     <Eye size={16} />
                   </button>
+                  <button
+                    className={styles.actionBtn}
+                    onClick={() => onEdit?.(user)}
+                    title={t('admin.users.actions.edit')}
+                  >
+                    <Edit2 size={16} />
+                  </button>
                   {user.status !== 'banned' ? (
                     <button
                       className={clsx(styles.actionBtn, styles.ban)}
@@ -212,6 +223,13 @@ export const UserTable: React.FC<UserTableProps> = ({
                       <Unlock size={16} />
                     </button>
                   )}
+                  <button
+                    className={clsx(styles.actionBtn, styles.deleteBtn)}
+                    onClick={() => onDelete?.(user)}
+                    title={t('admin.users.actions.delete')}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </td>
             </tr>

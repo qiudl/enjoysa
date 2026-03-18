@@ -154,6 +154,11 @@
   color: #16a34a;
 }
 
+.actionBtn.deleteBtn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 /* Empty State */
 .empty {
   display: flex;

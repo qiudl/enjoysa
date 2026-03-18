@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, RefreshCw, Download } from 'lucide-react';
+import { Search, RefreshCw, Download, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { ProductReviewStats } from '../../../components/Admin/ProductReviewStats';
 import type { ProductReviewStatsData } from '../../../components/Admin/ProductReviewStats';
@@ -34,9 +34,15 @@ const defaultStats: ProductReviewStatsData = {
   todayNew: 0,
 };
 
+const PAGE_SIZE = 20;
+
 type TabKey = 'all' | 'pending' | 'approved' | 'rejected';
 
-export const ProductReviewList: React.FC = () => {
+export interface ProductReviewListProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<ProductReview[]>([]);
@@ -46,26 +52,54 @@ export const ProductReviewList: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductReview | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (page = currentPage, status?: TabKey) => {
     setLoading(true);
     try {
-      const result = await adminService.listProducts({ page: 1, page_size: 50 });
+      const statusFilter = (status ?? activeTab) === 'all' ? undefined : (status ?? activeTab);
+      const result = await adminService.listProducts({
+        page,
+        page_size: PAGE_SIZE,
+        status: statusFilter,
+      });
       const items = (result.items || []).map(transformProduct);
       setProducts(items);
-      const pending = items.filter((p) => p.status === 'pending').length;
-      const approved = items.filter((p) => p.status === 'approved').length;
-      const rejected = items.filter((p) => p.status === 'rejected').length;
-      setStats({ total: result.total, pending, approved, rejected, todayNew: 0 });
+      setTotalItems(result.total);
+      setTotalPages(result.total_pages || Math.ceil(result.total / PAGE_SIZE));
+
+      // Stats: load all-status counts (only on first load or tab=all)
+      if (!statusFilter) {
+        const pending = items.filter((p) => p.status === 'pending').length;
+        const approved = items.filter((p) => p.status === 'approved').length;
+        const rejected = items.filter((p) => p.status === 'rejected').length;
+        setStats({ total: result.total, pending, approved, rejected, todayNew: 0 });
+      }
     } catch {
       // fallback
     } finally {
       setLoading(false);
     }
+  }, [currentPage, activeTab]);
+
+  useEffect(() => {
+    loadData(1);
+  }, []);
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setSelectedIds([]);
+    loadData(1, tab);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    setSelectedIds([]);
+    loadData(page);
   };
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
@@ -75,22 +109,17 @@ export const ProductReviewList: React.FC = () => {
     { key: 'rejected', label: t('admin.products.tabs.rejected'), count: stats.rejected },
   ];
 
-  const filteredProducts = products.filter((product) => {
-    // Filter by tab
-    if (activeTab !== 'all' && product.status !== activeTab) {
-      return false;
-    }
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        product.name.toLowerCase().includes(query) ||
-        product.nameEn?.toLowerCase().includes(query) ||
-        product.supplierName.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
+  // Client-side search filtering (search is not server-side yet)
+  const filteredProducts = searchQuery
+    ? products.filter((product) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          product.name.toLowerCase().includes(query) ||
+          product.nameEn?.toLowerCase().includes(query) ||
+          product.supplierName.toLowerCase().includes(query)
+        );
+      })
+    : products;
 
   const handleView = (product: ProductReview) => {
     setSelectedProduct(product);
@@ -122,12 +151,26 @@ export const ProductReviewList: React.FC = () => {
   };
 
   const handleStatClick = (status: string) => {
-    if (status === 'total') {
-      setActiveTab('all');
-    } else {
-      setActiveTab(status as TabKey);
-    }
+    const tab = status === 'total' ? 'all' : status as TabKey;
+    handleTabChange(tab);
   };
+
+  const handleEdit = (product: ProductReview) => {
+    onNavigate?.(`/admin/products/${product.id}/edit`);
+  };
+
+  const handleDelete = async (product: ProductReview) => {
+    const msg = t('admin.products.deleteConfirm', { name: product.name });
+    if (!window.confirm(msg)) return;
+    try {
+      await adminService.deleteProduct(Number(product.id));
+      // Reload current page after delete
+      loadData(currentPage);
+    } catch { /* ignore */ }
+  };
+
+  const from = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to = Math.min(currentPage * PAGE_SIZE, totalItems);
 
   return (
     <div className={styles.page}>
@@ -143,7 +186,7 @@ export const ProductReviewList: React.FC = () => {
               <button
                 key={tab.key}
                 className={clsx(styles.tab, activeTab === tab.key && styles.active)}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => handleTabChange(tab.key)}
               >
                 {tab.label}
                 {tab.count !== undefined && (
@@ -168,7 +211,14 @@ export const ProductReviewList: React.FC = () => {
           </div>
 
           {/* Actions */}
-          <button className={styles.iconBtn} onClick={loadData} title={t('common.refresh')}>
+          <button
+            className={styles.createBtn}
+            onClick={() => onNavigate?.('/admin/products/new')}
+          >
+            <Plus size={16} />
+            {t('admin.products.actions.create')}
+          </button>
+          <button className={styles.iconBtn} onClick={() => loadData(currentPage)} title={t('common.refresh')}>
             <RefreshCw size={18} />
           </button>
           <button className={styles.iconBtn} title={t('admin.products.export')}>
@@ -186,18 +236,54 @@ export const ProductReviewList: React.FC = () => {
         onView={handleView}
         onApprove={handleApprove}
         onReject={(p) => handleReject(p, '')}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       {/* Pagination */}
-      {!loading && filteredProducts.length > 0 && (
+      {!loading && totalItems > 0 && (
         <div className={styles.pagination}>
           <span className={styles.paginationInfo}>
-            {t('admin.products.showing', {
-              from: 1,
-              to: filteredProducts.length,
-              total: filteredProducts.length,
-            })}
+            {t('admin.products.showing', { from, to, total: totalItems })}
           </span>
+          {totalPages > 1 && (
+            <div className={styles.paginationControls}>
+              <button
+                className={styles.pageBtn}
+                disabled={currentPage <= 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === 'ellipsis' ? (
+                    <span key={`e${idx}`} className={styles.pageEllipsis}>...</span>
+                  ) : (
+                    <button
+                      key={item}
+                      className={clsx(styles.pageBtn, currentPage === item && styles.pageBtnActive)}
+                      onClick={() => handlePageChange(item as number)}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              <button
+                className={styles.pageBtn}
+                disabled={currentPage >= totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

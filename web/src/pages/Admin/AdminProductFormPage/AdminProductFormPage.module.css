@@ -1,0 +1,633 @@
+/* Admin product form - embedded in AdminLayout, no full page/header/footer */
+
+.container {
+  max-width: 860px;
+  padding: 1.5rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumbLink {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbSep {
+  color: #cbd5e1;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 2rem;
+}
+
+/* ========== Step Indicator ========== */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.step:hover {
+  background: #f1f5f9;
+}
+
+.stepNumber {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.stepLabel {
+  font-weight: 500;
+}
+
+.stepLine {
+  width: 32px;
+  height: 2px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.step.active .stepNumber {
+  background: #3b82f6;
+  color: white;
+}
+
+.step.active .stepLabel {
+  color: #1e293b;
+}
+
+.step.completed .stepNumber {
+  background: #10b981;
+  color: white;
+}
+
+.step.completed .stepLabel {
+  color: #475569;
+}
+
+.stepLine.done {
+  background: #10b981;
+}
+
+/* ========== Sections ========== */
+
+.section {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sectionHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+}
+
+/* ========== Form Fields ========== */
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.formRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 0.375rem;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+  color: #1e293b;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #94a3b8;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+/* ========== Admin-specific: checkbox row ========== */
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkboxRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.checkboxRow label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+}
+
+/* ========== Image Upload ========== */
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.imageCard {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  transition: border-color 0.15s;
+  cursor: grab;
+}
+
+.imageCard:active {
+  cursor: grabbing;
+}
+
+.imageCard.isCover {
+  border-color: #3b82f6;
+}
+
+.imageCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.imageActions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.imageBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  transition: background 0.15s;
+}
+
+.imageBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.imageBtn.dangerBtn:hover {
+  background: #ef4444;
+}
+
+.uploadCard {
+  aspect-ratio: 4 / 3;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 0.75rem;
+}
+
+.uploadCard:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  color: #3b82f6;
+}
+
+/* ========== Inline List Items ========== */
+
+.listItem {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.listItem:last-child {
+  margin-bottom: 0;
+}
+
+.listItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.listItemIndex {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.removeBtn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #3b82f6;
+  background: #eff6ff;
+  border: 1px dashed #93c5fd;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.addBtn:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.emptyState {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  padding: 2rem 0;
+}
+
+/* ========== Preview ========== */
+
+.previewSection {
+  margin-bottom: 1.5rem;
+}
+
+.previewSection:last-child {
+  margin-bottom: 0;
+}
+
+.previewLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.375rem;
+}
+
+.previewValue {
+  font-size: 0.875rem;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.previewValue.empty {
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+.previewImages {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.previewImages img {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.previewItem {
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.previewItem h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 0.25rem;
+}
+
+.previewItem p {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.previewPrice {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #059669;
+  margin-top: 0.25rem;
+}
+
+/* ========== Footer Actions ========== */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 0;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 0.5rem;
+}
+
+.footerLeft {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.footerRight {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btnPrimary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btnSuccess {
+  background: #059669;
+  color: white;
+}
+
+.btnSuccess:hover:not(:disabled) {
+  background: #047857;
+}
+
+/* ========== Loading ========== */
+
+.loadingOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* ========== Responsive ========== */
+
+@media (max-width: 640px) {
+  .formRow,
+  .formRow3 {
+    grid-template-columns: 1fr;
+  }
+
+  .stepper {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 1rem;
+  }
+
+  .stepLine {
+    display: none;
+  }
+
+  .step {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .stepLabel {
+    display: none;
+  }
+
+  .footer {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .footerLeft,
+  .footerRight {
+    width: 100%;
+  }
+
+  .footerLeft .btn,
+  .footerRight .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .previewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .imageGrid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}

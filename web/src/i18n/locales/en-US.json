@@ -840,14 +840,30 @@
         "ticket": "Ticket"
       },
       "status": {
+        "draft": "Draft",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "offline": "Offline"
       },
       "actions": {
         "view": "View",
         "approve": "Approve",
-        "reject": "Reject"
+        "reject": "Reject",
+        "create": "Create Product",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "deleteConfirm": "Are you sure you want to delete product \"{{name}}\"? This action cannot be undone.",
+      "form": {
+        "createTitle": "Create Product",
+        "editTitle": "Edit Product",
+        "basicInfo": "Basic Information",
+        "supplier": "Supplier",
+        "selectSupplier": "Select a supplier",
+        "status": "Product Status",
+        "isFeatured": "Featured Product",
+        "adminFields": "Admin Information"
       },
       "detail": {
         "title": "Product Details",
@@ -1005,14 +1021,18 @@
       },
       "status": {
         "active": "Active",
-        "inactive": "Inactive",
+        "inactive": "Suspended",
         "banned": "Banned"
       },
       "actions": {
         "view": "View",
+        "create": "Create User",
+        "edit": "Edit",
+        "delete": "Delete",
         "ban": "Ban",
         "unban": "Unban"
       },
+      "deleteConfirm": "Are you sure you want to delete user \"{{name}}\"? This action cannot be undone.",
       "detail": {
         "title": "User Details",
         "tabs": {
@@ -1026,6 +1046,32 @@
         "orders": "Orders",
         "spent": "Spent",
         "ordersPlaceholder": "Order history feature coming soon..."
+      },
+      "form": {
+        "createTitle": "Create User",
+        "editTitle": "Edit User",
+        "basicInfo": "Basic Information",
+        "name": "Name",
+        "namePlaceholder": "Enter name",
+        "email": "Email",
+        "emailPlaceholder": "Enter email",
+        "phone": "Phone",
+        "phonePlaceholder": "Enter phone number",
+        "password": "Password",
+        "passwordPlaceholder": "Enter password",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Leave empty to keep current",
+        "status": "Status",
+        "statusActive": "Active",
+        "statusSuspended": "Suspended",
+        "statusBanned": "Banned",
+        "errors": {
+          "nameRequired": "Name is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Invalid email format",
+          "passwordRequired": "Password is required",
+          "passwordMin": "Password must be at least 6 characters"
+        }
       },
       "ban": {
         "title": "Ban User",

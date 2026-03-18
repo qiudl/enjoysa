@@ -106,6 +106,27 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* Create Button */
+.createBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.createBtn:hover {
+  background: #1d4ed8;
+}
+
 /* Icon Button */
 .iconBtn {
   padding: 0.5rem;
@@ -127,7 +148,7 @@
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: 1rem;
   margin-top: 1rem;
 }
@@ -135,6 +156,43 @@
 .paginationInfo {
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageIndicator {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  padding: 0 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -157,5 +215,14 @@
   .searchWrapper {
     flex: 1;
     width: auto;
+  }
+
+  .createBtn span {
+    display: none;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 0.75rem;
   }
 }

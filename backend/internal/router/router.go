@@ -84,7 +84,7 @@ func Setup(cfg Config) *gin.Engine {
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
-	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, oStore, pStore, regionStore)
+	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
@@ -256,6 +256,10 @@ func Setup(cfg Config) *gin.Engine {
 
 		// Product management
 		adminGroup.GET("/products", adminHandler.ListProducts)
+		adminGroup.GET("/products/:id", adminHandler.GetProduct)
+		adminGroup.POST("/products", adminHandler.CreateProduct)
+		adminGroup.PUT("/products/:id", adminHandler.UpdateProduct)
+		adminGroup.DELETE("/products/:id", adminHandler.DeleteProduct)
 		adminGroup.POST("/products/:id/approve", adminHandler.ApproveProduct)
 		adminGroup.POST("/products/:id/reject", adminHandler.RejectProduct)
 
@@ -264,6 +268,11 @@ func Setup(cfg Config) *gin.Engine {
 
 		// User management
 		adminGroup.GET("/users", adminHandler.ListUsers)
+		adminGroup.GET("/users/:id", adminHandler.GetUser)
+		adminGroup.POST("/users", adminHandler.CreateUser)
+		adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
+		adminGroup.DELETE("/users/:id", adminHandler.DeleteUser)
+		adminGroup.POST("/users/:id/status", adminHandler.ToggleUserStatus)
 
 		// Settlements / Finance
 		adminGroup.GET("/settlements", settlementHandler.AdminList)

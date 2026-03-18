@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"enjoysa-backend/internal/auth"
@@ -120,8 +121,12 @@ func SupplierAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
 
 func AdminAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		fmt.Printf("[AdminAuth] %s %s | Authorization: %q\n", c.Request.Method, c.Request.URL.Path, authHeader)
+
 		tokenStr, err := getTokenFromHeader(c)
 		if err != nil {
+			fmt.Printf("[AdminAuth] REJECT: %v\n", err)
 			response.Unauthorized(c, "Missing or invalid token")
 			c.Abort()
 			return
@@ -129,6 +134,7 @@ func AdminAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
 
 		claims, err := jwtService.ParseToken(tokenStr)
 		if err != nil {
+			fmt.Printf("[AdminAuth] TOKEN INVALID: %v\n", err)
 			response.Unauthorized(c, "Token expired or invalid")
 			c.Abort()
 			return

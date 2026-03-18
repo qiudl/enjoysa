@@ -22,18 +22,23 @@ export const SupplierAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   // On init, check for existing token and load profile
   useEffect(() => {
     const init = async () => {
-      // Try cached data first for instant display
+      const hasToken = isTokenPresent('supplier');
+
+      // Try cached data for instant display, but ONLY if token exists
       try {
         const saved = localStorage.getItem(SUPPLIER_STORAGE_KEY);
-        if (saved) {
+        if (saved && hasToken) {
           setSupplier(JSON.parse(saved));
+        } else if (saved) {
+          // Stale cached data without token — clean up
+          localStorage.removeItem(SUPPLIER_STORAGE_KEY);
         }
       } catch {
         // Ignore parse errors
       }
 
       // If we have a token, validate by fetching profile
-      if (isTokenPresent('supplier')) {
+      if (hasToken) {
         try {
           const profile = await supplierAuth.getProfile();
           setSupplier(profile);

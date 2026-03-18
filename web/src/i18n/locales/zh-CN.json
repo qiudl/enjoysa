@@ -840,14 +840,30 @@
         "ticket": "景点门票"
       },
       "status": {
+        "draft": "草稿",
         "pending": "待审核",
         "approved": "已通过",
-        "rejected": "已驳回"
+        "rejected": "已驳回",
+        "offline": "已下架"
       },
       "actions": {
         "view": "查看",
         "approve": "通过",
-        "reject": "驳回"
+        "reject": "驳回",
+        "create": "新建产品",
+        "edit": "编辑",
+        "delete": "删除"
+      },
+      "deleteConfirm": "确定要删除产品「{{name}}」吗？此操作不可撤销。",
+      "form": {
+        "createTitle": "新建产品",
+        "editTitle": "编辑产品",
+        "basicInfo": "基本信息",
+        "supplier": "归属供应商",
+        "selectSupplier": "请选择供应商",
+        "status": "产品状态",
+        "isFeatured": "设为推荐产品",
+        "adminFields": "管理信息"
       },
       "detail": {
         "title": "产品详情",
@@ -1005,14 +1021,18 @@
       },
       "status": {
         "active": "活跃",
-        "inactive": "非活跃",
+        "inactive": "已停用",
         "banned": "已封禁"
       },
       "actions": {
         "view": "查看",
+        "create": "创建用户",
+        "edit": "编辑",
+        "delete": "删除",
         "ban": "封禁",
         "unban": "解封"
       },
+      "deleteConfirm": "确定要删除用户「{{name}}」吗？此操作不可撤销。",
       "detail": {
         "title": "用户详情",
         "tabs": {
@@ -1026,6 +1046,32 @@
         "orders": "订单",
         "spent": "消费",
         "ordersPlaceholder": "订单记录功能开发中..."
+      },
+      "form": {
+        "createTitle": "创建用户",
+        "editTitle": "编辑用户",
+        "basicInfo": "基本信息",
+        "name": "姓名",
+        "namePlaceholder": "请输入姓名",
+        "email": "邮箱",
+        "emailPlaceholder": "请输入邮箱",
+        "phone": "手机号",
+        "phonePlaceholder": "请输入手机号",
+        "password": "密码",
+        "passwordPlaceholder": "请输入密码",
+        "newPassword": "新密码",
+        "newPasswordPlaceholder": "留空则不修改",
+        "status": "状态",
+        "statusActive": "正常",
+        "statusSuspended": "已停用",
+        "statusBanned": "已封禁",
+        "errors": {
+          "nameRequired": "请输入姓名",
+          "emailRequired": "请输入邮箱",
+          "emailInvalid": "邮箱格式不正确",
+          "passwordRequired": "请输入密码",
+          "passwordMin": "密码至少6位"
+        }
       },
       "ban": {
         "title": "封禁用户",

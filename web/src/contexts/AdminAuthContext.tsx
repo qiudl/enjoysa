@@ -23,18 +23,23 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   // On init, check for existing token and load profile
   useEffect(() => {
     const init = async () => {
-      // Try cached data first for instant display
+      const hasToken = isTokenPresent('admin');
+
+      // Try cached data for instant display, but ONLY if token exists
       try {
         const saved = localStorage.getItem(ADMIN_STORAGE_KEY);
-        if (saved) {
+        if (saved && hasToken) {
           setAdmin(JSON.parse(saved));
+        } else if (saved) {
+          // Stale cached data without token — clean up
+          localStorage.removeItem(ADMIN_STORAGE_KEY);
         }
       } catch {
         // Ignore parse errors
       }
 
       // If we have a token, validate by fetching profile
-      if (isTokenPresent('admin')) {
+      if (hasToken) {
         try {
           const profile = await adminAuth.getProfile();
           setAdmin(profile);

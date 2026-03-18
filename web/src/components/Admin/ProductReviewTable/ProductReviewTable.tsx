@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Eye, CheckCircle, XCircle, Image } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Image, Pencil, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './ProductReviewTable.module.css';
 
@@ -32,6 +32,8 @@ export interface ProductReviewTableProps {
   onView?: (product: ProductReview) => void;
   onApprove?: (product: ProductReview) => void;
   onReject?: (product: ProductReview) => void;
+  onEdit?: (product: ProductReview) => void;
+  onDelete?: (product: ProductReview) => void;
 }
 
 export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
@@ -42,6 +44,8 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
   onView,
   onApprove,
   onReject,
+  onEdit,
+  onDelete,
 }) => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === 'zh' || i18n.language === 'zh-CN';
@@ -216,6 +220,13 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                   >
                     <Eye size={16} />
                   </button>
+                  <button
+                    className={styles.actionBtn}
+                    onClick={() => onEdit?.(product)}
+                    title={t('admin.products.actions.edit')}
+                  >
+                    <Pencil size={16} />
+                  </button>
                   {product.status === 'pending' && (
                     <>
                       <button
@@ -234,6 +245,13 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                       </button>
                     </>
                   )}
+                  <button
+                    className={clsx(styles.actionBtn, styles.reject)}
+                    onClick={() => onDelete?.(product)}
+                    title={t('admin.products.actions.delete')}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </td>
             </tr>

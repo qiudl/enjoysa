@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   HomePage,
@@ -33,6 +33,7 @@ import {
   DashboardPage,
   SupplierList,
   ProductReviewList,
+  AdminProductFormPage,
   OrderList,
   UserList,
   FinanceList,
@@ -390,7 +391,7 @@ function SupplierLoginPageWrapper() {
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated) {
-    navigate('/supplier', { replace: true });
+    return <Navigate to="/supplier" replace />;
   }
 
   const handleLoginSuccess = async (email: string, password: string) => {
@@ -534,7 +535,7 @@ function AdminLoginPageWrapper() {
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated) {
-    navigate('/admin', { replace: true });
+    return <Navigate to="/admin" replace />;
   }
 
   const handleLoginSuccess = async (email: string, password: string) => {
@@ -573,9 +574,31 @@ function AdminSuppliersWrapper() {
 
 // 包装组件：AdminProductsWrapper
 function AdminProductsWrapper() {
+  const navigate = useNavigate();
   return (
     <AdminLayout>
-      <ProductReviewList />
+      <ProductReviewList onNavigate={(path) => navigate(path)} />
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminProductNewWrapper
+function AdminProductNewWrapper() {
+  const navigate = useNavigate();
+  return (
+    <AdminLayout>
+      <AdminProductFormPage onNavigate={(path) => navigate(path)} />
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminProductEditWrapper
+function AdminProductEditWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  return (
+    <AdminLayout>
+      <AdminProductFormPage productId={id} onNavigate={(path) => navigate(path)} />
     </AdminLayout>
   );
 }
@@ -730,6 +753,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminAuthGuard><AdminDashboardWrapper /></AdminAuthGuard>} />
         <Route path="/admin/suppliers" element={<AdminAuthGuard><AdminSuppliersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/products" element={<AdminAuthGuard><AdminProductsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products/new" element={<AdminAuthGuard><AdminProductNewWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products/:id/edit" element={<AdminAuthGuard><AdminProductEditWrapper /></AdminAuthGuard>} />
         <Route path="/admin/orders" element={<AdminAuthGuard><AdminOrdersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/users" element={<AdminAuthGuard><AdminUsersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/finance" element={<AdminAuthGuard><AdminFinanceWrapper /></AdminAuthGuard>} />

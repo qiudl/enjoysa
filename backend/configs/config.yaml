@@ -5,7 +5,7 @@ server:
 
 database:
   host: localhost
-  port: 6054
+  port: 5432
   user: donglinlai
   password: ""
   dbname: enjoysa

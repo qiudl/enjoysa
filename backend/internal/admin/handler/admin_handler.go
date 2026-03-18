@@ -8,6 +8,7 @@ import (
 	authstore "enjoysa-backend/internal/auth/store"
 	"enjoysa-backend/internal/models"
 	orderstore "enjoysa-backend/internal/order/store"
+	producthandler "enjoysa-backend/internal/product/handler"
 	productmodel "enjoysa-backend/internal/product/model"
 	productstore "enjoysa-backend/internal/product/store"
 	"enjoysa-backend/pkg/response"
@@ -20,6 +21,7 @@ import (
 type AdminHandler struct {
 	db           *gorm.DB
 	adminStore   *authstore.AdminStore
+	userStore    *authstore.UserStore
 	orderStore   *orderstore.OrderStore
 	productStore *productstore.ProductStore
 	regionStore  *productstore.RegionStore
@@ -28,6 +30,7 @@ type AdminHandler struct {
 func NewAdminHandler(
 	db *gorm.DB,
 	adminStore *authstore.AdminStore,
+	userStore *authstore.UserStore,
 	orderStore *orderstore.OrderStore,
 	productStore *productstore.ProductStore,
 	regionStore *productstore.RegionStore,
@@ -35,6 +38,7 @@ func NewAdminHandler(
 	return &AdminHandler{
 		db:           db,
 		adminStore:   adminStore,
+		userStore:    userStore,
 		orderStore:   orderStore,
 		productStore: productStore,
 		regionStore:  regionStore,
@@ -266,6 +270,266 @@ func (h *AdminHandler) RejectProduct(c *gin.Context) {
 	response.SuccessMessage(c, "Product rejected")
 }
 
+func (h *AdminHandler) GetProduct(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	response.Success(c, product)
+}
+
+type AdminCreateProductRequest struct {
+	producthandler.CreateProductRequest
+	SupplierID uint   `json:"supplier_id" binding:"required"`
+	Status     string `json:"status"`
+	IsFeatured *bool  `json:"is_featured"`
+}
+
+func (h *AdminHandler) CreateProduct(c *gin.Context) {
+	var req AdminCreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Validate supplier exists and is approved
+	var supplier models.Supplier
+	if err := h.db.First(&supplier, req.SupplierID).Error; err != nil {
+		response.NotFound(c, "Supplier not found")
+		return
+	}
+	if supplier.Status != "approved" {
+		response.BadRequest(c, "Cannot create product for supplier with status: "+supplier.Status)
+		return
+	}
+
+	status := productmodel.ProductStatusApproved
+	if req.Status != "" {
+		status = productmodel.ProductStatus(req.Status)
+	}
+
+	product := &productmodel.Product{
+		NameZh:        req.NameZh,
+		NameEn:        req.NameEn,
+		SupplierID:    req.SupplierID,
+		RegionID:      req.RegionID,
+		CategoryID:    req.CategoryID,
+		PriceFrom:     req.PriceFrom,
+		SummaryZh:     req.SummaryZh,
+		SummaryEn:     req.SummaryEn,
+		DescriptionZh: req.DescriptionZh,
+		DescriptionEn: req.DescriptionEn,
+		AddressZh:     req.AddressZh,
+		AddressEn:     req.AddressEn,
+		Duration:      req.Duration,
+		GroupSize:     req.GroupSize,
+		Tags:          req.Tags,
+		Status:        status,
+	}
+
+	if req.IsFeatured != nil {
+		product.IsFeatured = *req.IsFeatured
+	}
+
+	for _, img := range req.Images {
+		product.Images = append(product.Images, productmodel.ProductImage{
+			URL:       img.URL,
+			SortOrder: img.SortOrder,
+			IsCover:   img.IsCover,
+		})
+	}
+	for _, pkg := range req.Packages {
+		product.Packages = append(product.Packages, productmodel.ProductPackage{
+			NameZh:    pkg.NameZh,
+			NameEn:    pkg.NameEn,
+			DescZh:    pkg.DescZh,
+			DescEn:    pkg.DescEn,
+			Price:     pkg.Price,
+			SortOrder: pkg.SortOrder,
+		})
+	}
+	for _, hl := range req.Highlights {
+		product.Highlights = append(product.Highlights, productmodel.ProductHighlight{
+			TitleZh:   hl.TitleZh,
+			TitleEn:   hl.TitleEn,
+			DescZh:    hl.DescZh,
+			DescEn:    hl.DescEn,
+			SortOrder: hl.SortOrder,
+		})
+	}
+	for _, faq := range req.FAQs {
+		product.FAQs = append(product.FAQs, productmodel.ProductFAQ{
+			QuestionZh: faq.QuestionZh,
+			QuestionEn: faq.QuestionEn,
+			AnswerZh:   faq.AnswerZh,
+			AnswerEn:   faq.AnswerEn,
+			SortOrder:  faq.SortOrder,
+		})
+	}
+
+	if err := h.productStore.Create(product); err != nil {
+		response.ServerError(c, "Failed to create product")
+		return
+	}
+
+	// Update region attraction count
+	if product.RegionID > 0 && product.Status == productmodel.ProductStatusApproved {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
+	}
+
+	product, _ = h.productStore.GetByID(product.ID)
+	response.Created(c, product)
+}
+
+func (h *AdminHandler) UpdateProduct(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	var req AdminCreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	oldRegionID := product.RegionID
+	oldStatus := product.Status
+
+	product.NameZh = req.NameZh
+	product.NameEn = req.NameEn
+	product.SupplierID = req.SupplierID
+	product.RegionID = req.RegionID
+	product.CategoryID = req.CategoryID
+	product.PriceFrom = req.PriceFrom
+	product.SummaryZh = req.SummaryZh
+	product.SummaryEn = req.SummaryEn
+	product.DescriptionZh = req.DescriptionZh
+	product.DescriptionEn = req.DescriptionEn
+	product.AddressZh = req.AddressZh
+	product.AddressEn = req.AddressEn
+	product.Duration = req.Duration
+	product.GroupSize = req.GroupSize
+	if req.Tags != "" {
+		product.Tags = req.Tags
+	}
+	if req.Status != "" {
+		product.Status = productmodel.ProductStatus(req.Status)
+	}
+	if req.IsFeatured != nil {
+		product.IsFeatured = *req.IsFeatured
+	}
+
+	// Delete old related and re-create
+	h.productStore.DeleteRelated(product.ID)
+
+	product.Images = nil
+	product.Packages = nil
+	product.Highlights = nil
+	product.FAQs = nil
+
+	for _, img := range req.Images {
+		product.Images = append(product.Images, productmodel.ProductImage{
+			ProductID: product.ID,
+			URL:       img.URL,
+			SortOrder: img.SortOrder,
+			IsCover:   img.IsCover,
+		})
+	}
+	for _, pkg := range req.Packages {
+		product.Packages = append(product.Packages, productmodel.ProductPackage{
+			ProductID: product.ID,
+			NameZh:    pkg.NameZh,
+			NameEn:    pkg.NameEn,
+			DescZh:    pkg.DescZh,
+			DescEn:    pkg.DescEn,
+			Price:     pkg.Price,
+			SortOrder: pkg.SortOrder,
+		})
+	}
+	for _, hl := range req.Highlights {
+		product.Highlights = append(product.Highlights, productmodel.ProductHighlight{
+			ProductID: product.ID,
+			TitleZh:   hl.TitleZh,
+			TitleEn:   hl.TitleEn,
+			DescZh:    hl.DescZh,
+			DescEn:    hl.DescEn,
+			SortOrder: hl.SortOrder,
+		})
+	}
+	for _, faq := range req.FAQs {
+		product.FAQs = append(product.FAQs, productmodel.ProductFAQ{
+			ProductID:  product.ID,
+			QuestionZh: faq.QuestionZh,
+			QuestionEn: faq.QuestionEn,
+			AnswerZh:   faq.AnswerZh,
+			AnswerEn:   faq.AnswerEn,
+			SortOrder:  faq.SortOrder,
+		})
+	}
+
+	if err := h.productStore.Update(product); err != nil {
+		response.ServerError(c, "Failed to update product")
+		return
+	}
+
+	// Update region attraction counts if region or status changed
+	if oldRegionID != product.RegionID || oldStatus != product.Status {
+		if oldRegionID > 0 {
+			h.regionStore.UpdateAttractionCount(oldRegionID)
+		}
+		if product.RegionID > 0 {
+			h.regionStore.UpdateAttractionCount(product.RegionID)
+		}
+	}
+
+	product, _ = h.productStore.GetByID(product.ID)
+	response.Success(c, product)
+}
+
+func (h *AdminHandler) DeleteProduct(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	regionID := product.RegionID
+
+	h.productStore.DeleteRelated(product.ID)
+	if err := h.productStore.Delete(product.ID); err != nil {
+		response.ServerError(c, "Failed to delete product")
+		return
+	}
+
+	if regionID > 0 {
+		h.regionStore.UpdateAttractionCount(regionID)
+	}
+
+	response.SuccessMessage(c, "Product deleted")
+}
+
 // === Order Management ===
 
 func (h *AdminHandler) ListOrders(c *gin.Context) {
@@ -293,22 +557,177 @@ func (h *AdminHandler) ListOrders(c *gin.Context) {
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
-
-	var users []models.User
-	var total int64
-
-	query := h.db.Model(&models.User{})
+	status := c.Query("status")
 	keyword := c.Query("keyword")
-	if keyword != "" {
-		kw := "%" + keyword + "%"
-		query = query.Where("name ILIKE ? OR email ILIKE ?", kw, kw)
-	}
-	query.Count(&total)
 
-	offset := (page - 1) * pageSize
-	query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&users)
+	users, total, err := h.userStore.List(page, pageSize, status, keyword)
+	if err != nil {
+		response.ServerError(c, "Failed to list users")
+		return
+	}
 
 	response.Paginated(c, users, total, page, pageSize)
+}
+
+func (h *AdminHandler) GetUser(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	user, err := h.userStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "User not found")
+		return
+	}
+
+	response.Success(c, user)
+}
+
+type CreateUserRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password" binding:"required,min=6"`
+	Status   string `json:"status"`
+}
+
+func (h *AdminHandler) CreateUser(c *gin.Context) {
+	var req CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Check email uniqueness
+	if _, err := h.userStore.GetByEmail(req.Email); err == nil {
+		response.BadRequest(c, "Email already exists")
+		return
+	}
+
+	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	status := "active"
+	if req.Status != "" {
+		status = req.Status
+	}
+
+	user := &models.User{
+		Name:     req.Name,
+		Email:    req.Email,
+		Phone:    req.Phone,
+		Password: string(hashedPwd),
+		Status:   status,
+	}
+
+	if err := h.userStore.Create(user); err != nil {
+		response.ServerError(c, "Failed to create user")
+		return
+	}
+
+	response.Created(c, user)
+}
+
+type UpdateUserRequest struct {
+	Name   *string `json:"name"`
+	Email  *string `json:"email"`
+	Phone  *string `json:"phone"`
+	Status *string `json:"status"`
+}
+
+func (h *AdminHandler) UpdateUser(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	var req UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	user, err := h.userStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "User not found")
+		return
+	}
+
+	if req.Name != nil {
+		user.Name = *req.Name
+	}
+	if req.Email != nil {
+		existing, _ := h.userStore.GetByEmail(*req.Email)
+		if existing != nil && existing.ID != user.ID {
+			response.BadRequest(c, "Email already in use")
+			return
+		}
+		user.Email = *req.Email
+	}
+	if req.Phone != nil {
+		user.Phone = *req.Phone
+	}
+	if req.Status != nil {
+		user.Status = *req.Status
+	}
+
+	if err := h.userStore.Update(user); err != nil {
+		response.ServerError(c, "Failed to update user")
+		return
+	}
+
+	response.Success(c, user)
+}
+
+func (h *AdminHandler) DeleteUser(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	if _, err := h.userStore.GetByID(uint(id)); err != nil {
+		response.NotFound(c, "User not found")
+		return
+	}
+
+	if err := h.userStore.Delete(uint(id)); err != nil {
+		response.ServerError(c, "Failed to delete user")
+		return
+	}
+
+	response.SuccessMessage(c, "User deleted")
+}
+
+type ToggleUserStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=active suspended banned"`
+}
+
+func (h *AdminHandler) ToggleUserStatus(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+
+	var req ToggleUserStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: status must be 'active', 'suspended', or 'banned'")
+		return
+	}
+
+	if _, err := h.userStore.GetByID(uint(id)); err != nil {
+		response.NotFound(c, "User not found")
+		return
+	}
+
+	if err := h.userStore.UpdateStatus(uint(id), req.Status); err != nil {
+		response.ServerError(c, "Failed to update user status")
+		return
+	}
+
+	response.SuccessMessage(c, "User status updated")
 }
 
 // === Admin Management ===

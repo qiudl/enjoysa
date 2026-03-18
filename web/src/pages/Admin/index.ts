@@ -2,6 +2,7 @@ export { AdminLoginPage } from './AdminLoginPage';
 export { DashboardPage } from './DashboardPage';
 export { SupplierList } from './SupplierList';
 export { ProductReviewList } from './ProductReviewList';
+export { AdminProductFormPage } from './AdminProductFormPage';
 export { OrderList } from './OrderList';
 export { UserList } from './UserList';
 export { FinanceList } from './FinanceList';
