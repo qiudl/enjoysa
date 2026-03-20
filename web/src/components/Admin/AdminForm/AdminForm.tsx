@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Shield, Eye, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 import type { AdminUser, AdminRole, AdminStatus } from '../AdminTable';
+import { adminService, type ApiRole } from '../../../services/adminService';
 import styles from './AdminForm.module.css';
 
 export interface AdminFormData {
@@ -54,6 +55,12 @@ export const AdminForm: React.FC<AdminFormProps> = ({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [availableRoles, setAvailableRoles] = useState<ApiRole[]>([]);
+
+  // Fetch roles from API
+  useEffect(() => {
+    adminService.listRoles().then(setAvailableRoles).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (admin) {
@@ -220,8 +227,18 @@ export const AdminForm: React.FC<AdminFormProps> = ({
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
                     disabled={admin?.role === 'super_admin'}
                   >
-                    <option value="super_admin">{isZh ? '超级管理员' : 'Super Admin'}</option>
-                    <option value="admin">{isZh ? '管理员' : 'Admin'}</option>
+                    {availableRoles.length > 0 ? (
+                      availableRoles.map((r) => (
+                        <option key={r.code} value={r.code}>{r.name}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="super_admin">{isZh ? '超级管理员' : 'Super Admin'}</option>
+                        <option value="admin">{isZh ? '管理员' : 'Admin'}</option>
+                        <option value="operator">{isZh ? '运营' : 'Operator'}</option>
+                        <option value="viewer">{isZh ? '只读' : 'Viewer'}</option>
+                      </>
+                    )}
                   </select>
                 </div>
 

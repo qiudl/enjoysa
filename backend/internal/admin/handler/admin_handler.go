@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"enjoysa-backend/internal/audit"
 	authmodel "enjoysa-backend/internal/auth/model"
 	authstore "enjoysa-backend/internal/auth/store"
 	"enjoysa-backend/internal/models"
@@ -25,6 +26,7 @@ type AdminHandler struct {
 	orderStore   *orderstore.OrderStore
 	productStore *productstore.ProductStore
 	regionStore  *productstore.RegionStore
+	audit        *audit.Logger
 }
 
 func NewAdminHandler(
@@ -34,6 +36,7 @@ func NewAdminHandler(
 	orderStore *orderstore.OrderStore,
 	productStore *productstore.ProductStore,
 	regionStore *productstore.RegionStore,
+	auditLogger *audit.Logger,
 ) *AdminHandler {
 	return &AdminHandler{
 		db:           db,
@@ -42,6 +45,7 @@ func NewAdminHandler(
 		orderStore:   orderStore,
 		productStore: productStore,
 		regionStore:  regionStore,
+		audit:        auditLogger,
 	}
 }
 
@@ -141,6 +145,7 @@ func (h *AdminHandler) ApproveSupplier(c *gin.Context) {
 		return
 	}
 
+	h.audit.Log(c, "approve", "supplier", supplier.ID, supplier.Name)
 	response.SuccessMessage(c, "Supplier approved")
 }
 
@@ -175,6 +180,7 @@ func (h *AdminHandler) RejectSupplier(c *gin.Context) {
 		return
 	}
 
+	h.audit.Log(c, "reject", "supplier", supplier.ID, req.Reason)
 	response.SuccessMessage(c, "Supplier rejected")
 }
 
@@ -236,6 +242,7 @@ func (h *AdminHandler) ApproveProduct(c *gin.Context) {
 		h.regionStore.UpdateAttractionCount(product.RegionID)
 	}
 
+	h.audit.Log(c, "approve", "product", product.ID, product.NameEn)
 	response.SuccessMessage(c, "Product approved")
 }
 
@@ -267,6 +274,7 @@ func (h *AdminHandler) RejectProduct(c *gin.Context) {
 		h.regionStore.UpdateAttractionCount(product.RegionID)
 	}
 
+	h.audit.Log(c, "reject", "product", product.ID, req.Reason)
 	response.SuccessMessage(c, "Product rejected")
 }
 
@@ -779,6 +787,7 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 		return
 	}
 
+	h.audit.Log(c, "create", "admin", admin.ID, admin.Email)
 	response.Created(c, admin)
 }
 
@@ -908,6 +917,7 @@ func (h *AdminHandler) DeleteAdmin(c *gin.Context) {
 		return
 	}
 
+	h.audit.Log(c, "delete", "admin", admin.ID, admin.Email)
 	response.SuccessMessage(c, "Admin deleted")
 }
 

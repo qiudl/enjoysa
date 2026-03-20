@@ -8,6 +8,7 @@ import (
 	"enjoysa-backend/internal/auth"
 	authmodel "enjoysa-backend/internal/auth/model"
 	"enjoysa-backend/internal/models"
+	rbacmodel "enjoysa-backend/internal/rbac/model"
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -161,7 +162,21 @@ func AdminAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
 
 		c.Set("admin", &admin)
 		c.Set("admin_id", admin.ID)
-		c.Set("admin_role", admin.Role)
+
+		// Read role from admin_roles table (new RBAC), fallback to admin.Role field
+		var roleCodes []string
+		db.Model(&rbacmodel.SysRole{}).
+			Joins("JOIN admin_roles ON admin_roles.role_id = sys_roles.id").
+			Where("admin_roles.admin_id = ? AND sys_roles.status = 1", admin.ID).
+			Pluck("sys_roles.code", &roleCodes)
+
+		if len(roleCodes) > 0 {
+			c.Set("admin_role", roleCodes[0])
+			c.Set("admin_role_codes", roleCodes)
+		} else {
+			c.Set("admin_role", admin.Role)
+			c.Set("admin_role_codes", []string{admin.Role})
+		}
 		c.Next()
 	}
 }

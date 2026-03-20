@@ -18,8 +18,9 @@ export interface LanguageSwitcherProps {
 }
 
 const languages = [
-  { code: 'zh', name: '中文', nativeName: '中文' },
   { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'zh', name: '简体中文', nativeName: '简体中文' },
+  { code: 'zh-TW', name: '繁體中文', nativeName: '繁體中文' },
 ];
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
@@ -79,10 +80,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       <button
         className={clsx(styles.minimal, styles[size])}
         onClick={() => {
-          const nextLang = languages.find((l) => l.code !== currentLang.code);
-          if (nextLang) {
-            handleLanguageChange(nextLang.code);
-          }
+          const currentIndex = languages.findIndex((l) => l.code === currentLang.code);
+          const nextLang = languages[(currentIndex + 1) % languages.length];
+          handleLanguageChange(nextLang.code);
         }}
       >
         {showIcon && <Globe size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}

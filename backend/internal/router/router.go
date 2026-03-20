@@ -7,6 +7,9 @@ import (
 	"enjoysa-backend/internal/auth"
 	authhandler "enjoysa-backend/internal/auth/handler"
 	authstore "enjoysa-backend/internal/auth/store"
+	"enjoysa-backend/internal/audit"
+	audithandler "enjoysa-backend/internal/audit/handler"
+	auditstore "enjoysa-backend/internal/audit/store"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -17,6 +20,8 @@ import (
 	paymenthandler "enjoysa-backend/internal/payment/handler"
 	producthandler "enjoysa-backend/internal/product/handler"
 	productstore "enjoysa-backend/internal/product/store"
+	rbachandler "enjoysa-backend/internal/rbac/handler"
+	rbacstore "enjoysa-backend/internal/rbac/store"
 	settlementhandler "enjoysa-backend/internal/settlement/handler"
 	settlementstore "enjoysa-backend/internal/settlement/store"
 	settingshandler "enjoysa-backend/internal/settings/handler"
@@ -24,16 +29,18 @@ import (
 	supplierhandler "enjoysa-backend/internal/supplier/handler"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type Config struct {
-	FrontendURL  string
-	DB           *gorm.DB
-	JWTService   *auth.JWTService
-	UploadConfig config.UploadConfig
-	StripeConfig config.StripeConfig
+	FrontendURL    string
+	DB             *gorm.DB
+	JWTService     *auth.JWTService
+	UploadConfig   config.UploadConfig
+	StripeConfig   config.StripeConfig
+	CasbinEnforcer *casbin.SyncedEnforcer
 }
 
 func Setup(cfg Config) *gin.Engine {
@@ -73,10 +80,21 @@ func Setup(cfg Config) *gin.Engine {
 		pg = gateway.NewStripeGateway(cfg.StripeConfig.SecretKey, cfg.StripeConfig.WebhookSecret)
 	}
 
+	// === Audit ===
+	aStore := auditstore.NewAuditStore(cfg.DB)
+	auditLogger := audit.NewLogger(aStore)
+	auditHandler := audithandler.NewAuditHandler(aStore)
+
+	// === RBAC Stores ===
+	roleStore := rbacstore.NewRoleStore(cfg.DB)
+	menuStore := rbacstore.NewMenuStore(cfg.DB)
+	roleMenuStore := rbacstore.NewRoleMenuStore(cfg.DB)
+	adminRoleStore := rbacstore.NewAdminRoleStore(cfg.DB)
+
 	// === Handlers ===
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService)
 	supplierAuthHandler := authhandler.NewSupplierAuthHandler(supplierUserStore, cfg.JWTService)
-	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService)
+	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService, cfg.DB)
 	publicProductHandler := producthandler.NewPublicProductHandler(pStore, regionStore, categoryStore, scheduleStore)
 	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
@@ -84,10 +102,15 @@ func Setup(cfg Config) *gin.Engine {
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
-	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore)
+	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, auditLogger)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
+
+	// RBAC handlers
+	roleHandler := rbachandler.NewRoleHandler(roleStore, menuStore, roleMenuStore, cfg.CasbinEnforcer)
+	menuHandler := rbachandler.NewMenuHandler(menuStore)
+	adminRoleHandler := rbachandler.NewAdminRoleHandler(adminRoleStore, roleStore, cfg.CasbinEnforcer)
 
 	// Auth middleware
 	userAuth := middleware.UserAuth(cfg.JWTService, cfg.DB)
@@ -287,6 +310,28 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.GET("/settings", settingsHandler.GetAll)
 		adminGroup.GET("/settings/:group", settingsHandler.GetByGroup)
 		adminGroup.PUT("/settings/:group", settingsHandler.Update)
+
+		// RBAC: Role management
+		adminGroup.GET("/roles", roleHandler.List)
+		adminGroup.POST("/roles", roleHandler.Create)
+		adminGroup.GET("/roles/:id", roleHandler.Get)
+		adminGroup.PUT("/roles/:id", roleHandler.Update)
+		adminGroup.DELETE("/roles/:id", roleHandler.Delete)
+		adminGroup.GET("/roles/:id/menus", roleHandler.GetRoleMenus)
+		adminGroup.PUT("/roles/:id/menus", roleHandler.UpdateRoleMenus)
+
+		// RBAC: Menu management (super_admin only via RequirePermission)
+		adminGroup.GET("/menus", menuHandler.ListTree)
+		adminGroup.POST("/menus", menuHandler.Create)
+		adminGroup.PUT("/menus/:id", menuHandler.Update)
+		adminGroup.DELETE("/menus/:id", menuHandler.Delete)
+
+		// Audit logs
+		adminGroup.GET("/audit-logs", auditHandler.List)
+
+		// RBAC: Admin-role assignment
+		adminGroup.GET("/admins/:id/roles", adminRoleHandler.GetAdminRoles)
+		adminGroup.PUT("/admins/:id/roles", adminRoleHandler.UpdateAdminRoles)
 
 		// Admin management (super_admin only)
 		superAdmin := adminGroup.Group("")

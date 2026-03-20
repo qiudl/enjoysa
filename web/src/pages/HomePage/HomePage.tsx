@@ -52,12 +52,9 @@ export interface HomePageProps {
 
 // Default categories (overridden by API data when available)
 const defaultCategories: ProductCategory[] = [
-  { id: '1', name: '野生动物', nameEn: 'Wildlife', icon: '🦘' },
+  { id: '1', name: '景点体验', nameEn: 'Attractions & Experiences', icon: '🎯' },
   { id: '2', name: '美食美酒', nameEn: 'Food & Wine', icon: '🍷' },
-  { id: '3', name: '海滨休闲', nameEn: 'Beach & Coastal', icon: '🏖️' },
-  { id: '4', name: '自驾路线', nameEn: 'Self-Drive', icon: '🚗' },
-  { id: '5', name: '亲子活动', nameEn: 'Family Fun', icon: '👨‍👩‍👧‍👦' },
-  { id: '6', name: '文化体验', nameEn: 'Culture', icon: '🎭' },
+  { id: '3', name: '特色住宿', nameEn: 'Unique Stays', icon: '🏡' },
 ];
 
 interface ApiBanner {

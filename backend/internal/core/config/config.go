@@ -10,11 +10,18 @@ import (
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Redis    RedisConfig    `mapstructure:"redis"`
 	Log      LogConfig      `mapstructure:"log"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Google   GoogleConfig   `mapstructure:"google"`
 	Stripe   StripeConfig   `mapstructure:"stripe"`
 	Upload   UploadConfig   `mapstructure:"upload"`
+}
+
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 type ServerConfig struct {

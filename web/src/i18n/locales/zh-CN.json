@@ -160,7 +160,9 @@
     "customerReviews": "用户评价",
     "relatedProducts": "相关推荐",
     "noReviews": "暂无评价",
-    "writeReview": "写评价"
+    "writeReview": "写评价",
+    "locationMap": "位置地图",
+    "navigateTo": "导航前往"
   },
   "tags": {
     "hot": "热卖",
@@ -294,7 +296,12 @@
     "scanToPay": "扫码支付",
     "bankInfo": "银行账户信息",
     "uploadProof": "上传转账凭证",
-    "securityNotice": "您的支付信息已加密保护，请放心支付"
+    "securityNotice": "您的支付信息已加密保护，请放心支付",
+    "comingSoon": "即将上线",
+    "paymentSuccessBanner": "支付成功！订单已确认",
+    "paymentCancelled": "支付已取消",
+    "retryPayment": "重新支付",
+    "paymentCancelledHint": "您可以在订单过期前重新支付"
   },
   "participant": {
     "title": "出行人信息",
@@ -604,7 +611,7 @@
   },
   "footer": {
     "about": "关于我们",
-    "aboutText": "畅游南澳是专注于南澳大利亚的旅游服务平台，为中国游客提供优质的旅游产品和服务。",
+    "aboutText": "EnjoySA是为澳洲旅客提供独具本地特色的\"轻奢体验+美食+住宿\"一站式预定平台。",
     "quickLinks": "快速链接",
     "customerService": "客户服务",
     "contactUs": "联系我们",
@@ -638,8 +645,8 @@
   },
   "region": {
     "attractionCount": "{{count}} 个景点",
-    "title": "探索南澳区域",
-    "subtitle": "七大区域，各有精彩"
+    "title": "探索区域",
+    "subtitle": "六大区域，各有精彩"
   },
   "error": {
     "networkError": "网络错误，请稍后重试",
@@ -664,7 +671,8 @@
     "roles": {
       "superAdmin": "超级管理员",
       "admin": "管理员",
-      "operator": "运营人员"
+      "operator": "运营人员",
+      "viewer": "只读"
     },
     "login": {
       "platformName": "平台管理后台",
@@ -1001,7 +1009,8 @@
         "active": "活跃用户",
         "inactive": "非活跃用户",
         "newToday": "今日新增",
-        "newMonth": "本月新增"
+        "newMonth": "本月新增",
+        "newThisMonth": "本月新增"
       },
       "tabs": {
         "all": "全部",
@@ -1015,6 +1024,7 @@
         "phone": "手机",
         "orders": "订单数",
         "spent": "消费金额",
+        "totalSpent": "消费金额",
         "status": "状态",
         "registerDate": "注册时间",
         "actions": "操作"

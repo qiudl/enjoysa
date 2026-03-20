@@ -202,3 +202,17 @@
     padding: 1rem;
   }
 }
+
+@media (max-width: 480px) {
+  .section input,
+  .section select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .agreement input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+  }
+}

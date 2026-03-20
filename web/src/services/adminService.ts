@@ -234,6 +234,49 @@ export const adminService = {
   async changePassword(oldPassword: string, newPassword: string) {
     return put<void>('/admin/auth/password', { old_password: oldPassword, new_password: newPassword }, 'admin');
   },
+
+  // === RBAC: Roles ===
+  async listRoles() {
+    return get<ApiRole[]>('/admin/roles', 'admin');
+  },
+
+  async getRole(id: number) {
+    return get<ApiRole>(`/admin/roles/${id}`, 'admin');
+  },
+
+  async createRole(data: { name: string; code: string; note?: string; sort_order?: number; status?: number }) {
+    return post<ApiRole>('/admin/roles', data, 'admin');
+  },
+
+  async updateRole(id: number, data: { name?: string; note?: string; sort_order?: number; status?: number }) {
+    return put<ApiRole>(`/admin/roles/${id}`, data, 'admin');
+  },
+
+  async deleteRole(id: number) {
+    return del<void>(`/admin/roles/${id}`, 'admin');
+  },
+
+  async getRoleMenus(roleId: number) {
+    return get<{ menu_ids: number[] }>(`/admin/roles/${roleId}/menus`, 'admin');
+  },
+
+  async updateRoleMenus(roleId: number, menuIds: number[]) {
+    return put<void>(`/admin/roles/${roleId}/menus`, { menu_ids: menuIds }, 'admin');
+  },
+
+  // === RBAC: Menus ===
+  async listMenus() {
+    return get<ApiMenu[]>('/admin/menus', 'admin');
+  },
+
+  // === RBAC: Admin Roles ===
+  async getAdminRoles(adminId: number) {
+    return get<ApiRole[]>(`/admin/admins/${adminId}/roles`, 'admin');
+  },
+
+  async updateAdminRoles(adminId: number, roleIds: number[]) {
+    return put<void>(`/admin/admins/${adminId}/roles`, { role_ids: roleIds }, 'admin');
+  },
 };
 
 // 后端 Admin 响应
@@ -245,6 +288,37 @@ export interface ApiAdmin {
   status: string;
   created_at: string;
   last_login_at?: string;
+}
+
+// RBAC 角色
+export interface ApiRole {
+  id: number;
+  name: string;
+  code: string;
+  note: string;
+  sort_order: number;
+  status: number;
+  is_system: boolean;
+  created_at: string;
+}
+
+// RBAC 菜单
+export interface ApiMenu {
+  id: number;
+  parent_id: number;
+  name: string;
+  title: string;
+  title_zh: string;
+  icon: string;
+  path: string;
+  authority: string;
+  menu_type: number;
+  method: string;
+  api_path: string;
+  sort_order: number;
+  status: number;
+  hidden: boolean;
+  children?: ApiMenu[];
 }
 
 export default adminService;

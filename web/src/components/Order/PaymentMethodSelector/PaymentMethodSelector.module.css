@@ -118,6 +118,19 @@
   transform: scale(1);
 }
 
+/* Coming Soon Badge */
+.comingSoonBadge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
 /* Security Notice */
 .securityNotice {
   display: flex;

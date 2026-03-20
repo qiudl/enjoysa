@@ -10,6 +10,8 @@ export interface PaymentMethodSelectorProps {
   selectedMethod?: PaymentMethod;
   /** 可用的支付方式 */
   availableMethods?: PaymentMethod[];
+  /** 即将上线的支付方式（置灰显示 Coming Soon） */
+  comingSoon?: PaymentMethod[];
   /** 选择支付方式回调 */
   onSelect?: (method: PaymentMethod) => void;
   /** 是否禁用 */
@@ -50,8 +52,8 @@ const paymentMethods: PaymentMethodConfig[] = [
     icon: <CreditCard size={24} />,
     label: '信用卡/借记卡',
     labelEn: 'Credit/Debit Card',
-    description: '支持 Visa、Mastercard、银联',
-    descriptionEn: 'Visa, Mastercard, UnionPay accepted',
+    description: '支持 Visa、Mastercard · 由 Stripe 安全处理',
+    descriptionEn: 'Visa, Mastercard · Secured by Stripe',
   },
   {
     id: 'paypal',
@@ -77,6 +79,7 @@ const defaultMethods: PaymentMethod[] = ['wechat', 'alipay', 'credit_card', 'pay
 export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   availableMethods = defaultMethods,
+  comingSoon = [],
   onSelect,
   disabled = false,
 }) => {
@@ -92,39 +95,48 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       <h3 className={styles.title}>{t('payment.selectMethod')}</h3>
 
       <div className={styles.methods}>
-        {filteredMethods.map(method => (
-          <button
-            key={method.id}
-            className={clsx(styles.method, {
-              [styles.selected]: selectedMethod === method.id,
-              [styles.disabled]: disabled,
-            })}
-            onClick={() => !disabled && onSelect?.(method.id)}
-            disabled={disabled}
-            type="button"
-          >
-            <div className={styles.methodIcon}>
-              {method.logo ? (
-                <img src={method.logo} alt={method.label} className={styles.logo} />
+        {filteredMethods.map(method => {
+          const isComingSoon = comingSoon.includes(method.id);
+          return (
+            <button
+              key={method.id}
+              className={clsx(styles.method, {
+                [styles.selected]: selectedMethod === method.id && !isComingSoon,
+                [styles.disabled]: disabled || isComingSoon,
+              })}
+              onClick={() => !disabled && !isComingSoon && onSelect?.(method.id)}
+              disabled={disabled || isComingSoon}
+              type="button"
+            >
+              <div className={styles.methodIcon}>
+                {method.logo ? (
+                  <img src={method.logo} alt={method.label} className={styles.logo} />
+                ) : (
+                  method.icon
+                )}
+              </div>
+
+              <div className={styles.methodInfo}>
+                <span className={styles.methodLabel}>
+                  {isZh ? method.label : method.labelEn}
+                </span>
+                <span className={styles.methodDescription}>
+                  {isZh ? method.description : method.descriptionEn}
+                </span>
+              </div>
+
+              {isComingSoon ? (
+                <span className={styles.comingSoonBadge}>
+                  {t('payment.comingSoon')}
+                </span>
               ) : (
-                method.icon
+                <div className={clsx(styles.checkmark, { [styles.visible]: selectedMethod === method.id })}>
+                  <Check size={16} />
+                </div>
               )}
-            </div>
-
-            <div className={styles.methodInfo}>
-              <span className={styles.methodLabel}>
-                {isZh ? method.label : method.labelEn}
-              </span>
-              <span className={styles.methodDescription}>
-                {isZh ? method.description : method.descriptionEn}
-              </span>
-            </div>
-
-            <div className={clsx(styles.checkmark, { [styles.visible]: selectedMethod === method.id })}>
-              <Check size={16} />
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
       {/* Security Notice */}

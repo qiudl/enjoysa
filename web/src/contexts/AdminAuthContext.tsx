@@ -80,9 +80,15 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const hasPermission = (permission: string): boolean => {
     if (!admin) return false;
+    // Check if user has super_admin role
+    if (admin.roles?.some(r => r.code === 'super_admin')) return true;
+    // Fallback for old-style role field
     if (admin.role === 'super_admin') return true;
-    // For now, admin role has all permissions in MVP
-    return !!permission;
+    // Check real permissions array from backend
+    if (admin.permissions && admin.permissions.length > 0) {
+      return admin.permissions.includes(permission);
+    }
+    return false;
   };
 
   return (

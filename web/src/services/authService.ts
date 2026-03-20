@@ -152,13 +152,37 @@ export const supplierAuth = {
 
 // ==================== Admin ====================
 
+export interface AdminRoleInfo {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface AdminMenuInfo {
+  id: number;
+  parent_id: number;
+  name: string;
+  title: string;
+  title_zh: string;
+  icon: string;
+  path: string;
+  authority: string;
+  menu_type: number;
+  sort_order: number;
+  hidden: boolean;
+  children?: AdminMenuInfo[];
+}
+
 export interface AdminInfo {
   id: number;
   email: string;
   name: string;
-  role: 'super_admin' | 'admin';
+  role?: string;
   status: string;
   avatar?: string;
+  roles?: AdminRoleInfo[];
+  permissions?: string[];
+  menus?: AdminMenuInfo[];
 }
 
 interface AdminLoginResponse {

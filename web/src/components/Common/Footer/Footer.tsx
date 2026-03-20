@@ -78,11 +78,7 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand Section */}
           <div className={styles.brand}>
             <div className={styles.logo}>
-              {logo ? (
-                <img src={logo} alt="EnjoySA" className={styles.logoImage} />
-              ) : (
-                <span className={styles.logoText}>EnjoySA</span>
-              )}
+              <img src={logo || '/images/logo.jpg'} alt="EnjoySA 畅游南澳" className={styles.logoImage} />
             </div>
             <p className={styles.description}>{description || defaultDescription}</p>
 

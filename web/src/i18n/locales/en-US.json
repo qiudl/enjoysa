@@ -160,7 +160,9 @@
     "customerReviews": "Customer Reviews",
     "relatedProducts": "Related Products",
     "noReviews": "No reviews yet",
-    "writeReview": "Write a Review"
+    "writeReview": "Write a Review",
+    "locationMap": "Location Map",
+    "navigateTo": "Get Directions"
   },
   "tags": {
     "hot": "Hot",
@@ -294,7 +296,12 @@
     "scanToPay": "Scan to Pay",
     "bankInfo": "Bank Account Details",
     "uploadProof": "Upload Transfer Proof",
-    "securityNotice": "Your payment information is encrypted and secure"
+    "securityNotice": "Your payment information is encrypted and secure",
+    "comingSoon": "Coming Soon",
+    "paymentSuccessBanner": "Payment Successful! Order Confirmed",
+    "paymentCancelled": "Payment Cancelled",
+    "retryPayment": "Retry Payment",
+    "paymentCancelledHint": "You can retry payment before the order expires"
   },
   "participant": {
     "title": "Traveler Information",
@@ -604,7 +611,7 @@
   },
   "footer": {
     "about": "About Us",
-    "aboutText": "EnjoySA is a tourism platform dedicated to South Australia, providing quality travel products and services for Chinese tourists.",
+    "aboutText": "EnjoySA is a one-stop booking platform offering uniquely local 'premium experiences + food & wine + accommodation' for travellers in Australia.",
     "quickLinks": "Quick Links",
     "customerService": "Customer Service",
     "contactUs": "Contact Us",
@@ -638,8 +645,8 @@
   },
   "region": {
     "attractionCount": "{{count}} attractions",
-    "title": "Explore SA Regions",
-    "subtitle": "Seven regions, each with unique charm"
+    "title": "Explore Regions",
+    "subtitle": "Six regions, each with unique charm"
   },
   "error": {
     "networkError": "Network error, please try again",
@@ -664,7 +671,8 @@
     "roles": {
       "superAdmin": "Super Admin",
       "admin": "Admin",
-      "operator": "Operator"
+      "operator": "Operator",
+      "viewer": "Viewer"
     },
     "login": {
       "platformName": "Platform Admin",
@@ -1001,7 +1009,8 @@
         "active": "Active Users",
         "inactive": "Inactive Users",
         "newToday": "New Today",
-        "newMonth": "New This Month"
+        "newMonth": "New This Month",
+        "newThisMonth": "New This Month"
       },
       "tabs": {
         "all": "All",
@@ -1015,6 +1024,7 @@
         "phone": "Phone",
         "orders": "Orders",
         "spent": "Total Spent",
+        "totalSpent": "Total Spent",
         "status": "Status",
         "registerDate": "Register Date",
         "actions": "Actions"

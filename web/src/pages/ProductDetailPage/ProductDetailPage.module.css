@@ -184,6 +184,20 @@
   color: var(--color-text, #1a1a2e);
 }
 
+/* Map Section */
+.mapSection {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.meetingPointNote {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #64748b);
+}
+
 /* Section */
 .section {
   background: white;
@@ -503,5 +517,41 @@
 
   .infoGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .thumbnails {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .thumbnails::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dateGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .bookingCard {
+    max-height: 60vh;
+  }
+
+  .main {
+    padding-bottom: 280px;
+  }
+
+  .mapSection {
+    padding: 1rem;
   }
 }

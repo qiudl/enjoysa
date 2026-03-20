@@ -7,6 +7,7 @@ import {
   ProductDetailPage,
   CheckoutPage,
   MyOrdersPage,
+  OrderDetailPage,
   UserProfilePage,
   DestinationsPage,
   CategoriesPage,
@@ -194,6 +195,32 @@ function CheckoutPageWrapper() {
       cartCount={getCartCount()}
       onOrderSuccess={(orderId) => navigate(`/orders?highlight=${orderId}`)}
       onLoginRequired={() => navigate('/login')}
+      onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：OrderDetailPage
+function OrderDetailPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { getCartCount } = useCart();
+  const paymentStatus = searchParams.get('status');
+
+  const handleClearPaymentStatus = () => {
+    searchParams.delete('status');
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  return (
+    <OrderDetailPage
+      orderId={id}
+      cartCount={getCartCount()}
+      paymentStatus={paymentStatus}
+      onClearPaymentStatus={handleClearPaymentStatus}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
     />
   );
@@ -708,6 +735,7 @@ function App() {
         {/* 订单流程 */}
         <Route path="/checkout" element={<CheckoutPageWrapper />} />
         <Route path="/orders" element={<MyOrdersPageWrapper />} />
+        <Route path="/orders/:id" element={<OrderDetailPageWrapper />} />
 
         {/* 用户中心 */}
         <Route path="/profile" element={<UserProfilePageWrapper />} />

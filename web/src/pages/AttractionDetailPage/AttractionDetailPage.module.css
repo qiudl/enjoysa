@@ -280,6 +280,11 @@
   color: var(--color-text, #1a1a2e);
 }
 
+/* Map Container */
+.mapContainer {
+  margin-top: 1.25rem;
+}
+
 /* Inclusions */
 .inclusions h3 {
   font-size: 0.9375rem;

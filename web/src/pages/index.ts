@@ -8,6 +8,7 @@ export * from './ProductListPage';
 export * from './ProductDetailPage';
 export * from './CheckoutPage';
 export * from './MyOrdersPage';
+export * from './OrderDetailPage';
 export * from './UserProfilePage';
 export * from './DestinationsPage';
 export * from './CategoriesPage';

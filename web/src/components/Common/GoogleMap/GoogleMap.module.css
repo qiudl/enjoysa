@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.iframe {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--color-primary, #0066ff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.navButton:hover {
+  background: #0052cc;
+}
+
+.fallback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--color-surface, #f8fafc);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.fallbackIcon {
+  font-size: 1.25rem;
+}
+
+.fallbackAddress {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+@media (max-width: 480px) {
+  .iframe {
+    height: 250px !important;
+  }
+}

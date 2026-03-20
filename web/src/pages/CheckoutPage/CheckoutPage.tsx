@@ -131,7 +131,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [participants, setParticipants] = useState<ParticipantDetail[]>([
     createDefaultParticipant(),
   ]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wechat');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit_card');
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -252,6 +252,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h2 className={styles.sectionTitle}>{t('order.paymentMethod')}</h2>
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
+                  availableMethods={['credit_card', 'wechat', 'alipay']}
+                  comingSoon={['wechat', 'alipay']}
                   onSelect={handlePaymentSelect}
                 />
               </section>

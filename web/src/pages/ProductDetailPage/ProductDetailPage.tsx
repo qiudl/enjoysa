@@ -5,6 +5,7 @@ import {
   Footer,
   Button,
   Loading,
+  GoogleMap,
 } from '../../components/Common';
 import type { Product } from '../../types';
 import { productService, transformApiProduct } from '../../services/productService';
@@ -225,6 +226,23 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 )}
               </div>
             </section>
+
+            {/* Location Map */}
+            {location && (
+              <section className={styles.mapSection}>
+                <h2 className={styles.sectionTitle}>{t('product.locationMap')}</h2>
+                <GoogleMap
+                  address={product.locationEn || product.location}
+                  title={title}
+                  height={300}
+                />
+                {meetingPoint && meetingPoint !== location && (
+                  <p className={styles.meetingPointNote}>
+                    📍 {t('product.meetingPoint')}: {meetingPoint}
+                  </p>
+                )}
+              </section>
+            )}
 
             {/* Highlights */}
             <section className={styles.section}>

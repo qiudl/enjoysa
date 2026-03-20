@@ -7,7 +7,8 @@ import type { AdminUser, AdminRole, AdminStatus } from '../../../components/Admi
 import { AdminForm } from '../../../components/Admin/AdminForm';
 import type { AdminFormData } from '../../../components/Admin/AdminForm';
 import { RolePermissions } from '../../../components/Admin/RolePermissions';
-import { adminService, type ApiAdmin } from '../../../services/adminService';
+import type { RoleConfig, Permission } from '../../../components/Admin/RolePermissions';
+import { adminService, type ApiAdmin, type ApiRole, type ApiMenu } from '../../../services/adminService';
 import styles from './AdminList.module.css';
 
 function transformAdmin(a: ApiAdmin): AdminUser {
@@ -38,6 +39,11 @@ export const AdminList: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+
+  // RBAC state
+  const [apiRoles, setApiRoles] = useState<ApiRole[]>([]);
+  const [apiMenus, setApiMenus] = useState<ApiMenu[]>([]);
+  const [roleMenuMap, setRoleMenuMap] = useState<Record<number, number[]>>({});
 
   useEffect(() => {
     loadData();
@@ -154,9 +160,133 @@ export const AdminList: React.FC = () => {
     setEditingAdmin(null);
   };
 
-  const handleRoleSave = (role: AdminRole, permissions: string[]) => {
-    console.log('Save role permissions:', role, permissions);
-    // In real app, call API to save role permissions
+  // Load RBAC data when switching to roles tab
+  useEffect(() => {
+    if (activeTab === 'roles') {
+      loadRBACData();
+    }
+  }, [activeTab]);
+
+  const loadRBACData = async () => {
+    try {
+      const [roles, menus] = await Promise.all([
+        adminService.listRoles(),
+        adminService.listMenus(),
+      ]);
+      setApiRoles(roles);
+      setApiMenus(menus);
+
+      // Load menu IDs for each role
+      const menuMap: Record<number, number[]> = {};
+      await Promise.all(
+        roles.filter(r => r.code !== 'super_admin').map(async (role) => {
+          try {
+            const result = await adminService.getRoleMenus(role.id);
+            menuMap[role.id] = result.menu_ids || [];
+          } catch {
+            menuMap[role.id] = [];
+          }
+        })
+      );
+      setRoleMenuMap(menuMap);
+    } catch { /* ignore */ }
+  };
+
+  // Build permission list from menus (non-directory, non-empty authority)
+  const buildPermissions = (): Permission[] => {
+    const permSet = new Map<string, Permission>();
+    const flattenMenus = (menus: ApiMenu[]) => {
+      for (const m of menus) {
+        if (m.authority && !permSet.has(m.authority)) {
+          permSet.set(m.authority, {
+            key: m.authority,
+            labelZh: m.title_zh || m.title,
+            labelEn: m.title,
+          });
+        }
+        if (m.children) flattenMenus(m.children);
+      }
+    };
+    flattenMenus(apiMenus);
+    return Array.from(permSet.values());
+  };
+
+  // Build role configs from API data
+  const buildRoleConfigs = (): RoleConfig[] => {
+    const allPerms = buildPermissions().map(p => p.key);
+
+    // Flatten menus to get menu_id -> authority map
+    const menuAuthority = new Map<number, string>();
+    const flattenForMap = (menus: ApiMenu[]) => {
+      for (const m of menus) {
+        if (m.authority) menuAuthority.set(m.id, m.authority);
+        if (m.children) flattenForMap(m.children);
+      }
+    };
+    flattenForMap(apiMenus);
+
+    return apiRoles.map((role): RoleConfig => {
+      if (role.code === 'super_admin') {
+        return {
+          role: role.code as AdminRole,
+          labelZh: role.name,
+          labelEn: role.name,
+          permissions: allPerms,
+          isEditable: false,
+        };
+      }
+
+      // Map menu IDs to authority strings
+      const menuIds = roleMenuMap[role.id] || [];
+      const perms = new Set<string>();
+      for (const mid of menuIds) {
+        const auth = menuAuthority.get(mid);
+        if (auth) perms.add(auth);
+      }
+
+      return {
+        role: role.code as AdminRole,
+        labelZh: role.name,
+        labelEn: role.name,
+        permissions: Array.from(perms),
+        isEditable: true,
+      };
+    });
+  };
+
+  const handleRoleSave = async (roleCode: AdminRole, permissions: string[]) => {
+    // Find the role by code
+    const role = apiRoles.find(r => r.code === roleCode);
+    if (!role) return;
+
+    // Map permission keys back to menu IDs
+    const flatMenus: ApiMenu[] = [];
+    const flatten = (menus: ApiMenu[]) => {
+      for (const m of menus) {
+        flatMenus.push(m);
+        if (m.children) flatten(m.children);
+      }
+    };
+    flatten(apiMenus);
+
+    // Collect menu IDs for the selected permissions
+    const menuIds = new Set<number>();
+    for (const m of flatMenus) {
+      if (m.authority && permissions.includes(m.authority)) {
+        menuIds.add(m.id);
+        // Also add parent directory
+        if (m.parent_id) menuIds.add(m.parent_id);
+      }
+    }
+
+    try {
+      await adminService.updateRoleMenus(role.id, Array.from(menuIds));
+      // Refresh role-menu map
+      const result = await adminService.getRoleMenus(role.id);
+      setRoleMenuMap(prev => ({ ...prev, [role.id]: result.menu_ids || [] }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save permissions');
+    }
   };
 
   return (
@@ -254,8 +384,8 @@ export const AdminList: React.FC = () => {
 
       {activeTab === 'roles' && (
         <RolePermissions
-          roles={[]}
-          permissions={[]}
+          roles={apiRoles.length > 0 ? buildRoleConfigs() : []}
+          permissions={apiRoles.length > 0 ? buildPermissions() : []}
           onSave={handleRoleSave}
         />
       )}

@@ -37,3 +37,6 @@ export type { HeroBannerProps, BannerSlide } from './HeroBanner';
 
 export { RegionCard } from './RegionCard';
 export type { RegionCardProps } from './RegionCard';
+
+export { GoogleMap } from './GoogleMap';
+export type { GoogleMapProps } from './GoogleMap';

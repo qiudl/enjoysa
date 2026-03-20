@@ -195,7 +195,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   <div className={styles.userDropdownHeader}>
                     <strong>{admin?.name}</strong>
                     <span className={styles.userRole}>
-                      {admin?.role === 'super_admin' ? t('admin.roles.superAdmin') : t('admin.roles.admin')}
+                      {admin?.roles && admin.roles.length > 0
+                        ? admin.roles.map(r => r.name).join(', ')
+                        : admin?.role === 'super_admin' ? t('admin.roles.superAdmin') : t('admin.roles.admin')}
                     </span>
                   </div>
                   <div className={styles.userDropdownDivider} />

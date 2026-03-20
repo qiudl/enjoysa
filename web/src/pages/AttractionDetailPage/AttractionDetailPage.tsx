@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Info,
 } from 'lucide-react';
-import { Header, Footer } from '../../components/Common';
+import { Header, Footer, GoogleMap } from '../../components/Common';
 import { productService } from '../../services/productService';
 import type {
   ApiProduct,
@@ -287,6 +287,15 @@ export const AttractionDetailPage: React.FC<AttractionDetailPageProps> = ({
                   </div>
                 )}
               </div>
+              {(product.address_zh || product.address_en) && (
+                <div className={styles.mapContainer}>
+                  <GoogleMap
+                    address={product.address_en || product.address_zh || ''}
+                    title={isZh ? product.name_zh : product.name_en}
+                    height={280}
+                  />
+                </div>
+              )}
             </section>
           )}
 

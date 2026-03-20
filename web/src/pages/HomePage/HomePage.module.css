@@ -218,6 +218,14 @@
 }
 
 @media (max-width: 480px) {
+  .section {
+    padding: 2rem 1rem;
+  }
+
+  .features {
+    padding: 2rem 1rem;
+  }
+
   .sectionHeader {
     flex-direction: column;
     align-items: flex-start;

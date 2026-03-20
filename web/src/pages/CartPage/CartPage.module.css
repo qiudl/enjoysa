@@ -286,3 +286,16 @@
     padding-bottom: 200px;
   }
 }
+
+@media (max-width: 480px) {
+  .quantityBtn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.125rem;
+  }
+
+  .removeBtn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+  }
+}

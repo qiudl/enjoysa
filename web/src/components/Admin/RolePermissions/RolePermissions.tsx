@@ -32,6 +32,7 @@ const DEFAULT_PERMISSIONS: Permission[] = [
   { key: 'suppliers.manage', labelZh: '管理供应商', labelEn: 'Manage Suppliers' },
   { key: 'products.view', labelZh: '查看产品', labelEn: 'View Products' },
   { key: 'products.review', labelZh: '审核产品', labelEn: 'Review Products' },
+  { key: 'products.manage', labelZh: '管理产品', labelEn: 'Manage Products' },
   { key: 'orders.view', labelZh: '查看订单', labelEn: 'View Orders' },
   { key: 'orders.manage', labelZh: '管理订单', labelEn: 'Manage Orders' },
   { key: 'users.view', labelZh: '查看用户', labelEn: 'View Users' },
@@ -42,6 +43,8 @@ const DEFAULT_PERMISSIONS: Permission[] = [
   { key: 'admins.manage', labelZh: '管理管理员', labelEn: 'Manage Admins' },
   { key: 'settings.view', labelZh: '查看设置', labelEn: 'View Settings' },
   { key: 'settings.manage', labelZh: '管理设置', labelEn: 'Manage Settings' },
+  { key: 'contacts.view', labelZh: '查看消息', labelEn: 'View Messages' },
+  { key: 'contacts.manage', labelZh: '管理消息', labelEn: 'Manage Messages' },
 ];
 
 const DEFAULT_ROLES: RoleConfig[] = [
@@ -63,14 +66,14 @@ const DEFAULT_ROLES: RoleConfig[] = [
     role: 'operator',
     labelZh: '运营',
     labelEn: 'Operator',
-    permissions: ['dashboard.view', 'suppliers.view', 'products.view', 'products.review', 'orders.view', 'orders.manage', 'users.view'],
+    permissions: ['dashboard.view', 'suppliers.view', 'products.view', 'products.review', 'orders.view', 'orders.manage', 'users.view', 'contacts.view', 'contacts.manage'],
     isEditable: true,
   },
   {
     role: 'viewer',
     labelZh: '只读',
     labelEn: 'Viewer',
-    permissions: ['dashboard.view', 'suppliers.view', 'products.view', 'orders.view', 'users.view', 'finance.view'],
+    permissions: ['dashboard.view', 'suppliers.view', 'products.view', 'orders.view', 'users.view', 'finance.view', 'settings.view', 'contacts.view'],
     isEditable: true,
   },
 ];

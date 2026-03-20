@@ -1,0 +1,1682 @@
+{
+  "common": {
+    "loading": "載入中...",
+    "error": "出錯了",
+    "retry": "重試",
+    "cancel": "取消",
+    "confirm": "確認",
+    "save": "儲存",
+    "delete": "刪除",
+    "edit": "編輯",
+    "search": "搜尋",
+    "filter": "篩選",
+    "sort": "排序",
+    "more": "更多",
+    "back": "返回",
+    "next": "下一步",
+    "prev": "上一步",
+    "submit": "提交",
+    "reset": "重置",
+    "close": "關閉",
+    "viewAll": "檢視全部",
+    "noData": "暫無資料",
+    "required": "必填",
+    "refresh": "重新整理"
+  },
+  "nav": {
+    "home": "首頁",
+    "destinations": "目的地",
+    "categories": "分類",
+    "about": "關於我們",
+    "contact": "聯絡我們",
+    "cart": "購物車",
+    "orders": "我的訂單",
+    "favorites": "我的收藏",
+    "profile": "個人中心"
+  },
+  "brand": {
+    "name": "暢遊南澳",
+    "tagline": "Enjoy South Australia"
+  },
+  "auth": {
+    "login": "登入",
+    "feature1": "輕鬆預訂南澳熱門景點",
+    "feature2": "支援微信、支付寶支付",
+    "feature3": "全程中文客服支援",
+    "feature4": "精選優質旅遊產品",
+    "register": "註冊",
+    "logout": "退出登入",
+    "loginTitle": "歡迎回來",
+    "loginSubtitle": "登入您的暢遊南澳賬號",
+    "registerTitle": "建立賬號",
+    "registerSubtitle": "開啟您的南澳之旅",
+    "phone": "手機號",
+    "email": "郵箱",
+    "password": "密碼",
+    "verificationCode": "驗證碼",
+    "getCode": "獲取驗證碼",
+    "resendCode": "重新傳送",
+    "countdown": "{{seconds}}秒後重發",
+    "phoneLogin": "手機登入",
+    "emailLogin": "郵箱登入",
+    "wechatLogin": "微信登入",
+    "googleLogin": "Google登入",
+    "thirdPartyLogin": "第三方登入",
+    "agreeTerms": "我已閱讀並同意",
+    "termsOfService": "服務條款",
+    "and": "和",
+    "privacyPolicy": "隱私政策",
+    "forgotPassword": "忘記密碼？",
+    "noAccount": "還沒有賬號？",
+    "hasAccount": "已有賬號？",
+    "goRegister": "立即註冊",
+    "goLogin": "立即登入",
+    "loginSuccess": "登入成功",
+    "registerSuccess": "註冊成功",
+    "logoutSuccess": "已退出登入",
+    "phoneRequired": "請輸入手機號",
+    "phoneInvalid": "手機號格式不正確",
+    "emailRequired": "請輸入郵箱",
+    "emailInvalid": "郵箱格式不正確",
+    "codeRequired": "請輸入驗證碼",
+    "codeInvalid": "驗證碼不正確",
+    "codeSent": "驗證碼已傳送",
+    "pleaseAgreeTerms": "請閱讀並同意服務條款"
+  },
+  "user": {
+    "profile": "個人資料",
+    "profileTitle": "個人中心",
+    "orders": "我的訂單",
+    "favorites": "我的收藏",
+    "favoritesEmpty": "還沒有收藏的產品",
+    "favoritesEmptyHint": "瀏覽產品時點選愛心圖示即可收藏",
+    "explore": "去發現",
+    "coupons": "優惠券",
+    "myPoints": "我的積分",
+    "helpCenter": "幫助中心",
+    "logoutConfirm": "確定要退出登入嗎？",
+    "quickActions": "快捷功能",
+    "recentOrders": "最近訂單",
+    "noOrders": "暫無訂單",
+    "startExploring": "去探索南澳精彩旅程",
+    "travelDate": "出行日期",
+    "guests": "人",
+    "memberLevel": {
+      "normal": "普通會員",
+      "silver": "白銀會員",
+      "gold": "黃金會員",
+      "platinum": "鉑金會員"
+    },
+    "orderStats": {
+      "pending": "待支付",
+      "confirmed": "待出行",
+      "completed": "已完成",
+      "refund": "退款/售後"
+    },
+    "reviews": "我的評價",
+    "settings": "賬號設定",
+    "nickname": "暱稱",
+    "avatar": "頭像",
+    "phone": "手機號",
+    "email": "郵箱",
+    "language": "語言",
+    "changePassword": "修改密碼",
+    "editProfile": "編輯資料",
+    "orderCount": "訂單",
+    "favoriteCount": "收藏",
+    "reviewCount": "評價"
+  },
+  "product": {
+    "price": "價格",
+    "priceFrom": "起",
+    "originalPrice": "原價",
+    "perPerson": "/人",
+    "rating": "評分",
+    "reviews": "條評價",
+    "location": "地點",
+    "duration": "時長",
+    "highlights": "行程亮點",
+    "inclusions": "費用包含",
+    "exclusions": "費用不含",
+    "meetingPoint": "集合地點",
+    "instantConfirmation": "即時確認",
+    "freeCancellation": "免費取消",
+    "available": "可預訂",
+    "limited": "庫存緊張",
+    "soldOut": "已售罄",
+    "addToCart": "加入購物車",
+    "buyNow": "立即預訂",
+    "addToFavorites": "收藏",
+    "removeFromFavorites": "取消收藏",
+    "share": "分享",
+    "selectDate": "選擇日期",
+    "selectTime": "選擇時間",
+    "selectParticipants": "選擇人數",
+    "adult": "成人",
+    "child": "兒童",
+    "infant": "嬰兒",
+    "totalPrice": "總價",
+    "description": "詳情介紹",
+    "customerReviews": "使用者評價",
+    "relatedProducts": "相關推薦",
+    "noReviews": "暫無評價",
+    "writeReview": "寫評價",
+    "locationMap": "位置地圖",
+    "navigateTo": "導航前往"
+  },
+  "tags": {
+    "hot": "熱賣",
+    "new": "新品",
+    "discount": "特惠",
+    "recommended": "推薦",
+    "family": "親子",
+    "couple": "情侶",
+    "adventure": "冒險",
+    "nature": "自然",
+    "food": "美食",
+    "culture": "文化"
+  },
+  "cart": {
+    "title": "購物車",
+    "empty": "購物車是空的",
+    "emptyHint": "快去挑選心儀的旅行產品吧",
+    "goShopping": "去逛逛",
+    "items": "件商品",
+    "subtotal": "小計",
+    "selectAll": "全選",
+    "selectedCount": "已選 {{count}} 件",
+    "totalAmount": "合計",
+    "checkout": "去結算",
+    "remove": "刪除",
+    "quantity": "數量",
+    "travelDate": "出行日期",
+    "travelTime": "出行時間",
+    "participants": "出行人數",
+    "changeDate": "修改日期",
+    "addedToCart": "已加入購物車"
+  },
+  "checkout": {
+    "title": "訂單確認",
+    "processing": "處理中...",
+    "loginRequired": "請先登入",
+    "loginToContinue": "您需要登入後才能繼續下單",
+    "successTitle": "訂單提交成功",
+    "successMessage": "您的訂單已提交，請在30分鐘內完成支付",
+    "viewOrder": "檢視訂單",
+    "continueShopping": "繼續購物"
+  },
+  "order": {
+    "title": "訂單",
+    "orderNumber": "訂單號",
+    "orderTime": "下單時間",
+    "orderStatus": "訂單狀態",
+    "contactInfo": "聯絡人資訊",
+    "contactName": "聯絡人姓名",
+    "contactPhone": "聯絡電話",
+    "contactEmail": "聯絡郵箱",
+    "contactWechat": "微訊號（選填）",
+    "notes": "備註",
+    "notesPlaceholder": "如有特殊需求請備註",
+    "paymentMethod": "支付方式",
+    "orderSummary": "訂單摘要",
+    "submitOrder": "提交訂單",
+    "payNow": "立即支付",
+    "viewDetails": "檢視詳情",
+    "cancelOrder": "取消訂單",
+    "confirmCancel": "確認取消訂單？",
+    "cancelReason": "取消原因",
+    "requestRefund": "申請退款",
+    "viewVoucher": "檢視憑證",
+    "downloadVoucher": "下載憑證",
+    "contactSupport": "聯絡客服",
+    "reorder": "再次購買",
+    "writeReview": "去評價",
+    "bookingDetails": "預訂詳情",
+    "travelDate": "出行日期",
+    "selectDate": "請選擇日期",
+    "participants": "出行人數",
+    "adults": "成人",
+    "children": "兒童",
+    "priceBreakdown": "價格明細",
+    "adultPrice": "成人價",
+    "childPrice": "兒童價",
+    "subtotal": "小計",
+    "couponDiscount": "優惠券",
+    "total": "總計",
+    "status": {
+      "pending_payment": "待支付",
+      "paid": "已支付",
+      "confirmed": "已確認",
+      "in_progress": "進行中",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "refund_requested": "退款中",
+      "refunded": "已退款"
+    },
+    "tabs": {
+      "all": "全部",
+      "pending": "待支付",
+      "confirmed": "待出行",
+      "completed": "已完成"
+    },
+    "empty": {
+      "title": "暫無訂單",
+      "description": "去探索南澳精彩旅程",
+      "action": "去逛逛"
+    },
+    "timeline": {
+      "title": "訂單狀態",
+      "orderCreated": "訂單建立",
+      "paymentSuccess": "支付成功",
+      "waitingPayment": "等待支付",
+      "orderConfirmed": "訂單確認",
+      "tripCompleted": "行程完成",
+      "orderCancelled": "訂單取消"
+    },
+    "paymentMethods": {
+      "wechat": "微信支付",
+      "alipay": "支付寶",
+      "credit_card": "信用卡/簽帳金融卡",
+      "paypal": "PayPal",
+      "bank_transfer": "銀行轉賬"
+    }
+  },
+  "payment": {
+    "title": "支付",
+    "selectMethod": "選擇支付方式",
+    "wechat": "微信支付",
+    "alipay": "支付寶",
+    "bankTransfer": "對公轉賬",
+    "stripe": "信用卡/簽帳金融卡",
+    "paypal": "PayPal",
+    "amount": "支付金額",
+    "paymentSuccess": "支付成功",
+    "paymentFailed": "支付失敗",
+    "paymentPending": "等待支付確認",
+    "scanToPay": "掃碼支付",
+    "bankInfo": "銀行賬戶資訊",
+    "uploadProof": "上傳轉賬憑證",
+    "securityNotice": "您的支付資訊已加密保護，請放心支付"
+  },
+  "participant": {
+    "title": "出行人資訊",
+    "people": "人",
+    "unnamed": "未命名出行人",
+    "add": "新增出行人",
+    "firstName": "名",
+    "lastName": "姓",
+    "firstNamePlaceholder": "請輸入名字",
+    "lastNamePlaceholder": "請輸入姓氏",
+    "email": "郵箱",
+    "emailPlaceholder": "請輸入郵箱",
+    "phone": "手機號",
+    "phonePlaceholder": "請輸入手機號",
+    "dateOfBirth": "出生日期",
+    "nationality": "國籍",
+    "nationalityPlaceholder": "請輸入國籍",
+    "passportNumber": "護照號碼",
+    "passportPlaceholder": "請輸入護照號碼",
+    "specialRequirements": "特殊需求",
+    "specialRequirementsPlaceholder": "如飲食禁忌、行動不便等"
+  },
+  "review": {
+    "title": "評價",
+    "rating": "評分",
+    "content": "評價內容",
+    "contentPlaceholder": "分享您的體驗...",
+    "addPhotos": "新增照片",
+    "submit": "提交評價",
+    "helpful": "有幫助",
+    "reply": "商家回覆",
+    "travelDate": "出行日期"
+  },
+  "search": {
+    "placeholder": "搜尋目的地、景點、活動...",
+    "recentSearches": "最近搜尋",
+    "hotSearches": "熱門搜尋",
+    "noResults": "未找到相關結果",
+    "tryOther": "換個關鍵詞試試"
+  },
+  "filter": {
+    "title": "篩選",
+    "category": "分類",
+    "destination": "目的地",
+    "priceRange": "價格範圍",
+    "rating": "評分",
+    "tags": "標籤",
+    "apply": "應用篩選",
+    "clear": "清除篩選",
+    "allCategories": "全部分類",
+    "allDestinations": "全部目的地",
+    "advancedFilters": "高階篩選",
+    "clearAll": "清除",
+    "features": "特色",
+    "services": "服務",
+    "sortBy": "排序",
+    "sort": {
+      "recommended": "推薦",
+      "priceAsc": "價格↑",
+      "priceDesc": "價格↓",
+      "rating": "評分",
+      "sales": "銷量",
+      "newest": "最新"
+    }
+  },
+  "services": {
+    "instantConfirmation": "即時確認",
+    "freeCancellation": "免費取消",
+    "pickupService": "酒店接送",
+    "chineseGuide": "中文導遊"
+  },
+  "destination": {
+    "featured": "精選",
+    "products": "個產品",
+    "explore": "探索",
+    "title": "熱門目的地",
+    "subtitle": "探索南澳大利亞的精彩目的地",
+    "searchPlaceholder": "搜尋目的地...",
+    "allDestinations": "所有目的地"
+  },
+  "category": {
+    "products": "個產品",
+    "title": "探索分類",
+    "subtitle": "按興趣發現南澳精彩體驗",
+    "allCategories": "所有分類",
+    "popularCategories": "熱門分類",
+    "moreCategories": "更多分類"
+  },
+  "sort": {
+    "default": "預設排序",
+    "priceAsc": "價格從低到高",
+    "priceDesc": "價格從高到低",
+    "rating": "評分最高",
+    "popularity": "人氣最高",
+    "newest": "最新上架"
+  },
+  "productList": {
+    "searchPlaceholder": "搜尋產品...",
+    "results": "搜尋結果",
+    "products": "個產品",
+    "sortBy": "排序：",
+    "sortOptions": {
+      "recommend": "推薦",
+      "priceLow": "價格從低到高",
+      "priceHigh": "價格從高到低",
+      "rating": "評分最高",
+      "reviews": "評價最多"
+    },
+    "noResults": "沒有找到相關產品",
+    "tryOther": "試試其他搜尋詞"
+  },
+  "about": {
+    "title": "關於我們",
+    "subtitle": "您的南澳旅行專家",
+    "intro": {
+      "title": "暢遊南澳 EnjoySA",
+      "description": "我們是一家專注於南澳大利亞旅遊服務的專業團隊，致力於為華人遊客提供最優質的旅行體驗。無論是袋鼠島的野生動物、巴羅薩谷的美酒佳餚，還是阿德萊德的城市魅力，我們都能為您量身定製完美的旅程。"
+    },
+    "features": {
+      "title": "為什麼選擇我們",
+      "items": [
+        {
+          "icon": "🇨🇳",
+          "title": "中文服務",
+          "description": "全程中文導遊和客服支援，溝通無障礙"
+        },
+        {
+          "icon": "💳",
+          "title": "本地支付",
+          "description": "支援微信、支付寶等多種中國支付方式"
+        },
+        {
+          "icon": "⭐",
+          "title": "品質保障",
+          "description": "精選優質供應商，確保行程質量"
+        },
+        {
+          "icon": "💰",
+          "title": "價格透明",
+          "description": "無隱藏費用，明碼標價"
+        },
+        {
+          "icon": "🔒",
+          "title": "安全出行",
+          "description": "完善的保險保障，讓您安心出遊"
+        },
+        {
+          "icon": "📞",
+          "title": "24/7 支援",
+          "description": "全天候客戶服務，隨時解答您的疑問"
+        }
+      ]
+    },
+    "team": {
+      "title": "我們的團隊",
+      "description": "我們的團隊由經驗豐富的旅遊專家組成，深耕南澳旅遊多年，對當地的風土人情瞭如指掌。我們不僅僅是您的旅行服務商，更是您探索南澳的朋友和嚮導。"
+    },
+    "mission": {
+      "title": "我們的使命",
+      "description": "讓每一位來到南澳的華人遊客都能感受到賓至如歸的溫暖，體驗到南澳大利亞獨特的自然風光和人文魅力，帶走美好的回憶。"
+    }
+  },
+  "contact": {
+    "title": "聯絡我們",
+    "subtitle": "隨時為您服務",
+    "contactInfo": {
+      "title": "聯絡方式",
+      "items": [
+        {
+          "icon": "📞",
+          "label": "客服電話",
+          "value": "+61 8 1234 5678",
+          "description": "週一至週日 9:00-21:00 (澳洲時間)"
+        },
+        {
+          "icon": "📱",
+          "label": "微信客服",
+          "value": "EnjoySA_Service",
+          "description": "掃碼新增，線上諮詢"
+        },
+        {
+          "icon": "✉️",
+          "label": "電子郵箱",
+          "value": "service@enjoysa.com.au",
+          "description": "我們會在24小時內回覆"
+        },
+        {
+          "icon": "📍",
+          "label": "辦公地址",
+          "value": "阿德萊德市中心",
+          "description": "Level 5, 123 King William Street, Adelaide SA 5000"
+        }
+      ]
+    },
+    "form": {
+      "title": "傳送訊息",
+      "name": "您的姓名",
+      "email": "電子郵箱",
+      "phone": "聯絡電話（可選）",
+      "subject": "主題",
+      "message": "您的留言",
+      "submit": "傳送訊息",
+      "sending": "傳送中...",
+      "success": "訊息已傳送，我們會盡快回復您！",
+      "placeholder": {
+        "name": "請輸入您的姓名",
+        "email": "請輸入您的郵箱",
+        "phone": "請輸入您的電話",
+        "subject": "請輸入主題",
+        "message": "請輸入您想諮詢的內容..."
+      }
+    },
+    "workingHours": {
+      "title": "工作時間",
+      "items": [
+        {
+          "day": "週一至週五",
+          "hours": "9:00 - 18:00"
+        },
+        {
+          "day": "週六",
+          "hours": "10:00 - 16:00"
+        },
+        {
+          "day": "週日及節假日",
+          "hours": "休息（緊急情況可留言）"
+        }
+      ]
+    }
+  },
+  "faq": {
+    "title": "常見問題",
+    "subtitle": "在這裡找到關於暢遊南澳的常見問題解答",
+    "categories": {
+      "booking": "預訂相關",
+      "payment": "支付與退款",
+      "tour": "行程安排",
+      "other": "其他問題"
+    },
+    "faqs": {
+      "booking": [
+        {
+          "question": "如何預訂旅遊產品？",
+          "answer": "您可以在我們的網站上瀏覽產品，選擇合適的日期和人數後，點選「立即預訂」按鈕。按照提示完成支付即可完成預訂。預訂成功後，您將收到確認郵件和電子票據。"
+        },
+        {
+          "question": "預訂需要提前多久？",
+          "answer": "建議您至少提前24-48小時預訂，旺季期間（如學校假期、公共假日）建議提前1周預訂。部分熱門產品可能需要更早預訂。"
+        },
+        {
+          "question": "可以為他人預訂嗎？",
+          "answer": "可以。您可以為家人、朋友預訂產品，只需在預訂時填寫實際參與者的資訊即可。"
+        }
+      ],
+      "payment": [
+        {
+          "question": "支援哪些支付方式？",
+          "answer": "我們支援多種支付方式，包括：微信支付、支付寶、銀聯卡、Visa/Mastercard信用卡等。所有支付均透過安全加密通道處理。"
+        },
+        {
+          "question": "如何申請退款？",
+          "answer": "如需退款，請在「我的訂單」中找到相應訂單，點選「申請退款」。我們會在1-3個工作日內稽核您的申請。符合退款條件的訂單將在5-10個工作日內退回原支付賬戶。"
+        },
+        {
+          "question": "退款政策是怎樣的？",
+          "answer": "出發前7天以上取消可全額退款；出發前3-7天取消退還50%；出發前72小時內取消不予退款。具體政策可能因產品而異，請檢視產品詳情頁的退款說明。"
+        }
+      ],
+      "tour": [
+        {
+          "question": "行程包含接送嗎？",
+          "answer": "大部分產品提供阿德萊德市區酒店接送服務，具體接送安排請檢視產品詳情。部分產品可能需要自行前往集合點。"
+        },
+        {
+          "question": "行程會因天氣取消嗎？",
+          "answer": "如遇惡劣天氣導致活動無法安全進行，我們會提前通知您並安排改期或全額退款。請確保預留準確的聯絡方式。"
+        },
+        {
+          "question": "需要帶什麼物品？",
+          "answer": "根據不同的活動型別，建議攜帶：舒適的步行鞋、防曬用品、帽子、相機、飲用水等。具體需攜帶物品請參考產品詳情頁的「溫馨提示」。"
+        }
+      ],
+      "other": [
+        {
+          "question": "如何聯絡客服？",
+          "answer": "您可以透過以下方式聯絡我們：電話 +61 8 XXXX XXXX（工作時間）、郵箱 support@enjoysa.com.au、或在網站上使用線上客服功能。我們會盡快回復您的問題。"
+        },
+        {
+          "question": "產品評價如何提交？",
+          "answer": "完成行程後，您可以在「我的訂單」中對已完成的訂單進行評價。您的真實評價將幫助其他使用者做出選擇，也幫助我們不斷改進服務。"
+        },
+        {
+          "question": "如何成為合作伙伴？",
+          "answer": "如果您是南澳旅遊服務提供商，歡迎與我們合作。請傳送郵件至 partner@enjoysa.com.au，附上您的公司介紹和產品資訊，我們會盡快與您聯絡。"
+        }
+      ]
+    },
+    "contact": "沒有找到答案？",
+    "contactLink": "聯絡我們"
+  },
+  "terms": {
+    "title": "服務條款",
+    "lastUpdated": "最後更新：2024年1月",
+    "sections": {
+      "acceptance": {
+        "title": "1. 服務協議的接受",
+        "content": "歡迎使用暢遊南澳（EnjoySA）提供的服務。透過訪問或使用我們的網站和服務，您同意受本服務條款的約束。如果您不同意這些條款，請勿使用我們的服務。\n\n我們保留隨時修改這些條款的權利。修改後的條款將在網站上公佈後立即生效。繼續使用我們的服務即表示您接受修改後的條款。"
+      },
+      "description": {
+        "title": "2. 服務描述",
+        "content": "暢遊南澳是一個旅遊預訂平臺，為使用者提供南澳大利亞地區的旅遊產品預訂服務，包括但不限於：一日遊、多日遊、門票、接送服務等。\n\n我們作為中介平臺，連線使用者與旅遊服務提供商。實際的旅遊服務由第三方服務提供商提供，我們不直接參與服務的執行。"
+      },
+      "account": {
+        "title": "3. 使用者賬戶",
+        "content": "使用某些服務可能需要註冊賬戶。您同意：\n• 提供準確、完整的註冊資訊\n• 保護賬戶安全，不與他人共享登入憑據\n• 對賬戶下的所有活動負責\n• 發現未授權使用時立即通知我們\n\n我們有權在發現違規行為時暫停或終止賬戶。"
+      },
+      "booking": {
+        "title": "4. 預訂與支付",
+        "content": "4.1 預訂確認\n提交預訂並完成支付後，您將收到確認郵件。只有收到確認郵件才表示預訂成功。\n\n4.2 價格與費用\n所有價格均以澳元（AUD）顯示。價格可能會變動，以預訂時顯示的價格為準。\n\n4.3 支付安全\n我們使用安全的第三方支付處理服務。我們不儲存您的完整支付資訊。"
+      },
+      "cancellation": {
+        "title": "5. 取消與退款",
+        "content": "5.1 使用者取消\n取消政策因產品而異，請參閱具體產品的取消政策。一般規則：\n• 出發前7天以上：全額退款\n• 出發前3-7天：50%退款\n• 出發前72小時內：不予退款\n\n5.2 服務商取消\n如服務商因故取消行程，您可選擇改期或申請全額退款。\n\n5.3 不可抗力\n因天氣、自然災害等不可抗力導致的取消，我們將協助安排改期或退款。"
+      },
+      "conduct": {
+        "title": "6. 使用者行為準則",
+        "content": "使用我們的服務時，您同意：\n• 遵守所有適用的法律法規\n• 尊重其他使用者和服務提供商\n• 不釋出虛假、誤導或有害資訊\n• 不進行任何可能損害平臺運營的行為\n• 不濫用優惠、促銷或獎勵機制\n\n違反這些準則可能導致賬戶被暫停或終止。"
+      },
+      "ip": {
+        "title": "7. 智慧財產權",
+        "content": "網站上的所有內容，包括但不限於文字、圖片、圖示、介面設計等，均受智慧財產權法保護。\n\n未經我們書面許可，您不得複製、修改、分發或以其他方式使用這些內容。使用者提交的評價和內容，授予我們非獨佔性的使用許可。"
+      },
+      "disclaimer": {
+        "title": "8. 免責宣告",
+        "content": "8.1 服務「按現狀」提供\n我們盡力確保服務的可用性和準確性，但不保證服務不會中斷或無錯誤。\n\n8.2 第三方服務\n對於第三方服務提供商的服務質量，我們不承擔直接責任。如有糾紛，我們將盡力協助調解。\n\n8.3 責任限制\n在法律允許的範圍內，我們的責任以您支付的預訂費用為限。"
+      },
+      "dispute": {
+        "title": "9. 爭議解決",
+        "content": "如發生爭議，雙方應首先透過友好協商解決。如協商不成，應提交至澳大利亞南澳州有管轄權的法院解決。\n\n本條款受澳大利亞南澳州法律管轄並據其解釋。"
+      },
+      "contact": {
+        "title": "10. 聯絡我們",
+        "content": "如對本服務條款有任何疑問，請聯絡我們：\n\n郵箱：legal@enjoysa.com.au\n地址：Adelaide, South Australia, Australia\n電話：+61 8 XXXX XXXX"
+      }
+    }
+  },
+  "privacy": {
+    "title": "隱私政策",
+    "lastUpdated": "最後更新：2024年1月",
+    "sections": {
+      "overview": {
+        "title": "概述",
+        "content": "暢遊南澳（EnjoySA）深知個人隱私的重要性。本隱私政策說明我們如何收集、使用、儲存和保護您的個人資訊。\n\n使用我們的服務即表示您同意本隱私政策中描述的資料處理方式。我們鼓勵您仔細閱讀本政策，如有疑問，請隨時聯絡我們。"
+      },
+      "collection": {
+        "title": "1. 我們收集的資訊",
+        "content": "我們可能收集以下型別的個人資訊：\n\n1.1 您主動提供的資訊\n• 賬戶註冊資訊：姓名、郵箱、手機號碼\n• 預訂資訊：出行日期、參與人數、特殊需求\n• 支付資訊：支付方式、交易記錄（我們不儲存完整的銀行卡資訊）\n• 通訊內容：您與客服的對話、評價和反饋\n\n1.2 自動收集的資訊\n• 裝置資訊：裝置型別、作業系統、瀏覽器型別\n• 日誌資訊：訪問時間、頁面瀏覽記錄、IP地址\n• Cookie和類似技術收集的資訊"
+      },
+      "usage": {
+        "title": "2. 資訊使用目的",
+        "content": "我們使用您的資訊用於：\n\n• 處理您的預訂和提供服務\n• 傳送預訂確認、行程提醒和重要通知\n• 改善我們的產品和服務\n• 提供客戶支援\n• 傳送營銷資訊（可選擇退訂）\n• 防止欺詐和確保安全\n• 遵守法律義務"
+      },
+      "sharing": {
+        "title": "3. 資訊共享",
+        "content": "我們可能在以下情況下共享您的資訊：\n\n3.1 服務提供商\n為完成您的預訂，我們會將必要資訊提供給旅遊服務商（如接送時間、人數等）。\n\n3.2 支付處理商\n處理支付需要將相關資訊提供給第三方支付服務商。\n\n3.3 法律要求\n在法律要求或政府機關合法請求時，我們可能披露您的資訊。\n\n3.4 業務轉讓\n如發生合併、收購等情況，您的資訊可能作為業務資產轉移。\n\n我們不會向第三方出售您的個人資訊。"
+      },
+      "cookies": {
+        "title": "4. Cookie 和追蹤技術",
+        "content": "我們使用 Cookie 和類似技術來：\n\n• 記住您的偏好和設定\n• 分析網站流量和使用情況\n• 提供個性化內容和廣告\n• 改善使用者體驗\n\n您可以透過瀏覽器設定管理 Cookie 偏好。禁用 Cookie 可能影響某些功能的正常使用。"
+      },
+      "security": {
+        "title": "5. 資料安全",
+        "content": "我們採取多種安全措施保護您的資訊：\n\n• 使用 SSL/TLS 加密傳輸資料\n• 敏感資料加密儲存\n• 定期安全審計和更新\n• 員工培訓和訪問控制\n• 安全的資料中心託管\n\n儘管我們努力保護您的資訊，但網際網路傳輸不能保證100%安全。"
+      },
+      "retention": {
+        "title": "6. 資料保留",
+        "content": "我們僅在必要的時間內保留您的個人資訊：\n\n• 賬戶資訊：賬戶存續期間及登出後的合理期限\n• 交易記錄：根據財務和法律要求保留\n• 日誌資料：通常保留不超過12個月\n\n您可以隨時要求刪除您的個人資訊，但某些資訊可能因法律原因需要保留。"
+      },
+      "rights": {
+        "title": "7. 您的權利",
+        "content": "根據適用的隱私法律，您可能擁有以下權利：\n\n• 訪問權：請求獲取我們持有的您的個人資訊\n• 更正權：要求更正不準確的資訊\n• 刪除權：要求刪除您的個人資訊\n• 限制處理權：要求限制對您資訊的處理\n• 資料可攜權：請求以可機讀格式獲取您的資料\n• 反對權：反對某些資料處理活動\n\n如需行使這些權利，請透過下方聯絡方式與我們聯絡。"
+      },
+      "children": {
+        "title": "8. 兒童隱私",
+        "content": "我們的服務不面向16歲以下的兒童。我們不會故意收集兒童的個人資訊。如果您發現我們無意中收集了兒童資訊，請立即聯絡我們，我們將及時刪除。"
+      },
+      "changes": {
+        "title": "9. 政策變更",
+        "content": "我們可能會不時更新本隱私政策。重大變更將透過網站通知或郵件通知您。建議您定期檢視本頁面瞭解最新的隱私保護措施。"
+      },
+      "contact": {
+        "title": "10. 聯絡我們",
+        "content": "如對本隱私政策有任何疑問或需要行使您的權利，請聯絡我們：\n\n郵箱：privacy@enjoysa.com.au\n地址：Adelaide, South Australia, Australia\n電話：+61 8 XXXX XXXX\n\n我們將在收到請求後30天內回覆。"
+      }
+    }
+  },
+  "footer": {
+    "about": "關於我們",
+    "aboutText": "EnjoySA是為澳洲旅客提供獨具本地特色的「輕奢體驗+美食+住宿」一站式預定平臺。",
+    "quickLinks": "快速連結",
+    "customerService": "客戶服務",
+    "contactUs": "聯絡我們",
+    "faq": "常見問題",
+    "serviceAgreement": "服務協議",
+    "privacyPolicy": "隱私政策",
+    "followUs": "關注我們",
+    "wechat": "微信公眾號",
+    "weibo": "微博",
+    "partnerPortal": "合作伙伴",
+    "supplierPortal": "供應商入口",
+    "adminPortal": "平臺登入",
+    "copyright": "2026 暢遊南澳 EnjoySA. 保留所有權利。"
+  },
+  "home": {
+    "heroTitle": "探索南澳大利亞",
+    "heroSubtitle": "發現阿德萊德及周邊最精彩的旅遊體驗",
+    "searchPlaceholder": "搜尋景點、活動、美食...",
+    "popularDestinations": "熱門目的地",
+    "featuredProducts": "精選推薦",
+    "categories": "探索分類",
+    "whyChooseUs": "為什麼選擇我們",
+    "localExpert": "本地專家",
+    "localExpertDesc": "深耕南澳多年，提供最地道的旅行體驗",
+    "bestPrice": "優質價格",
+    "bestPriceDesc": "官方直採，確保最具競爭力的價格",
+    "easyBooking": "便捷預訂",
+    "easyBookingDesc": "支援多種支付方式，即時確認",
+    "support247": "全天候服務",
+    "support247Desc": "中文客服團隊，隨時解答您的問題"
+  },
+  "region": {
+    "attractionCount": "{{count}} 個景點",
+    "title": "探索區域",
+    "subtitle": "六大區域，各有精彩"
+  },
+  "error": {
+    "networkError": "網路錯誤，請稍後重試",
+    "serverError": "伺服器錯誤",
+    "notFound": "頁面未找到",
+    "unauthorized": "請先登入",
+    "forbidden": "沒有許可權",
+    "validationError": "輸入有誤，請檢查"
+  },
+  "admin": {
+    "menu": {
+      "dashboard": "控制檯",
+      "suppliers": "供應商管理",
+      "products": "產品稽核",
+      "orders": "訂單管理",
+      "users": "使用者管理",
+      "finance": "財務管理",
+      "admins": "管理員",
+      "settings": "系統設定"
+    },
+    "logout": "退出登入",
+    "roles": {
+      "superAdmin": "超級管理員",
+      "admin": "管理員",
+      "operator": "運營人員",
+      "viewer": "唯讀"
+    },
+    "login": {
+      "platformName": "平臺管理後臺",
+      "description": "EnjoySA 平臺綜合管理系統",
+      "feature1": "使用者管理",
+      "feature2": "供應商管理",
+      "feature3": "產品稽核",
+      "feature4": "資料分析",
+      "title": "管理員登入",
+      "welcomeBack": "歡迎回來",
+      "subtitle": "登入訪問管理後臺",
+      "email": "郵箱",
+      "emailPlaceholder": "請輸入郵箱",
+      "password": "密碼",
+      "passwordPlaceholder": "請輸入密碼",
+      "loginButton": "登入",
+      "loggingIn": "登入中...",
+      "securityNote": "這是安全管理區域，未經授權禁止訪問。",
+      "errorRequired": "請輸入郵箱和密碼",
+      "errorInvalid": "郵箱或密碼錯誤",
+      "errorNetwork": "網路錯誤，請重試"
+    },
+    "dashboard": {
+      "title": "控制檯",
+      "totalUsers": "總使用者數",
+      "newUsersToday": "今日新增",
+      "totalOrders": "總訂單數",
+      "ordersToday": "今日訂單",
+      "revenue": "總收入",
+      "revenueToday": "今日收入",
+      "totalSuppliers": "供應商數",
+      "pendingReview": "待稽核",
+      "recentOrders": "最近訂單",
+      "topProducts": "熱門產品"
+    },
+    "suppliers": {
+      "title": "供應商管理",
+      "search": "搜尋供應商...",
+      "add": "新增供應商",
+      "export": "匯出",
+      "empty": "暫無供應商資料",
+      "showing": "顯示 {{from}}-{{to}} 條，共 {{total}} 條",
+      "stats": {
+        "total": "總供應商數",
+        "pending": "待稽核",
+        "approved": "已透過",
+        "suspended": "已暫停"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待稽核",
+        "approved": "已透過",
+        "suspended": "已暫停"
+      },
+      "table": {
+        "name": "供應商名稱",
+        "type": "型別",
+        "contact": "聯絡方式",
+        "products": "產品數",
+        "orders": "訂單數",
+        "status": "狀態",
+        "joinDate": "入駐時間",
+        "actions": "操作"
+      },
+      "status": {
+        "pending": "待稽核",
+        "approved": "已透過",
+        "rejected": "已拒絕",
+        "suspended": "已暫停"
+      },
+      "actions": {
+        "view": "檢視",
+        "approve": "透過",
+        "reject": "拒絕",
+        "suspend": "暫停",
+        "unsuspend": "恢復"
+      },
+      "detail": {
+        "title": "供應商詳情",
+        "tabs": {
+          "info": "基本資訊",
+          "products": "產品列表",
+          "orders": "訂單記錄"
+        },
+        "contactInfo": "聯絡資訊",
+        "email": "郵箱",
+        "phone": "電話",
+        "contactPerson": "聯絡人",
+        "joinDate": "入駐日期",
+        "products": "產品",
+        "orders": "訂單",
+        "productsPlaceholder": "產品列表功能開發中...",
+        "ordersPlaceholder": "訂單記錄功能開發中..."
+      },
+      "reject": {
+        "title": "拒絕供應商",
+        "message": "請填寫拒絕原因，將傳送給供應商",
+        "placeholder": "請輸入拒絕原因..."
+      },
+      "suspend": {
+        "title": "暫停供應商",
+        "message": "請填寫暫停原因，暫停後該供應商產品將下架",
+        "placeholder": "請輸入暫停原因..."
+      },
+      "form": {
+        "createTitle": "新增供應商",
+        "editTitle": "編輯供應商",
+        "basicInfo": "基本資訊",
+        "name": "企業名稱",
+        "namePlaceholder": "請輸入企業名稱",
+        "nameEn": "企業英文名",
+        "nameEnPlaceholder": "Please enter company name in English",
+        "type": "供應商型別",
+        "businessLicense": "營業執照號",
+        "businessLicensePlaceholder": "請輸入營業執照號",
+        "contactInfo": "聯絡資訊",
+        "contactName": "聯絡人",
+        "contactNamePlaceholder": "請輸入聯絡人姓名",
+        "contactPhone": "聯絡電話",
+        "contactPhonePlaceholder": "請輸入聯絡電話",
+        "contactEmail": "聯絡郵箱",
+        "contactEmailPlaceholder": "請輸入聯絡郵箱",
+        "address": "地址",
+        "addressPlaceholder": "請輸入地址",
+        "commissionSettings": "佣金設定",
+        "commissionRate": "佣金比例",
+        "description": "簡介",
+        "descriptionZh": "中文簡介",
+        "descriptionEn": "英文簡介",
+        "descriptionPlaceholder": "請輸入供應商簡介...",
+        "descriptionEnPlaceholder": "Please enter supplier description...",
+        "errors": {
+          "nameRequired": "請輸入企業名稱",
+          "contactNameRequired": "請輸入聯絡人姓名",
+          "phoneRequired": "請輸入聯絡電話",
+          "emailRequired": "請輸入聯絡郵箱",
+          "emailInvalid": "郵箱格式不正確"
+        }
+      }
+    },
+    "products": {
+      "title": "產品稽核",
+      "search": "搜尋產品...",
+      "export": "匯出",
+      "empty": "暫無產品資料",
+      "showing": "顯示 {{from}}-{{to}} 條，共 {{total}} 條",
+      "stats": {
+        "total": "總產品數",
+        "pending": "待稽核",
+        "approved": "已透過",
+        "rejected": "已駁回",
+        "today": "今日新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待稽核",
+        "approved": "已透過",
+        "rejected": "已駁回"
+      },
+      "table": {
+        "product": "產品",
+        "category": "分類",
+        "supplier": "供應商",
+        "price": "價格",
+        "status": "狀態",
+        "submitDate": "提交時間",
+        "actions": "操作"
+      },
+      "categories": {
+        "dayTour": "一日遊",
+        "multiDay": "多日遊",
+        "activity": "活動體驗",
+        "ticket": "景點門票"
+      },
+      "status": {
+        "draft": "草稿",
+        "pending": "待稽核",
+        "approved": "已透過",
+        "rejected": "已駁回",
+        "offline": "已下架"
+      },
+      "actions": {
+        "view": "檢視",
+        "approve": "透過",
+        "reject": "駁回",
+        "create": "新建產品",
+        "edit": "編輯",
+        "delete": "刪除"
+      },
+      "deleteConfirm": "確定要刪除產品「{{name}}」嗎？此操作不可撤銷。",
+      "form": {
+        "createTitle": "新建產品",
+        "editTitle": "編輯產品",
+        "basicInfo": "基本資訊",
+        "supplier": "歸屬供應商",
+        "selectSupplier": "請選擇供應商",
+        "status": "產品狀態",
+        "isFeatured": "設為推薦產品",
+        "adminFields": "管理資訊"
+      },
+      "detail": {
+        "title": "產品詳情",
+        "tabs": {
+          "info": "基本資訊",
+          "images": "產品圖片",
+          "itinerary": "行程安排"
+        },
+        "supplier": "供應商",
+        "submitDate": "提交時間",
+        "duration": "行程時長",
+        "hours": "小時",
+        "location": "目的地",
+        "price": "價格",
+        "description": "產品描述",
+        "noDescription": "暫無描述",
+        "includes": "費用包含",
+        "includeItem1": "酒店接送",
+        "includeItem2": "中文導遊",
+        "includeItem3": "景點門票",
+        "excludes": "費用不含",
+        "excludeItem1": "個人消費",
+        "excludeItem2": "旅遊保險",
+        "pickup": "酒店接送",
+        "pickupDesc": "從阿德萊德市區酒店出發",
+        "activity1": "景點遊覽",
+        "activity1Desc": "參觀主要景點，瞭解當地歷史文化",
+        "lunch": "午餐",
+        "lunchDesc": "在當地特色餐廳享用午餐",
+        "return": "返程",
+        "returnDesc": "返回阿德萊德市區酒店",
+        "approvedMessage": "該產品已稽核透過",
+        "rejectedMessage": "該產品已被駁回"
+      },
+      "reject": {
+        "title": "駁回產品",
+        "message": "請填寫駁回原因，將傳送給供應商",
+        "placeholder": "請輸入駁回原因..."
+      }
+    },
+    "orders": {
+      "title": "訂單管理",
+      "search": "搜尋訂單...",
+      "export": "匯出",
+      "empty": "暫無訂單資料",
+      "showing": "顯示 {{from}}-{{to}} 條，共 {{total}} 條",
+      "stats": {
+        "total": "總訂單數",
+        "pending": "待處理",
+        "confirmed": "已確認",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "today": "今日新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待處理",
+        "confirmed": "已確認",
+        "completed": "已完成",
+        "cancelled": "已取消"
+      },
+      "table": {
+        "orderNo": "訂單號",
+        "customer": "客戶",
+        "product": "產品",
+        "supplier": "供應商",
+        "travelDate": "出行日期",
+        "amount": "金額",
+        "status": "狀態",
+        "orderDate": "下單時間",
+        "actions": "操作",
+        "guests": "人"
+      },
+      "status": {
+        "pending": "待處理",
+        "confirmed": "已確認",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "refunding": "退款中"
+      },
+      "actions": {
+        "view": "檢視",
+        "confirm": "確認",
+        "cancel": "取消",
+        "handleRefund": "處理退款",
+        "approveRefund": "同意退款",
+        "rejectRefund": "拒絕退款",
+        "confirmCancel": "確認取消"
+      },
+      "detail": {
+        "title": "訂單詳情",
+        "tabs": {
+          "info": "訂單資訊",
+          "customer": "客戶資訊",
+          "timeline": "訂單狀態"
+        },
+        "orderAmount": "訂單金額",
+        "productInfo": "產品資訊",
+        "supplierInfo": "供應商資訊",
+        "supplierName": "供應商名稱",
+        "orderTime": "訂單時間",
+        "createdAt": "下單時間",
+        "paidAt": "支付時間",
+        "guests": "人",
+        "customerName": "客戶姓名",
+        "customerPhone": "聯絡電話",
+        "customerEmail": "郵箱",
+        "timeline": {
+          "created": "訂單建立",
+          "paid": "支付成功",
+          "confirmed": "訂單確認",
+          "completed": "行程完成",
+          "cancelled": "訂單取消"
+        }
+      },
+      "cancel": {
+        "title": "取消訂單",
+        "message": "請填寫取消原因",
+        "placeholder": "請輸入取消原因..."
+      },
+      "rejectRefund": {
+        "title": "拒絕退款",
+        "message": "請填寫拒絕原因",
+        "placeholder": "請輸入拒絕退款原因..."
+      }
+    },
+    "users": {
+      "title": "使用者管理",
+      "search": "搜尋使用者...",
+      "export": "匯出",
+      "empty": "暫無使用者資料",
+      "showing": "顯示 {{from}}-{{to}} 條，共 {{total}} 條",
+      "stats": {
+        "total": "總使用者數",
+        "active": "活躍使用者",
+        "inactive": "非活躍使用者",
+        "newToday": "今日新增",
+        "newMonth": "本月新增",
+        "newThisMonth": "本月新增"
+      },
+      "tabs": {
+        "all": "全部",
+        "active": "活躍",
+        "inactive": "非活躍",
+        "banned": "已封禁"
+      },
+      "table": {
+        "user": "使用者",
+        "email": "郵箱",
+        "phone": "手機",
+        "orders": "訂單數",
+        "spent": "消費金額",
+        "totalSpent": "消費金額",
+        "status": "狀態",
+        "registerDate": "註冊時間",
+        "actions": "操作"
+      },
+      "status": {
+        "active": "活躍",
+        "inactive": "已停用",
+        "banned": "已封禁"
+      },
+      "actions": {
+        "view": "檢視",
+        "create": "建立使用者",
+        "edit": "編輯",
+        "delete": "刪除",
+        "ban": "封禁",
+        "unban": "解封"
+      },
+      "deleteConfirm": "確定要刪除使用者「{{name}}」嗎？此操作不可撤銷。",
+      "detail": {
+        "title": "使用者詳情",
+        "tabs": {
+          "info": "基本資訊",
+          "orders": "訂單記錄"
+        },
+        "email": "郵箱",
+        "phone": "手機號",
+        "registerDate": "註冊日期",
+        "lastLogin": "最後登入",
+        "orders": "訂單",
+        "spent": "消費",
+        "ordersPlaceholder": "訂單記錄功能開發中..."
+      },
+      "form": {
+        "createTitle": "建立使用者",
+        "editTitle": "編輯使用者",
+        "basicInfo": "基本資訊",
+        "name": "姓名",
+        "namePlaceholder": "請輸入姓名",
+        "email": "郵箱",
+        "emailPlaceholder": "請輸入郵箱",
+        "phone": "手機號",
+        "phonePlaceholder": "請輸入手機號",
+        "password": "密碼",
+        "passwordPlaceholder": "請輸入密碼",
+        "newPassword": "新密碼",
+        "newPasswordPlaceholder": "留空則不修改",
+        "status": "狀態",
+        "statusActive": "正常",
+        "statusSuspended": "已停用",
+        "statusBanned": "已封禁",
+        "errors": {
+          "nameRequired": "請輸入姓名",
+          "emailRequired": "請輸入郵箱",
+          "emailInvalid": "郵箱格式不正確",
+          "passwordRequired": "請輸入密碼",
+          "passwordMin": "密碼至少6位"
+        }
+      },
+      "ban": {
+        "title": "封禁使用者",
+        "message": "請填寫封禁原因",
+        "placeholder": "請輸入封禁原因..."
+      }
+    },
+    "finance": {
+      "title": "財務管理",
+      "search": "搜尋結算單...",
+      "export": "匯出",
+      "empty": "暫無結算資料",
+      "showing": "顯示 {{from}}-{{to}} 條，共 {{total}} 條",
+      "stats": {
+        "totalRevenue": "總收入",
+        "pendingSettlement": "待結算",
+        "settledAmount": "已結算",
+        "commissionEarned": "佣金收入",
+        "today": "今日",
+        "month": "本月"
+      },
+      "tabs": {
+        "all": "全部",
+        "pending": "待處理",
+        "processing": "處理中",
+        "completed": "已完成"
+      },
+      "table": {
+        "settlementNo": "結算單號",
+        "supplier": "供應商",
+        "period": "結算週期",
+        "orders": "訂單數",
+        "totalAmount": "總金額",
+        "commission": "佣金",
+        "netAmount": "結算金額",
+        "status": "狀態",
+        "actions": "操作"
+      },
+      "status": {
+        "pending": "待處理",
+        "processing": "處理中",
+        "completed": "已完成",
+        "failed": "失敗"
+      },
+      "actions": {
+        "view": "檢視",
+        "download": "下載",
+        "process": "處理"
+      },
+      "detail": {
+        "title": "結算詳情",
+        "tabs": {
+          "info": "基本資訊",
+          "orders": "訂單明細"
+        },
+        "supplier": "供應商",
+        "period": "結算週期",
+        "orderCount": "訂單數量",
+        "orders": "單",
+        "createdAt": "建立時間",
+        "paidAt": "打款時間",
+        "netAmount": "結算金額",
+        "breakdown": "金額明細",
+        "totalAmount": "訂單總額",
+        "commission": "平臺佣金",
+        "ordersPlaceholder": "訂單明細功能開發中..."
+      }
+    },
+    "settings": {
+      "title": "系統設定",
+      "subtitle": "管理平臺配置和偏好設定",
+      "save": "儲存設定",
+      "saving": "儲存中...",
+      "reset": "重置",
+      "general": "基本設定",
+      "payments": "支付設定",
+      "notifications": "通知設定",
+      "security": "安全設定",
+      "generalSettings": {
+        "siteInfo": "網站資訊",
+        "siteName": "網站名稱",
+        "siteNameEn": "網站英文名",
+        "siteUrl": "網站地址",
+        "contact": "聯絡方式",
+        "contactEmail": "聯絡郵箱",
+        "contactPhone": "聯絡電話",
+        "regional": "地區設定",
+        "defaultLanguage": "預設語言",
+        "timezone": "時區",
+        "currency": "貨幣"
+      },
+      "paymentSettings": {
+        "methods": "支付方式",
+        "wechat": "微信支付",
+        "wechatDesc": "啟用微信支付收款",
+        "alipay": "支付寶",
+        "alipayDesc": "啟用支付寶收款",
+        "stripe": "信用卡/簽帳金融卡",
+        "stripeDesc": "透過 Stripe 處理銀行卡支付",
+        "paypal": "PayPal",
+        "paypalDesc": "啟用 PayPal 收款",
+        "settlement": "結算設定",
+        "commissionRate": "預設佣金比例",
+        "minWithdrawal": "最低提現金額",
+        "settlementCycle": "結算週期",
+        "weekly": "每週",
+        "biweekly": "每兩週",
+        "monthly": "每月"
+      },
+      "notificationSettings": {
+        "email": "郵件通知",
+        "newOrder": "新訂單通知",
+        "newOrderDesc": "有新訂單時傳送郵件通知",
+        "orderStatus": "訂單狀態變更",
+        "orderStatusDesc": "訂單狀態變更時傳送郵件通知",
+        "newSupplier": "新供應商註冊",
+        "newSupplierDesc": "有新供應商申請入駐時傳送通知",
+        "dailyReport": "每日報表",
+        "dailyReportDesc": "每天傳送運營資料彙總",
+        "sms": "簡訊通知",
+        "smsNewOrder": "新訂單簡訊",
+        "smsNewOrderDesc": "有新訂單時傳送簡訊通知",
+        "smsOrderStatus": "訂單狀態簡訊",
+        "smsOrderStatusDesc": "訂單狀態變更時傳送簡訊通知"
+      },
+      "securitySettings": {
+        "authentication": "身份驗證",
+        "twoFactor": "雙重驗證",
+        "twoFactorDesc": "要求管理員啟用雙重身份驗證",
+        "sessionTimeout": "會話超時時間",
+        "minutes": "分鐘",
+        "password": "密碼策略",
+        "minLength": "最小密碼長度",
+        "characters": "字元",
+        "requireSpecial": "要求特殊字元",
+        "requireSpecialDesc": "密碼必須包含特殊字元",
+        "access": "訪問控制",
+        "ipWhitelist": "IP 白名單",
+        "ipWhitelistPlaceholder": "每行一個 IP 地址，留空允許所有",
+        "ipWhitelistHint": "限制可訪問管理後臺的 IP 地址"
+      }
+    }
+  },
+  "supplier": {
+    "types": {
+      "travelAgency": "旅行社",
+      "hotel": "酒店",
+      "scenic": "景區",
+      "restaurant": "餐廳",
+      "carRental": "租車"
+    },
+    "login": {
+      "brandTitle": "供應商平臺",
+      "feature1": "酒店 / 民宿管理",
+      "feature2": "景點門票上架",
+      "feature3": "用車服務釋出",
+      "feature4": "訂單資料分析",
+      "feature5": "便捷財務結算",
+      "backToHome": "返回首頁",
+      "title": "供應商登入",
+      "welcomeBack": "歡迎回來",
+      "subtitle": "登入管理您的產品、訂單和結算",
+      "email": "郵箱",
+      "emailPlaceholder": "請輸入郵箱",
+      "password": "密碼",
+      "passwordPlaceholder": "請輸入密碼",
+      "forgotPassword": "忘記密碼?",
+      "loginButton": "登入",
+      "loggingIn": "登入中...",
+      "noAccount": "還沒有供應商賬號?",
+      "applyNow": "申請入駐",
+      "supportTypes": "支援入駐型別",
+      "errorRequired": "請輸入郵箱和密碼",
+      "errorInvalid": "郵箱或密碼錯誤",
+      "errorNetwork": "網路錯誤，請重試"
+    },
+    "register": {
+      "brandTitle": "供應商入駐",
+      "benefit1": "零成本入駐，按成交付費",
+      "benefit2": "獲取海量華人遊客流量",
+      "benefit3": "專業運營支援團隊",
+      "benefit4": "便捷財務結算系統",
+      "backToHome": "返回首頁",
+      "title": "供應商註冊",
+      "step1": "企業資訊",
+      "step2": "賬號設定",
+      "companyName": "企業名稱",
+      "companyNamePlaceholder": "請輸入企業名稱",
+      "supplierType": "供應商型別",
+      "contactName": "聯絡人姓名",
+      "contactNamePlaceholder": "請輸入聯絡人姓名",
+      "phone": "聯絡電話",
+      "phonePlaceholder": "請輸入聯絡電話",
+      "businessLicense": "營業執照號（選填）",
+      "businessLicensePlaceholder": "請輸入營業執照號",
+      "nextStep": "下一步",
+      "email": "登入郵箱",
+      "emailPlaceholder": "請輸入郵箱地址",
+      "password": "設定密碼",
+      "passwordPlaceholder": "請設定登入密碼（至少6位）",
+      "confirmPassword": "確認密碼",
+      "confirmPasswordPlaceholder": "請再次輸入密碼",
+      "agreeTerms": "我已閱讀並同意",
+      "termsLink": "《供應商入駐協議》",
+      "prevStep": "上一步",
+      "submitting": "提交中...",
+      "submitButton": "提交申請",
+      "hasAccount": "已有供應商賬號？",
+      "backToLogin": "立即登入",
+      "errorCompanyRequired": "請輸入企業名稱",
+      "errorTypeRequired": "請選擇供應商型別",
+      "errorContactRequired": "請輸入聯絡人姓名",
+      "errorPhoneRequired": "請輸入聯絡電話",
+      "errorEmailRequired": "請輸入郵箱地址",
+      "errorPasswordLength": "密碼長度至少6位",
+      "errorPasswordMismatch": "兩次輸入的密碼不一致",
+      "errorAgreeTerms": "請閱讀並同意入駐協議",
+      "errorNetwork": "網路錯誤，請稍後重試"
+    },
+    "dashboard": {
+      "title": "供應商後臺",
+      "welcome": "歡迎回來",
+      "overview": "資料概覽",
+      "todayOrders": "今日訂單",
+      "pendingOrders": "待處理訂單",
+      "monthSales": "本月銷售額",
+      "pendingSettlement": "待結算金額",
+      "totalProducts": "商品總數",
+      "quickActions": "快捷操作",
+      "productManage": "產品管理",
+      "orderManage": "訂單管理",
+      "settlement": "財務結算",
+      "addProduct": "新增商品",
+      "viewOrders": "檢視訂單",
+      "settings": "店鋪設定",
+      "recentOrders": "最近訂單",
+      "orderNo": "訂單號",
+      "product": "產品",
+      "customer": "客戶",
+      "amount": "金額",
+      "status": "狀態",
+      "action": "操作",
+      "confirm": "確認",
+      "viewAll": "檢視全部",
+      "noOrders": "暫無訂單",
+      "productStats": "產品統計",
+      "activeProducts": "已上架",
+      "pendingReview": "待稽核",
+      "orderStatus": {
+        "pending": "待處理",
+        "confirmed": "已確認",
+        "completed": "已完成",
+        "cancelled": "已取消"
+      }
+    },
+    "products": {
+      "title": "產品管理",
+      "addProduct": "釋出產品",
+      "search": "搜尋產品...",
+      "filter": "篩選",
+      "all": "全部",
+      "allStatus": "全部狀態",
+      "active": "已上架",
+      "inactive": "已下架",
+      "online": "已上架",
+      "offline": "已下架",
+      "pending": "待稽核",
+      "rejected": "已駁回",
+      "image": "圖片",
+      "productName": "產品名稱",
+      "price": "價格",
+      "stock": "庫存",
+      "soldCount": "已售",
+      "sales": "銷量",
+      "status": "狀態",
+      "actions": "操作",
+      "edit": "編輯",
+      "schedules": "排期",
+      "view": "檢視",
+      "delete": "刪除",
+      "setOnline": "上架",
+      "setOffline": "下架",
+      "noProducts": "暫無產品",
+      "addFirst": "點選上方「釋出產品」按鈕新增第一個產品",
+      "confirmDelete": "確定要刪除該產品嗎？",
+      "unlimited": "不限",
+      "statusLabels": {
+        "active": "已上架",
+        "inactive": "已下架",
+        "pending": "待稽核",
+        "rejected": "已駁回"
+      }
+    },
+    "orders": {
+      "title": "訂單管理",
+      "search": "搜尋訂單號或客戶...",
+      "all": "全部",
+      "allStatus": "全部狀態",
+      "pending": "待處理",
+      "confirmed": "已確認",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "refunding": "退款中",
+      "orderNo": "訂單號",
+      "customer": "客戶",
+      "product": "產品",
+      "travelDate": "出行日期",
+      "quantity": "人數",
+      "amount": "金額",
+      "status": "狀態",
+      "actions": "操作",
+      "confirm": "確認訂單",
+      "complete": "完成",
+      "viewDetail": "詳情",
+      "handleRefund": "處理退款",
+      "confirmOrder": "確認訂單",
+      "confirmOrderDesc": "確認後將向客戶傳送確認通知",
+      "cancel": "取消",
+      "approve": "同意退款",
+      "reject": "拒絕退款",
+      "refundReason": "退款原因",
+      "customerInfo": "客戶資訊",
+      "phone": "電話",
+      "contact": "聯絡客戶",
+      "noOrders": "暫無訂單",
+      "people": "人",
+      "guests": "位客人",
+      "statusLabels": {
+        "pending": "待處理",
+        "confirmed": "已確認",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "refunding": "退款中"
+      }
+    },
+    "settlement": {
+      "title": "財務結算",
+      "overview": "資金概覽",
+      "pendingSettlement": "待結算",
+      "pendingAmount": "待結算金額",
+      "settledAmount": "已結算",
+      "monthSales": "本月銷售",
+      "accountInfo": "賬戶資訊",
+      "editAccount": "修改賬戶",
+      "edit": "修改",
+      "bankName": "開戶銀行",
+      "bankAccount": "收款賬戶",
+      "accountName": "賬戶名稱",
+      "accountNumber": "賬號",
+      "accountHolder": "戶名",
+      "commissionRate": "佣金比例",
+      "settlementHistory": "結算記錄",
+      "all": "全部",
+      "settled": "已結算",
+      "pending": "待結算",
+      "processing": "處理中",
+      "completed": "已結算",
+      "period": "結算週期",
+      "orderCount": "訂單數",
+      "totalAmount": "總銷售額",
+      "totalSales": "銷售總額",
+      "commission": "平臺佣金",
+      "netAmount": "結算金額",
+      "status": "狀態",
+      "actions": "操作",
+      "createdAt": "生成時間",
+      "paidAt": "打款時間",
+      "settledDate": "結算日期",
+      "expectedDate": "預計到賬",
+      "viewDetail": "明細",
+      "download": "下載",
+      "noSettlements": "暫無結算記錄",
+      "noRecords": "暫無結算記錄"
+    },
+    "nav": {
+      "dashboard": "工作臺",
+      "products": "商品管理",
+      "orders": "訂單管理",
+      "settlement": "財務結算",
+      "settings": "店鋪設定"
+    },
+    "productForm": {
+      "steps": {
+        "basic": "基本資訊",
+        "images": "產品圖片",
+        "packages": "套餐價格",
+        "extras": "亮點與FAQ",
+        "preview": "預覽提交"
+      },
+      "basicInfo": "基本資訊",
+      "titleZh": "產品名稱（中文）",
+      "titleZhPlaceholder": "請輸入中文產品名稱",
+      "titleEn": "產品名稱（英文）",
+      "titleEnPlaceholder": "請輸入英文產品名稱",
+      "summaryZh": "簡介（中文）",
+      "summaryEn": "簡介（英文）",
+      "summaryPlaceholder": "一句話概括產品亮點...",
+      "descriptionZh": "詳細描述（中文）",
+      "descriptionEn": "詳細描述（英文）",
+      "descriptionPlaceholder": "請輸入產品詳細描述...",
+      "region": "所屬區域",
+      "selectRegion": "請選擇區域",
+      "category": "產品分類",
+      "selectCategory": "請選擇分類",
+      "price": "起始價格（AUD）",
+      "pricePlaceholder": "0.00",
+      "duration": "行程時長",
+      "durationPlaceholder": "如：8小時",
+      "groupSize": "團組規模",
+      "groupSizePlaceholder": "如：2-15人",
+      "addressZh": "地址（中文）",
+      "addressEn": "地址（英文）",
+      "addressPlaceholder": "請輸入地址",
+      "tags": "產品標籤",
+      "tagsHint": "用逗號分隔多個標籤",
+      "imageUpload": "產品圖片",
+      "imageUploadHint": "最多上傳5張，第一張為封面圖",
+      "dragToSort": "拖拽排序",
+      "uploadImage": "上傳圖片",
+      "coverImage": "封面",
+      "setCover": "設為封面",
+      "maxImages": "最多5張圖片",
+      "uploading": "上傳中...",
+      "packages": "套餐價格",
+      "packagesHint": "至少新增一個套餐",
+      "addPackage": "新增套餐",
+      "packageNameZh": "套餐名稱（中文）",
+      "packageNameEn": "套餐名稱（英文）",
+      "packageDescZh": "套餐說明（中文）",
+      "packageDescEn": "套餐說明（英文）",
+      "packagePrice": "價格（AUD）",
+      "noPackages": "暫無套餐，點選上方按鈕新增",
+      "highlights": "產品亮點",
+      "addHighlight": "新增亮點",
+      "highlightTitleZh": "亮點標題（中文）",
+      "highlightTitleEn": "亮點標題（英文）",
+      "highlightDescZh": "亮點描述（中文）",
+      "highlightDescEn": "亮點描述（英文）",
+      "noHighlights": "暫無亮點，點選上方按鈕新增",
+      "faqs": "常見問題",
+      "addFaq": "新增問題",
+      "faqQuestionZh": "問題（中文）",
+      "faqQuestionEn": "問題（英文）",
+      "faqAnswerZh": "回答（中文）",
+      "faqAnswerEn": "回答（英文）",
+      "noFaqs": "暫無常見問題，點選上方按鈕新增",
+      "preview": "產品預覽",
+      "previewBasic": "基本資訊",
+      "previewImages": "圖片",
+      "previewPackages": "套餐",
+      "previewHighlights": "亮點",
+      "previewFaqs": "常見問題",
+      "noData": "未填寫",
+      "saveDraft": "儲存草稿",
+      "saveAndSubmit": "儲存並提交稽核",
+      "saving": "儲存中...",
+      "submitting": "提交中...",
+      "savedSuccess": "產品已儲存",
+      "submittedSuccess": "產品已提交稽核",
+      "loadingProduct": "載入產品資料..."
+    },
+    "schedule": {
+      "title": "排期管理",
+      "productLabel": "產品",
+      "loading": "載入排期中...",
+      "noSchedules": "暫無排期",
+      "noSchedulesHint": "點選\"新增排期\"為該產品建立可預約的日期和時段",
+      "addSchedule": "新增排期",
+      "batchAdd": "批次新增",
+      "editSchedule": "編輯排期",
+      "date": "日期",
+      "timeSlot": "時間段",
+      "timeSlotPlaceholder": "如：09:00",
+      "totalSlots": "總名額",
+      "bookedSlots": "已預訂",
+      "availableSlots": "剩餘名額",
+      "priceOverride": "價格（留空使用套餐價格）",
+      "package": "關聯套餐",
+      "selectPackage": "不關聯套餐",
+      "status": "狀態",
+      "statusAvailable": "可預約",
+      "statusFull": "已滿",
+      "statusCancelled": "已取消",
+      "save": "儲存",
+      "cancel": "取消",
+      "delete": "刪除",
+      "confirmDelete": "確定要刪除這個排期嗎？",
+      "batchTitle": "批次建立排期",
+      "startDate": "開始日期",
+      "endDate": "結束日期",
+      "repeatPattern": "重複模式",
+      "everyday": "每天",
+      "weekdays": "僅工作日",
+      "weekends": "僅週末",
+      "custom": "自定義",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六",
+      "sun": "日",
+      "batchCreate": "批次建立",
+      "batchCreating": "建立中...",
+      "batchSuccess": "已成功建立排期",
+      "saveSuccess": "排期已儲存",
+      "deleteSuccess": "排期已刪除",
+      "back": "返回產品列表",
+      "today": "今天",
+      "prevMonth": "上個月",
+      "nextMonth": "下個月"
+    }
+  }
+}
