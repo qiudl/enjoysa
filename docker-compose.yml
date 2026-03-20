@@ -32,6 +32,7 @@ services:
       - ENJOYSA_JWT_SECRET=${JWT_SECRET:-enjoysa-prod-jwt-secret-2026}
       - ENJOYSA_STRIPE_SECRET=${STRIPE_SECRET_KEY:-}
       - ENJOYSA_STRIPE_WEBHOOK=${STRIPE_WEBHOOK_SECRET:-}
+      - ENJOYSA_RESEND_API_KEY=${RESEND_API_KEY:-}
     ports:
       - "127.0.0.1:6080:6080"
     volumes:
