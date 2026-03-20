@@ -280,12 +280,9 @@ func (h *UserAuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Always return success to prevent email enumeration
-	successMsg := "If that email exists, a reset link has been sent."
-
 	user, err := h.userStore.GetByEmail(req.Email)
 	if err != nil {
-		response.SuccessMessage(c, successMsg)
+		response.NotFound(c, "Email not registered")
 		return
 	}
 
@@ -293,11 +290,11 @@ func (h *UserAuthHandler) ForgotPassword(c *gin.Context) {
 	count, err := h.passwordResetStore.CountRecent(user.ID, 15*time.Minute)
 	if err != nil {
 		logger.Errorf("Failed to count recent reset tokens: %v", err)
-		response.SuccessMessage(c, successMsg)
+		response.BadRequest(c, "Too many requests, please try again later")
 		return
 	}
 	if count >= 3 {
-		response.SuccessMessage(c, successMsg)
+		response.BadRequest(c, "Too many requests, please try again later")
 		return
 	}
 
@@ -330,7 +327,10 @@ func (h *UserAuthHandler) ForgotPassword(c *gin.Context) {
 		}
 	}()
 
-	response.SuccessMessage(c, successMsg)
+	response.Success(c, gin.H{
+		"message": "Reset link has been sent.",
+		"email":   req.Email,
+	})
 }
 
 type ResetPasswordRequest struct {

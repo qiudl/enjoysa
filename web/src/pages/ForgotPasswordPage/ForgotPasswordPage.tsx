@@ -39,9 +39,15 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
     try {
       await userAuth.forgotPassword(email);
       setIsSent(true);
-    } catch {
-      // Still show success to prevent email enumeration
-      setIsSent(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('not registered') || msg.includes('Not Found')) {
+        setError(t('auth.emailNotFound'));
+      } else if (msg.includes('Too many')) {
+        setError(t('auth.tooManyRequests'));
+      } else {
+        setError(t('common.error'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +120,7 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({
                   <CheckCircle size={32} />
                 </div>
                 <h2 className={styles.sentTitle}>{t('auth.resetLinkSent')}</h2>
-                <p className={styles.sentDesc}>{t('auth.resetLinkSentDesc')}</p>
+                <p className={styles.sentDesc}>{t('auth.resetLinkSentDesc', { email })}</p>
               </div>
             )}
 
