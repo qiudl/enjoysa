@@ -42,3 +42,7 @@ upload:
     - image/png
     - image/webp
     - application/pdf
+
+resend:
+  api_key: ""
+  from_address: "EnjoySA <onboarding@resend.dev>"

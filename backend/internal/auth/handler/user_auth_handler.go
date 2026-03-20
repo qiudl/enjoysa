@@ -1,10 +1,15 @@
 package handler
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"enjoysa-backend/internal/auth"
+	authmodel "enjoysa-backend/internal/auth/model"
 	"enjoysa-backend/internal/auth/store"
+	"enjoysa-backend/internal/core/logger"
+	"enjoysa-backend/internal/email"
 	"enjoysa-backend/internal/models"
 	"enjoysa-backend/pkg/response"
 
@@ -13,14 +18,26 @@ import (
 )
 
 type UserAuthHandler struct {
-	userStore  *store.UserStore
-	jwtService *auth.JWTService
+	userStore          *store.UserStore
+	jwtService         *auth.JWTService
+	passwordResetStore *store.PasswordResetStore
+	emailService       *email.ResendService
+	frontendURL        string
 }
 
-func NewUserAuthHandler(userStore *store.UserStore, jwtService *auth.JWTService) *UserAuthHandler {
+func NewUserAuthHandler(
+	userStore *store.UserStore,
+	jwtService *auth.JWTService,
+	passwordResetStore *store.PasswordResetStore,
+	emailService *email.ResendService,
+	frontendURL string,
+) *UserAuthHandler {
 	return &UserAuthHandler{
-		userStore:  userStore,
-		jwtService: jwtService,
+		userStore:          userStore,
+		jwtService:         jwtService,
+		passwordResetStore: passwordResetStore,
+		emailService:       emailService,
+		frontendURL:        frontendURL,
 	}
 }
 
@@ -250,4 +267,117 @@ func (h *UserAuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	response.SuccessMessage(c, "Password changed successfully")
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+func (h *UserAuthHandler) ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Always return success to prevent email enumeration
+	successMsg := "If that email exists, a reset link has been sent."
+
+	user, err := h.userStore.GetByEmail(req.Email)
+	if err != nil {
+		response.SuccessMessage(c, successMsg)
+		return
+	}
+
+	// Rate limit: max 3 requests per 15 minutes
+	count, err := h.passwordResetStore.CountRecent(user.ID, 15*time.Minute)
+	if err != nil {
+		logger.Errorf("Failed to count recent reset tokens: %v", err)
+		response.SuccessMessage(c, successMsg)
+		return
+	}
+	if count >= 3 {
+		response.SuccessMessage(c, successMsg)
+		return
+	}
+
+	// Generate secure token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		logger.Errorf("Failed to generate random token: %v", err)
+		response.ServerError(c, "Internal error")
+		return
+	}
+	tokenStr := hex.EncodeToString(tokenBytes)
+
+	// Store token (expires in 1 hour)
+	resetToken := &authmodel.PasswordResetToken{
+		UserID:    user.ID,
+		Token:     tokenStr,
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+	}
+	if err := h.passwordResetStore.Create(resetToken); err != nil {
+		logger.Errorf("Failed to create reset token: %v", err)
+		response.ServerError(c, "Internal error")
+		return
+	}
+
+	// Send email asynchronously
+	resetLink := h.frontendURL + "/reset-password?token=" + tokenStr
+	go func() {
+		if err := h.emailService.SendPasswordResetEmail(user.Email, user.Name, resetLink, user.Language); err != nil {
+			logger.Errorf("Failed to send reset email to %s: %v", user.Email, err)
+		}
+	}()
+
+	response.SuccessMessage(c, successMsg)
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+func (h *UserAuthHandler) ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Find valid token
+	resetToken, err := h.passwordResetStore.FindValidToken(req.Token)
+	if err != nil {
+		response.BadRequest(c, "Invalid or expired reset token")
+		return
+	}
+
+	// Get user
+	user, err := h.userStore.GetByID(resetToken.UserID)
+	if err != nil || user.Status != "active" {
+		response.BadRequest(c, "Invalid or expired reset token")
+		return
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		response.ServerError(c, "Failed to hash password")
+		return
+	}
+
+	// Update password
+	user.Password = string(hashedPassword)
+	if err := h.userStore.Update(user); err != nil {
+		response.ServerError(c, "Failed to update password")
+		return
+	}
+
+	// Mark token as used
+	_ = h.passwordResetStore.MarkUsed(resetToken.ID)
+
+	// Invalidate all other tokens for this user
+	_ = h.passwordResetStore.InvalidateUserTokens(user.ID)
+
+	response.SuccessMessage(c, "Password has been reset successfully.")
 }

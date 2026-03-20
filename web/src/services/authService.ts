@@ -90,6 +90,17 @@ export const userAuth = {
   logout() {
     clearTokens('user');
   },
+
+  async forgotPassword(email: string) {
+    return post<{ message: string }>('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token: string, newPassword: string) {
+    return post<{ message: string }>('/auth/reset-password', {
+      token,
+      new_password: newPassword,
+    });
+  },
 };
 
 // ==================== B端供应商 ====================

@@ -21,6 +21,8 @@ export interface LoginPageProps {
   onLanguageChange?: (lang: 'zh' | 'en') => void;
   /** 返回首页回调 */
   onNavigateHome?: () => void;
+  /** 忘记密码回调 */
+  onForgotPassword?: () => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({
@@ -31,6 +33,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onRegisterSuccess,
   onLanguageChange,
   onNavigateHome,
+  onForgotPassword,
 }) => {
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
@@ -90,6 +93,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 onLogin={onLogin}
                 onSuccess={(data) => onLoginSuccess?.(data)}
                 onSwitchToRegister={() => setMode('register')}
+                onForgotPassword={onForgotPassword}
               />
             ) : (
               <RegisterForm

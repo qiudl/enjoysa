@@ -16,6 +16,12 @@ type Config struct {
 	Google   GoogleConfig   `mapstructure:"google"`
 	Stripe   StripeConfig   `mapstructure:"stripe"`
 	Upload   UploadConfig   `mapstructure:"upload"`
+	Resend   ResendConfig   `mapstructure:"resend"`
+}
+
+type ResendConfig struct {
+	APIKey      string `mapstructure:"api_key"`
+	FromAddress string `mapstructure:"from_address"`
 }
 
 type RedisConfig struct {
@@ -90,6 +96,7 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("stripe.secret_key", "ENJOYSA_STRIPE_SECRET")
 	_ = v.BindEnv("stripe.webhook_secret", "ENJOYSA_STRIPE_WEBHOOK")
 	_ = v.BindEnv("server.frontend_url", "ENJOYSA_FRONTEND_URL")
+	_ = v.BindEnv("resend.api_key", "ENJOYSA_RESEND_API_KEY")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)

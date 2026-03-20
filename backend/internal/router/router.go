@@ -13,6 +13,7 @@ import (
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
+	"enjoysa-backend/internal/email"
 	"enjoysa-backend/internal/core/middleware"
 	orderhandler "enjoysa-backend/internal/order/handler"
 	orderstore "enjoysa-backend/internal/order/store"
@@ -40,6 +41,7 @@ type Config struct {
 	JWTService     *auth.JWTService
 	UploadConfig   config.UploadConfig
 	StripeConfig   config.StripeConfig
+	ResendConfig   config.ResendConfig
 	CasbinEnforcer *casbin.SyncedEnforcer
 }
 
@@ -91,8 +93,12 @@ func Setup(cfg Config) *gin.Engine {
 	roleMenuStore := rbacstore.NewRoleMenuStore(cfg.DB)
 	adminRoleStore := rbacstore.NewAdminRoleStore(cfg.DB)
 
+	// === Password Reset ===
+	passwordResetStore := authstore.NewPasswordResetStore(cfg.DB)
+	emailService := email.NewResendService(cfg.ResendConfig)
+
 	// === Handlers ===
-	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService)
+	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
 	supplierAuthHandler := authhandler.NewSupplierAuthHandler(supplierUserStore, cfg.JWTService)
 	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService, cfg.DB)
 	publicProductHandler := producthandler.NewPublicProductHandler(pStore, regionStore, categoryStore, scheduleStore)
@@ -130,6 +136,8 @@ func Setup(cfg Config) *gin.Engine {
 		authGroup.POST("/login", userAuthHandler.Login)
 		authGroup.POST("/refresh", userAuthHandler.RefreshToken)
 		authGroup.POST("/google", userAuthHandler.GoogleLogin)
+		authGroup.POST("/forgot-password", userAuthHandler.ForgotPassword)
+		authGroup.POST("/reset-password", userAuthHandler.ResetPassword)
 
 		authProtected := authGroup.Group("")
 		authProtected.Use(userAuth)

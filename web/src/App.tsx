@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import {
   HomePage,
   LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
   ProductListPage,
   ProductDetailPage,
   CheckoutPage,
@@ -122,6 +124,35 @@ function LoginPageWrapper() {
       onLoginSuccess={() => navigate('/')}
       onRegisterSuccess={() => navigate('/')}
       onNavigateHome={() => navigate('/')}
+      onForgotPassword={() => navigate('/forgot-password')}
+    />
+  );
+}
+
+// 包装组件：ForgotPasswordPage
+function ForgotPasswordPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <ForgotPasswordPage
+      onNavigateHome={() => navigate('/')}
+      onBackToLogin={() => navigate('/login')}
+    />
+  );
+}
+
+// 包装组件：ResetPasswordPage
+function ResetPasswordPageWrapper() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || undefined;
+
+  return (
+    <ResetPasswordPage
+      token={token}
+      onNavigateHome={() => navigate('/')}
+      onGoToLogin={() => navigate('/login')}
+      onRequestNewLink={() => navigate('/forgot-password')}
     />
   );
 }
@@ -722,6 +753,8 @@ function App() {
         {/* 认证页面 */}
         <Route path="/login" element={<LoginPageWrapper />} />
         <Route path="/register" element={<RegisterPageWrapper />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPageWrapper />} />
+        <Route path="/reset-password" element={<ResetPasswordPageWrapper />} />
 
         {/* 区域与景点页面 */}
         <Route path="/regions/:id" element={<RegionPageWrapper />} />

@@ -4,6 +4,8 @@
 // C端页面
 export * from './HomePage';
 export * from './LoginPage';
+export * from './ForgotPasswordPage';
+export * from './ResetPasswordPage';
 export * from './ProductListPage';
 export * from './ProductDetailPage';
 export * from './CheckoutPage';
