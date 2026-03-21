@@ -19,6 +19,10 @@ export interface ParticipantFormProps {
   requirePassport?: boolean;
   /** 是否只读 */
   readonly?: boolean;
+  /** 各参与者字段错误信息 { [participantIndex]: { fieldName: errorMsg } } */
+  errors?: Record<number, Record<string, string>>;
+  /** 字段修改时清除对应错误 */
+  onFieldChange?: (index: number, field: string) => void;
 }
 
 const defaultParticipant: Omit<ParticipantDetail, 'id'> = {
@@ -40,6 +44,8 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   minParticipants = 1,
   requirePassport = false,
   readonly = false,
+  errors,
+  onFieldChange,
 }) => {
   const { t } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>(
@@ -73,6 +79,8 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   };
 
   const updateParticipant = (id: string, field: keyof ParticipantDetail, value: string) => {
+    const idx = participants.findIndex(p => p.id === id);
+    if (idx >= 0) onFieldChange?.(idx, field);
     onChange?.(
       participants.map(p =>
         p.id === id ? { ...p, [field]: value } : p
@@ -144,6 +152,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     placeholder={t('participant.firstNamePlaceholder')}
                     required
                     disabled={readonly}
+                    error={errors?.[index]?.firstName}
                   />
                   <Input
                     label={t('participant.lastName')}
@@ -152,6 +161,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     placeholder={t('participant.lastNamePlaceholder')}
                     required
                     disabled={readonly}
+                    error={errors?.[index]?.lastName}
                   />
                 </div>
 
@@ -162,7 +172,9 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     value={participant.email || ''}
                     onChange={(e) => updateParticipant(participant.id, 'email', e.target.value)}
                     placeholder={t('participant.emailPlaceholder')}
+                    required
                     disabled={readonly}
+                    error={errors?.[index]?.email}
                   />
                   <Input
                     label={t('participant.phone')}
@@ -170,7 +182,9 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     value={participant.phone || ''}
                     onChange={(e) => updateParticipant(participant.id, 'phone', e.target.value)}
                     placeholder={t('participant.phonePlaceholder')}
+                    required
                     disabled={readonly}
+                    error={errors?.[index]?.phone}
                   />
                 </div>
 
@@ -199,6 +213,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     placeholder={t('participant.passportPlaceholder')}
                     required
                     disabled={readonly}
+                    error={errors?.[index]?.passportNumber}
                   />
                 )}
 

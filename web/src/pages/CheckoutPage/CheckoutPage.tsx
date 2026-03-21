@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -136,6 +136,50 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [participantErrors, setParticipantErrors] = useState<Record<number, Record<string, string>>>({});
+  const participantSectionRef = useRef<HTMLElement>(null);
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateParticipants = useCallback((): boolean => {
+    const errs: Record<number, Record<string, string>> = {};
+    let valid = true;
+
+    participants.forEach((p, i) => {
+      const fieldErrs: Record<string, string> = {};
+      if (!p.firstName.trim()) fieldErrs.firstName = t('checkout.errors.firstNameRequired');
+      if (!p.lastName.trim()) fieldErrs.lastName = t('checkout.errors.lastNameRequired');
+      if (!p.email?.trim()) {
+        fieldErrs.email = t('checkout.errors.emailRequired');
+      } else if (!EMAIL_RE.test(p.email)) {
+        fieldErrs.email = t('checkout.errors.emailInvalid');
+      }
+      if (!p.phone?.trim()) fieldErrs.phone = t('checkout.errors.phoneRequired');
+      if (!p.passportNumber?.trim()) fieldErrs.passportNumber = t('checkout.errors.passportRequired');
+      if (Object.keys(fieldErrs).length > 0) {
+        errs[i] = fieldErrs;
+        valid = false;
+      }
+    });
+
+    setParticipantErrors(errs);
+    return valid;
+  }, [participants, t]);
+
+  const handleFieldChange = useCallback((index: number, field: string) => {
+    setParticipantErrors(prev => {
+      const next = { ...prev };
+      if (next[index]) {
+        const { [field]: _, ...rest } = next[index];
+        if (Object.keys(rest).length === 0) {
+          delete next[index];
+        } else {
+          next[index] = rest;
+        }
+      }
+      return next;
+    });
+  }, []);
 
   const handleParticipantsChange = (updatedParticipants: ParticipantDetail[]) => {
     setParticipants(updatedParticipants);
@@ -156,6 +200,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
 
     if (!agreed) return;
+
+    if (!validateParticipants()) {
+      participantSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
 
     setSubmitting(true);
 
@@ -236,7 +285,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Left Column */}
             <div className={styles.leftColumn}>
               {/* Participant Info */}
-              <section className={styles.section}>
+              <section className={styles.section} ref={participantSectionRef}>
                 <h2 className={styles.sectionTitle}>{t('participant.title')}</h2>
                 <ParticipantForm
                   participants={participants}
@@ -244,6 +293,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   maxParticipants={adultCount}
                   minParticipants={1}
                   requirePassport
+                  errors={participantErrors}
+                  onFieldChange={handleFieldChange}
                 />
               </section>
 
