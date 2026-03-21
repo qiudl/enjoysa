@@ -156,6 +156,41 @@
   color: var(--color-error);
 }
 
+/* Divider */
+.divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-6) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.divider span {
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Social Login */
+.socialLogin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.googleLoginWrapper {
+  display: flex;
+  justify-content: center;
+}
+
 /* Login Prompt */
 .loginPrompt {
   text-align: center;

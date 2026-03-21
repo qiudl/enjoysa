@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../Common/Button';
 import { Input } from '../../Common/Input';
@@ -8,6 +9,8 @@ import styles from './RegisterForm.module.css';
 export interface RegisterFormProps {
   /** 注册函数 */
   onRegister?: (email: string, password: string, name: string) => Promise<boolean>;
+  /** Google 登录/注册函数 */
+  onGoogleLogin?: (idToken: string) => Promise<boolean>;
   /** 注册成功回调 */
   onSuccess?: (data: {
     identifier: string;
@@ -24,6 +27,7 @@ export interface RegisterFormProps {
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({
   onRegister,
+  onGoogleLogin,
   onSuccess,
   onSwitchToLogin,
   onViewTerms,
@@ -96,6 +100,26 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         // Fallback for storybook/demo
         await new Promise((resolve) => setTimeout(resolve, 1000));
         onSuccess?.({ identifier: email, type: 'email', nickname });
+      }
+    } catch {
+      setErrors({ general: t('auth.networkError', 'Network error, please try again') });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (response: CredentialResponse) => {
+    if (!response.credential) return;
+    setIsLoading(true);
+    setErrors({});
+    try {
+      if (onGoogleLogin) {
+        const success = await onGoogleLogin(response.credential);
+        if (success) {
+          onSuccess?.({ identifier: '', type: 'email', nickname: '' });
+        } else {
+          setErrors({ general: t('auth.googleLoginFailed', 'Google login failed, please try again') });
+        }
       }
     } catch {
       setErrors({ general: t('auth.networkError', 'Network error, please try again') });
@@ -202,6 +226,24 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           {t('auth.register')}
         </Button>
       </form>
+
+      {/* 第三方登录 */}
+      <div className={styles.divider}>
+        <span>{t('auth.thirdPartyLogin')}</span>
+      </div>
+
+      <div className={styles.socialLogin}>
+        <div className={styles.googleLoginWrapper}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setErrors({ general: t('auth.googleLoginFailed', 'Google login failed, please try again') })}
+            width="100%"
+            text="signup_with"
+            shape="rectangular"
+            size="large"
+          />
+        </div>
+      </div>
 
       {/* 登录入口 */}
       <div className={styles.loginPrompt}>

@@ -204,7 +204,15 @@
     "successTitle": "訂單提交成功",
     "successMessage": "您的訂單已提交，請在30分鐘內完成支付",
     "viewOrder": "檢視訂單",
-    "continueShopping": "繼續購物"
+    "continueShopping": "繼續購物",
+    "errors": {
+      "firstNameRequired": "請輸入名字",
+      "lastNameRequired": "請輸入姓氏",
+      "emailRequired": "請輸入電子郵箱",
+      "emailInvalid": "電子郵箱格式不正確",
+      "phoneRequired": "請輸入手機號碼",
+      "passportRequired": "請輸入護照號碼"
+    }
   },
   "order": {
     "title": "訂單",
@@ -708,7 +716,15 @@
     "signupBtn": "免費註冊",
     "dismissBtn": "以後再說",
     "langLabel": "聊天語言",
-    "historyLoading": "載入歷史訊息..."
+    "historyLoading": "載入歷史訊息...",
+    "historyTitle": "歷史對話",
+    "newChat": "新對話",
+    "noHistory": "暫無歷史對話",
+    "untitledChat": "對話",
+    "justNow": "剛剛",
+    "minutesAgo": "{{n}}分鐘前",
+    "hoursAgo": "{{n}}小時前",
+    "daysAgo": "{{n}}天前"
   },
   "footer": {
     "about": "關於我們",

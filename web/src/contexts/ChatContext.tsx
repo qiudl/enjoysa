@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { sendMessageStream, getSessions, getMessages, type ChatMessage } from '../services/chatService';
+import { sendMessageStream, getSessions, getMessages, type ChatMessage, type ChatSession } from '../services/chatService';
 import { useTranslation } from 'react-i18next';
 import { useUserAuth } from './UserAuthContext';
 
@@ -30,6 +30,13 @@ interface ChatContextType {
   userMessageCount: number;
   signupDismissed: boolean;
   dismissSignup: () => void;
+  showHistory: boolean;
+  setShowHistory: (show: boolean) => void;
+  sessions: ChatSession[];
+  isSessionsLoading: boolean;
+  loadSessions: () => Promise<void>;
+  loadSession: (id: number) => Promise<void>;
+  newSession: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -41,6 +48,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [signupDismissed, setSignupDismissed] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const { i18n } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
@@ -234,6 +244,43 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [chatLanguage]);
 
+  const loadSessions = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setIsSessionsLoading(true);
+    try {
+      const list = await getSessions();
+      setSessions(list);
+    } catch (err) {
+      console.error('[Chat] Failed to load sessions:', err);
+    } finally {
+      setIsSessionsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const loadSession = useCallback(async (id: number) => {
+    setIsHistoryLoading(true);
+    try {
+      const msgs = await getMessages(id);
+      if (msgs.length > 0) {
+        setMessages(msgs.map(m => ({ role: m.role, content: m.content })));
+        setSessionId(id);
+        sessionIdRef.current = id;
+      }
+    } catch (err) {
+      console.error('[Chat] Failed to load session:', err);
+    } finally {
+      setIsHistoryLoading(false);
+      setShowHistory(false);
+    }
+  }, []);
+
+  const newSession = useCallback(() => {
+    setMessages([]);
+    setSessionId(null);
+    sessionIdRef.current = null;
+    setShowHistory(false);
+  }, []);
+
   const clearChat = useCallback(() => {
     setMessages([]);
     setSessionId(null);
@@ -248,6 +295,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       chatLanguage, setChatLanguage,
       openChat, closeChat, toggleChat, sendMessage, clearChat,
       userMessageCount, signupDismissed, dismissSignup,
+      showHistory, setShowHistory, sessions, isSessionsLoading,
+      loadSessions, loadSession, newSession,
     }}>
       {children}
     </ChatContext.Provider>

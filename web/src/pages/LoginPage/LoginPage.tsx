@@ -102,6 +102,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             ) : (
               <RegisterForm
                 onRegister={onRegister}
+                onGoogleLogin={onGoogleLogin}
                 onSuccess={(data) => onRegisterSuccess?.(data)}
                 onSwitchToLogin={() => setMode('login')}
               />

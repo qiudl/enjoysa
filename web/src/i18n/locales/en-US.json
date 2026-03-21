@@ -228,7 +228,15 @@
     "successTitle": "Order Submitted",
     "successMessage": "Your order has been submitted. Please complete payment within 30 minutes.",
     "viewOrder": "View Order",
-    "continueShopping": "Continue Shopping"
+    "continueShopping": "Continue Shopping",
+    "errors": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "phoneRequired": "Phone number is required",
+      "passportRequired": "Passport number is required"
+    }
   },
   "order": {
     "title": "Order",
@@ -648,7 +656,15 @@
     "signupBtn": "Sign up free",
     "dismissBtn": "Maybe later",
     "langLabel": "Language",
-    "historyLoading": "Loading history..."
+    "historyLoading": "Loading history...",
+    "historyTitle": "Chat History",
+    "newChat": "New Chat",
+    "noHistory": "No chat history yet",
+    "untitledChat": "Chat",
+    "justNow": "Just now",
+    "minutesAgo": "{{n}} min ago",
+    "hoursAgo": "{{n}}h ago",
+    "daysAgo": "{{n}}d ago"
   },
   "footer": {
     "about": "About Us",

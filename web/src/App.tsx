@@ -171,12 +171,17 @@ function ResetPasswordPageWrapper() {
 // 包装组件：RegisterPage
 function RegisterPageWrapper() {
   const navigate = useNavigate();
-  const { register } = useUserAuth();
+  const { register, googleLogin } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="register"
       onRegister={register}
+      onGoogleLogin={async (idToken) => {
+        const success = await googleLogin(idToken);
+        if (success) navigate('/');
+        return success;
+      }}
       onLoginSuccess={() => navigate('/')}
       onRegisterSuccess={() => navigate('/')}
       onNavigateHome={() => navigate('/')}

@@ -228,7 +228,15 @@
     "successTitle": "订单提交成功",
     "successMessage": "您的订单已提交，请在30分钟内完成支付",
     "viewOrder": "查看订单",
-    "continueShopping": "继续购物"
+    "continueShopping": "继续购物",
+    "errors": {
+      "firstNameRequired": "请输入名字",
+      "lastNameRequired": "请输入姓氏",
+      "emailRequired": "请输入邮箱",
+      "emailInvalid": "邮箱格式不正确",
+      "phoneRequired": "请输入手机号",
+      "passportRequired": "请输入护照号码"
+    }
   },
   "order": {
     "title": "订单",
@@ -648,7 +656,15 @@
     "signupBtn": "免费注册",
     "dismissBtn": "以后再说",
     "langLabel": "聊天语言",
-    "historyLoading": "加载历史消息..."
+    "historyLoading": "加载历史消息...",
+    "historyTitle": "历史对话",
+    "newChat": "新对话",
+    "noHistory": "暂无历史对话",
+    "untitledChat": "对话",
+    "justNow": "刚刚",
+    "minutesAgo": "{{n}}分钟前",
+    "hoursAgo": "{{n}}小时前",
+    "daysAgo": "{{n}}天前"
   },
   "footer": {
     "about": "关于我们",

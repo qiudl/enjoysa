@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageCircle, X, Trash2, Send, Sparkles, Globe, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Trash2, Send, Sparkles, Globe, Loader2, Clock, ArrowLeft, Plus } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { useUserAuth } from '../../../contexts/UserAuthContext';
 import styles from './ChatWidget.module.css';
@@ -18,6 +18,8 @@ export const ChatWidget: React.FC = () => {
     chatLanguage, setChatLanguage,
     toggleChat, sendMessage, clearChat,
     userMessageCount, signupDismissed, dismissSignup,
+    showHistory, setShowHistory, sessions, isSessionsLoading,
+    loadSessions, loadSession, newSession,
   } = useChat();
   const { isAuthenticated } = useUserAuth();
   const [input, setInput] = useState('');
@@ -78,6 +80,22 @@ export const ChatWidget: React.FC = () => {
   // Show signup nudge after 1st AI reply (guest only, once per session)
   const showSignupNudge = !isAuthenticated && userMessageCount >= 1 && !isLoading && !signupDismissed;
 
+  const handleHistoryClick = () => {
+    setShowHistory(true);
+    loadSessions();
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t('chat.justNow', 'Just now');
+    if (mins < 60) return t('chat.minutesAgo', '{{n}} min ago', { n: mins });
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return t('chat.hoursAgo', '{{n}}h ago', { n: hours });
+    const days = Math.floor(hours / 24);
+    return t('chat.daysAgo', '{{n}}d ago', { n: days });
+  };
+
   return (
     <>
       {/* Floating Button */}
@@ -91,123 +109,186 @@ export const ChatWidget: React.FC = () => {
           {/* Header */}
           <div className={styles.chatHeader}>
             <div className={styles.chatTitle}>
-              <Sparkles size={18} />
-              {t('chat.title', 'AI Travel Assistant')}
+              {showHistory ? (
+                <>
+                  <button className={styles.headerBtn} onClick={() => setShowHistory(false)}>
+                    <ArrowLeft size={16} />
+                  </button>
+                  {t('chat.historyTitle', 'Chat History')}
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  {t('chat.title', 'AI Travel Assistant')}
+                </>
+              )}
             </div>
             <div className={styles.headerActions}>
-              {/* Language Selector */}
-              <div className={styles.langWrapper} ref={langMenuRef}>
-                <button
-                  className={styles.headerBtn}
-                  onClick={() => setShowLangMenu(prev => !prev)}
-                  title={t('chat.langLabel', 'Language')}
-                >
-                  <Globe size={16} />
+              {showHistory ? (
+                <button className={styles.headerBtn} onClick={newSession} title={t('chat.newChat', 'New Chat')}>
+                  <Plus size={16} />
                 </button>
-                {showLangMenu && (
-                  <div className={styles.langMenu}>
-                    {LANGUAGES.map(lang => (
-                      <button
-                        key={lang.code}
-                        className={`${styles.langOption} ${chatLanguage === lang.code ? styles.langActive : ''}`}
-                        onClick={() => handleLangSelect(lang.code)}
-                      >
-                        {lang.label}
-                      </button>
-                    ))}
+              ) : (
+                <>
+                  {/* History Button - only for authenticated users */}
+                  {isAuthenticated && (
+                    <button
+                      className={styles.headerBtn}
+                      onClick={handleHistoryClick}
+                      title={t('chat.historyTitle', 'Chat History')}
+                    >
+                      <Clock size={16} />
+                    </button>
+                  )}
+                  {/* Language Selector */}
+                  <div className={styles.langWrapper} ref={langMenuRef}>
+                    <button
+                      className={styles.headerBtn}
+                      onClick={() => setShowLangMenu(prev => !prev)}
+                      title={t('chat.langLabel', 'Language')}
+                    >
+                      <Globe size={16} />
+                    </button>
+                    {showLangMenu && (
+                      <div className={styles.langMenu}>
+                        {LANGUAGES.map(lang => (
+                          <button
+                            key={lang.code}
+                            className={`${styles.langOption} ${chatLanguage === lang.code ? styles.langActive : ''}`}
+                            onClick={() => handleLangSelect(lang.code)}
+                          >
+                            {lang.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <button className={styles.headerBtn} onClick={clearChat} title={t('chat.clearHistory', 'Clear')}>
-                <Trash2 size={16} />
-              </button>
+                  <button className={styles.headerBtn} onClick={clearChat} title={t('chat.clearHistory', 'Clear')}>
+                    <Trash2 size={16} />
+                  </button>
+                </>
+              )}
               <button className={styles.headerBtn} onClick={toggleChat}>
                 <X size={16} />
               </button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className={styles.chatMessages}>
-            {isHistoryLoading && (
-              <div className={styles.historyLoading}>
-                <Loader2 size={20} className={styles.spinner} />
-                <span>{t('chat.historyLoading', 'Loading history...')}</span>
-              </div>
-            )}
-
-            {!isHistoryLoading && messages.length === 0 && (
-              <div className={styles.welcomeCard}>
-                <div className={styles.welcomeAvatar}>
-                  <Sparkles size={24} />
+          {showHistory ? (
+            /* History List View */
+            <div className={styles.chatMessages}>
+              {isSessionsLoading ? (
+                <div className={styles.historyLoading}>
+                  <Loader2 size={20} className={styles.spinner} />
+                  <span>{t('chat.historyLoading', 'Loading history...')}</span>
                 </div>
-                <p className={styles.welcomeText}>{t('chat.welcome')}</p>
-                <div className={styles.quickChips}>
-                  {quickQuestions.map((q, i) => (
-                    <button
-                      key={i}
-                      className={styles.chip}
-                      onClick={() => handleSend(q)}
-                      disabled={isLoading}
-                    >
-                      {q}
-                    </button>
-                  ))}
+              ) : sessions.length === 0 ? (
+                <div className={styles.historyEmpty}>
+                  <Clock size={32} />
+                  <p>{t('chat.noHistory', 'No chat history yet')}</p>
                 </div>
-              </div>
-            )}
-
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageAssistant}`}
-              >
-                {msg.content}
-              </div>
-            ))}
-
-            {/* Signup nudge card */}
-            {showSignupNudge && (
-              <div className={styles.signupCard}>
-                <p className={styles.signupText}>{t('chat.signupHint')}</p>
-                <div className={styles.signupActions}>
-                  <a href="/login" className={styles.signupBtn}>{t('chat.signupBtn')}</a>
-                  <button className={styles.signupDismiss} onClick={dismissSignup}>
-                    {t('chat.dismissBtn', 'Later')}
+              ) : (
+                sessions.map(session => (
+                  <button
+                    key={session.id}
+                    className={styles.sessionItem}
+                    onClick={() => loadSession(session.id)}
+                  >
+                    <div className={styles.sessionTitle}>
+                      {session.title || t('chat.untitledChat', 'Chat')}
+                    </div>
+                    <div className={styles.sessionTime}>
+                      {formatRelativeTime(session.updated_at)}
+                    </div>
                   </button>
-                </div>
-              </div>
-            )}
+                ))
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Messages */}
+              <div className={styles.chatMessages}>
+                {isHistoryLoading && (
+                  <div className={styles.historyLoading}>
+                    <Loader2 size={20} className={styles.spinner} />
+                    <span>{t('chat.historyLoading', 'Loading history...')}</span>
+                  </div>
+                )}
 
-            {isLoading && messages[messages.length - 1]?.content === '' && (
-              <div className={styles.typing}>
-                <span className={styles.typingDot} />
-                <span className={styles.typingDot} />
-                <span className={styles.typingDot} />
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+                {!isHistoryLoading && messages.length === 0 && (
+                  <div className={styles.welcomeCard}>
+                    <div className={styles.welcomeAvatar}>
+                      <Sparkles size={24} />
+                    </div>
+                    <p className={styles.welcomeText}>{t('chat.welcome')}</p>
+                    <div className={styles.quickChips}>
+                      {quickQuestions.map((q, i) => (
+                        <button
+                          key={i}
+                          className={styles.chip}
+                          onClick={() => handleSend(q)}
+                          disabled={isLoading}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Input */}
-          <div className={styles.chatInput}>
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={t('chat.placeholder', 'Type your message...')}
-              rows={1}
-            />
-            <button
-              className={styles.sendBtn}
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              aria-label={t('chat.send', 'Send')}
-            >
-              <Send size={16} />
-            </button>
-          </div>
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageAssistant}`}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+
+                {/* Signup nudge card */}
+                {showSignupNudge && (
+                  <div className={styles.signupCard}>
+                    <p className={styles.signupText}>{t('chat.signupHint')}</p>
+                    <div className={styles.signupActions}>
+                      <a href="/login" className={styles.signupBtn}>{t('chat.signupBtn')}</a>
+                      <button className={styles.signupDismiss} onClick={dismissSignup}>
+                        {t('chat.dismissBtn', 'Later')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isLoading && messages[messages.length - 1]?.content === '' && (
+                  <div className={styles.typing}>
+                    <span className={styles.typingDot} />
+                    <span className={styles.typingDot} />
+                    <span className={styles.typingDot} />
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className={styles.chatInput}>
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={t('chat.placeholder', 'Type your message...')}
+                  rows={1}
+                />
+                <button
+                  className={styles.sendBtn}
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isLoading}
+                  aria-label={t('chat.send', 'Send')}
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>
