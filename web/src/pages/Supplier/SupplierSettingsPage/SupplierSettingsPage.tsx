@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer, Button } from '../../../components/Common';
+import { Camera } from 'lucide-react';
+import { Button } from '../../../components/Common';
 import { get, put } from '../../../services/api';
+import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierSettingsPage.module.css';
 
 interface SupplierProfile {
@@ -25,10 +27,6 @@ interface SupplierProfile {
   notify_sms: boolean;
 }
 
-export interface SupplierSettingsPageProps {
-  supplierName?: string;
-}
-
 const supplierTypeLabels: Record<string, string> = {
   travel_agency: 'Travel Agency',
   hotel: 'Hotel',
@@ -37,9 +35,7 @@ const supplierTypeLabels: Record<string, string> = {
   car_rental: 'Car Rental',
 };
 
-export const SupplierSettingsPage: React.FC<SupplierSettingsPageProps> = ({
-  supplierName = '',
-}) => {
+export const SupplierSettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState<SupplierProfile | null>(null);
   const [editSection, setEditSection] = useState<'company' | 'bank' | null>(null);
@@ -97,14 +93,30 @@ export const SupplierSettingsPage: React.FC<SupplierSettingsPageProps> = ({
     setTimeout(() => setToast(''), 2500);
   };
 
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const url = await supplierProductService.upload(file);
+      const updated = await put<SupplierProfile>('/supplier/profile', { logo: url }, 'supplier');
+      setProfile(updated);
+      showToast(t('supplier.settings.saveSuccess', 'Saved successfully'));
+    } catch {
+      showToast(t('supplier.settings.saveFailed', 'Save failed'));
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
   const emptyText = t('supplier.settings.notSet', 'Not set');
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.settings.title', 'Settings')}</h1>
           </div>
@@ -171,11 +183,25 @@ export const SupplierSettingsPage: React.FC<SupplierSettingsPageProps> = ({
                 <>
                   <div className={styles.logoRow}>
                     <span className={styles.fieldLabel}>Logo</span>
-                    {profile?.logo ? (
-                      <img src={profile.logo} alt="Logo" className={styles.logoPreview} />
-                    ) : (
-                      <div className={styles.logoPlaceholder}>🏢</div>
-                    )}
+                    <div className={styles.logoUploadArea} onClick={() => logoInputRef.current?.click()}>
+                      {profile?.logo ? (
+                        <img src={profile.logo} alt="Logo" className={styles.logoPreview} />
+                      ) : (
+                        <div className={styles.logoPlaceholder}>
+                          <Camera size={24} />
+                        </div>
+                      )}
+                      <div className={styles.logoOverlay}>
+                        {uploadingLogo ? '...' : <Camera size={16} />}
+                      </div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
                   </div>
                   <div className={styles.fieldRow}>
                     <span className={styles.fieldLabel}>{t('supplier.settings.companyName', 'Company Name')}</span>
@@ -319,10 +345,6 @@ export const SupplierSettingsPage: React.FC<SupplierSettingsPageProps> = ({
               </div>
             </div>
           </section>
-        </div>
-      </main>
-
-      <Footer />
 
       {toast && <div className={styles.toast}>{toast}</div>}
     </div>

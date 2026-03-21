@@ -30,14 +30,10 @@ type Story = StoryObj<typeof SupplierOrderListPage>;
 
 /** 默认 */
 export const Default: Story = {
-  args: {
-    supplierName: '祥龙旅行社',
-  },
+  args: {},
 };
 
 /** 英文版 */
 export const English: Story = {
-  args: {
-    supplierName: 'Adelaide Tours Co.',
-  },
+  args: {},
 };

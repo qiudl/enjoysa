@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer, Button, Modal } from '../../../components/Common';
+import { Button, Modal } from '../../../components/Common';
 import type { ApiProduct } from '../../../services/productService';
 import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierProductListPage.module.css';
@@ -18,8 +18,6 @@ export interface SupplierProduct {
 }
 
 export interface SupplierProductListPageProps {
-  /** 供应商名称 */
-  supplierName?: string;
   /** 导航回调 */
   onNavigate?: (path: string) => void;
 }
@@ -48,7 +46,6 @@ function transformProduct(p: ApiProduct): SupplierProduct {
 }
 
 export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = ({
-  supplierName = '祥龙旅行社',
   onNavigate,
 }) => {
   const { t } = useTranslation();
@@ -173,11 +170,7 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   };
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.products.title')}</h1>
@@ -315,10 +308,6 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
               <p className={styles.emptyHint}>{t('supplier.products.addFirst')}</p>
             </div>
           )}
-        </div>
-      </main>
-
-      <Footer />
 
       {/* Delete Confirmation Modal */}
       <Modal

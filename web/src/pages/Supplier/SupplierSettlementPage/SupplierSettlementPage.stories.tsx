@@ -30,30 +30,10 @@ type Story = StoryObj<typeof SupplierSettlementPage>;
 
 /** 默认 */
 export const Default: Story = {
-  args: {
-    supplierName: '祥龙旅行社',
-    pendingAmount: 32112,
-    settledAmount: 156800,
-    monthSales: 35680,
-  },
+  args: {},
 };
 
 /** 英文版 */
 export const English: Story = {
-  args: {
-    supplierName: 'Adelaide Tours Co.',
-    pendingAmount: 32112,
-    settledAmount: 156800,
-    monthSales: 35680,
-  },
-};
-
-/** 高额结算 */
-export const HighAmount: Story = {
-  args: {
-    supplierName: '南澳精品旅游',
-    pendingAmount: 128500,
-    settledAmount: 1568000,
-    monthSales: 356800,
-  },
+  args: {},
 };

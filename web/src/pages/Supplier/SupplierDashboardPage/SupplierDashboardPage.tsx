@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer, Button } from '../../../components/Common';
+import { Button } from '../../../components/Common';
 import { get } from '../../../services/api';
 import { listSupplierOrders, type Order } from '../../../services/orderService';
 import {
@@ -115,11 +115,7 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
   const totalAlerts = (alerts?.low_stock?.length ?? 0) + (alerts?.sold_out?.length ?? 0);
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Welcome Section */}
           <section className={styles.welcomeSection}>
             <div className={styles.welcomeContent}>
@@ -349,10 +345,6 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
               </div>
             </section>
           </div>
-        </div>
-      </main>
-
-      <Footer />
     </div>
   );
 };

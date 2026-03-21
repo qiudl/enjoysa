@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, X, Plus, Layers } from 'lucide-react';
-import { Header, Footer } from '../../../components/Common';
 import { supplierProductService } from '../../../services/supplierProductService';
 import type { ApiProduct, ApiProductSchedule, ApiProductPackage } from '../../../services/productService';
 import styles from './SupplierSchedulePage.module.css';
 
 export interface SupplierSchedulePageProps {
   productId?: string;
-  supplierName?: string;
   onNavigate?: (path: string) => void;
 }
 
@@ -54,7 +52,6 @@ type ModalMode = 'add' | 'edit' | 'batch' | null;
 
 export const SupplierSchedulePage: React.FC<SupplierSchedulePageProps> = ({
   productId,
-  supplierName = '',
   onNavigate,
 }) => {
   const { t, i18n } = useTranslation();
@@ -222,7 +219,7 @@ export const SupplierSchedulePage: React.FC<SupplierSchedulePageProps> = ({
       const end = new Date(batchEndDate);
       const items: { package_id?: number; date: string; time_slot?: string; total_slots: number; price?: number | null }[] = [];
 
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      for (let d = new Date(start); d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
         const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
         let include = false;
         if (batchPattern === 'everyday') include = true;
@@ -295,22 +292,12 @@ export const SupplierSchedulePage: React.FC<SupplierSchedulePageProps> = ({
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Header isLoggedIn userName={supplierName} />
-        <main className={styles.main}>
-          <div className={styles.loading}>{t('supplier.schedule.loading')}</div>
-        </main>
-        <Footer />
-      </div>
+      <div className={styles.loading}>{t('supplier.schedule.loading')}</div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <div className={styles.headerLeft}>
@@ -448,10 +435,6 @@ export const SupplierSchedulePage: React.FC<SupplierSchedulePageProps> = ({
               )}
             </div>
           </div>
-        </div>
-      </main>
-
-      <Footer />
 
       {/* Add/Edit Modal */}
       {(modalMode === 'add' || modalMode === 'edit') && (

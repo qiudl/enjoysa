@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer } from '../../../components/Common';
 import { getAuditLogs, type AuditLog } from '../../../services/supplierDashboardService';
 import styles from './SupplierAuditLogPage.module.css';
 
-export interface SupplierAuditLogPageProps {
-  supplierName?: string;
-}
-
-export const SupplierAuditLogPage: React.FC<SupplierAuditLogPageProps> = ({
-  supplierName = '供应商',
-}) => {
+export const SupplierAuditLogPage: React.FC = () => {
   const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,11 +40,7 @@ export const SupplierAuditLogPage: React.FC<SupplierAuditLogPageProps> = ({
   const totalPages = Math.ceil(total / 20);
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.auditLog.title')}</h1>
           </div>
@@ -133,10 +122,6 @@ export const SupplierAuditLogPage: React.FC<SupplierAuditLogPageProps> = ({
               </button>
             </div>
           )}
-        </div>
-      </main>
-
-      <Footer />
     </div>
   );
 };

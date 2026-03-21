@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer, Button, Modal } from '../../../components/Common';
-import { listSupplierOrders, acceptOrder, refundOrder, updateOrderRemark, type Order as ApiOrder } from '../../../services/orderService';
+import { Button, Modal } from '../../../components/Common';
+import { listSupplierOrders, acceptOrder, completeOrder, refundOrder, updateOrderRemark, type Order as ApiOrder } from '../../../services/orderService';
 import styles from './SupplierOrderListPage.module.css';
 
 export interface SupplierOrder {
@@ -20,8 +20,6 @@ export interface SupplierOrder {
 }
 
 export interface SupplierOrderListPageProps {
-  /** 供应商名称 */
-  supplierName?: string;
   /** 导航回调 */
   onNavigate?: (path: string) => void;
 }
@@ -52,9 +50,7 @@ function transformOrder(o: ApiOrder): SupplierOrder {
   };
 }
 
-export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
-  supplierName = '祥龙旅行社',
-}) => {
+export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = () => {
   const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [filter, setFilter] = useState<string>('all');
@@ -69,6 +65,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   const [refundAmount, setRefundAmount] = useState('');
   const [remarkText, setRemarkText] = useState('');
   const [refundLoading, setRefundLoading] = useState(false);
+  const [completingOrderId, setCompletingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const params: Record<string, string | number> = { page: 1, page_size: 50 };
@@ -145,6 +142,18 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
     setShowConfirmModal(true);
   };
 
+  const handleComplete = async (order: SupplierOrder) => {
+    if (completingOrderId) return;
+    if (!confirm(t('supplier.orders.completeConfirmDesc', 'Mark this order as completed?'))) return;
+    setCompletingOrderId(order.id);
+    try {
+      await completeOrder(order.numericId);
+      setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: 'completed' as const } : o));
+    } catch { /* error handled by API layer */ } finally {
+      setCompletingOrderId(null);
+    }
+  };
+
   const handleRefund = (order: SupplierOrder) => {
     setSelectedOrder(order);
     setRefundType('full');
@@ -161,6 +170,10 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
 
   const submitRefund = async () => {
     if (!selectedOrder || !refundReason.trim()) return;
+    if (refundType === 'partial') {
+      const amt = parseFloat(refundAmount);
+      if (isNaN(amt) || amt <= 0 || amt > selectedOrder.amount) return;
+    }
     setRefundLoading(true);
     try {
       await refundOrder(selectedOrder.numericId, {
@@ -188,11 +201,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   };
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.orders.title')}</h1>
@@ -302,8 +311,8 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                         )}
                         {order.status === 'confirmed' && (
                           <>
-                            <Button size="sm" variant="primary">
-                              {t('supplier.orders.complete')}
+                            <Button size="sm" variant="primary" onClick={() => handleComplete(order)} disabled={completingOrderId === order.id}>
+                              {completingOrderId === order.id ? t('common.processing', '...') : t('supplier.orders.complete')}
                             </Button>
                             <Button size="sm" variant="danger" onClick={() => handleRefund(order)}>
                               {t('supplier.orders.refund')}
@@ -327,10 +336,6 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
               <p className={styles.emptyText}>{t('supplier.orders.noOrders')}</p>
             </div>
           )}
-        </div>
-      </main>
-
-      <Footer />
 
       {/* Confirm Order Modal */}
       <Modal

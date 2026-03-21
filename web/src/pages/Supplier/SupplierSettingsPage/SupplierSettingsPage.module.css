@@ -119,6 +119,30 @@
   color: var(--color-text-muted, #64748b);
 }
 
+.logoUploadArea {
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.logoUploadArea:hover .logoOverlay {
+  opacity: 1;
+}
+
+.logoOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 12px;
+}
+
 /* Form (edit mode) */
 .form {
   display: flex;

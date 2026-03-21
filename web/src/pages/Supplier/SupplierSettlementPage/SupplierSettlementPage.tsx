@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Header, Footer, Button } from '../../../components/Common';
+import { Button } from '../../../components/Common';
 import { get } from '../../../services/api';
 import type { PaginatedResponse } from '../../../services/api';
+import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
 import styles from './SupplierSettlementPage.module.css';
 
 export interface Settlement {
@@ -52,31 +53,28 @@ function transformSettlement(s: ApiSettlement): Settlement {
   };
 }
 
+interface SupplierProfile {
+  bank_name: string;
+  bank_account: string;
+  account_holder: string;
+  commission_rate: number;
+}
+
 export interface SupplierSettlementPageProps {
-  /** 供应商名称 */
-  supplierName?: string;
-  /** 待结算金额 */
-  pendingAmount?: number;
-  /** 已结算金额 */
-  settledAmount?: number;
-  /** 本月销售额 */
-  monthSales?: number;
   /** 导航回调 */
   onNavigate?: (path: string) => void;
 }
 
-export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
-  supplierName = '祥龙旅行社',
-  pendingAmount: defaultPending = 0,
-  settledAmount: defaultSettled = 0,
-  monthSales: defaultMonth = 0,
-}) => {
+export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () => {
+  const { supplier } = useSupplierAuth();
+  const supplierName = supplier?.supplier?.name || supplier?.name || '';
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'completed'>('all');
   const [settlements, setSettlements] = useState<Settlement[]>([]);
-  const [pendingAmount, setPendingAmount] = useState(defaultPending);
-  const [settledAmount, setSettledAmount] = useState(defaultSettled);
-  const [monthSales, setMonthSales] = useState(defaultMonth);
+  const [pendingAmount, setPendingAmount] = useState(0);
+  const [settledAmount, setSettledAmount] = useState(0);
+  const [monthSales, setMonthSales] = useState(0);
+  const [profile, setProfile] = useState<SupplierProfile | null>(null);
 
   useEffect(() => {
     get<PaginatedResponse<ApiSettlement>>('/supplier/settlements?page=1&page_size=50', 'supplier')
@@ -91,6 +89,10 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
         setSettledAmount(stats.settled_amount || 0);
         setMonthSales(stats.month_sales || 0);
       })
+      .catch(() => {});
+
+    get<SupplierProfile>('/supplier/profile', 'supplier')
+      .then((data) => setProfile(data))
       .catch(() => {});
   }, []);
 
@@ -114,11 +116,7 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
   };
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.settlement.title')}</h1>
@@ -173,19 +171,19 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
             <div className={styles.accountCard}>
               <div className={styles.accountRow}>
                 <span className={styles.accountLabel}>{t('supplier.settlement.bankName')}</span>
-                <span className={styles.accountValue}>中国建设银行 阿德莱德分行</span>
+                <span className={styles.accountValue}>{profile?.bank_name || '-'}</span>
               </div>
               <div className={styles.accountRow}>
                 <span className={styles.accountLabel}>{t('supplier.settlement.accountNumber')}</span>
-                <span className={styles.accountValue}>6222 **** **** 1234</span>
+                <span className={styles.accountValue}>{profile?.bank_account || '-'}</span>
               </div>
               <div className={styles.accountRow}>
                 <span className={styles.accountLabel}>{t('supplier.settlement.accountHolder')}</span>
-                <span className={styles.accountValue}>{supplierName}</span>
+                <span className={styles.accountValue}>{profile?.account_holder || supplierName || '-'}</span>
               </div>
               <div className={styles.accountRow}>
                 <span className={styles.accountLabel}>{t('supplier.settlement.commissionRate')}</span>
-                <span className={styles.accountValue} style={{ color: '#f59e0b' }}>10%</span>
+                <span className={styles.accountValue} style={{ color: '#f59e0b' }}>{profile?.commission_rate != null ? `${profile.commission_rate}%` : '10%'}</span>
               </div>
             </div>
           </section>
@@ -279,10 +277,6 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = ({
               </div>
             )}
           </section>
-        </div>
-      </main>
-
-      <Footer />
     </div>
   );
 };

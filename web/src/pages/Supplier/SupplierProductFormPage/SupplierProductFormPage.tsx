@@ -13,7 +13,6 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Header, Footer } from '../../../components/Common';
 import { supplierProductService } from '../../../services/supplierProductService';
 import type { ImagePayload, PackagePayload, HighlightPayload, FAQPayload } from '../../../services/supplierProductService';
 import { regionService } from '../../../services/regionService';
@@ -57,7 +56,6 @@ interface FormData {
 }
 
 export interface SupplierProductFormPageProps {
-  supplierName?: string;
   productId?: string;
   onNavigate?: (path: string) => void;
 }
@@ -118,7 +116,6 @@ function SortableImage({
 // ────────────────────────────── Main Component ──────────────────────────────
 
 export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = ({
-  supplierName = '供应商',
   productId,
   onNavigate,
 }) => {
@@ -896,22 +893,12 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Header isLoggedIn userName={supplierName} />
-        <main className={styles.main}>
-          <div className={styles.loadingOverlay}>{t('supplier.productForm.loadingProduct')}</div>
-        </main>
-        <Footer />
-      </div>
+      <div className={styles.loadingOverlay}>{t('supplier.productForm.loadingProduct')}</div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <Header isLoggedIn userName={supplierName} />
-
-      <main className={styles.main}>
-        <div className={styles.container}>
+    <div className={styles.container}>
           {/* Breadcrumb */}
           <nav className={styles.breadcrumb}>
             <button onClick={() => onNavigate?.('/supplier/products')} className={styles.breadcrumbLink}>
@@ -1003,10 +990,6 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
               )}
             </div>
           </div>
-        </div>
-      </main>
-
-      <Footer />
     </div>
   );
 };
