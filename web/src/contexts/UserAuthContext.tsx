@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { userAuth, isTokenPresent, type UserInfo } from '../services/authService';
+import i18n from '../i18n';
+
+function syncLanguage(lang?: string) {
+  if (!lang) return;
+  const mapped = lang === 'zh-CN' ? 'zh' : lang === 'en-US' ? 'en' : lang;
+  if (i18n.language !== mapped) {
+    i18n.changeLanguage(mapped);
+  }
+}
 
 export type { UserInfo };
 
@@ -40,6 +49,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
           const profile = await userAuth.getProfile();
           setUser(profile);
           localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(profile));
+          syncLanguage(profile.language);
         } catch {
           userAuth.logout();
           localStorage.removeItem(USER_STORAGE_KEY);
@@ -59,6 +69,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
       const userInfo = await userAuth.login(email, password);
       setUser(userInfo);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo));
+      syncLanguage(userInfo.language);
       return true;
     } catch {
       return false;
@@ -73,6 +84,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
       const userInfo = await userAuth.register(email, password, name);
       setUser(userInfo);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo));
+      syncLanguage(userInfo.language);
       return true;
     } catch {
       return false;
@@ -87,6 +99,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
       const userInfo = await userAuth.googleLogin(idToken);
       setUser(userInfo);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo));
+      syncLanguage(userInfo.language);
       return true;
     } catch {
       return false;
@@ -100,6 +113,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
       const updatedUser = await userAuth.updateProfile(updates);
       setUser(updatedUser);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      syncLanguage(updatedUser.language);
       return true;
     } catch {
       return false;

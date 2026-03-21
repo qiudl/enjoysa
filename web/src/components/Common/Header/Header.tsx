@@ -156,11 +156,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className={styles.userButton}
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  {userAvatar ? (
-                    <img src={userAvatar} alt={userName} className={styles.avatar} />
-                  ) : (
-                    <User size={20} />
-                  )}
+                  <User size={20} />
                   <span className={styles.userName}>{userName || t('nav.profile')}</span>
                 </button>
                 {userMenuOpen && (

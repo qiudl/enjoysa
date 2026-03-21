@@ -1,52 +1,54 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import {
-  HomePage,
-  LoginPage,
-  ForgotPasswordPage,
-  ResetPasswordPage,
-  ProductListPage,
-  ProductDetailPage,
-  CheckoutPage,
-  MyOrdersPage,
-  OrderDetailPage,
-  UserProfilePage,
-  UserProfileEditPage,
-  DestinationsPage,
-  CategoriesPage,
-  AboutPage,
-  ContactPage,
-  CartPage,
-  FavoritesPage,
-  FaqPage,
-  TermsPage,
-  PrivacyPage,
-  // B端供应商页面
-  SupplierDashboardPage,
-  SupplierProductListPage,
-  SupplierProductFormPage,
-  SupplierSchedulePage,
-  SupplierOrderListPage,
-  SupplierSettlementPage,
-  SupplierAuditLogPage,
-  SupplierSettingsPage,
-  SupplierLoginPage,
-  SupplierRegisterPage,
-  RegionPage,
-  AttractionDetailPage,
-  // 平台管理端页面
-  AdminLoginPage,
-  DashboardPage,
-  SupplierList,
-  ProductReviewList,
-  AdminProductFormPage,
-  OrderList,
-  UserList,
-  FinanceList,
-  AdminList,
-  SettingsPage,
-} from './pages';
+// 首页同步加载（首屏性能）
+import { HomePage } from './pages/HomePage';
+// 所有其他页面懒加载
+const LoginPage = React.lazy(() => import('./pages/LoginPage/LoginPage'));
+const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage/ResetPasswordPage'));
+const ProductListPage = React.lazy(() => import('./pages/ProductListPage/ProductListPage'));
+const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage/ProductDetailPage'));
+const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
+const MyOrdersPage = React.lazy(() => import('./pages/MyOrdersPage/MyOrdersPage'));
+const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage/OrderDetailPage'));
+const UserProfilePage = React.lazy(() => import('./pages/UserProfilePage/UserProfilePage'));
+const UserProfileEditPage = React.lazy(() => import('./pages/UserProfileEditPage/UserProfileEditPage'));
+const DestinationsPage = React.lazy(() => import('./pages/DestinationsPage/DestinationsPage'));
+const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage/CategoriesPage'));
+const AboutPage = React.lazy(() => import('./pages/AboutPage/AboutPage'));
+const ContactPage = React.lazy(() => import('./pages/ContactPage/ContactPage'));
+const CartPage = React.lazy(() => import('./pages/CartPage/CartPage'));
+const FavoritesPage = React.lazy(() => import('./pages/FavoritesPage/FavoritesPage'));
+const FaqPage = React.lazy(() => import('./pages/FaqPage/FaqPage'));
+const TermsPage = React.lazy(() => import('./pages/TermsPage/TermsPage'));
+const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage/PrivacyPage'));
+const RegionPage = React.lazy(() => import('./pages/RegionPage/RegionPage'));
+const AttractionDetailPage = React.lazy(() => import('./pages/AttractionDetailPage/AttractionDetailPage'));
+// B端供应商页面
+const SupplierDashboardPage = React.lazy(() => import('./pages/Supplier/SupplierDashboardPage/SupplierDashboardPage'));
+const SupplierProductListPage = React.lazy(() => import('./pages/Supplier/SupplierProductListPage/SupplierProductListPage'));
+const SupplierProductFormPage = React.lazy(() => import('./pages/Supplier/SupplierProductFormPage/SupplierProductFormPage'));
+const SupplierSchedulePage = React.lazy(() => import('./pages/Supplier/SupplierSchedulePage/SupplierSchedulePage'));
+const SupplierOrderListPage = React.lazy(() => import('./pages/Supplier/SupplierOrderListPage/SupplierOrderListPage'));
+const SupplierSettlementPage = React.lazy(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
+const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
+const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
+const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
+const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
+// 平台管理端页面
+const AdminLoginPage = React.lazy(() => import('./pages/Admin/AdminLoginPage/AdminLoginPage'));
+const DashboardPage = React.lazy(() => import('./pages/Admin/DashboardPage/DashboardPage'));
+const SupplierList = React.lazy(() => import('./pages/Admin/SupplierList/SupplierList'));
+const ProductReviewList = React.lazy(() => import('./pages/Admin/ProductReviewList/ProductReviewList'));
+const AdminProductFormPage = React.lazy(() => import('./pages/Admin/AdminProductFormPage/AdminProductFormPage'));
+const OrderList = React.lazy(() => import('./pages/Admin/OrderList/OrderList'));
+const UserList = React.lazy(() => import('./pages/Admin/UserList/UserList'));
+const FinanceList = React.lazy(() => import('./pages/Admin/FinanceList/FinanceList'));
+const AdminList = React.lazy(() => import('./pages/Admin/AdminList/AdminList'));
+const SettingsPage = React.lazy(() => import('./pages/Admin/SettingsPage/SettingsPage'));
+
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
 import { ChatWidget } from './components/Common/ChatWidget';
@@ -55,6 +57,14 @@ import { AdminAuthGuard } from './components/Common/AdminAuthGuard';
 import { AdminLayout } from './components/Admin';
 import { SupplierLayout } from './components/Supplier/SupplierLayout';
 import './App.css';
+
+function PageLoading() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  );
+}
 
 // 包装组件：HomePage
 function HomePageWrapper() {
@@ -823,6 +833,7 @@ function App() {
       <ChatProvider>
       <SupplierAuthProvider>
       <AdminAuthProvider>
+      <Suspense fallback={<PageLoading />}>
       <Routes>
         {/* 首页 */}
         <Route path="/" element={<HomePageWrapper />} />
@@ -905,6 +916,7 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
       <ChatWidget />
       </AdminAuthProvider>
       </SupplierAuthProvider>

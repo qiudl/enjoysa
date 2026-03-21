@@ -12,6 +12,17 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['lucide-react', 'i18next', 'react-i18next', '@react-oauth/google'],
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

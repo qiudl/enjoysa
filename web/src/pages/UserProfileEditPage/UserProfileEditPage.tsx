@@ -29,6 +29,13 @@ const LANGUAGE_OPTIONS = [
   { value: 'zh-TW', label: '繁體中文' },
 ];
 
+/** Map user profile language code to i18n language code */
+function toI18nLang(lang: string): string {
+  if (lang === 'zh-CN') return 'zh';
+  if (lang === 'en-US') return 'en';
+  return lang; // zh-TW stays zh-TW
+}
+
 export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
   userName = '',
   userEmail = '',
@@ -43,7 +50,7 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
   onRegisterClick,
   onNavClick,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [name, setName] = useState(userName);
   const [phone, setPhone] = useState(userPhone);
   const [language, setLanguage] = useState(userLanguage);
@@ -69,6 +76,7 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
     try {
       const success = await onSave?.({ name: name.trim(), phone: phone.trim(), language });
       if (success) {
+        i18n.changeLanguage(toI18nLang(language));
         setMessage({ type: 'success', text: t('user.editProfile_page.success') });
         setTimeout(() => onBack?.(), 1000);
       } else {
