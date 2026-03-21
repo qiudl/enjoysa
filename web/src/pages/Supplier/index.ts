@@ -21,3 +21,6 @@ export type { SupplierProductFormPageProps } from './SupplierProductFormPage';
 
 export { SupplierSchedulePage } from './SupplierSchedulePage';
 export type { SupplierSchedulePageProps } from './SupplierSchedulePage';
+
+export { SupplierAuditLogPage } from './SupplierAuditLogPage';
+export type { SupplierAuditLogPageProps } from './SupplierAuditLogPage';

@@ -3,9 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button } from '../../../components/Common';
 import { get } from '../../../services/api';
 import { listSupplierOrders, type Order } from '../../../services/orderService';
+import {
+  getRevenueTrend, getTopProducts, getChannelStats, getEnhancedStats, getScheduleAlerts,
+  type RevenueTrendItem, type TopProductItem, type ChannelStatsItem, type EnhancedStats, type ScheduleAlerts,
+} from '../../../services/supplierDashboardService';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, BarChart, Bar,
+} from 'recharts';
 import styles from './SupplierDashboardPage.module.css';
 
-// 后端 dashboard 响应
 interface DashboardData {
   order_stats: {
     total: number;
@@ -24,13 +31,12 @@ interface DashboardData {
 }
 
 export interface SupplierDashboardPageProps {
-  /** 供应商名称 */
   supplierName?: string;
-  /** 供应商类型 */
   supplierType?: 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental';
-  /** 导航到指定路径 */
   onNavigate?: (path: string) => void;
 }
+
+const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
   supplierName = '供应商',
@@ -41,16 +47,31 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
   const [dashData, setDashData] = useState<DashboardData | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enhanced, setEnhanced] = useState<EnhancedStats | null>(null);
+  const [revenueTrend, setRevenueTrend] = useState<RevenueTrendItem[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProductItem[]>([]);
+  const [channelStats, setChannelStats] = useState<ChannelStatsItem[]>([]);
+  const [alerts, setAlerts] = useState<ScheduleAlerts | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [dash, orderResult] = await Promise.all([
+        const [dash, orderResult, enh, trend, top, channels, al] = await Promise.all([
           get<DashboardData>('/supplier/dashboard', 'supplier'),
           listSupplierOrders({ page: 1, page_size: 5 }),
+          getEnhancedStats().catch(() => null),
+          getRevenueTrend(14).catch(() => []),
+          getTopProducts(30, 5).catch(() => []),
+          getChannelStats(30).catch(() => []),
+          getScheduleAlerts().catch(() => null),
         ]);
         setDashData(dash);
         setRecentOrders(orderResult.orders || []);
+        setEnhanced(enh);
+        setRevenueTrend(trend);
+        setTopProducts(top);
+        setChannelStats(channels);
+        setAlerts(al);
       } catch {
         // Fallback: keep defaults
       } finally {
@@ -61,33 +82,37 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
   }, []);
 
   const pendingOrders = dashData?.order_stats.pending ?? 0;
-  const totalAmount = dashData?.order_stats.total_amount ?? 0;
-  const totalOrders = dashData?.order_stats.total ?? 0;
   const productCount = dashData?.products.total ?? 0;
   const activeProducts = dashData?.products.approved ?? 0;
 
   const stats = [
+    { key: 'today_revenue', label: t('supplier.dashboard.todayRevenue'), value: `$${(enhanced?.today_revenue ?? 0).toLocaleString()}`, icon: '💰', color: '#10b981' },
+    { key: 'week_revenue', label: t('supplier.dashboard.weekRevenue'), value: `$${(enhanced?.week_revenue ?? 0).toLocaleString()}`, icon: '📈', color: '#3b82f6' },
+    { key: 'month_revenue', label: t('supplier.dashboard.monthRevenue'), value: `$${(enhanced?.month_revenue ?? 0).toLocaleString()}`, icon: '📊', color: '#8b5cf6' },
     { key: 'pending', label: t('supplier.dashboard.pendingOrders'), value: pendingOrders, icon: '📋', color: '#f59e0b' },
-    { key: 'today', label: t('supplier.dashboard.todayOrders'), value: totalOrders, icon: '📦', color: '#3b82f6' },
-    { key: 'sales', label: t('supplier.dashboard.monthSales'), value: `$${totalAmount.toLocaleString()}`, icon: '💰', color: '#10b981' },
-    { key: 'settlement', label: t('supplier.dashboard.pendingSettlement'), value: `$${0}`, icon: '🏦', color: '#8b5cf6' },
+    { key: 'today_orders', label: t('supplier.dashboard.todayOrders'), value: enhanced?.today_orders ?? 0, icon: '📦', color: '#06b6d4' },
+    { key: 'avg_order', label: t('supplier.dashboard.avgOrderValue'), value: `$${(enhanced?.avg_order_value ?? 0).toFixed(0)}`, icon: '🎯', color: '#ec4899' },
   ];
 
   const quickActions = [
     { key: 'products', label: t('supplier.dashboard.productManage'), icon: '📦', path: '/supplier/products' },
     { key: 'orders', label: t('supplier.dashboard.orderManage'), icon: '📋', path: '/supplier/orders' },
     { key: 'settlement', label: t('supplier.dashboard.settlement'), icon: '💳', path: '/supplier/settlement' },
+    { key: 'audit', label: t('supplier.dashboard.auditLogs'), icon: '📝', path: '/supplier/audit-logs' },
   ];
 
   const getStatusStyle = (status: string) => {
-    const styles: Record<string, { bg: string; color: string }> = {
+    const map: Record<string, { bg: string; color: string }> = {
       pending: { bg: '#fef3c7', color: '#92400e' },
-      confirmed: { bg: '#dbeafe', color: '#1e40af' },
+      paid: { bg: '#dbeafe', color: '#1e40af' },
+      accepted: { bg: '#dbeafe', color: '#1e40af' },
       completed: { bg: '#dcfce7', color: '#166534' },
       cancelled: { bg: '#fee2e2', color: '#991b1b' },
     };
-    return styles[status] || styles.pending;
+    return map[status] || map.pending;
   };
+
+  const totalAlerts = (alerts?.low_stock?.length ?? 0) + (alerts?.sold_out?.length ?? 0);
 
   return (
     <div className={styles.page}>
@@ -126,6 +151,109 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
               ))}
             </div>
           </section>
+
+          {/* Charts Section */}
+          <div className={styles.chartsSection}>
+            {/* Revenue Trend */}
+            <section className={styles.chartCard}>
+              <h2 className={styles.sectionTitle}>{t('supplier.dashboard.revenueTrend')}</h2>
+              {revenueTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, t('supplier.dashboard.revenue')]} />
+                    <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={styles.emptyChart}>{t('common.noData')}</div>
+              )}
+            </section>
+
+            {/* Channel Distribution */}
+            <section className={styles.chartCard}>
+              <h2 className={styles.sectionTitle}>{t('supplier.dashboard.channelDistribution')}</h2>
+              {channelStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={channelStats.map((c) => ({
+                        name: c.channel === 'direct' ? t('supplier.orders.channels.direct') : c.channel === 'trip_com' ? 'Trip.com' : c.channel,
+                        value: c.revenue,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    >
+                      {channelStats.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v) => `$${Number(v).toFixed(2)}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={styles.emptyChart}>{t('common.noData')}</div>
+              )}
+            </section>
+          </div>
+
+          {/* Top Products */}
+          {topProducts.length > 0 && (
+            <section className={styles.topProductsSection}>
+              <h2 className={styles.sectionTitle}>{t('supplier.dashboard.topProducts')}</h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={topProducts.slice(0, 5)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="product_name"
+                    width={150}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v) => v.length > 18 ? v.slice(0, 18) + '...' : v}
+                  />
+                  <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, t('supplier.dashboard.revenue')]} />
+                  <Bar dataKey="revenue" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </section>
+          )}
+
+          {/* Stock Alerts */}
+          {totalAlerts > 0 && (
+            <section className={styles.alertsSection}>
+              <h2 className={styles.sectionTitle}>
+                {t('supplier.dashboard.stockAlerts')}
+                <span className={styles.alertBadge}>{totalAlerts}</span>
+              </h2>
+              <div className={styles.alertsList}>
+                {(alerts?.sold_out || []).slice(0, 3).map((a) => (
+                  <div key={a.id} className={`${styles.alertCard} ${styles.alertDanger}`}>
+                    <span className={styles.alertIcon}>🔴</span>
+                    <div className={styles.alertContent}>
+                      <span className={styles.alertTitle}>{t('supplier.dashboard.soldOut')}</span>
+                      <span className={styles.alertMeta}>{a.date} {a.time_slot}</span>
+                    </div>
+                  </div>
+                ))}
+                {(alerts?.low_stock || []).slice(0, 3).map((a) => (
+                  <div key={a.id} className={`${styles.alertCard} ${styles.alertWarning}`}>
+                    <span className={styles.alertIcon}>🟡</span>
+                    <div className={styles.alertContent}>
+                      <span className={styles.alertTitle}>{t('supplier.dashboard.lowStock')}: {a.total_slots - a.booked_slots} {t('supplier.dashboard.remaining')}</span>
+                      <span className={styles.alertMeta}>{a.date} {a.time_slot}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Quick Actions */}
           <section className={styles.actionsSection}>

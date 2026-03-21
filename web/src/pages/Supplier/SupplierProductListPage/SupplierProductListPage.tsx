@@ -57,6 +57,10 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SupplierProduct | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchAction, setBatchAction] = useState<'online' | 'offline' | 'delete'>('online');
+  const [batchLoading, setBatchLoading] = useState(false);
 
   const loadProducts = async () => {
     try {
@@ -132,6 +136,42 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredProducts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredProducts.map((p) => p.id)));
+    }
+  };
+
+  const openBatchAction = (action: 'online' | 'offline' | 'delete') => {
+    setBatchAction(action);
+    setShowBatchModal(true);
+  };
+
+  const executeBatchAction = async () => {
+    if (selectedIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      await supplierProductService.batchAction(batchAction, Array.from(selectedIds).map(Number));
+      setSelectedIds(new Set());
+      setShowBatchModal(false);
+      await loadProducts();
+    } catch {
+      // error handled
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <Header isLoggedIn userName={supplierName} />
@@ -170,10 +210,33 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
             </div>
           </div>
 
+          {/* Batch Action Bar */}
+          {selectedIds.size > 0 && (
+            <div className={styles.batchBar}>
+              <span className={styles.batchCount}>
+                {t('supplier.products.selected', { count: selectedIds.size })}
+              </span>
+              <div className={styles.batchActions}>
+                <Button size="sm" variant="primary" onClick={() => openBatchAction('online')}>
+                  {t('supplier.products.batchOnline')}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => openBatchAction('offline')}>
+                  {t('supplier.products.batchOffline')}
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => openBatchAction('delete')}>
+                  {t('supplier.products.batchDelete')}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Product List */}
           {filteredProducts.length > 0 ? (
             <div className={styles.productList}>
               <div className={styles.listHeader}>
+                <span className={styles.colCheck}>
+                  <input type="checkbox" checked={selectedIds.size === filteredProducts.length && filteredProducts.length > 0} onChange={toggleSelectAll} />
+                </span>
                 <span className={styles.colProduct}>{t('supplier.products.productName')}</span>
                 <span className={styles.colPrice}>{t('supplier.products.price')}</span>
                 <span className={styles.colStock}>{t('supplier.products.stock')}</span>
@@ -185,6 +248,9 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                 const statusStyle = getStatusStyle(product.status);
                 return (
                   <div key={product.id} className={styles.listRow}>
+                    <span className={styles.colCheck}>
+                      <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)} />
+                    </span>
                     <div className={styles.colProduct}>
                       <img
                         src={product.image}
@@ -268,6 +334,30 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
             {selectedProduct.title}
           </p>
         )}
+      </Modal>
+
+      {/* Batch Action Confirmation Modal */}
+      <Modal
+        open={showBatchModal}
+        title={t(`supplier.products.batch${batchAction.charAt(0).toUpperCase() + batchAction.slice(1)}`)}
+        size="sm"
+        onClose={() => setShowBatchModal(false)}
+        footer={
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <Button variant="outline" onClick={() => setShowBatchModal(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant={batchAction === 'delete' ? 'danger' : 'primary'}
+              onClick={executeBatchAction}
+              disabled={batchLoading}
+            >
+              {batchLoading ? t('common.processing') : t('common.confirm')}
+            </Button>
+          </div>
+        }
+      >
+        <p>{t('supplier.products.batchConfirm', { count: selectedIds.size, action: t(`supplier.products.batch${batchAction.charAt(0).toUpperCase() + batchAction.slice(1)}`) })}</p>
       </Modal>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header, Footer, Button, Modal } from '../../../components/Common';
-import { listSupplierOrders, acceptOrder, type Order as ApiOrder } from '../../../services/orderService';
+import { listSupplierOrders, acceptOrder, refundOrder, updateOrderRemark, type Order as ApiOrder } from '../../../services/orderService';
 import styles from './SupplierOrderListPage.module.css';
 
 export interface SupplierOrder {
@@ -62,7 +62,13 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [showRemarkModal, setShowRemarkModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(null);
+  const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [remarkText, setRemarkText] = useState('');
+  const [refundLoading, setRefundLoading] = useState(false);
 
   useEffect(() => {
     const params: Record<string, string | number> = { page: 1, page_size: 50 };
@@ -141,7 +147,44 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
 
   const handleRefund = (order: SupplierOrder) => {
     setSelectedOrder(order);
+    setRefundType('full');
+    setRefundReason('');
+    setRefundAmount(String(order.amount));
     setShowRefundModal(true);
+  };
+
+  const handleRemark = (order: SupplierOrder) => {
+    setSelectedOrder(order);
+    setRemarkText('');
+    setShowRemarkModal(true);
+  };
+
+  const submitRefund = async () => {
+    if (!selectedOrder || !refundReason.trim()) return;
+    setRefundLoading(true);
+    try {
+      await refundOrder(selectedOrder.numericId, {
+        type: refundType,
+        reason: refundReason,
+        amount: refundType === 'partial' ? parseFloat(refundAmount) : undefined,
+      });
+      setOrders((prev) => prev.map((o) => o.id === selectedOrder.id ? { ...o, status: 'refunding' as const } : o));
+      setShowRefundModal(false);
+    } catch {
+      // error handled by API layer
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  const submitRemark = async () => {
+    if (!selectedOrder || !remarkText.trim()) return;
+    try {
+      await updateOrderRemark(selectedOrder.numericId, { supplier_remark: remarkText });
+      setShowRemarkModal(false);
+    } catch {
+      // error handled by API layer
+    }
   };
 
   return (
@@ -249,8 +292,8 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                     <div className={styles.orderFooter}>
                       <span className={styles.orderTime}>{order.createdAt}</span>
                       <div className={styles.orderActions}>
-                        <Button size="sm" variant="outline">
-                          {t('supplier.orders.viewDetail')}
+                        <Button size="sm" variant="outline" onClick={() => handleRemark(order)}>
+                          {t('supplier.orders.addRemark')}
                         </Button>
                         {order.status === 'pending' && (
                           <Button size="sm" variant="primary" onClick={() => handleConfirm(order)}>
@@ -258,9 +301,14 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                           </Button>
                         )}
                         {order.status === 'confirmed' && (
-                          <Button size="sm" variant="primary">
-                            {t('supplier.orders.complete')}
-                          </Button>
+                          <>
+                            <Button size="sm" variant="primary">
+                              {t('supplier.orders.complete')}
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => handleRefund(order)}>
+                              {t('supplier.orders.refund')}
+                            </Button>
+                          </>
                         )}
                         {order.status === 'refunding' && (
                           <Button size="sm" variant="danger" onClick={() => handleRefund(order)}>
@@ -313,10 +361,10 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
         )}
       </Modal>
 
-      {/* Handle Refund Modal */}
+      {/* Refund Modal */}
       <Modal
         open={showRefundModal}
-        title={t('supplier.orders.handleRefund')}
+        title={t('supplier.orders.refund')}
         size="sm"
         onClose={() => setShowRefundModal(false)}
         footer={
@@ -324,18 +372,15 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
             <Button variant="outline" onClick={() => setShowRefundModal(false)}>
               {t('supplier.orders.cancel')}
             </Button>
-            <Button variant="danger" onClick={() => setShowRefundModal(false)}>
-              {t('supplier.orders.reject')}
-            </Button>
-            <Button variant="primary" onClick={() => setShowRefundModal(false)}>
-              {t('supplier.orders.approve')}
+            <Button variant="danger" onClick={submitRefund} disabled={refundLoading || !refundReason.trim()}>
+              {refundLoading ? t('common.processing') : t('supplier.orders.confirmRefund')}
             </Button>
           </div>
         }
       >
         {selectedOrder && (
-          <>
-            <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
               <p style={{ margin: '0 0 0.5rem', fontWeight: 500 }}>
                 {i18n.language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
               </p>
@@ -344,14 +389,73 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
               </p>
             </div>
             <div>
-              <p style={{ margin: '0 0 0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>
-                {t('supplier.orders.refundReason')}:
-              </p>
-              <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-                {i18n.language === 'zh' ? '行程有变，无法出行' : 'Schedule changed, unable to travel'}
-              </p>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>
+                {t('supplier.orders.refundType')}
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                  <input type="radio" checked={refundType === 'full'} onChange={() => { setRefundType('full'); setRefundAmount(String(selectedOrder.amount)); }} />
+                  {t('supplier.orders.fullRefund')}
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                  <input type="radio" checked={refundType === 'partial'} onChange={() => setRefundType('partial')} />
+                  {t('supplier.orders.partialRefund')}
+                </label>
+              </div>
             </div>
-          </>
+            {refundType === 'partial' && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>
+                  {t('supplier.orders.refundAmountLabel')}
+                </label>
+                <input
+                  type="number"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  max={selectedOrder.amount}
+                  min={0.01}
+                  step="0.01"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.875rem' }}
+                />
+              </div>
+            )}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, fontSize: '0.875rem' }}>
+                {t('supplier.orders.refundReason')} *
+              </label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder={t('supplier.orders.refundReasonPlaceholder')}
+                rows={3}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical' }}
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Remark Modal */}
+      <Modal
+        open={showRemarkModal}
+        title={t('supplier.orders.addRemark')}
+        size="sm"
+        onClose={() => setShowRemarkModal(false)}
+        onOk={submitRemark}
+      >
+        {selectedOrder && (
+          <div>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', color: '#64748b' }}>
+              {t('supplier.orders.orderNo')}: {selectedOrder.id}
+            </p>
+            <textarea
+              value={remarkText}
+              onChange={(e) => setRemarkText(e.target.value)}
+              placeholder={t('supplier.orders.remarkPlaceholder')}
+              rows={4}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical' }}
+            />
+          </div>
         )}
       </Modal>
     </div>

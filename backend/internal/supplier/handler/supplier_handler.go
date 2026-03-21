@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+
 	"enjoysa-backend/internal/models"
 	orderstore "enjoysa-backend/internal/order/store"
 	productstore "enjoysa-backend/internal/product/store"
@@ -236,4 +238,86 @@ func (h *SupplierHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	response.Success(c, supplier)
+}
+
+// RevenueTrend 收入趋势
+func (h *SupplierHandler) RevenueTrend(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if days < 1 || days > 365 {
+		days = 30
+	}
+
+	items, err := h.orderStore.GetRevenueTrend(supplierID, days)
+	if err != nil {
+		response.ServerError(c, "Failed to get revenue trend")
+		return
+	}
+	response.Success(c, items)
+}
+
+// TopProducts 产品销量排行
+func (h *SupplierHandler) TopProducts(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if days < 1 || days > 365 {
+		days = 30
+	}
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
+
+	items, err := h.orderStore.GetTopProducts(supplierID, days, limit)
+	if err != nil {
+		response.ServerError(c, "Failed to get top products")
+		return
+	}
+	response.Success(c, items)
+}
+
+// ChannelStats 渠道统计
+func (h *SupplierHandler) ChannelStats(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if days < 1 || days > 365 {
+		days = 30
+	}
+
+	items, err := h.orderStore.GetChannelStats(supplierID, days)
+	if err != nil {
+		response.ServerError(c, "Failed to get channel stats")
+		return
+	}
+
+	var totalRevenue float64
+	for _, item := range items {
+		totalRevenue += item.Revenue
+	}
+	type channelWithPct struct {
+		orderstore.ChannelStatsItem
+		Percentage float64 `json:"percentage"`
+	}
+	result := make([]channelWithPct, len(items))
+	for i, item := range items {
+		pct := 0.0
+		if totalRevenue > 0 {
+			pct = item.Revenue / totalRevenue * 100
+		}
+		result[i] = channelWithPct{item, pct}
+	}
+
+	response.Success(c, gin.H{"channels": result})
+}
+
+// DashboardEnhanced 增强型仪表盘统计
+func (h *SupplierHandler) DashboardEnhanced(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+
+	stats, err := h.orderStore.GetEnhancedStats(supplierID)
+	if err != nil {
+		response.ServerError(c, "Failed to get enhanced stats")
+		return
+	}
+	response.Success(c, stats)
 }

@@ -96,10 +96,45 @@
   overflow: hidden;
 }
 
+/* Batch Action Bar */
+.batchBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.batchCount {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.batchActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.colCheck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.colCheck input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .listHeader,
 .listRow {
   display: grid;
-  grid-template-columns: 2.5fr 1fr 0.8fr 0.8fr 1fr 1.5fr;
+  grid-template-columns: 40px 2.5fr 1fr 0.8fr 0.8fr 1fr 1.5fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   align-items: center;

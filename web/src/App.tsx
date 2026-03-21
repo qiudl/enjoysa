@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import {
   HomePage,
   LoginPage,
@@ -27,6 +28,7 @@ import {
   SupplierSchedulePage,
   SupplierOrderListPage,
   SupplierSettlementPage,
+  SupplierAuditLogPage,
   SupplierLoginPage,
   SupplierRegisterPage,
   RegionPage,
@@ -115,12 +117,17 @@ function AttractionDetailPageWrapper() {
 // 包装组件：LoginPage
 function LoginPageWrapper() {
   const navigate = useNavigate();
-  const { login } = useUserAuth();
+  const { login, googleLogin } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="login"
       onLogin={login}
+      onGoogleLogin={async (idToken) => {
+        const success = await googleLogin(idToken);
+        if (success) navigate('/');
+        return success;
+      }}
       onLoginSuccess={() => navigate('/')}
       onRegisterSuccess={() => navigate('/')}
       onNavigateHome={() => navigate('/')}
@@ -582,6 +589,17 @@ function SupplierSettlementPageWrapper() {
   );
 }
 
+// 包装组件：SupplierAuditLogPage
+function SupplierAuditLogPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierAuditLogPage
+      supplierName={supplier?.name || '供应商'}
+    />
+  );
+}
+
 // =====================
 // 平台管理端页面包装组件
 // =====================
@@ -741,6 +759,7 @@ function NotFoundPage() {
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <BrowserRouter>
       <CartProvider>
       <UserAuthProvider>
@@ -805,6 +824,7 @@ function App() {
         <Route path="/supplier/products/:id/schedules" element={<SupplierAuthGuard><SupplierSchedulePageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/orders" element={<SupplierAuthGuard><SupplierOrderListPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
@@ -830,6 +850,7 @@ function App() {
       </UserAuthProvider>
       </CartProvider>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

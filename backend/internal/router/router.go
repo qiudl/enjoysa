@@ -31,6 +31,7 @@ import (
 	settingshandler "enjoysa-backend/internal/settings/handler"
 	settingsstore "enjoysa-backend/internal/settings/store"
 	supplierhandler "enjoysa-backend/internal/supplier/handler"
+	supplierstore "enjoysa-backend/internal/supplier/store"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 
 	"github.com/casbin/casbin/v2"
@@ -99,6 +100,10 @@ func Setup(cfg Config) *gin.Engine {
 	// === Password Reset ===
 	passwordResetStore := authstore.NewPasswordResetStore(cfg.DB)
 	emailService := email.NewResendService(cfg.ResendConfig)
+
+	// === Supplier audit ===
+	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
+	supplierAuditLogHandler := supplierhandler.NewAuditLogHandler(supplierAuditStore)
 
 	// === Handlers ===
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
@@ -206,8 +211,14 @@ func Setup(cfg Config) *gin.Engine {
 	supplierGroup.Use(supplierAuth)
 	{
 		supplierGroup.GET("/dashboard", supplierHandler.Dashboard)
+		supplierGroup.GET("/dashboard/enhanced", supplierHandler.DashboardEnhanced)
+		supplierGroup.GET("/dashboard/revenue-trend", supplierHandler.RevenueTrend)
+		supplierGroup.GET("/dashboard/top-products", supplierHandler.TopProducts)
+		supplierGroup.GET("/dashboard/channel-stats", supplierHandler.ChannelStats)
 		supplierGroup.GET("/profile", supplierHandler.GetProfile)
 		supplierGroup.PUT("/profile", supplierHandler.UpdateProfile)
+		supplierGroup.GET("/schedules/alerts", supplierProductHandler.ScheduleAlerts)
+		supplierGroup.GET("/audit-logs", supplierAuditLogHandler.List)
 	}
 
 	// Supplier product routes
@@ -226,6 +237,9 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.POST("/:id/schedules/batch", supplierProductHandler.BatchCreateSchedules)
 		supplierProducts.PUT("/:id/schedules/:sid", supplierProductHandler.UpdateSchedule)
 		supplierProducts.DELETE("/:id/schedules/:sid", supplierProductHandler.DeleteSchedule)
+		supplierProducts.POST("/batch", supplierProductHandler.BatchAction)
+		supplierProducts.DELETE("/:id/schedules/batch-delete", supplierProductHandler.BatchDeleteSchedules)
+		supplierProducts.GET("/:id/schedules/calendar", supplierProductHandler.ScheduleCalendar)
 	}
 
 	// Supplier order routes
@@ -239,6 +253,8 @@ func Setup(cfg Config) *gin.Engine {
 		supplierOrders.POST("/:id/reject", supplierOrderHandler.RejectOrder)
 		supplierOrders.POST("/:id/complete", supplierOrderHandler.CompleteOrder)
 		supplierOrders.GET("/:id/history", supplierOrderHandler.GetHistory)
+		supplierOrders.POST("/:id/refund", supplierOrderHandler.RefundOrder)
+		supplierOrders.PATCH("/:id/remark", supplierOrderHandler.UpdateRemark)
 	}
 
 	// Supplier settlement routes

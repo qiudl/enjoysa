@@ -233,6 +233,124 @@ func (h *SupplierOrderHandler) CompleteOrder(c *gin.Context) {
 	response.SuccessMessage(c, "Order completed")
 }
 
+func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	supplierUserID := c.MustGet("supplier_user_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+	if order.Status != ordermodel.OrderStatusPaid && order.Status != ordermodel.OrderStatusAccepted {
+		response.BadRequest(c, "Order can only be refunded when paid or accepted")
+		return
+	}
+
+	var req struct {
+		Amount float64 `json:"amount"`
+		Reason string  `json:"reason" binding:"required"`
+		Type   string  `json:"type" binding:"required,oneof=full partial"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	refundAmount := order.TotalPrice
+	if req.Type == "partial" {
+		if req.Amount <= 0 || req.Amount > order.TotalPrice {
+			response.BadRequest(c, "Invalid refund amount")
+			return
+		}
+		refundAmount = req.Amount
+	}
+
+	now := time.Now()
+	oldStatus := order.Status
+	order.RefundType = req.Type
+	order.RefundReason = req.Reason
+	order.RefundStatus = "processing"
+	order.RefundAmount = refundAmount
+
+	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
+		amountCents := int64(refundAmount * 100)
+		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err != nil {
+			order.RefundStatus = "failed"
+			h.orderStore.Update(order)
+			response.ServerError(c, "Refund failed: "+err.Error())
+			return
+		}
+	}
+
+	order.RefundStatus = "completed"
+	order.RefundedAt = &now
+	order.Status = ordermodel.OrderStatusRefunded
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to update order")
+		return
+	}
+
+	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   oldStatus,
+		ToStatus:     order.Status,
+		OperatorID:   &supplierUserID,
+		OperatorType: "supplier",
+		Remark:       "Refund (" + req.Type + "): " + req.Reason,
+	})
+
+	response.Success(c, order)
+}
+
+func (h *SupplierOrderHandler) UpdateRemark(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	var req struct {
+		SupplierRemark string `json:"supplier_remark"`
+		InternalNote   string `json:"internal_note"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+
+	order.SupplierRemark = req.SupplierRemark
+	order.InternalNote = req.InternalNote
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to update remark")
+		return
+	}
+
+	response.Success(c, order)
+}
+
 func (h *SupplierOrderHandler) GetHistory(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {

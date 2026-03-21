@@ -189,6 +189,39 @@ export const supplierProductService = {
   async deleteSchedule(productId: number, scheduleId: number) {
     return del<void>(`/supplier/products/${productId}/schedules/${scheduleId}`, 'supplier');
   },
+
+  /** 批量操作产品（上架/下架/删除） */
+  async batchAction(action: 'online' | 'offline' | 'delete', ids: number[]) {
+    return post<{ results: Array<{ id: number; success: boolean; error?: string }> }>(
+      '/supplier/products/batch',
+      { action, ids },
+      'supplier',
+    );
+  },
+
+  /** 批量删除排期 */
+  async batchDeleteSchedules(productId: number, _ids: number[]) {
+    return del<{ deleted: number[]; skipped: number[] }>(
+      `/supplier/products/${productId}/schedules/batch-delete`,
+      'supplier',
+    );
+  },
+
+  /** 排期日历汇总 */
+  async scheduleCalendar(productId: number, month: string) {
+    return get<Array<{ date: string; total_slots: number; booked_slots: number; schedules: number }>>(
+      `/supplier/products/${productId}/schedules/calendar?month=${month}`,
+      'supplier',
+    );
+  },
+
+  /** 库存预警 */
+  async scheduleAlerts() {
+    return get<{ low_stock: unknown[]; sold_out: unknown[] }>(
+      '/supplier/schedules/alerts',
+      'supplier',
+    );
+  },
 };
 
 export default supplierProductService;

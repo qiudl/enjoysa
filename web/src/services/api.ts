@@ -140,3 +140,14 @@ export function put<T>(endpoint: string, body?: unknown, userType?: UserType): P
 export function del<T>(endpoint: string, userType?: UserType): Promise<T> {
   return request<T>(endpoint, { method: 'DELETE' }, userType);
 }
+
+export function patch<T>(endpoint: string, body?: unknown, userType?: UserType): Promise<T> {
+  return request<T>(
+    endpoint,
+    {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    },
+    userType,
+  );
+}

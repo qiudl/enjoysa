@@ -1362,8 +1362,23 @@
       "productStats": "产品统计",
       "activeProducts": "已上架",
       "pendingReview": "待审核",
+      "todayRevenue": "今日营收",
+      "weekRevenue": "本周营收",
+      "monthRevenue": "本月营收",
+      "avgOrderValue": "平均客单价",
+      "revenueTrend": "营收趋势",
+      "channelDistribution": "渠道分布",
+      "topProducts": "热销产品",
+      "stockAlerts": "库存预警",
+      "soldOut": "已售罄",
+      "lowStock": "低库存",
+      "remaining": "余位",
+      "revenue": "营收",
+      "auditLogs": "操作日志",
       "orderStatus": {
         "pending": "待处理",
+        "paid": "已付款",
+        "accepted": "已接单",
         "confirmed": "已确认",
         "completed": "已完成",
         "cancelled": "已取消"
@@ -1400,6 +1415,11 @@
       "addFirst": "点击上方「发布产品」按钮添加第一个产品",
       "confirmDelete": "确定要删除该产品吗？",
       "unlimited": "不限",
+      "selected": "已选择 {{count}} 项",
+      "batchOnline": "批量上架",
+      "batchOffline": "批量下架",
+      "batchDelete": "批量删除",
+      "batchConfirm": "确定要对 {{count}} 个产品执行「{{action}}」操作吗？",
       "statusLabels": {
         "active": "已上架",
         "inactive": "已下架",
@@ -1434,7 +1454,16 @@
       "cancel": "取消",
       "approve": "同意退款",
       "reject": "拒绝退款",
+      "refund": "退款",
+      "fullRefund": "全额退款",
+      "partialRefund": "部分退款",
+      "refundType": "退款类型",
+      "refundAmountLabel": "退款金额 (AUD)",
       "refundReason": "退款原因",
+      "refundReasonPlaceholder": "请输入退款原因...",
+      "confirmRefund": "确认退款",
+      "addRemark": "备注",
+      "remarkPlaceholder": "请输入备注信息...",
       "customerInfo": "客户信息",
       "phone": "电话",
       "contact": "联系客户",
@@ -1494,11 +1523,32 @@
       "noSettlements": "暂无结算记录",
       "noRecords": "暂无结算记录"
     },
+    "auditLog": {
+      "title": "操作日志",
+      "allActions": "全部操作",
+      "allResources": "全部资源",
+      "totalRecords": "共 {{count}} 条记录",
+      "actions": {
+        "create": "创建",
+        "update": "更新",
+        "delete": "删除",
+        "online": "上架",
+        "offline": "下架",
+        "refund": "退款"
+      },
+      "resources": {
+        "product": "产品",
+        "order": "订单",
+        "schedule": "排期",
+        "profile": "店铺"
+      }
+    },
     "nav": {
       "dashboard": "工作台",
       "products": "商品管理",
       "orders": "订单管理",
       "settlement": "财务结算",
+      "auditLogs": "操作日志",
       "settings": "店铺设置"
     },
     "productForm": {

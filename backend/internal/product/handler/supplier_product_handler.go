@@ -649,3 +649,150 @@ func (h *SupplierProductHandler) DeleteSchedule(c *gin.Context) {
 
 	response.SuccessMessage(c, "Schedule deleted")
 }
+
+// BatchAction 产品批量操作（上架/下架/删除）
+func (h *SupplierProductHandler) BatchAction(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+
+	var req struct {
+		Action     string `json:"action" binding:"required,oneof=online offline delete"`
+		ProductIDs []uint `json:"product_ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if len(req.ProductIDs) > 50 {
+		response.BadRequest(c, "Maximum 50 products per batch")
+		return
+	}
+
+	type result struct {
+		ID      uint   `json:"id"`
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+	}
+	results := make([]result, 0, len(req.ProductIDs))
+
+	for _, pid := range req.ProductIDs {
+		product, err := h.productStore.GetByID(pid)
+		if err != nil {
+			results = append(results, result{pid, false, "Product not found"})
+			continue
+		}
+		if product.SupplierID != supplierID {
+			results = append(results, result{pid, false, "Access denied"})
+			continue
+		}
+
+		switch req.Action {
+		case "online":
+			if product.Status != model.ProductStatusOffline {
+				results = append(results, result{pid, false, "Can only go online from offline status"})
+				continue
+			}
+			h.productStore.UpdateStatus(pid, model.ProductStatusApproved)
+		case "offline":
+			if product.Status != model.ProductStatusApproved {
+				results = append(results, result{pid, false, "Can only go offline from approved status"})
+				continue
+			}
+			h.productStore.UpdateStatus(pid, model.ProductStatusOffline)
+		case "delete":
+			if product.Status != model.ProductStatusDraft && product.Status != model.ProductStatusRejected {
+				results = append(results, result{pid, false, "Can only delete draft or rejected products"})
+				continue
+			}
+			h.productStore.DeleteRelated(pid)
+			h.productStore.Delete(pid)
+		}
+		results = append(results, result{pid, true, "OK"})
+	}
+
+	response.Success(c, results)
+}
+
+// BatchDeleteSchedules 排期批量删除
+func (h *SupplierProductHandler) BatchDeleteSchedules(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(productID))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+	if product.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	var req struct {
+		ScheduleIDs []uint `json:"schedule_ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	deleted, hasBookings, err := h.scheduleStore.BatchDelete(req.ScheduleIDs)
+	if err != nil {
+		response.ServerError(c, "Failed to delete schedules")
+		return
+	}
+
+	response.Success(c, gin.H{
+		"deleted":      deleted,
+		"has_bookings": hasBookings,
+		"message":      "Batch delete completed",
+	})
+}
+
+// ScheduleCalendar 排期日历聚合数据
+func (h *SupplierProductHandler) ScheduleCalendar(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(productID))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+	if product.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
+	items, err := h.scheduleStore.CalendarSummary(uint(productID), month)
+	if err != nil {
+		response.ServerError(c, "Failed to get calendar data")
+		return
+	}
+
+	response.Success(c, items)
+}
+
+// ScheduleAlerts 库存预警
+func (h *SupplierProductHandler) ScheduleAlerts(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+
+	lowStock, soldOut, err := h.scheduleStore.GetAlerts(supplierID)
+	if err != nil {
+		response.ServerError(c, "Failed to get alerts")
+		return
+	}
+
+	response.Success(c, gin.H{
+		"low_stock": lowStock,
+		"sold_out":  soldOut,
+	})
+}

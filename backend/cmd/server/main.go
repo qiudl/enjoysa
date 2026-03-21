@@ -22,6 +22,7 @@ import (
 	"enjoysa-backend/internal/models"
 	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
+	suppliermodel "enjoysa-backend/internal/supplier/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	productmodel "enjoysa-backend/internal/product/model"
 	"enjoysa-backend/internal/rbac"
@@ -184,6 +185,8 @@ func autoMigrate(db *gorm.DB) error {
 		&octomodel.OctoReseller{},
 		&octomodel.OctoBooking{},
 		&octomodel.OctoAvailabilityCache{},
+		// Supplier audit
+		&suppliermodel.SupplierAuditLog{},
 	)
 }
 

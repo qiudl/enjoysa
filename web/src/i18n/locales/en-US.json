@@ -1287,8 +1287,23 @@
       "productStats": "Product Stats",
       "activeProducts": "Active",
       "pendingReview": "Pending Review",
+      "todayRevenue": "Today's Revenue",
+      "weekRevenue": "Weekly Revenue",
+      "monthRevenue": "Monthly Revenue",
+      "avgOrderValue": "Avg Order Value",
+      "revenueTrend": "Revenue Trend",
+      "channelDistribution": "Channel Distribution",
+      "topProducts": "Top Products",
+      "stockAlerts": "Stock Alerts",
+      "soldOut": "Sold Out",
+      "lowStock": "Low Stock",
+      "remaining": "remaining",
+      "revenue": "Revenue",
+      "auditLogs": "Audit Logs",
       "orderStatus": {
         "pending": "Pending",
+        "paid": "Paid",
+        "accepted": "Accepted",
         "confirmed": "Confirmed",
         "completed": "Completed",
         "cancelled": "Cancelled"
@@ -1325,6 +1340,11 @@
       "addFirst": "Click \"Add Product\" button above to add your first product",
       "confirmDelete": "Are you sure you want to delete this product?",
       "unlimited": "Unlimited",
+      "selected": "{{count}} selected",
+      "batchOnline": "Batch Activate",
+      "batchOffline": "Batch Deactivate",
+      "batchDelete": "Batch Delete",
+      "batchConfirm": "Are you sure you want to {{action}} {{count}} products?",
       "statusLabels": {
         "active": "Active",
         "inactive": "Inactive",
@@ -1359,7 +1379,16 @@
       "cancel": "Cancel",
       "approve": "Approve Refund",
       "reject": "Reject Refund",
+      "refund": "Refund",
+      "fullRefund": "Full Refund",
+      "partialRefund": "Partial Refund",
+      "refundType": "Refund Type",
+      "refundAmountLabel": "Refund Amount (AUD)",
       "refundReason": "Refund Reason",
+      "refundReasonPlaceholder": "Enter refund reason...",
+      "confirmRefund": "Confirm Refund",
+      "addRemark": "Remark",
+      "remarkPlaceholder": "Enter remark...",
       "customerInfo": "Customer Info",
       "phone": "Phone",
       "contact": "Contact Customer",
@@ -1419,11 +1448,32 @@
       "noSettlements": "No settlement records",
       "noRecords": "No settlement records"
     },
+    "auditLog": {
+      "title": "Audit Logs",
+      "allActions": "All Actions",
+      "allResources": "All Resources",
+      "totalRecords": "{{count}} records",
+      "actions": {
+        "create": "Create",
+        "update": "Update",
+        "delete": "Delete",
+        "online": "Activate",
+        "offline": "Deactivate",
+        "refund": "Refund"
+      },
+      "resources": {
+        "product": "Product",
+        "order": "Order",
+        "schedule": "Schedule",
+        "profile": "Profile"
+      }
+    },
     "nav": {
       "dashboard": "Dashboard",
       "products": "Products",
       "orders": "Orders",
       "settlement": "Settlement",
+      "auditLogs": "Audit Logs",
       "settings": "Settings"
     },
     "login": {

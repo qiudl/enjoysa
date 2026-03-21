@@ -3,7 +3,7 @@
  * C端订单和B端供应商订单 API
  */
 
-import { get, post } from './api';
+import { get, post, patch } from './api';
 
 // 订单状态
 export type OrderStatus = 'pending' | 'paid' | 'accepted' | 'processing' | 'completed' | 'cancelled' | 'refunded';
@@ -172,6 +172,14 @@ export async function completeOrder(id: number): Promise<void> {
   await post<void>(`/supplier/orders/${id}/complete`, undefined, 'supplier');
 }
 
+export async function refundOrder(id: number, data: { type: 'full' | 'partial'; reason: string; amount?: number }): Promise<void> {
+  await post<void>(`/supplier/orders/${id}/refund`, data, 'supplier');
+}
+
+export async function updateOrderRemark(id: number, data: { supplier_remark?: string; internal_note?: string }): Promise<void> {
+  await patch<void>(`/supplier/orders/${id}/remark`, data, 'supplier');
+}
+
 // 导出所有服务函数
 export const orderService = {
   // C端
@@ -189,6 +197,8 @@ export const orderService = {
     accept: acceptOrder,
     reject: rejectOrder,
     complete: completeOrder,
+    refund: refundOrder,
+    updateRemark: updateOrderRemark,
   },
 };
 

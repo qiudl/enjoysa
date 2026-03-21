@@ -84,6 +84,9 @@ type Order struct {
 	CancelReason string     `gorm:"size:500" json:"cancel_reason,omitempty"`
 	RefundedAt   *time.Time `json:"refunded_at,omitempty"`
 	RefundAmount float64    `gorm:"type:decimal(10,2)" json:"refund_amount"`
+	RefundType   string     `gorm:"size:10" json:"refund_type,omitempty"`   // full / partial
+	RefundReason string     `gorm:"size:500" json:"refund_reason,omitempty"`
+	RefundStatus string     `gorm:"size:20" json:"refund_status,omitempty"` // pending / processing / completed / failed
 
 	// 备注
 	UserRemark     string `gorm:"size:1000" json:"user_remark"`

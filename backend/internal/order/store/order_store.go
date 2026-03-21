@@ -156,3 +156,103 @@ func (s *OrderStore) GetByStripeSessionID(sessionID string) (*model.Order, error
 	}
 	return &order, nil
 }
+
+func (s *OrderStore) DB() *gorm.DB {
+	return s.db
+}
+
+// RevenueTrendItem 每日收入趋势数据点
+type RevenueTrendItem struct {
+	Date       string  `json:"date"`
+	Revenue    float64 `json:"revenue"`
+	OrderCount int64   `json:"order_count"`
+}
+
+func (s *OrderStore) GetRevenueTrend(supplierID uint, days int) ([]RevenueTrendItem, error) {
+	var items []RevenueTrendItem
+	err := s.db.Raw(`
+		SELECT TO_CHAR(completed_at, 'YYYY-MM-DD') as date,
+		       COALESCE(SUM(total_price), 0) as revenue,
+		       COUNT(*) as order_count
+		FROM orders
+		WHERE supplier_id = ? AND status = 'completed'
+		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
+		ORDER BY date ASC
+	`, supplierID, days).Scan(&items).Error
+	return items, err
+}
+
+// TopProductItem 产品销量排行
+type TopProductItem struct {
+	ProductID   uint    `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	OrderCount  int64   `json:"order_count"`
+	Revenue     float64 `json:"revenue"`
+	GuestCount  int64   `json:"guest_count"`
+}
+
+func (s *OrderStore) GetTopProducts(supplierID uint, days int, limit int) ([]TopProductItem, error) {
+	var items []TopProductItem
+	err := s.db.Raw(`
+		SELECT product_id, product_name,
+		       COUNT(*) as order_count,
+		       COALESCE(SUM(total_price), 0) as revenue,
+		       COALESCE(SUM(guest_count), 0) as guest_count
+		FROM orders
+		WHERE supplier_id = ? AND status = 'completed'
+		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		GROUP BY product_id, product_name
+		ORDER BY revenue DESC
+		LIMIT ?
+	`, supplierID, days, limit).Scan(&items).Error
+	return items, err
+}
+
+// ChannelStatsItem 渠道统计
+type ChannelStatsItem struct {
+	Channel    string  `json:"channel"`
+	OrderCount int64   `json:"order_count"`
+	Revenue    float64 `json:"revenue"`
+}
+
+func (s *OrderStore) GetChannelStats(supplierID uint, days int) ([]ChannelStatsItem, error) {
+	var items []ChannelStatsItem
+	err := s.db.Raw(`
+		SELECT COALESCE(channel, 'direct') as channel,
+		       COUNT(*) as order_count,
+		       COALESCE(SUM(total_price), 0) as revenue
+		FROM orders
+		WHERE supplier_id = ? AND status = 'completed'
+		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		GROUP BY COALESCE(channel, 'direct')
+		ORDER BY revenue DESC
+	`, supplierID, days).Scan(&items).Error
+	return items, err
+}
+
+// EnhancedStats 增强型仪表盘统计
+type EnhancedStats struct {
+	TodayRevenue   float64 `json:"today_revenue"`
+	WeekRevenue    float64 `json:"week_revenue"`
+	MonthRevenue   float64 `json:"month_revenue"`
+	TodayOrders    int64   `json:"today_orders"`
+	MonthTotal     int64   `json:"month_total"`
+	MonthCancelled int64   `json:"month_cancelled"`
+	AvgOrderValue  float64 `json:"avg_order_value"`
+}
+
+func (s *OrderStore) GetEnhancedStats(supplierID uint) (*EnhancedStats, error) {
+	var stats EnhancedStats
+	base := "supplier_id = ? AND status = 'completed'"
+
+	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at::date = CURRENT_DATE", supplierID).Scan(&stats.TodayRevenue)
+	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('week', CURRENT_DATE)", supplierID).Scan(&stats.WeekRevenue)
+	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthRevenue)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND created_at::date = CURRENT_DATE", supplierID).Scan(&stats.TodayOrders)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthTotal)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND status = 'cancelled' AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthCancelled)
+	s.db.Raw("SELECT COALESCE(AVG(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.AvgOrderValue)
+
+	return &stats, nil
+}
