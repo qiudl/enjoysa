@@ -699,7 +699,16 @@
     "placeholder": "輸入你的問題...",
     "send": "發送",
     "clearHistory": "清除記錄",
-    "emptyHint": "問我任何關於南澳旅遊的問題吧！"
+    "emptyHint": "問我任何關於南澳旅遊的問題吧！",
+    "welcome": "你好！我是暢遊南澳的 AI 旅行助手。有什麼關於南澳旅遊的問題，都可以問我！",
+    "quickAsk1": "推薦南澳熱門景點",
+    "quickAsk2": "巴羅莎谷酒莊推薦",
+    "quickAsk3": "如何預訂產品？",
+    "signupHint": "註冊帳號可以保存完整聊天記錄、獲取個性化旅行推薦。",
+    "signupBtn": "免費註冊",
+    "dismissBtn": "以後再說",
+    "langLabel": "聊天語言",
+    "historyLoading": "載入歷史訊息..."
   },
   "footer": {
     "about": "關於我們",

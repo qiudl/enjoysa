@@ -639,7 +639,16 @@
     "placeholder": "Type your message...",
     "send": "Send",
     "clearHistory": "Clear history",
-    "emptyHint": "Ask me anything about South Australia travel!"
+    "emptyHint": "Ask me anything about South Australia travel!",
+    "welcome": "Hi! I'm your EnjoySA AI travel assistant. Feel free to ask me anything about South Australia!",
+    "quickAsk1": "Best attractions in South Australia",
+    "quickAsk2": "Barossa Valley winery guide",
+    "quickAsk3": "How do I book a tour?",
+    "signupHint": "Sign up to save your chat history and get personalized travel recommendations.",
+    "signupBtn": "Sign up free",
+    "dismissBtn": "Maybe later",
+    "langLabel": "Language",
+    "historyLoading": "Loading history..."
   },
   "footer": {
     "about": "About Us",

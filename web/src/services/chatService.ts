@@ -36,6 +36,38 @@ export interface StreamCallbacks {
 }
 
 /**
+ * Get chat sessions for the current user.
+ */
+export async function getSessions(userType: UserType = 'user'): Promise<ChatSession[]> {
+  const token = getAccessToken(userType);
+  if (!token) return [];
+
+  const response = await fetch(`${API_BASE}/chat/sessions`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) return [];
+
+  const data = await response.json();
+  return data.data || [];
+}
+
+/**
+ * Get messages for a specific session.
+ */
+export async function getMessages(sessionId: number, userType: UserType = 'user'): Promise<ChatMessage[]> {
+  const token = getAccessToken(userType);
+  if (!token) return [];
+
+  const response = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) return [];
+
+  const data = await response.json();
+  return data.data || [];
+}
+
+/**
  * Send a chat message with SSE streaming response.
  */
 export async function sendMessageStream(

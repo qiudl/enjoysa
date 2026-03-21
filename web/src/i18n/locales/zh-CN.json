@@ -639,7 +639,16 @@
     "placeholder": "输入你的问题...",
     "send": "发送",
     "clearHistory": "清除记录",
-    "emptyHint": "问我任何关于南澳旅游的问题吧！"
+    "emptyHint": "问我任何关于南澳旅游的问题吧！",
+    "welcome": "你好！我是畅游南澳的 AI 旅行助手。有什么关于南澳旅游的问题，都可以问我！",
+    "quickAsk1": "推荐南澳热门景点",
+    "quickAsk2": "巴罗萨谷酒庄推荐",
+    "quickAsk3": "如何预订产品？",
+    "signupHint": "注册账号可以保存完整聊天记录、获取个性化旅行推荐。",
+    "signupBtn": "免费注册",
+    "dismissBtn": "以后再说",
+    "langLabel": "聊天语言",
+    "historyLoading": "加载历史消息..."
   },
   "footer": {
     "about": "关于我们",

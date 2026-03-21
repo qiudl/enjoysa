@@ -79,6 +79,7 @@
 .headerActions {
   display: flex;
   gap: 4px;
+  align-items: center;
 }
 
 .headerBtn {
@@ -98,6 +99,46 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Language Selector */
+.langWrapper {
+  position: relative;
+}
+
+.langMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 120px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.langOption {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--color-text, #262626);
+  font-size: var(--text-sm, 13px);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+
+.langOption:hover {
+  background: var(--color-bg-secondary, #f5f5f5);
+}
+
+.langActive {
+  color: var(--color-primary, #1677ff);
+  font-weight: 600;
+}
+
 /* Messages Area */
 .chatMessages {
   flex: 1;
@@ -110,26 +151,82 @@
   max-height: 360px;
 }
 
-.emptyState {
+/* History loading */
+.historyLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--color-text-secondary, #8c8c8c);
+  font-size: var(--text-sm, 13px);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Welcome Card */
+.welcomeCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--color-text-secondary, #8c8c8c);
   text-align: center;
-  gap: 8px;
-  padding: 24px;
+  padding: 16px 8px;
+  gap: 12px;
 }
 
-.emptyState svg {
-  color: var(--color-primary, #1677ff);
-  opacity: 0.4;
+.welcomeAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary, #1677ff), #4096ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
 }
 
-.emptyHint {
+.welcomeText {
   font-size: var(--text-sm, 13px);
-  line-height: 1.5;
+  line-height: 1.6;
+  color: var(--color-text, #262626);
+  max-width: 300px;
+}
+
+/* Quick Question Chips */
+.quickChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.chip {
+  padding: 6px 14px;
+  border: 1px solid var(--color-primary, #1677ff);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-primary, #1677ff);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms), color var(--duration-fast, 150ms);
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background: var(--color-primary, #1677ff);
+  color: #fff;
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Message Bubble */
@@ -155,6 +252,60 @@
   background: var(--color-bg-secondary, #f5f5f5);
   color: var(--color-text, #262626);
   border-bottom-left-radius: 4px;
+}
+
+/* Signup Nudge Card */
+.signupCard {
+  align-self: center;
+  background: linear-gradient(135deg, #f0f5ff, #e6f4ff);
+  border: 1px solid #b3d8ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+  max-width: 90%;
+}
+
+.signupText {
+  font-size: 12px;
+  color: var(--color-text-secondary, #595959);
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.signupActions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.signupBtn {
+  display: inline-block;
+  padding: 6px 18px;
+  background: var(--color-primary, #1677ff);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity var(--duration-fast, 150ms);
+}
+
+.signupBtn:hover {
+  opacity: 0.9;
+}
+
+.signupDismiss {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary, #8c8c8c);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.signupDismiss:hover {
+  color: var(--color-text, #262626);
 }
 
 /* Typing indicator */
