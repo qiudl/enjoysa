@@ -90,6 +90,11 @@ type Order struct {
 	SupplierRemark string `gorm:"size:1000" json:"supplier_remark"`
 	InternalNote   string `gorm:"size:1000" json:"internal_note"`
 
+	// 渠道信息（OCTO / Trip.com Connect）
+	Channel         string `gorm:"size:20;default:direct" json:"channel"`          // direct / trip_com
+	ChannelRef      string `gorm:"size:128" json:"channel_ref,omitempty"`          // 渠道订单引用号
+	OctoBookingUUID string `gorm:"size:36;index" json:"octo_booking_uuid,omitempty"` // 关联 OCTO booking UUID
+
 	// 联系人
 	ContactName  string `gorm:"size:100" json:"contact_name"`
 	ContactPhone string `gorm:"size:20" json:"contact_phone"`

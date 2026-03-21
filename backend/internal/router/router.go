@@ -13,8 +13,11 @@ import (
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
-	"enjoysa-backend/internal/email"
 	"enjoysa-backend/internal/core/middleware"
+	"enjoysa-backend/internal/email"
+	octohandler "enjoysa-backend/internal/octo/handler"
+	octomw "enjoysa-backend/internal/octo/middleware"
+	octostore "enjoysa-backend/internal/octo/store"
 	orderhandler "enjoysa-backend/internal/order/handler"
 	orderstore "enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
@@ -359,6 +362,36 @@ func Setup(cfg Config) *gin.Engine {
 	// File upload
 	// ========================================
 	v1.POST("/upload", jwtAuth, uploadHandler.Upload)
+
+	// ========================================
+	// OCTO API (Trip.com Connect)
+	// ========================================
+	resellerStore := octostore.NewResellerStore(cfg.DB)
+	availStore := octostore.NewAvailabilityStore(cfg.DB)
+	bookingStore := octostore.NewBookingStore(cfg.DB)
+
+	octoSupplierHandler := octohandler.NewSupplierHandler()
+	octoProductHandler := octohandler.NewProductHandler(pStore)
+	octoAvailHandler := octohandler.NewAvailabilityHandler(scheduleStore, pStore, availStore)
+	octoBookingHandler := octohandler.NewBookingHandler(bookingStore, availStore, scheduleStore, pStore)
+
+	octo := r.Group("/octo/v1")
+	octo.Use(octomw.OctoAuth(resellerStore))
+	octo.Use(octomw.OctoCapabilities())
+	{
+		octo.GET("/supplier", octoSupplierHandler.GetSupplier)
+		octo.GET("/products", octoProductHandler.ListProducts)
+		octo.GET("/products/:id", octoProductHandler.GetProduct)
+		octo.POST("/availability/calendar", octoAvailHandler.Calendar)
+		octo.POST("/availability", octoAvailHandler.Check)
+		octo.POST("/bookings", octoBookingHandler.CreateBooking)
+		octo.GET("/bookings", octoBookingHandler.ListBookings)
+		octo.GET("/bookings/:uuid", octoBookingHandler.GetBooking)
+		octo.PUT("/bookings/:uuid/confirm", octoBookingHandler.ConfirmBooking)
+		octo.PATCH("/bookings/:uuid", octoBookingHandler.UpdateBooking)
+		octo.POST("/bookings/:uuid/cancel", octoBookingHandler.CancelBooking)
+		octo.POST("/bookings/:uuid/extend", octoBookingHandler.ExtendBooking)
+	}
 
 	return r
 }

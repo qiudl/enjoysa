@@ -50,6 +50,9 @@ export interface Order {
   contact_phone: string;
   contact_email: string;
   expires_at?: string;
+  channel?: string;           // direct / trip_com
+  channel_ref?: string;
+  octo_booking_uuid?: string;
   created_at: string;
   updated_at: string;
 }
@@ -73,6 +76,7 @@ export interface ListFilter {
   page_size?: number;
   status?: OrderStatus;
   order_type?: OrderType;
+  channel?: string;
   start_date?: string;
   end_date?: string;
   keyword?: string;

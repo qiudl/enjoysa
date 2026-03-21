@@ -29,3 +29,11 @@ func (ProductSchedule) TableName() string {
 func (s *ProductSchedule) AvailableSlots() int {
 	return s.TotalSlots - s.BookedSlots
 }
+
+// GetPrice 返回排期价格（优先使用排期自身价格，否则返回 0）
+func (s *ProductSchedule) GetPrice() float64 {
+	if s.Price != nil {
+		return *s.Price
+	}
+	return 0
+}

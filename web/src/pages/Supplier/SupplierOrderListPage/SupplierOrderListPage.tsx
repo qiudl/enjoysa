@@ -6,6 +6,7 @@ import styles from './SupplierOrderListPage.module.css';
 
 export interface SupplierOrder {
   id: string;
+  numericId: number;
   productTitle: string;
   productTitleEn: string;
   customerName: string;
@@ -14,6 +15,7 @@ export interface SupplierOrder {
   quantity: number;
   amount: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'refunding';
+  channel: string;
   createdAt: string;
 }
 
@@ -36,6 +38,7 @@ const statusMap: Record<string, SupplierOrder['status']> = {
 function transformOrder(o: ApiOrder): SupplierOrder {
   return {
     id: o.order_no || String(o.id),
+    numericId: o.id,
     productTitle: o.product_name,
     productTitleEn: o.product_name,
     customerName: o.contact_name,
@@ -44,6 +47,7 @@ function transformOrder(o: ApiOrder): SupplierOrder {
     quantity: o.quantity || o.guest_count,
     amount: o.total_price,
     status: statusMap[o.status] || 'pending',
+    channel: o.channel || 'direct',
     createdAt: o.created_at?.replace('T', ' ').slice(0, 16) || '',
   };
 }
@@ -54,18 +58,23 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
   const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SupplierOrder | null>(null);
 
   useEffect(() => {
-    listSupplierOrders({ page: 1, page_size: 50 })
+    const params: Record<string, string | number> = { page: 1, page_size: 50 };
+    if (channelFilter !== 'all') {
+      params.channel = channelFilter;
+    }
+    listSupplierOrders(params as never)
       .then((result) => {
         setOrders((result.orders || []).map(transformOrder));
       })
       .catch(() => {});
-  }, []);
+  }, [channelFilter]);
 
   const filters = [
     { key: 'all', label: t('supplier.orders.all') },
@@ -73,6 +82,12 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
     { key: 'confirmed', label: t('supplier.orders.confirmed') },
     { key: 'completed', label: t('supplier.orders.completed') },
     { key: 'refunding', label: t('supplier.orders.refunding') },
+  ];
+
+  const channelFilters = [
+    { key: 'all', label: t('supplier.orders.channels.all') },
+    { key: 'direct', label: t('supplier.orders.channels.direct') },
+    { key: 'trip_com', label: t('supplier.orders.channels.tripCom') },
   ];
 
   const filteredOrders = orders.filter((order) => {
@@ -87,15 +102,36 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
     return true;
   });
 
+  // Channel stats
+  const directCount = orders.filter((o) => o.channel === 'direct').length;
+  const tripComCount = orders.filter((o) => o.channel === 'trip_com').length;
+  const directAmount = orders
+    .filter((o) => o.channel === 'direct' && o.status === 'completed')
+    .reduce((sum, o) => sum + o.amount, 0);
+  const tripComAmount = orders
+    .filter((o) => o.channel === 'trip_com' && o.status === 'completed')
+    .reduce((sum, o) => sum + o.amount, 0);
+
   const getStatusStyle = (status: string) => {
-    const styles: Record<string, { bg: string; color: string }> = {
+    const statusStyles: Record<string, { bg: string; color: string }> = {
       pending: { bg: '#fef3c7', color: '#92400e' },
       confirmed: { bg: '#dbeafe', color: '#1e40af' },
       completed: { bg: '#dcfce7', color: '#166534' },
       cancelled: { bg: '#f3f4f6', color: '#6b7280' },
       refunding: { bg: '#fee2e2', color: '#991b1b' },
     };
-    return styles[status] || styles.pending;
+    return statusStyles[status] || statusStyles.pending;
+  };
+
+  const getChannelBadge = (channel: string) => {
+    if (channel === 'trip_com') {
+      return (
+        <span className={styles.channelBadge} data-channel="trip_com">
+          Trip.com
+        </span>
+      );
+    }
+    return null;
   };
 
   const handleConfirm = (order: SupplierOrder) => {
@@ -119,7 +155,36 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
             <h1 className={styles.pageTitle}>{t('supplier.orders.title')}</h1>
           </div>
 
-          {/* Filters and Search */}
+          {/* Channel Stats */}
+          {tripComCount > 0 && (
+            <div className={styles.channelStats}>
+              <div className={styles.channelStatCard}>
+                <span className={styles.channelStatLabel}>{t('supplier.orders.channels.direct')}</span>
+                <span className={styles.channelStatCount}>{directCount} {t('supplier.orders.channelOrders')}</span>
+                <span className={styles.channelStatAmount}>AUD {directAmount.toFixed(2)}</span>
+              </div>
+              <div className={`${styles.channelStatCard} ${styles.tripComCard}`}>
+                <span className={styles.channelStatLabel}>Trip.com</span>
+                <span className={styles.channelStatCount}>{tripComCount} {t('supplier.orders.channelOrders')}</span>
+                <span className={styles.channelStatAmount}>AUD {tripComAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Channel Filter */}
+          <div className={styles.channelFilters}>
+            {channelFilters.map((f) => (
+              <button
+                key={f.key}
+                className={`${styles.channelFilterBtn} ${channelFilter === f.key ? styles.active : ''}`}
+                onClick={() => setChannelFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Status Filters and Search */}
           <div className={styles.toolbar}>
             <div className={styles.filters}>
               {filters.map((f) => (
@@ -151,7 +216,10 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                 return (
                   <div key={order.id} className={styles.orderCard}>
                     <div className={styles.orderHeader}>
-                      <span className={styles.orderId}>{order.id}</span>
+                      <div className={styles.orderHeaderLeft}>
+                        <span className={styles.orderId}>{order.id}</span>
+                        {getChannelBadge(order.channel)}
+                      </div>
                       <span
                         className={styles.orderStatus}
                         style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
@@ -175,7 +243,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                       </div>
                       <div className={styles.orderAmount}>
                         <span className={styles.amountLabel}>{t('supplier.orders.amount')}</span>
-                        <span className={styles.amountValue}>¥{order.amount}</span>
+                        <span className={styles.amountValue}>AUD {order.amount.toFixed(2)}</span>
                       </div>
                     </div>
                     <div className={styles.orderFooter}>
@@ -225,9 +293,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
         onOk={async () => {
           if (selectedOrder) {
             try {
-              // Extract numeric ID from order_no or use id directly
-              const numId = Number(selectedOrder.id.replace(/\D/g, '').slice(-4)) || 0;
-              await acceptOrder(numId);
+              await acceptOrder(selectedOrder.numericId);
               setOrders((prev) => prev.map((o) => o.id === selectedOrder.id ? { ...o, status: 'confirmed' as const } : o));
             } catch { /* ignore */ }
           }
@@ -274,7 +340,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({
                 {i18n.language === 'en' ? selectedOrder.productTitleEn : selectedOrder.productTitle}
               </p>
               <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-                {t('supplier.orders.amount')}: ¥{selectedOrder.amount}
+                {t('supplier.orders.amount')}: AUD {selectedOrder.amount.toFixed(2)}
               </p>
             </div>
             <div>

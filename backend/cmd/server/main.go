@@ -20,6 +20,7 @@ import (
 	"enjoysa-backend/internal/core/database"
 	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/models"
+	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	productmodel "enjoysa-backend/internal/product/model"
@@ -179,6 +180,10 @@ func autoMigrate(db *gorm.DB) error {
 		&rbacmodel.AdminRole{},
 		// Audit
 		&auditmodel.AuditLog{},
+		// OCTO (Trip.com Connect)
+		&octomodel.OctoReseller{},
+		&octomodel.OctoBooking{},
+		&octomodel.OctoAvailabilityCache{},
 	)
 }
 

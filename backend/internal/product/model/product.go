@@ -56,6 +56,10 @@ type Product struct {
 	Rating      float64 `gorm:"type:decimal(3,2);default:0" json:"rating"`
 	ReviewCount int     `gorm:"default:0" json:"review_count"`
 
+	// OCTO / Trip.com Connect
+	OctoEnabled  bool       `gorm:"default:false" json:"octo_enabled"`    // 是否上架 Trip.com
+	OctoSyncedAt *time.Time `json:"octo_synced_at,omitempty"`             // 最后同步时间
+
 	// 关联
 	Supplier   *models.Supplier  `gorm:"foreignKey:SupplierID" json:"supplier,omitempty"`
 	Region     *Region           `gorm:"foreignKey:RegionID" json:"region,omitempty"`

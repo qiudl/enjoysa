@@ -31,6 +31,100 @@
   margin: 0;
 }
 
+/* Channel Stats */
+.channelStats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.channelStatCard {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.channelStatCard.tripComCard {
+  background: linear-gradient(135deg, #0066ff10, #0066ff05);
+  border: 1px solid #0066ff30;
+}
+
+.channelStatLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.channelStatCount {
+  font-size: 0.875rem;
+  color: var(--color-text, #1a1a2e);
+}
+
+.channelStatAmount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+/* Channel Filters */
+.channelFilters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.channelFilterBtn {
+  padding: 0.375rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #64748b);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.channelFilterBtn:hover {
+  border-color: #94a3b8;
+}
+
+.channelFilterBtn.active {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: white;
+}
+
+/* Channel Badge */
+.channelBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.channelBadge[data-channel="trip_com"] {
+  background: #0066ff15;
+  color: #0052cc;
+  border: 1px solid #0066ff30;
+}
+
+/* Order Header Left */
+.orderHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* Toolbar */
 .toolbar {
   display: flex;

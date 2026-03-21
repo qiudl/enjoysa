@@ -61,6 +61,7 @@
     "emailLogin": "Email Login",
     "wechatLogin": "WeChat Login",
     "googleLogin": "Google Login",
+    "googleLoginFailed": "Google login failed, please try again",
     "thirdPartyLogin": "Third-party Login",
     "agreeTerms": "I have read and agree to the",
     "termsOfService": "Terms of Service",
@@ -1365,6 +1366,12 @@
       "noOrders": "No orders yet",
       "people": "people",
       "guests": "guests",
+      "channelOrders": "orders",
+      "channels": {
+        "all": "All Channels",
+        "direct": "Direct",
+        "tripCom": "Trip.com"
+      },
       "statusLabels": {
         "pending": "Pending",
         "confirmed": "Confirmed",

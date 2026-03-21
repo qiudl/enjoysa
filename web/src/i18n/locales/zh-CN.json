@@ -61,6 +61,7 @@
     "emailLogin": "邮箱登录",
     "wechatLogin": "微信登录",
     "googleLogin": "Google登录",
+    "googleLoginFailed": "Google登录失败，请重试",
     "thirdPartyLogin": "第三方登录",
     "agreeTerms": "我已阅读并同意",
     "termsOfService": "服务条款",
@@ -1440,6 +1441,12 @@
       "noOrders": "暂无订单",
       "people": "人",
       "guests": "位客人",
+      "channelOrders": "笔订单",
+      "channels": {
+        "all": "全部渠道",
+        "direct": "直销",
+        "tripCom": "Trip.com"
+      },
       "statusLabels": {
         "pending": "待处理",
         "confirmed": "已确认",

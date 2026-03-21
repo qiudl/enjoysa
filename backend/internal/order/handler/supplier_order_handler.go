@@ -32,6 +32,7 @@ func (h *SupplierOrderHandler) ListOrders(c *gin.Context) {
 	orders, total, err := h.orderStore.List(store.OrderFilter{
 		SupplierID: supplierID,
 		Status:     c.Query("status"),
+		Channel:    c.Query("channel"),
 		Keyword:    c.Query("keyword"),
 		StartDate:  c.Query("start_date"),
 		EndDate:    c.Query("end_date"),

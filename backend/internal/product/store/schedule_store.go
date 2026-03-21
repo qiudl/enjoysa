@@ -66,3 +66,19 @@ func (s *ScheduleStore) IncrementSlot(id uint, quantity int) error {
 		Where("id = ?", id).
 		Update("booked_slots", gorm.Expr("booked_slots - ?", quantity)).Error
 }
+
+// ListByProductAndPackage 按产品和套餐查询日期范围内的排期
+func (s *ScheduleStore) ListByProductAndPackage(productID, packageID uint, from, to time.Time) ([]model.ProductSchedule, error) {
+	var schedules []model.ProductSchedule
+	query := s.db.Where("product_id = ? AND package_id = ?", productID, packageID)
+	if !from.IsZero() {
+		query = query.Where("date >= ?", from)
+	}
+	if !to.IsZero() {
+		query = query.Where("date <= ?", to)
+	}
+	if err := query.Order("date ASC, time_slot ASC").Find(&schedules).Error; err != nil {
+		return nil, err
+	}
+	return schedules, nil
+}

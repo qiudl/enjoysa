@@ -20,6 +20,7 @@ type OrderFilter struct {
 	UserID     uint
 	SupplierID uint
 	Status     string
+	Channel    string
 	Keyword    string
 	StartDate  string
 	EndDate    string
@@ -57,6 +58,9 @@ func (s *OrderStore) List(filter OrderFilter) ([]model.Order, int64, error) {
 	}
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.Channel != "" {
+		query = query.Where("channel = ?", filter.Channel)
 	}
 	if filter.Keyword != "" {
 		kw := "%" + filter.Keyword + "%"
