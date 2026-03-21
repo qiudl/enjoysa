@@ -738,8 +738,12 @@ func (h *SupplierProductHandler) BatchDeleteSchedules(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	if len(req.ScheduleIDs) > 100 {
+		response.BadRequest(c, "Maximum 100 schedules per batch")
+		return
+	}
 
-	deleted, hasBookings, err := h.scheduleStore.BatchDelete(req.ScheduleIDs)
+	deleted, hasBookings, err := h.scheduleStore.BatchDeleteByProduct(req.ScheduleIDs, uint(productID))
 	if err != nil {
 		response.ServerError(c, "Failed to delete schedules")
 		return

@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"log"
 
 	"enjoysa-backend/internal/supplier/model"
 
@@ -33,7 +34,7 @@ func (l *SupplierAuditLogger) Log(c *gin.Context, action, resourceType string, r
 		}
 	}
 
-	log := &model.SupplierAuditLog{
+	entry := &model.SupplierAuditLog{
 		SupplierID:   sid,
 		UserID:       uid,
 		UserName:     uname,
@@ -46,6 +47,10 @@ func (l *SupplierAuditLogger) Log(c *gin.Context, action, resourceType string, r
 		UserAgent:    c.GetHeader("User-Agent"),
 	}
 
-	// Fire and forget
-	go l.store.Create(log)
+	// Fire and forget with error logging
+	go func() {
+		if err := l.store.Create(entry); err != nil {
+			log.Printf("[SupplierAuditLogger] Failed to write audit log: %v", err)
+		}
+	}()
 }

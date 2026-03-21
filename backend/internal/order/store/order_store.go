@@ -36,6 +36,18 @@ func (s *OrderStore) Update(order *model.Order) error {
 	return s.db.Save(order).Error
 }
 
+// UpdateWithStatus optimistic lock: only updates if current DB status matches expectedStatus
+func (s *OrderStore) UpdateWithStatus(order *model.Order, expectedStatus model.OrderStatus) error {
+	result := s.db.Model(order).Where("id = ? AND status = ?", order.ID, expectedStatus).Updates(order)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound // status already changed by another request
+	}
+	return nil
+}
+
 func (s *OrderStore) GetByID(id uint) (*model.Order, error) {
 	var order model.Order
 	if err := s.db.Preload("User").Preload("Supplier").First(&order, id).Error; err != nil {
@@ -177,6 +189,7 @@ func (s *OrderStore) GetRevenueTrend(supplierID uint, days int) ([]RevenueTrendI
 		FROM orders
 		WHERE supplier_id = ? AND status = 'completed'
 		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		  AND deleted_at IS NULL
 		GROUP BY TO_CHAR(completed_at, 'YYYY-MM-DD')
 		ORDER BY date ASC
 	`, supplierID, days).Scan(&items).Error
@@ -202,6 +215,7 @@ func (s *OrderStore) GetTopProducts(supplierID uint, days int, limit int) ([]Top
 		FROM orders
 		WHERE supplier_id = ? AND status = 'completed'
 		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		  AND deleted_at IS NULL
 		GROUP BY product_id, product_name
 		ORDER BY revenue DESC
 		LIMIT ?
@@ -225,6 +239,7 @@ func (s *OrderStore) GetChannelStats(supplierID uint, days int) ([]ChannelStatsI
 		FROM orders
 		WHERE supplier_id = ? AND status = 'completed'
 		  AND completed_at >= NOW() - INTERVAL '1 day' * ?
+		  AND deleted_at IS NULL
 		GROUP BY COALESCE(channel, 'direct')
 		ORDER BY revenue DESC
 	`, supplierID, days).Scan(&items).Error
@@ -244,14 +259,14 @@ type EnhancedStats struct {
 
 func (s *OrderStore) GetEnhancedStats(supplierID uint) (*EnhancedStats, error) {
 	var stats EnhancedStats
-	base := "supplier_id = ? AND status = 'completed'"
+	base := "supplier_id = ? AND status = 'completed' AND deleted_at IS NULL"
 
 	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at::date = CURRENT_DATE", supplierID).Scan(&stats.TodayRevenue)
 	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('week', CURRENT_DATE)", supplierID).Scan(&stats.WeekRevenue)
 	s.db.Raw("SELECT COALESCE(SUM(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthRevenue)
-	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND created_at::date = CURRENT_DATE", supplierID).Scan(&stats.TodayOrders)
-	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthTotal)
-	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND status = 'cancelled' AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthCancelled)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND deleted_at IS NULL AND created_at::date = CURRENT_DATE", supplierID).Scan(&stats.TodayOrders)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND deleted_at IS NULL AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthTotal)
+	s.db.Raw("SELECT COUNT(*) FROM orders WHERE supplier_id = ? AND status = 'cancelled' AND deleted_at IS NULL AND created_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.MonthCancelled)
 	s.db.Raw("SELECT COALESCE(AVG(total_price),0) FROM orders WHERE "+base+" AND completed_at >= DATE_TRUNC('month', CURRENT_DATE)", supplierID).Scan(&stats.AvgOrderValue)
 
 	return &stats, nil

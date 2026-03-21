@@ -50,6 +50,9 @@ func (s *AuditLogStore) List(filter AuditLogFilter) ([]model.SupplierAuditLog, i
 	if pageSize < 1 {
 		pageSize = 20
 	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
 
 	offset := (page - 1) * pageSize
 	err := query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&logs).Error

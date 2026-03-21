@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"log"
+	"math"
 	"strconv"
 	"time"
 
@@ -108,8 +110,8 @@ func (h *SupplierOrderHandler) AcceptOrder(c *gin.Context) {
 	order.AcceptedAt = &now
 	order.AcceptedBy = &supplierUserID
 
-	if err := h.orderStore.Update(order); err != nil {
-		response.ServerError(c, "Failed to accept order")
+	if err := h.orderStore.UpdateWithStatus(order, ordermodel.OrderStatusPaid); err != nil {
+		response.BadRequest(c, "Order status has been changed by another operation")
 		return
 	}
 
@@ -163,7 +165,7 @@ func (h *SupplierOrderHandler) RejectOrder(c *gin.Context) {
 
 	// Trigger refund
 	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
-		amountCents := int64(order.TotalPrice * 100)
+		amountCents := int64(math.Round(order.TotalPrice * 100))
 		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err == nil {
 			order.Status = ordermodel.OrderStatusRefunded
 			order.RefundedAt = &now
@@ -256,6 +258,12 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 		return
 	}
 
+	// Idempotency: reject if refund already in progress or completed
+	if order.RefundStatus == "processing" || order.RefundStatus == "completed" {
+		response.BadRequest(c, "Refund already in progress or completed")
+		return
+	}
+
 	var req struct {
 		Amount float64 `json:"amount"`
 		Reason string  `json:"reason" binding:"required"`
@@ -282,12 +290,21 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 	order.RefundStatus = "processing"
 	order.RefundAmount = refundAmount
 
+	// Persist processing status before calling Stripe
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to update order")
+		return
+	}
+
 	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
-		amountCents := int64(refundAmount * 100)
+		amountCents := int64(math.Round(refundAmount * 100))
 		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err != nil {
+			log.Printf("[RefundOrder] Stripe refund failed for order %d: %v", order.ID, err)
 			order.RefundStatus = "failed"
-			h.orderStore.Update(order)
-			response.ServerError(c, "Refund failed: "+err.Error())
+			if updateErr := h.orderStore.Update(order); updateErr != nil {
+				log.Printf("[RefundOrder] Failed to update refund_status=failed for order %d: %v", order.ID, updateErr)
+			}
+			response.ServerError(c, "Refund failed, please try again later")
 			return
 		}
 	}
@@ -297,6 +314,7 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 	order.Status = ordermodel.OrderStatusRefunded
 
 	if err := h.orderStore.Update(order); err != nil {
+		log.Printf("[RefundOrder] Stripe refunded but DB update failed for order %d: %v", order.ID, err)
 		response.ServerError(c, "Failed to update order")
 		return
 	}
@@ -352,9 +370,20 @@ func (h *SupplierOrderHandler) UpdateRemark(c *gin.Context) {
 }
 
 func (h *SupplierOrderHandler) GetHistory(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
 		return
 	}
 

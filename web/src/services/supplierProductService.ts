@@ -194,15 +194,16 @@ export const supplierProductService = {
   async batchAction(action: 'online' | 'offline' | 'delete', ids: number[]) {
     return post<{ results: Array<{ id: number; success: boolean; error?: string }> }>(
       '/supplier/products/batch',
-      { action, ids },
+      { action, product_ids: ids },
       'supplier',
     );
   },
 
   /** 批量删除排期 */
-  async batchDeleteSchedules(productId: number, _ids: number[]) {
-    return del<{ deleted: number[]; skipped: number[] }>(
+  async batchDeleteSchedules(productId: number, ids: number[]) {
+    return post<{ deleted: number; has_bookings: number[] }>(
       `/supplier/products/${productId}/schedules/batch-delete`,
+      { schedule_ids: ids },
       'supplier',
     );
   },

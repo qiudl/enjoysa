@@ -238,7 +238,7 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.PUT("/:id/schedules/:sid", supplierProductHandler.UpdateSchedule)
 		supplierProducts.DELETE("/:id/schedules/:sid", supplierProductHandler.DeleteSchedule)
 		supplierProducts.POST("/batch", supplierProductHandler.BatchAction)
-		supplierProducts.DELETE("/:id/schedules/batch-delete", supplierProductHandler.BatchDeleteSchedules)
+		supplierProducts.POST("/:id/schedules/batch-delete", supplierProductHandler.BatchDeleteSchedules)
 		supplierProducts.GET("/:id/schedules/calendar", supplierProductHandler.ScheduleCalendar)
 	}
 

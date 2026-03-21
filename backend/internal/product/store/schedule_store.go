@@ -185,6 +185,34 @@ func (s *ScheduleStore) BatchDelete(ids []uint) (deleted int64, hasBookings []ui
 	return
 }
 
+// BatchDeleteByProduct 批量删除排期（限定 product_id，防止越权）
+func (s *ScheduleStore) BatchDeleteByProduct(ids []uint, productID uint) (deleted int64, hasBookings []uint, err error) {
+	// Find schedules with bookings that belong to this product
+	s.db.Raw(`
+		SELECT id FROM product_schedules
+		WHERE id IN ? AND product_id = ? AND booked_slots > 0
+	`, ids, productID).Scan(&hasBookings)
+
+	// Delete only those without bookings and belonging to this product
+	deleteIDs := make([]uint, 0)
+	bookedSet := make(map[uint]bool)
+	for _, id := range hasBookings {
+		bookedSet[id] = true
+	}
+	for _, id := range ids {
+		if !bookedSet[id] {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	if len(deleteIDs) > 0 {
+		result := s.db.Where("product_id = ?", productID).Delete(&model.ProductSchedule{}, deleteIDs)
+		deleted = result.RowsAffected
+		err = result.Error
+	}
+	return
+}
+
 // ListByProductAndPackage 按产品和套餐查询日期范围内的排期
 func (s *ScheduleStore) ListByProductAndPackage(productID, packageID uint, from, to time.Time) ([]model.ProductSchedule, error) {
 	var schedules []model.ProductSchedule
