@@ -22,16 +22,6 @@ const meta: Meta<typeof UserProfilePage> = {
       </I18nextProvider>
     ),
   ],
-  argTypes: {
-    language: {
-      control: 'radio',
-      options: ['zh', 'en'],
-    },
-    memberLevel: {
-      control: 'select',
-      options: ['normal', 'silver', 'gold', 'platinum'],
-    },
-  },
 };
 
 export default meta;
@@ -40,55 +30,18 @@ type Story = StoryObj<typeof UserProfilePage>;
 /** 默认个人中心 */
 export const Default: Story = {
   args: {
-    language: 'zh',
     userName: '张三',
     userEmail: 'zhangsan@example.com',
     userPhone: '138****8000',
-    memberLevel: 'gold',
-    points: 2580,
-    couponCount: 3,
-    favoriteCount: 12,
-  },
-};
-
-/** 普通会员 */
-export const NormalMember: Story = {
-  args: {
-    ...Default.args,
-    memberLevel: 'normal',
-    points: 100,
-  },
-};
-
-/** 白银会员 */
-export const SilverMember: Story = {
-  args: {
-    ...Default.args,
-    memberLevel: 'silver',
-    points: 500,
-  },
-};
-
-/** 铂金会员 */
-export const PlatinumMember: Story = {
-  args: {
-    ...Default.args,
-    memberLevel: 'platinum',
-    points: 10000,
   },
 };
 
 /** 英文版 */
 export const English: Story = {
   args: {
-    language: 'en',
     userName: 'John Doe',
     userEmail: 'john@example.com',
-    userPhone: '138****8000',
-    memberLevel: 'gold',
-    points: 2580,
-    couponCount: 3,
-    favoriteCount: 12,
+    userPhone: '+61 412 345 678',
   },
 };
 

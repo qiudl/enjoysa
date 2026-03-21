@@ -123,9 +123,31 @@
     "language": "語言",
     "changePassword": "修改密碼",
     "editProfile": "編輯資料",
+    "anonymous": "用戶",
     "orderCount": "訂單",
     "favoriteCount": "收藏",
-    "reviewCount": "評價"
+    "reviewCount": "評價",
+    "dropdown": {
+      "profile": "個人資料",
+      "orders": "我的訂單",
+      "logout": "退出登入"
+    },
+    "editProfile_page": {
+      "title": "編輯資料",
+      "name": "姓名",
+      "email": "信箱",
+      "phone": "手機號碼",
+      "language": "語言偏好",
+      "save": "儲存修改",
+      "saving": "儲存中...",
+      "success": "儲存成功",
+      "failed": "儲存失敗，請重試",
+      "nameRequired": "請輸入姓名",
+      "unsavedChanges": "有未儲存的修改",
+      "emailReadonly": "信箱透過 Google 登入綁定，無法修改",
+      "back": "返回個人中心",
+      "avatarNote": "頭像同步自 Google 帳號"
+    }
   },
   "product": {
     "price": "價格",

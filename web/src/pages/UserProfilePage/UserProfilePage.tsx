@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -11,8 +11,6 @@ import { listOrders, type Order as ApiOrder } from '../../services/orderService'
 import styles from './UserProfilePage.module.css';
 
 export interface UserProfilePageProps {
-  /** 当前语言 */
-  language?: 'zh' | 'en';
   /** 用户名 */
   userName?: string;
   /** 用户头像 */
@@ -23,14 +21,6 @@ export interface UserProfilePageProps {
   userEmail?: string;
   /** 用户手机 */
   userPhone?: string;
-  /** 会员等级 */
-  memberLevel?: 'normal' | 'silver' | 'gold' | 'platinum';
-  /** 积分 */
-  points?: number;
-  /** 优惠券数量 */
-  couponCount?: number;
-  /** 收藏数量 */
-  favoriteCount?: number;
   /** 退出登录 */
   onLogout?: () => void;
   /** 编辑资料 */
@@ -89,16 +79,11 @@ function transformOrder(o: ApiOrder): Order {
 }
 
 export const UserProfilePage: React.FC<UserProfilePageProps> = ({
-  language = 'zh',
-  userName = '张三',
+  userName = '',
   userAvatar,
   cartCount = 0,
-  userEmail = 'zhangsan@example.com',
-  userPhone = '138****8000',
-  memberLevel = 'gold',
-  points = 2580,
-  couponCount = 3,
-  favoriteCount = 12,
+  userEmail = '',
+  userPhone = '',
   onLogout,
   onEditProfile,
   onLoginClick,
@@ -106,7 +91,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   onNavClick,
 }) => {
   const { t, i18n } = useTranslation();
-  const currentLang = language || (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
+  const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
@@ -123,40 +108,49 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
     onLogout?.();
   };
 
-  const orderStats = [
-    { key: 'pending', count: 1, icon: '💳' },
-    { key: 'confirmed', count: 2, icon: '✈️' },
-    { key: 'completed', count: 5, icon: '✅' },
-    { key: 'refund', count: 0, icon: '↩️' },
-  ];
+  const orderStats = useMemo(() => {
+    const counts: Record<string, number> = { pending: 0, confirmed: 0, completed: 0, refund: 0 };
+    for (const order of recentOrders) {
+      if (order.status === 'pending_payment') counts.pending++;
+      else if (order.status === 'confirmed') counts.confirmed++;
+      else if (order.status === 'completed') counts.completed++;
+      else if (order.status === 'refunded') counts.refund++;
+    }
+    return [
+      { key: 'pending', count: counts.pending, icon: '💳' },
+      { key: 'confirmed', count: counts.confirmed, icon: '✈️' },
+      { key: 'completed', count: counts.completed, icon: '✅' },
+      { key: 'refund', count: counts.refund, icon: '↩️' },
+    ];
+  }, [recentOrders]);
 
   const quickActions = [
-    { key: 'favorites', label: t('nav.favorites'), icon: '❤️', count: favoriteCount },
-    { key: 'coupons', label: t('user.coupons'), icon: '🎫', count: couponCount },
-    { key: 'points', label: t('user.myPoints'), icon: '⭐', count: points },
-    { key: 'settings', label: t('user.settings'), icon: '⚙️' },
+    { key: 'editProfile', label: t('user.editProfile'), icon: '⚙️', onClick: () => onEditProfile?.() },
     { key: 'help', label: t('user.helpCenter'), icon: '❓' },
   ];
 
   const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
+    const statusTextMap: Record<string, string> = {
       pending_payment: t('user.orderStats.pending'),
       confirmed: t('user.orderStats.confirmed'),
       completed: t('user.orderStats.completed'),
     };
-    return statusMap[status] || status;
+    return statusTextMap[status] || status;
   };
+
+  const displayName = userName || t('user.anonymous');
 
   return (
     <div className={styles.page}>
       <Header
-        isLoggedIn
+        isLoggedIn={!!userName}
         userName={userName}
         userAvatar={userAvatar}
         cartCount={cartCount}
         onLoginClick={onLoginClick}
         onRegisterClick={onRegisterClick}
         onNavClick={onNavClick}
+        onLogout={onLogout}
       />
 
       <main className={styles.main}>
@@ -165,20 +159,17 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           <section className={styles.profileHeader}>
             <div className={styles.avatarSection}>
               {userAvatar ? (
-                <img src={userAvatar} alt={userName} className={styles.avatar} />
+                <img src={userAvatar} alt={displayName} className={styles.avatar} />
               ) : (
                 <div className={styles.avatarPlaceholder}>
-                  {userName.charAt(0)}
+                  {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className={styles.levelBadge} data-level={memberLevel}>
-                {t(`user.memberLevel.${memberLevel}`)}
-              </div>
             </div>
             <div className={styles.userInfo}>
-              <h1 className={styles.userName}>{userName}</h1>
-              <p className={styles.userContact}>{userPhone}</p>
-              <p className={styles.userContact}>{userEmail}</p>
+              <h1 className={styles.userName}>{displayName}</h1>
+              {userPhone && <p className={styles.userContact}>{userPhone}</p>}
+              {userEmail && <p className={styles.userContact}>{userEmail}</p>}
             </div>
             <Button variant="outline" size="sm" onClick={onEditProfile}>
               {t('user.editProfile')}
@@ -189,7 +180,9 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>{t('nav.orders')}</h2>
-              <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
+              <button className={styles.viewAllBtn} onClick={() => onNavClick?.('/orders')}>
+                {t('common.viewAll')} →
+              </button>
             </div>
             <div className={styles.orderStats}>
               {orderStats.map((stat) => (
@@ -238,7 +231,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
                           </p>
                         </div>
                         <div className={styles.orderPrice}>
-                          ¥{order.totalAmount}
+                          ${order.totalAmount}
                         </div>
                       </div>
                     ))}
@@ -259,12 +252,9 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
             <h2 className={styles.sectionTitle}>{t('user.quickActions')}</h2>
             <div className={styles.quickActions}>
               {quickActions.map((action) => (
-                <button key={action.key} className={styles.actionItem}>
+                <button key={action.key} className={styles.actionItem} onClick={action.onClick}>
                   <span className={styles.actionIcon}>{action.icon}</span>
                   <span className={styles.actionLabel}>{action.label}</span>
-                  {action.count !== undefined && (
-                    <span className={styles.actionCount}>{action.count}</span>
-                  )}
                 </button>
               ))}
             </div>
@@ -290,7 +280,6 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
         open={showLogoutModal}
         title={t('auth.logout')}
         size="sm"
-        language={language}
         onClose={() => setShowLogoutModal(false)}
         onOk={handleLogout}
       >

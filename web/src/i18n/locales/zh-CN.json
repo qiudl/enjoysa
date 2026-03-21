@@ -147,9 +147,31 @@
     "language": "语言",
     "changePassword": "修改密码",
     "editProfile": "编辑资料",
+    "anonymous": "用户",
     "orderCount": "订单",
     "favoriteCount": "收藏",
-    "reviewCount": "评价"
+    "reviewCount": "评价",
+    "dropdown": {
+      "profile": "个人资料",
+      "orders": "我的订单",
+      "logout": "退出登录"
+    },
+    "editProfile_page": {
+      "title": "编辑资料",
+      "name": "姓名",
+      "email": "邮箱",
+      "phone": "手机号",
+      "language": "语言偏好",
+      "save": "保存修改",
+      "saving": "保存中...",
+      "success": "保存成功",
+      "failed": "保存失败，请重试",
+      "nameRequired": "请输入姓名",
+      "unsavedChanges": "有未保存的修改",
+      "emailReadonly": "邮箱通过 Google 登录绑定，不可修改",
+      "back": "返回个人中心",
+      "avatarNote": "头像同步自 Google 账号"
+    }
   },
   "product": {
     "price": "价格",

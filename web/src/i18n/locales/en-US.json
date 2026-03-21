@@ -147,9 +147,31 @@
     "language": "Language",
     "changePassword": "Change Password",
     "editProfile": "Edit Profile",
+    "anonymous": "User",
     "orderCount": "Orders",
     "favoriteCount": "Favorites",
-    "reviewCount": "Reviews"
+    "reviewCount": "Reviews",
+    "dropdown": {
+      "profile": "Profile",
+      "orders": "My Orders",
+      "logout": "Log Out"
+    },
+    "editProfile_page": {
+      "title": "Edit Profile",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "language": "Language",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "success": "Saved successfully",
+      "failed": "Save failed, please try again",
+      "nameRequired": "Name is required",
+      "unsavedChanges": "Unsaved changes",
+      "emailReadonly": "Email is linked to your Google account and cannot be changed",
+      "back": "Back to Profile",
+      "avatarNote": "Avatar synced from Google account"
+    }
   },
   "product": {
     "price": "Price",

@@ -12,6 +12,7 @@ import {
   MyOrdersPage,
   OrderDetailPage,
   UserProfilePage,
+  UserProfileEditPage,
   DestinationsPage,
   CategoriesPage,
   AboutPage,
@@ -293,11 +294,49 @@ function MyOrdersPageWrapper() {
 function UserProfilePageWrapper() {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
+  const { user, isAuthenticated, logout } = useUserAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <UserProfilePage
+      userName={user?.name}
+      userEmail={user?.email}
+      userPhone={user?.phone}
+      userAvatar={user?.avatar}
       cartCount={getCartCount()}
-      onLogout={() => navigate('/')}
+      onLogout={() => { logout(); navigate('/'); }}
+      onEditProfile={() => navigate('/profile/edit')}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：UserProfileEditPage
+function UserProfileEditPageWrapper() {
+  const navigate = useNavigate();
+  const { getCartCount } = useCart();
+  const { user, isAuthenticated, updateProfile, logout } = useUserAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <UserProfileEditPage
+      userName={user?.name}
+      userEmail={user?.email}
+      userPhone={user?.phone}
+      userAvatar={user?.avatar}
+      userLanguage={user?.language || 'zh-CN'}
+      cartCount={getCartCount()}
+      onSave={updateProfile}
+      onBack={() => navigate('/profile')}
+      onLogout={() => { logout(); navigate('/'); }}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
@@ -810,6 +849,7 @@ function App() {
 
         {/* 用户中心 */}
         <Route path="/profile" element={<UserProfilePageWrapper />} />
+        <Route path="/profile/edit" element={<UserProfileEditPageWrapper />} />
 
         {/* 目的地页面 */}
         <Route path="/destinations" element={<DestinationsPageWrapper />} />

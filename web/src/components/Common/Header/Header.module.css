@@ -154,6 +154,65 @@
   white-space: nowrap;
 }
 
+/* User Menu Dropdown */
+.userMenuWrapper {
+  position: relative;
+}
+
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  padding: var(--space-1);
+  z-index: 1100;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.dropdownItem:hover {
+  background: var(--color-background-alt);
+}
+
+.dropdownItemDanger {
+  color: var(--color-error, #dc2626);
+}
+
+.dropdownItemDanger:hover {
+  background: #fef2f2;
+}
+
+.dropdownDivider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-border-light);
+}
+
+/* Mobile Logout */
+.mobileLogout {
+  color: var(--color-error, #dc2626);
+  border-top: 1px solid var(--color-border-light);
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+}
+
 /* Auth Buttons */
 .authButtons {
   display: none;

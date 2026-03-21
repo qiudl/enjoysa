@@ -10,6 +10,7 @@ interface UserAuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   googleLogin: (idToken: string) => Promise<boolean>;
+  updateProfile: (updates: { name?: string; phone?: string; language?: string }) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -94,6 +95,17 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const updateProfile = async (updates: { name?: string; phone?: string; language?: string }): Promise<boolean> => {
+    try {
+      const updatedUser = await userAuth.updateProfile(updates);
+      setUser(updatedUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const logout = () => {
     userAuth.logout();
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -109,6 +121,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
         login,
         register,
         googleLogin,
+        updateProfile,
         logout,
       }}
     >

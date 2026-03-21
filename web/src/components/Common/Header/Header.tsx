@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, ShoppingCart, Heart, User, Search } from 'lucide-react';
+import { Menu, X, ShoppingCart, Heart, User, Search, LogOut, Package } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './Header.module.css';
 import { LanguageSwitcher } from '../LanguageSwitcher';
@@ -28,6 +28,8 @@ export interface HeaderProps {
   onRegisterClick?: () => void;
   /** 搜索回调 */
   onSearch?: (keyword: string) => void;
+  /** 退出登录回调 */
+  onLogout?: () => void;
 }
 
 const navItems = [
@@ -50,11 +52,33 @@ export const Header: React.FC<HeaderProps> = ({
   onLoginClick,
   onRegisterClick,
   onSearch,
+  onLogout,
 }) => {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [userMenuOpen]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,18 +150,46 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </button>
 
-              {/* User Menu */}
-              <button
-                className={styles.userButton}
-                onClick={() => onNavClick?.('/profile')}
-              >
-                {userAvatar ? (
-                  <img src={userAvatar} alt={userName} className={styles.avatar} />
-                ) : (
-                  <User size={20} />
+              {/* User Menu with Dropdown */}
+              <div className={styles.userMenuWrapper} ref={userMenuRef}>
+                <button
+                  className={styles.userButton}
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                >
+                  {userAvatar ? (
+                    <img src={userAvatar} alt={userName} className={styles.avatar} />
+                  ) : (
+                    <User size={20} />
+                  )}
+                  <span className={styles.userName}>{userName || t('nav.profile')}</span>
+                </button>
+                {userMenuOpen && (
+                  <div className={styles.userDropdown}>
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => { onNavClick?.('/profile'); setUserMenuOpen(false); }}
+                    >
+                      <User size={16} />
+                      <span>{t('user.dropdown.profile')}</span>
+                    </button>
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => { onNavClick?.('/orders'); setUserMenuOpen(false); }}
+                    >
+                      <Package size={16} />
+                      <span>{t('user.dropdown.orders')}</span>
+                    </button>
+                    <div className={styles.dropdownDivider} />
+                    <button
+                      className={clsx(styles.dropdownItem, styles.dropdownItemDanger)}
+                      onClick={() => { onLogout?.(); setUserMenuOpen(false); }}
+                    >
+                      <LogOut size={16} />
+                      <span>{t('user.dropdown.logout')}</span>
+                    </button>
+                  </div>
                 )}
-                <span className={styles.userName}>{userName || t('nav.profile')}</span>
-              </button>
+              </div>
             </>
           ) : (
             <div className={styles.authButtons}>
@@ -240,6 +292,16 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <User size={18} />
                 {t('nav.profile')}
+              </button>
+              <button
+                className={clsx(styles.mobileNavItem, styles.mobileLogout)}
+                onClick={() => {
+                  onLogout?.();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <LogOut size={18} />
+                {t('user.dropdown.logout')}
               </button>
             </>
           ) : (

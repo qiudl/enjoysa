@@ -97,6 +97,15 @@ start_backend() {
   echo -e "${BLUE}[后端] 启动 Go 服务 (端口 6080)...${NC}"
   cd "$PROJECT_DIR/backend"
 
+  # 清理占用 6080 端口的旧进程
+  OLD_PID=$(lsof -ti tcp:6080 2>/dev/null)
+  if [ -n "$OLD_PID" ]; then
+    echo -e "${YELLOW}! 端口 6080 被占用 (PID: $OLD_PID)，正在关闭...${NC}"
+    kill $OLD_PID 2>/dev/null
+    sleep 1
+    kill -9 $OLD_PID 2>/dev/null
+  fi
+
   # 安装依赖
   go mod download 2>/dev/null
 
@@ -117,6 +126,16 @@ start_frontend() {
   echo ""
   echo -e "${BLUE}[前端] 启动 Vite 开发服务器 (端口 5173)...${NC}"
   cd "$PROJECT_DIR/web"
+
+  # 清理占用 5173-5179 端口的旧 Vite 进程
+  for PORT in 5173 5174 5175 5176 5177 5178 5179; do
+    OLD_PID=$(lsof -ti tcp:$PORT 2>/dev/null)
+    if [ -n "$OLD_PID" ]; then
+      echo -e "${YELLOW}! 端口 $PORT 被占用 (PID: $OLD_PID)，正在关闭...${NC}"
+      kill $OLD_PID 2>/dev/null
+    fi
+  done
+  sleep 1
 
   # 安装依赖
   if [ ! -d "node_modules" ]; then
