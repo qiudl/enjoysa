@@ -10,6 +10,9 @@ import (
 	"enjoysa-backend/internal/audit"
 	audithandler "enjoysa-backend/internal/audit/handler"
 	auditstore "enjoysa-backend/internal/audit/store"
+	chathandler "enjoysa-backend/internal/chat/handler"
+	chatservice "enjoysa-backend/internal/chat/service"
+	chatstore "enjoysa-backend/internal/chat/store"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -46,6 +49,7 @@ type Config struct {
 	UploadConfig   config.UploadConfig
 	StripeConfig   config.StripeConfig
 	ResendConfig   config.ResendConfig
+	AIConfig       config.AIConfig
 	CasbinEnforcer *casbin.SyncedEnforcer
 }
 
@@ -100,6 +104,11 @@ func Setup(cfg Config) *gin.Engine {
 	// === Password Reset ===
 	passwordResetStore := authstore.NewPasswordResetStore(cfg.DB)
 	emailService := email.NewResendService(cfg.ResendConfig)
+
+	// === Chat ===
+	chStore := chatstore.NewChatStore(cfg.DB)
+	aiService := chatservice.NewAIService(cfg.AIConfig)
+	chatHandler := chathandler.NewChatHandler(chStore, aiService)
 
 	// === Supplier audit ===
 	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
@@ -201,6 +210,21 @@ func Setup(cfg Config) *gin.Engine {
 
 	// Contact (public)
 	v1.POST("/contact", contactHandler.Submit)
+
+	// ========================================
+	// Chat routes (public + optional auth)
+	// ========================================
+	// Chat send supports both guest and authenticated users.
+	// Guest users get userID=0; authenticated users get their real ID.
+	v1.POST("/chat/send", middleware.OptionalUserAuth(cfg.JWTService, cfg.DB), chatHandler.SendMessageStream)
+
+	// Authenticated chat routes
+	chatGroup := v1.Group("/chat")
+	chatGroup.Use(userAuth)
+	{
+		chatGroup.GET("/sessions", chatHandler.ListSessions)
+		chatGroup.GET("/sessions/:id/messages", chatHandler.GetMessages)
+	}
 
 	// ========================================
 	// Supplier routes

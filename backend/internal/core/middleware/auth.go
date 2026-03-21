@@ -209,6 +209,33 @@ func RequireAdminRole(roles ...string) gin.HandlerFunc {
 	}
 }
 
+// OptionalUserAuth sets user context if a valid token is present but does not block unauthenticated requests.
+func OptionalUserAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenStr, err := getTokenFromHeader(c)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		claims, err := jwtService.ParseToken(tokenStr)
+		if err != nil || claims.UserType != "user" {
+			c.Next()
+			return
+		}
+
+		var user models.User
+		if err := db.First(&user, claims.UserID).Error; err != nil {
+			c.Next()
+			return
+		}
+
+		c.Set("user", &user)
+		c.Set("user_id", user.ID)
+		c.Next()
+	}
+}
+
 func getTokenFromHeader(c *gin.Context) (string, error) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {

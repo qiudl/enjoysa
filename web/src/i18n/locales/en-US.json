@@ -634,6 +634,13 @@
       }
     }
   },
+  "chat": {
+    "title": "AI Travel Assistant",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "clearHistory": "Clear history",
+    "emptyHint": "Ask me anything about South Australia travel!"
+  },
   "footer": {
     "about": "About Us",
     "aboutText": "EnjoySA is a one-stop booking platform offering uniquely local 'premium experiences + food & wine + accommodation' for travellers in Australia.",
@@ -1506,6 +1513,7 @@
       "auditLogs": "Audit Logs",
       "settings": "Settings"
     },
+    "logout": "Logout",
     "login": {
       "brandTitle": "Supplier Portal",
       "feature1": "Hotel / B&B Management",

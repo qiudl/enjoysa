@@ -17,6 +17,13 @@ type Config struct {
 	Stripe   StripeConfig   `mapstructure:"stripe"`
 	Upload   UploadConfig   `mapstructure:"upload"`
 	Resend   ResendConfig   `mapstructure:"resend"`
+	AI       AIConfig       `mapstructure:"ai"`
+}
+
+type AIConfig struct {
+	BaseURL string `mapstructure:"base_url"`
+	APIKey  string `mapstructure:"api_key"`
+	Model   string `mapstructure:"model"`
 }
 
 type ResendConfig struct {
@@ -97,6 +104,9 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("stripe.webhook_secret", "ENJOYSA_STRIPE_WEBHOOK")
 	_ = v.BindEnv("server.frontend_url", "ENJOYSA_FRONTEND_URL")
 	_ = v.BindEnv("resend.api_key", "ENJOYSA_RESEND_API_KEY")
+	_ = v.BindEnv("ai.base_url", "ENJOYSA_AI_BASE_URL")
+	_ = v.BindEnv("ai.api_key", "ENJOYSA_AI_API_KEY")
+	_ = v.BindEnv("ai.model", "ENJOYSA_AI_MODEL")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)

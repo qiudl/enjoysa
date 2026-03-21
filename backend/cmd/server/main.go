@@ -20,6 +20,7 @@ import (
 	"enjoysa-backend/internal/core/database"
 	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/models"
+	chatmodel "enjoysa-backend/internal/chat/model"
 	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
 	suppliermodel "enjoysa-backend/internal/supplier/model"
@@ -101,6 +102,7 @@ func main() {
 		UploadConfig:   cfg.Upload,
 		StripeConfig:   cfg.Stripe,
 		ResendConfig:   cfg.Resend,
+		AIConfig:       cfg.AI,
 		CasbinEnforcer: enforcer,
 	})
 
@@ -188,6 +190,9 @@ func autoMigrate(db *gorm.DB) error {
 		&octomodel.OctoAvailabilityCache{},
 		// Supplier audit
 		&suppliermodel.SupplierAuditLog{},
+		// Chat
+		&chatmodel.ChatSession{},
+		&chatmodel.ChatMessage{},
 	)
 }
 

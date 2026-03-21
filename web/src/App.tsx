@@ -47,9 +47,12 @@ import {
   SettingsPage,
 } from './pages';
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
+import { ChatProvider } from './contexts/ChatContext';
+import { ChatWidget } from './components/Common/ChatWidget';
 import { SupplierAuthGuard } from './components/Common/SupplierAuthGuard';
 import { AdminAuthGuard } from './components/Common/AdminAuthGuard';
 import { AdminLayout } from './components/Admin';
+import { SupplierLayout } from './components/Supplier/SupplierLayout';
 import './App.css';
 
 // 包装组件：HomePage
@@ -500,115 +503,113 @@ function SupplierDashboardPageWrapper() {
   const navigate = useNavigate();
 
   return (
-    <SupplierDashboardPage
-      supplierName={supplier?.supplier?.name || supplier?.name || '供应商'}
-      supplierType={(supplier?.supplier?.type || 'travel_agency') as 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental'}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierDashboardPage
+        supplierName={supplier?.supplier?.name || supplier?.name || '供应商'}
+        supplierType={(supplier?.supplier?.type || 'travel_agency') as 'travel_agency' | 'hotel' | 'attraction' | 'restaurant' | 'car_rental'}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierProductListPage
 function SupplierProductListPageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
 
   return (
-    <SupplierProductListPage
-      supplierName={supplier?.name || '供应商'}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierProductListPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierProductFormPage (新建产品)
 function SupplierProductNewPageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
 
   return (
-    <SupplierProductFormPage
-      supplierName={supplier?.name || '供应商'}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierProductFormPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierProductFormPage (编辑产品)
 function SupplierProductEditPageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
   const { id } = useParams();
 
   return (
-    <SupplierProductFormPage
-      supplierName={supplier?.name || '供应商'}
-      productId={id}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierProductFormPage
+        productId={id}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierSchedulePage
 function SupplierSchedulePageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
   const { id } = useParams();
 
   return (
-    <SupplierSchedulePage
-      productId={id}
-      supplierName={supplier?.name || ''}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierSchedulePage
+        productId={id}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierOrderListPage
 function SupplierOrderListPageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
 
   return (
-    <SupplierOrderListPage
-      supplierName={supplier?.name || '供应商'}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierOrderListPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierSettlementPage
 function SupplierSettlementPageWrapper() {
-  const { supplier } = useSupplierAuth();
   const navigate = useNavigate();
 
   return (
-    <SupplierSettlementPage
-      supplierName={supplier?.name || '供应商'}
-      onNavigate={(path) => navigate(path)}
-    />
+    <SupplierLayout>
+      <SupplierSettlementPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierAuditLogPage
 function SupplierAuditLogPageWrapper() {
-  const { supplier } = useSupplierAuth();
-
   return (
-    <SupplierAuditLogPage
-      supplierName={supplier?.name || '供应商'}
-    />
+    <SupplierLayout>
+      <SupplierAuditLogPage />
+    </SupplierLayout>
   );
 }
 
 // 包装组件：SupplierSettingsPage
 function SupplierSettingsPageWrapper() {
-  const { supplier } = useSupplierAuth();
-
   return (
-    <SupplierSettingsPage
-      supplierName={supplier?.name || '供应商'}
-    />
+    <SupplierLayout>
+      <SupplierSettingsPage />
+    </SupplierLayout>
   );
 }
 
@@ -775,6 +776,7 @@ function App() {
     <BrowserRouter>
       <CartProvider>
       <UserAuthProvider>
+      <ChatProvider>
       <SupplierAuthProvider>
       <AdminAuthProvider>
       <Routes>
@@ -858,8 +860,10 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <ChatWidget />
       </AdminAuthProvider>
       </SupplierAuthProvider>
+      </ChatProvider>
       </UserAuthProvider>
       </CartProvider>
     </BrowserRouter>

@@ -46,3 +46,8 @@ upload:
 resend:
   api_key: ""
   from_address: "EnjoySA <onboarding@resend.dev>"
+
+ai:
+  base_url: "https://api.deepseek.com/v1"  # OpenAI-compatible endpoint
+  api_key: ""
+  model: "deepseek-chat"

@@ -634,6 +634,13 @@
       }
     }
   },
+  "chat": {
+    "title": "AI 旅游助手",
+    "placeholder": "输入你的问题...",
+    "send": "发送",
+    "clearHistory": "清除记录",
+    "emptyHint": "问我任何关于南澳旅游的问题吧！"
+  },
   "footer": {
     "about": "关于我们",
     "aboutText": "EnjoySA是为澳洲旅客提供独具本地特色的\"轻奢体验+美食+住宿\"一站式预定平台。",
@@ -1581,6 +1588,7 @@
       "auditLogs": "操作日志",
       "settings": "店铺设置"
     },
+    "logout": "退出登录",
     "productForm": {
       "steps": {
         "basic": "基本信息",
