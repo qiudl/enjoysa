@@ -75,8 +75,8 @@ export const ChatWidget: React.FC = () => {
     t('chat.quickAsk3'),
   ];
 
-  // Show signup nudge after 3rd user message (guest only, once per session)
-  const showSignupNudge = !isAuthenticated && userMessageCount >= 3 && !signupDismissed;
+  // Show signup nudge after 1st AI reply (guest only, once per session)
+  const showSignupNudge = !isAuthenticated && userMessageCount >= 1 && !isLoading && !signupDismissed;
 
   return (
     <>

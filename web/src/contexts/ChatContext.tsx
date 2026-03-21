@@ -42,17 +42,21 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [signupDismissed, setSignupDismissed] = useState(false);
   const { i18n } = useTranslation();
-  const { isAuthenticated } = useUserAuth();
+  const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
   // Chat language: default from i18n, can be overridden
   const [chatLanguage, setChatLanguageState] = useState(() => {
-    // Try localStorage for guest preference
     const saved = localStorage.getItem(GUEST_LANG_KEY);
     return saved || i18n.language;
   });
 
-  const initializedRef = useRef(false);
-  const prevAuthRef = useRef(isAuthenticated);
+  const prevAuthRef = useRef<boolean | null>(null);
+  const sessionIdRef = useRef<number | null>(null);
+
+  // Keep sessionIdRef in sync
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
 
   // Sync chatLanguage when i18n language changes (unless user manually set it)
   const manualLangRef = useRef(false);
@@ -74,109 +78,102 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [isAuthenticated]);
 
-  // Guest localStorage persistence
-  const saveGuestData = useCallback((msgs: ChatMessage[], sid: number | null) => {
-    if (isAuthenticated) return;
-    const trimmed = msgs.slice(-MAX_GUEST_MESSAGES);
+  // Auto-save guest messages to localStorage whenever messages change
+  const skipSaveRef = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated || skipSaveRef.current) return;
+    if (messages.length === 0) return;
+    // Don't save if the last message is an empty assistant placeholder (still streaming)
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.role === 'assistant' && lastMsg.content === '') return;
+
+    const trimmed = messages.slice(-MAX_GUEST_MESSAGES);
     const data: GuestData = {
-      sessionId: sid,
+      sessionId: sessionIdRef.current,
       messages: trimmed,
       updatedAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(data));
     } catch {
-      // localStorage full, ignore
+      // localStorage full
     }
-  }, [isAuthenticated]);
+  }, [messages, isAuthenticated]);
 
-  // Initialize: load history from localStorage (guest) or API (authenticated)
+  // Load history helper
+  const loadUserHistory = useCallback(async () => {
+    setIsHistoryLoading(true);
+    try {
+      const sessions = await getSessions();
+      if (sessions.length > 0) {
+        const latest = sessions[0];
+        const updatedAt = new Date(latest.updated_at).getTime();
+        if (Date.now() - updatedAt < SESSION_EXPIRY_MS) {
+          const msgs = await getMessages(latest.id);
+          if (msgs.length > 0) {
+            setMessages(msgs.map(m => ({ role: m.role, content: m.content })));
+            setSessionId(latest.id);
+            if (latest.language) setChatLanguageState(latest.language);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Chat] Failed to load user history:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, []);
+
+  // Load guest history from localStorage
+  const loadGuestHistory = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(GUEST_STORAGE_KEY);
+      if (saved) {
+        const data: GuestData = JSON.parse(saved);
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          skipSaveRef.current = true;
+          setMessages(data.messages);
+          setSessionId(data.sessionId);
+          // Reset skip flag after next render
+          setTimeout(() => { skipSaveRef.current = false; }, 0);
+        }
+      }
+    } catch {
+      localStorage.removeItem(GUEST_STORAGE_KEY);
+    }
+  }, []);
+
+  // Initialize and handle auth state changes
+  // Wait for authLoading to finish before making decisions
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
+    if (authLoading) return; // Wait for UserAuthProvider to finish loading
 
-    if (isAuthenticated) {
-      // Load from API
-      setIsHistoryLoading(true);
-      getSessions().then(sessions => {
-        if (sessions.length > 0) {
-          const latest = sessions[0];
-          const updatedAt = new Date(latest.updated_at).getTime();
-          const now = Date.now();
-          if (now - updatedAt < SESSION_EXPIRY_MS) {
-            // Load messages from recent session
-            getMessages(latest.id).then(msgs => {
-              if (msgs.length > 0) {
-                setMessages(msgs.map(m => ({ role: m.role, content: m.content })));
-                setSessionId(latest.id);
-                if (latest.language) {
-                  setChatLanguageState(latest.language);
-                }
-              }
-              setIsHistoryLoading(false);
-            }).catch(() => setIsHistoryLoading(false));
-          } else {
-            setIsHistoryLoading(false);
-          }
-        } else {
-          setIsHistoryLoading(false);
-        }
-      }).catch(() => setIsHistoryLoading(false));
-    } else {
-      // Load from localStorage
-      try {
-        const saved = localStorage.getItem(GUEST_STORAGE_KEY);
-        if (saved) {
-          const data: GuestData = JSON.parse(saved);
-          if (Array.isArray(data.messages) && data.messages.length > 0) {
-            setMessages(data.messages);
-            setSessionId(data.sessionId);
-          }
-        }
-      } catch {
+    // First time auth is resolved, or auth state changed
+    if (prevAuthRef.current === null) {
+      // First initialization
+      prevAuthRef.current = isAuthenticated;
+      if (isAuthenticated) {
+        loadUserHistory();
+      } else {
+        loadGuestHistory();
+      }
+    } else if (prevAuthRef.current !== isAuthenticated) {
+      // Auth state changed (login/logout)
+      prevAuthRef.current = isAuthenticated;
+      if (isAuthenticated) {
+        // Just logged in
         localStorage.removeItem(GUEST_STORAGE_KEY);
+        setMessages([]);
+        setSessionId(null);
+        loadUserHistory();
+      } else {
+        // Just logged out
+        setMessages([]);
+        setSessionId(null);
+        manualLangRef.current = false;
       }
     }
-  }, [isAuthenticated]);
-
-  // Handle login/logout transitions
-  useEffect(() => {
-    if (prevAuthRef.current === isAuthenticated) return;
-    prevAuthRef.current = isAuthenticated;
-
-    if (isAuthenticated) {
-      // Just logged in: clear guest data, load user history
-      localStorage.removeItem(GUEST_STORAGE_KEY);
-      setMessages([]);
-      setSessionId(null);
-      setIsHistoryLoading(true);
-      getSessions().then(sessions => {
-        if (sessions.length > 0) {
-          const latest = sessions[0];
-          const updatedAt = new Date(latest.updated_at).getTime();
-          if (Date.now() - updatedAt < SESSION_EXPIRY_MS) {
-            getMessages(latest.id).then(msgs => {
-              if (msgs.length > 0) {
-                setMessages(msgs.map(m => ({ role: m.role, content: m.content })));
-                setSessionId(latest.id);
-                if (latest.language) setChatLanguageState(latest.language);
-              }
-              setIsHistoryLoading(false);
-            }).catch(() => setIsHistoryLoading(false));
-          } else {
-            setIsHistoryLoading(false);
-          }
-        } else {
-          setIsHistoryLoading(false);
-        }
-      }).catch(() => setIsHistoryLoading(false));
-    } else {
-      // Just logged out: clear state
-      setMessages([]);
-      setSessionId(null);
-      manualLangRef.current = false;
-    }
-  }, [isAuthenticated]);
+  }, [authLoading, isAuthenticated, loadUserHistory, loadGuestHistory]);
 
   // Count user messages (for signup nudge)
   const userMessageCount = messages.filter(m => m.role === 'user').length;
@@ -189,23 +186,17 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const sendMessage = useCallback(async (content: string, pageContext?: string) => {
     const userMsg: ChatMessage = { role: 'user', content };
-    setMessages(prev => {
-      const updated = [...prev, userMsg];
-      saveGuestData(updated, sessionId);
-      return updated;
-    });
+    setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
     // Add placeholder for assistant response
     const assistantMsg: ChatMessage = { role: 'assistant', content: '' };
     setMessages(prev => [...prev, assistantMsg]);
 
-    let currentSessionId = sessionId;
-
     try {
       await sendMessageStream(content, {
         onSessionId: (id) => {
-          currentSessionId = id;
+          sessionIdRef.current = id;
           setSessionId(id);
         },
         onToken: (token) => {
@@ -220,11 +211,6 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         },
         onDone: () => {
           setIsLoading(false);
-          // Save final state to localStorage for guests
-          setMessages(prev => {
-            saveGuestData(prev, currentSessionId);
-            return prev;
-          });
         },
         onError: (error) => {
           console.error('[Chat] stream error:', error);
@@ -234,20 +220,19 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (last && last.role === 'assistant' && last.content === '') {
               updated[updated.length - 1] = { ...last, content: '...' };
             }
-            saveGuestData(updated, currentSessionId);
             return updated;
           });
           setIsLoading(false);
         },
       }, {
-        sessionId: sessionId ?? undefined,
+        sessionId: sessionIdRef.current ?? undefined,
         language: chatLanguage,
         pageContext,
       });
     } catch {
       setIsLoading(false);
     }
-  }, [sessionId, chatLanguage, saveGuestData]);
+  }, [chatLanguage]);
 
   const clearChat = useCallback(() => {
     setMessages([]);
