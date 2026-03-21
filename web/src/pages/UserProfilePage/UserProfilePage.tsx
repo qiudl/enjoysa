@@ -158,13 +158,9 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           {/* Profile Header */}
           <section className={styles.profileHeader}>
             <div className={styles.avatarSection}>
-              {userAvatar ? (
-                <img src={userAvatar} alt={displayName} className={styles.avatar} />
-              ) : (
-                <div className={styles.avatarPlaceholder}>
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className={styles.avatarPlaceholder}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
             </div>
             <div className={styles.userInfo}>
               <h1 className={styles.userName}>{displayName}</h1>

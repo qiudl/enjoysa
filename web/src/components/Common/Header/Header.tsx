@@ -44,7 +44,6 @@ export const Header: React.FC<HeaderProps> = ({
   logo,
   isLoggedIn = false,
   userName,
-  userAvatar,
   cartCount = 0,
   favoriteCount = 0,
   sticky = false,

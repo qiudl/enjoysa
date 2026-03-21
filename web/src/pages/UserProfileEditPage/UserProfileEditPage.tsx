@@ -116,14 +116,9 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* Avatar */}
             <div className={styles.avatarSection}>
-              {userAvatar ? (
-                <img src={userAvatar} alt={displayName} className={styles.avatar} />
-              ) : (
-                <div className={styles.avatarPlaceholder}>
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <p className={styles.avatarNote}>{t('user.editProfile_page.avatarNote')}</p>
+              <div className={styles.avatarPlaceholder}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
             </div>
 
             {/* Name */}
