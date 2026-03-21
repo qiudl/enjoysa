@@ -693,6 +693,9 @@
       "settings": "Settings"
     },
     "logout": "Logout",
+    "noPermission": "403 - Access Denied",
+    "noPermissionDesc": "You do not have permission to access this page. Please contact your administrator.",
+    "backToDashboard": "Back to Dashboard",
     "roles": {
       "superAdmin": "Super Admin",
       "admin": "Admin",
@@ -1467,6 +1470,33 @@
         "schedule": "Schedule",
         "profile": "Profile"
       }
+    },
+    "settings": {
+      "title": "Settings",
+      "companyInfo": "Company Information",
+      "companyName": "Company Name",
+      "type": "Supplier Type",
+      "description": "Description",
+      "phone": "Phone",
+      "website": "Website",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "postalCode": "Postal Code",
+      "bankAccount": "Bank Account",
+      "bankName": "Bank Name",
+      "accountNumber": "Account Number",
+      "accountHolder": "Account Holder",
+      "preferences": "Notifications & Preferences",
+      "autoAccept": "Auto Accept Orders",
+      "autoAcceptDesc": "Automatically accept new orders without manual confirmation",
+      "emailNotify": "Email Notifications",
+      "emailNotifyDesc": "Receive order and system notifications via email",
+      "smsNotify": "SMS Notifications",
+      "smsNotifyDesc": "Receive order notifications via SMS",
+      "notSet": "Not set",
+      "saveSuccess": "Saved successfully",
+      "saveFailed": "Save failed"
     },
     "nav": {
       "dashboard": "Dashboard",

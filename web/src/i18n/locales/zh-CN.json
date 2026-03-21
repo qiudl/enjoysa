@@ -693,6 +693,9 @@
       "settings": "系统设置"
     },
     "logout": "退出登录",
+    "noPermission": "403 - 无访问权限",
+    "noPermissionDesc": "您没有权限访问此页面，请联系管理员。",
+    "backToDashboard": "返回仪表盘",
     "roles": {
       "superAdmin": "超级管理员",
       "admin": "管理员",
@@ -1542,6 +1545,33 @@
         "schedule": "排期",
         "profile": "店铺"
       }
+    },
+    "settings": {
+      "title": "店铺设置",
+      "companyInfo": "企业信息",
+      "companyName": "企业名称",
+      "type": "供应商类型",
+      "description": "简介",
+      "phone": "联系电话",
+      "website": "网站",
+      "address": "地址",
+      "city": "城市",
+      "state": "州/省",
+      "postalCode": "邮编",
+      "bankAccount": "银行账户",
+      "bankName": "银行名称",
+      "accountNumber": "账号",
+      "accountHolder": "开户人",
+      "preferences": "通知与偏好",
+      "autoAccept": "自动接单",
+      "autoAcceptDesc": "新订单无需手动确认，自动接受",
+      "emailNotify": "邮件通知",
+      "emailNotifyDesc": "通过邮件接收订单和系统通知",
+      "smsNotify": "短信通知",
+      "smsNotifyDesc": "通过短信接收订单通知",
+      "notSet": "未设置",
+      "saveSuccess": "保存成功",
+      "saveFailed": "保存失败"
     },
     "nav": {
       "dashboard": "工作台",

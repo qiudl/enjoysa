@@ -83,6 +83,7 @@ func main() {
 
 	// Seed RBAC data (roles, menus, policies)
 	rbac.SeedRBAC(db, enforcer)
+	rbac.RepairPolicies(db, enforcer)
 
 	// Create uploads dir
 	if err := os.MkdirAll(cfg.Upload.Dir, 0755); err != nil {

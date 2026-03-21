@@ -293,6 +293,7 @@ func Setup(cfg Config) *gin.Engine {
 	// ========================================
 	adminGroup := v1.Group("/admin")
 	adminGroup.Use(adminAuth)
+	adminGroup.Use(middleware.RequirePermission(cfg.CasbinEnforcer))
 	{
 		// Dashboard
 		adminGroup.GET("/dashboard/stats", adminHandler.DashboardStats)

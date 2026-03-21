@@ -299,6 +299,7 @@ func seedCasbinPolicies(db *gorm.DB, enforcer *casbin.SyncedEnforcer) {
 			switch menu.MenuType {
 			case 1: // page
 				if menu.Path != "" {
+					enforcer.AddPolicy(role.Code, menu.Path, "GET|POST|PUT|DELETE")
 					enforcer.AddPolicy(role.Code, menu.Path+"/*", "GET|POST|PUT|DELETE")
 				}
 			case 2: // button
@@ -331,4 +332,42 @@ func seedCasbinPolicies(db *gorm.DB, enforcer *casbin.SyncedEnforcer) {
 
 	enforcer.SavePolicy()
 	logger.Info("Seeded Casbin policies")
+}
+
+// RepairPolicies ensures all page menus have both base-path and wildcard Casbin policies.
+// This is idempotent and safe to run on every startup — Casbin deduplicates policies.
+func RepairPolicies(db *gorm.DB, enforcer *casbin.SyncedEnforcer) {
+	var roles []model.SysRole
+	db.Where("code != ?", "super_admin").Find(&roles)
+
+	changed := false
+	for _, role := range roles {
+		var menuIDs []uint
+		db.Model(&model.SysRoleMenu{}).Where("role_id = ?", role.ID).Pluck("menu_id", &menuIDs)
+		if len(menuIDs) == 0 {
+			continue
+		}
+
+		var menus []model.SysMenu
+		db.Where("id IN ?", menuIDs).Find(&menus)
+
+		for _, menu := range menus {
+			if menu.MenuType == 1 && menu.Path != "" {
+				// Ensure base-path policy exists (fixes list endpoints like GET /admin/orders)
+				added, _ := enforcer.AddPolicy(role.Code, menu.Path, "GET|POST|PUT|DELETE")
+				if added {
+					changed = true
+				}
+				added, _ = enforcer.AddPolicy(role.Code, menu.Path+"/*", "GET|POST|PUT|DELETE")
+				if added {
+					changed = true
+				}
+			}
+		}
+	}
+
+	if changed {
+		enforcer.SavePolicy()
+		logger.Info("Repaired RBAC Casbin policies (added missing base-path rules)")
+	}
 }

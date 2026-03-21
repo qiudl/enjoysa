@@ -98,6 +98,18 @@ export async function request<T>(
     throw new ApiError('Unauthorized', 401);
   }
 
+  // 处理 403 无权限
+  if (response.status === 403) {
+    let msg = 'Insufficient permissions';
+    try {
+      const data403: ApiResponse = await response.json();
+      msg = data403.error || data403.message || msg;
+    } catch {
+      // Non-JSON 403 (e.g. from reverse proxy)
+    }
+    throw new ApiError(msg, 403);
+  }
+
   const data: ApiResponse<T> = await response.json();
 
   if (!data.success) {

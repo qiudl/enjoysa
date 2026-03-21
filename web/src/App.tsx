@@ -29,6 +29,7 @@ import {
   SupplierOrderListPage,
   SupplierSettlementPage,
   SupplierAuditLogPage,
+  SupplierSettingsPage,
   SupplierLoginPage,
   SupplierRegisterPage,
   RegionPage,
@@ -600,6 +601,17 @@ function SupplierAuditLogPageWrapper() {
   );
 }
 
+// 包装组件：SupplierSettingsPage
+function SupplierSettingsPageWrapper() {
+  const { supplier } = useSupplierAuth();
+
+  return (
+    <SupplierSettingsPage
+      supplierName={supplier?.name || '供应商'}
+    />
+  );
+}
+
 // =====================
 // 平台管理端页面包装组件
 // =====================
@@ -825,22 +837,23 @@ function App() {
         <Route path="/supplier/orders" element={<SupplierAuthGuard><SupplierOrderListPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/settings" element={<SupplierAuthGuard><SupplierSettingsPageWrapper /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
 
         {/* 平台管理端 - 需要登录保护 */}
-        <Route path="/admin" element={<AdminAuthGuard><AdminDashboardWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/dashboard" element={<AdminAuthGuard><AdminDashboardWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/suppliers" element={<AdminAuthGuard><AdminSuppliersWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/products" element={<AdminAuthGuard><AdminProductsWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/products/new" element={<AdminAuthGuard><AdminProductNewWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/products/:id/edit" element={<AdminAuthGuard><AdminProductEditWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/orders" element={<AdminAuthGuard><AdminOrdersWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/users" element={<AdminAuthGuard><AdminUsersWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/finance" element={<AdminAuthGuard><AdminFinanceWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/admins" element={<AdminAuthGuard><AdminAdminsWrapper /></AdminAuthGuard>} />
-        <Route path="/admin/settings" element={<AdminAuthGuard><AdminSettingsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin" element={<AdminAuthGuard requiredPermission="dashboard.view"><AdminDashboardWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/dashboard" element={<AdminAuthGuard requiredPermission="dashboard.view"><AdminDashboardWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/suppliers" element={<AdminAuthGuard requiredPermission="suppliers.view"><AdminSuppliersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products" element={<AdminAuthGuard requiredPermission="products.view"><AdminProductsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products/new" element={<AdminAuthGuard requiredPermission="products.manage"><AdminProductNewWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/products/:id/edit" element={<AdminAuthGuard requiredPermission="products.manage"><AdminProductEditWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/orders" element={<AdminAuthGuard requiredPermission="orders.view"><AdminOrdersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/users" element={<AdminAuthGuard requiredPermission="users.view"><AdminUsersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/finance" element={<AdminAuthGuard requiredPermission="finance.view"><AdminFinanceWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/admins" element={<AdminAuthGuard requiredPermission="admins.view"><AdminAdminsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/settings" element={<AdminAuthGuard requiredPermission="settings.view"><AdminSettingsWrapper /></AdminAuthGuard>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

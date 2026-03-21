@@ -1,5 +1,7 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ShieldOff } from 'lucide-react';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
 
 interface AdminAuthGuardProps {
@@ -13,6 +15,8 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({
 }) => {
   const { isAuthenticated, isLoading, hasPermission } = useAdminAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -54,12 +58,32 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
+        minHeight: '60vh',
         gap: '1rem',
+        padding: '2rem',
       }}>
-        <h1 style={{ color: '#ff4d4f', margin: 0 }}>403</h1>
-        <p style={{ color: '#666' }}>You do not have permission to access this page</p>
+        <ShieldOff size={48} style={{ color: '#ff4d4f' }} />
+        <h2 style={{ color: '#262626', margin: 0 }}>
+          {t('admin.noPermission', '403 - Access Denied')}
+        </h2>
+        <p style={{ color: '#8c8c8c', margin: 0, textAlign: 'center' }}>
+          {t('admin.noPermissionDesc', 'You do not have permission to access this page. Please contact your administrator.')}
+        </p>
+        <button
+          onClick={() => navigate('/admin')}
+          style={{
+            marginTop: '0.5rem',
+            padding: '0.5rem 1.5rem',
+            backgroundColor: '#1890ff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+          }}
+        >
+          {t('admin.backToDashboard', 'Back to Dashboard')}
+        </button>
       </div>
     );
   }
