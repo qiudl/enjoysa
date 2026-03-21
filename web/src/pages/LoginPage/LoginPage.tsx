@@ -11,6 +11,8 @@ export interface LoginPageProps {
   initialMode?: 'login' | 'register';
   /** 登录函数 */
   onLogin?: (email: string, password: string) => Promise<boolean>;
+  /** Google 登录函数 */
+  onGoogleLogin?: (idToken: string) => Promise<boolean>;
   /** 注册函数 */
   onRegister?: (email: string, password: string, name: string) => Promise<boolean>;
   /** 登录成功回调 */
@@ -28,6 +30,7 @@ export interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({
   initialMode = 'login',
   onLogin,
+  onGoogleLogin,
   onRegister,
   onLoginSuccess,
   onRegisterSuccess,
@@ -91,6 +94,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             {mode === 'login' ? (
               <LoginForm
                 onLogin={onLogin}
+                onGoogleLogin={onGoogleLogin}
                 onSuccess={(data) => onLoginSuccess?.(data)}
                 onSwitchToRegister={() => setMode('register')}
                 onForgotPassword={onForgotPassword}

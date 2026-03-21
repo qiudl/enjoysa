@@ -3,6 +3,9 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 
 	"enjoysa-backend/internal/auth"
@@ -160,6 +163,15 @@ type GoogleLoginRequest struct {
 	IDToken string `json:"id_token" binding:"required"`
 }
 
+// googleTokenInfo represents the response from Google's tokeninfo endpoint
+type googleTokenInfo struct {
+	Sub           string `json:"sub"`            // Google user ID
+	Email         string `json:"email"`
+	EmailVerified string `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+}
+
 func (h *UserAuthHandler) GoogleLogin(c *gin.Context) {
 	var req GoogleLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -167,9 +179,83 @@ func (h *UserAuthHandler) GoogleLogin(c *gin.Context) {
 		return
 	}
 
-	// TODO: Verify Google ID token with Google API
-	// For now, return not implemented
-	response.BadRequest(c, "Google login not yet configured")
+	// Verify Google ID token via Google's tokeninfo endpoint
+	resp, err := http.Get(fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", req.IDToken))
+	if err != nil {
+		logger.Errorf("Failed to verify Google token: %v", err)
+		response.ServerError(c, "Failed to verify Google token")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		response.Unauthorized(c, "Invalid Google token")
+		return
+	}
+
+	var tokenInfo googleTokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
+		logger.Errorf("Failed to decode Google token info: %v", err)
+		response.ServerError(c, "Failed to process Google token")
+		return
+	}
+
+	if tokenInfo.Sub == "" || tokenInfo.Email == "" {
+		response.Unauthorized(c, "Invalid Google token")
+		return
+	}
+
+	// Try to find user by Google ID first
+	user, err := h.userStore.GetByGoogleID(tokenInfo.Sub)
+	if err != nil {
+		// Not found by Google ID, try by email
+		user, err = h.userStore.GetByEmail(tokenInfo.Email)
+		if err != nil {
+			// New user — auto register
+			user = &models.User{
+				Email:         tokenInfo.Email,
+				Name:          tokenInfo.Name,
+				Avatar:        tokenInfo.Picture,
+				GoogleID:      tokenInfo.Sub,
+				Status:        "active",
+				EmailVerified: true,
+			}
+			if err := h.userStore.Create(user); err != nil {
+				logger.Errorf("Failed to create Google user: %v", err)
+				response.ServerError(c, "Failed to create account")
+				return
+			}
+		} else {
+			// Existing user with same email — link Google ID
+			user.GoogleID = tokenInfo.Sub
+			if user.Avatar == "" && tokenInfo.Picture != "" {
+				user.Avatar = tokenInfo.Picture
+			}
+			_ = h.userStore.Update(user)
+		}
+	}
+
+	if user.Status != "active" {
+		response.Forbidden(c, "Account suspended")
+		return
+	}
+
+	// Update last login
+	now := time.Now()
+	user.LastLoginAt = &now
+	user.LastLoginIP = c.ClientIP()
+	_ = h.userStore.Update(user)
+
+	tokenPair, err := h.jwtService.GenerateTokenPair(user.ID, "user")
+	if err != nil {
+		response.ServerError(c, "Failed to generate token")
+		return
+	}
+
+	response.Success(c, gin.H{
+		"user":  user,
+		"token": tokenPair,
+	})
 }
 
 func (h *UserAuthHandler) GetProfile(c *gin.Context) {

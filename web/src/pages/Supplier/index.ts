@@ -24,3 +24,6 @@ export type { SupplierSchedulePageProps } from './SupplierSchedulePage';
 
 export { SupplierAuditLogPage } from './SupplierAuditLogPage';
 export type { SupplierAuditLogPageProps } from './SupplierAuditLogPage';
+
+export { SupplierSettingsPage } from './SupplierSettingsPage';
+export type { SupplierSettingsPageProps } from './SupplierSettingsPage';

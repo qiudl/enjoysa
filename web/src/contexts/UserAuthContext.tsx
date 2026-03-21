@@ -9,6 +9,7 @@ interface UserAuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
+  googleLogin: (idToken: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -79,6 +80,20 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  const googleLogin = async (idToken: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const userInfo = await userAuth.googleLogin(idToken);
+      setUser(userInfo);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userInfo));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     userAuth.logout();
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -93,6 +108,7 @@ export const UserAuthProvider: React.FC<{ children: ReactNode }> = ({ children }
         isLoading,
         login,
         register,
+        googleLogin,
         logout,
       }}
     >

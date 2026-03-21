@@ -35,7 +35,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentLang = languages.find(
-    (lang) => lang.code === i18n.language || i18n.language?.startsWith(lang.code)
+    (lang) => lang.code === i18n.language
+  ) || languages.find(
+    (lang) => i18n.language?.startsWith(lang.code)
   ) || languages[0];
 
   const handleLanguageChange = (langCode: string) => {

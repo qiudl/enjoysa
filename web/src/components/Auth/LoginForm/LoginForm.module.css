@@ -132,7 +132,13 @@
 /* Social Login */
 .socialLogin {
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
+}
+
+.googleLoginWrapper {
+  display: flex;
+  justify-content: center;
 }
 
 .socialButton {

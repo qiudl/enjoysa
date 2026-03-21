@@ -101,6 +101,14 @@ export const userAuth = {
       new_password: newPassword,
     });
   },
+
+  async googleLogin(idToken: string) {
+    const data = await post<UserLoginResponse>('/auth/google', {
+      id_token: idToken,
+    });
+    setTokens('user', data.token.access_token, data.token.refresh_token);
+    return data.user;
+  },
 };
 
 // ==================== B端供应商 ====================
