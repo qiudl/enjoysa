@@ -132,12 +132,13 @@ function AttractionDetailPageWrapper() {
 // 包装组件：LoginPage
 function LoginPageWrapper() {
   const navigate = useNavigate();
-  const { login, googleLogin } = useUserAuth();
+  const { login, register, googleLogin } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="login"
       onLogin={login}
+      onRegister={register}
       onGoogleLogin={async (idToken) => {
         const success = await googleLogin(idToken);
         if (success) navigate('/');
@@ -182,11 +183,12 @@ function ResetPasswordPageWrapper() {
 // 包装组件：RegisterPage
 function RegisterPageWrapper() {
   const navigate = useNavigate();
-  const { register, googleLogin } = useUserAuth();
+  const { login, register, googleLogin } = useUserAuth();
 
   return (
     <LoginPage
       initialMode="register"
+      onLogin={login}
       onRegister={register}
       onGoogleLogin={async (idToken) => {
         const success = await googleLogin(idToken);
