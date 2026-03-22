@@ -7,6 +7,8 @@ interface SupplierAuthContextType {
   supplier: SupplierUserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Supplier company approval status: pending / approved / suspended / rejected */
+  supplierStatus: string;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -28,9 +30,9 @@ export const SupplierAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
       try {
         const saved = localStorage.getItem(SUPPLIER_STORAGE_KEY);
         if (saved && hasToken) {
-          setSupplier(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          setSupplier(parsed);
         } else if (saved) {
-          // Stale cached data without token — clean up
           localStorage.removeItem(SUPPLIER_STORAGE_KEY);
         }
       } catch {
@@ -77,12 +79,15 @@ export const SupplierAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
     setSupplier(null);
   };
 
+  const supplierStatus = supplier?.supplier?.status || '';
+
   return (
     <SupplierAuthContext.Provider
       value={{
         supplier,
         isAuthenticated: !!supplier,
         isLoading,
+        supplierStatus,
         login,
         logout,
       }}

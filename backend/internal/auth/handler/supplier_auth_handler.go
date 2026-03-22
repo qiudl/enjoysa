@@ -47,8 +47,9 @@ func (h *SupplierAuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if su.Supplier != nil && su.Supplier.Status != "approved" {
-		response.Forbidden(c, "Supplier not approved")
+	// Block suspended/rejected suppliers; allow pending to login with limited access
+	if su.Supplier != nil && (su.Supplier.Status == "suspended" || su.Supplier.Status == "rejected") {
+		response.Forbidden(c, "Supplier account is "+su.Supplier.Status)
 		return
 	}
 

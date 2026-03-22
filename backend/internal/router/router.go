@@ -256,9 +256,9 @@ func Setup(cfg Config) *gin.Engine {
 		supplierGroup.GET("/audit-logs", supplierAuditLogHandler.List)
 	}
 
-	// Supplier product routes
+	// Supplier product routes (requires approved supplier)
 	supplierProducts := v1.Group("/supplier/products")
-	supplierProducts.Use(supplierAuth)
+	supplierProducts.Use(supplierAuth, middleware.RequireApprovedSupplier())
 	{
 		supplierProducts.GET("", supplierProductHandler.ListProducts)
 		supplierProducts.POST("", supplierProductHandler.CreateProduct)
@@ -277,9 +277,9 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.GET("/:id/schedules/calendar", supplierProductHandler.ScheduleCalendar)
 	}
 
-	// Supplier order routes
+	// Supplier order routes (requires approved supplier)
 	supplierOrders := v1.Group("/supplier/orders")
-	supplierOrders.Use(supplierAuth)
+	supplierOrders.Use(supplierAuth, middleware.RequireApprovedSupplier())
 	{
 		supplierOrders.GET("", supplierOrderHandler.ListOrders)
 		supplierOrders.GET("/stats", supplierOrderHandler.GetStats)
@@ -292,9 +292,9 @@ func Setup(cfg Config) *gin.Engine {
 		supplierOrders.PATCH("/:id/remark", supplierOrderHandler.UpdateRemark)
 	}
 
-	// Supplier settlement routes
+	// Supplier settlement routes (requires approved supplier)
 	supplierSettlements := v1.Group("/supplier/settlements")
-	supplierSettlements.Use(supplierAuth)
+	supplierSettlements.Use(supplierAuth, middleware.RequireApprovedSupplier())
 	{
 		supplierSettlements.GET("", settlementHandler.SupplierList)
 		supplierSettlements.GET("/stats", settlementHandler.SupplierStats)

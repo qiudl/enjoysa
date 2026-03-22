@@ -1560,6 +1560,10 @@
       "auditLogs": "Audit Logs",
       "settings": "Settings"
     },
+    "pending": {
+      "banner": "Your supplier account is under review. Some features are temporarily restricted and will be unlocked once approved.",
+      "featureLocked": "This feature requires approval"
+    },
     "logout": "Logout",
     "login": {
       "brandTitle": "Supplier Portal",
@@ -1591,7 +1595,10 @@
       "hotel": "Hotel",
       "scenic": "Attraction",
       "restaurant": "Restaurant",
-      "carRental": "Car Rental"
+      "carRental": "Car Rental",
+      "travel_agency": "Travel Agency",
+      "attraction": "Attraction",
+      "car_rental": "Car Rental"
     },
     "register": {
       "brandTitle": "Become a Partner",
@@ -1631,7 +1638,7 @@
       "errorContactRequired": "Please enter contact name",
       "errorPhoneRequired": "Please enter phone number",
       "errorEmailRequired": "Please enter email address",
-      "errorPasswordLength": "Password must be at least 6 characters",
+      "errorPasswordLength": "Password must be at least 8 characters",
       "errorPasswordMismatch": "Passwords do not match",
       "errorAgreeTerms": "Please agree to the supplier agreement",
       "errorNetwork": "Network error, please try again"

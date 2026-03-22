@@ -1370,7 +1370,10 @@
       "hotel": "酒店",
       "scenic": "景區",
       "restaurant": "餐廳",
-      "carRental": "租車"
+      "carRental": "租車",
+      "travel_agency": "旅行社",
+      "attraction": "景區",
+      "car_rental": "租車"
     },
     "login": {
       "brandTitle": "供應商平臺",
@@ -1435,7 +1438,7 @@
       "errorContactRequired": "請輸入聯絡人姓名",
       "errorPhoneRequired": "請輸入聯絡電話",
       "errorEmailRequired": "請輸入郵箱地址",
-      "errorPasswordLength": "密碼長度至少6位",
+      "errorPasswordLength": "密碼長度至少8位",
       "errorPasswordMismatch": "兩次輸入的密碼不一致",
       "errorAgreeTerms": "請閱讀並同意入駐協議",
       "errorNetwork": "網路錯誤，請稍後重試"
@@ -1629,6 +1632,10 @@
       "settlement": "財務結算",
       "auditLogs": "操作日誌",
       "settings": "店鋪設定"
+    },
+    "pending": {
+      "banner": "您的供應商帳號正在審核中，部分功能暫時受限。審核通過後將自動開放全部功能。",
+      "featureLocked": "此功能需審核通過後使用"
     },
     "logout": "退出登入",
     "productForm": {

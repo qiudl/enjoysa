@@ -113,9 +113,29 @@ func SupplierAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
+		supplierStatus := ""
+		if su.Supplier != nil {
+			supplierStatus = su.Supplier.Status
+		}
+
 		c.Set("supplier_user", &su)
 		c.Set("supplier_user_id", su.ID)
 		c.Set("supplier_id", su.SupplierID)
+		c.Set("supplier_status", supplierStatus)
+		c.Next()
+	}
+}
+
+// RequireApprovedSupplier blocks access for non-approved suppliers (e.g. pending).
+// Must be used after SupplierAuth middleware.
+func RequireApprovedSupplier() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		status, _ := c.Get("supplier_status")
+		if status != "approved" {
+			response.Forbidden(c, "Supplier not yet approved")
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }

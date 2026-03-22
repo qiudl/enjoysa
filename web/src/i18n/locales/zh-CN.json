@@ -1345,7 +1345,10 @@
       "hotel": "酒店",
       "scenic": "景区",
       "restaurant": "餐厅",
-      "carRental": "租车"
+      "carRental": "租车",
+      "travel_agency": "旅行社",
+      "attraction": "景区",
+      "car_rental": "租车"
     },
     "register": {
       "brandTitle": "供应商入驻",
@@ -1385,7 +1388,7 @@
       "errorContactRequired": "请输入联系人姓名",
       "errorPhoneRequired": "请输入联系电话",
       "errorEmailRequired": "请输入邮箱地址",
-      "errorPasswordLength": "密码长度至少6位",
+      "errorPasswordLength": "密码长度至少8位",
       "errorPasswordMismatch": "两次输入的密码不一致",
       "errorAgreeTerms": "请阅读并同意入驻协议",
       "errorNetwork": "网络错误，请稍后重试"
@@ -1634,6 +1637,10 @@
       "settlement": "财务结算",
       "auditLogs": "操作日志",
       "settings": "店铺设置"
+    },
+    "pending": {
+      "banner": "您的供应商账号正在审核中，部分功能暂时受限。审核通过后将自动开放全部功能。",
+      "featureLocked": "此功能需审核通过后使用"
     },
     "logout": "退出登录",
     "productForm": {

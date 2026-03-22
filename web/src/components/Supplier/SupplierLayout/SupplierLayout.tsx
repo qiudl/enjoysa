@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   ChevronDown,
+  Clock,
+  Lock,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
@@ -26,13 +28,15 @@ interface MenuItem {
   path: string;
   icon: React.ReactNode;
   labelKey: string;
+  /** If true, only accessible when supplier is approved */
+  requireApproved?: boolean;
 }
 
 const menuItems: MenuItem[] = [
   { key: 'dashboard', path: '/supplier', icon: <LayoutDashboard size={20} />, labelKey: 'supplier.nav.dashboard' },
-  { key: 'products', path: '/supplier/products', icon: <Package size={20} />, labelKey: 'supplier.nav.products' },
-  { key: 'orders', path: '/supplier/orders', icon: <ShoppingCart size={20} />, labelKey: 'supplier.nav.orders' },
-  { key: 'settlement', path: '/supplier/settlement', icon: <DollarSign size={20} />, labelKey: 'supplier.nav.settlement' },
+  { key: 'products', path: '/supplier/products', icon: <Package size={20} />, labelKey: 'supplier.nav.products', requireApproved: true },
+  { key: 'orders', path: '/supplier/orders', icon: <ShoppingCart size={20} />, labelKey: 'supplier.nav.orders', requireApproved: true },
+  { key: 'settlement', path: '/supplier/settlement', icon: <DollarSign size={20} />, labelKey: 'supplier.nav.settlement', requireApproved: true },
   { key: 'auditLogs', path: '/supplier/audit-logs', icon: <FileText size={20} />, labelKey: 'supplier.nav.auditLogs' },
   { key: 'settings', path: '/supplier/settings', icon: <Settings size={20} />, labelKey: 'supplier.nav.settings' },
 ];
@@ -41,7 +45,8 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { supplier, logout } = useSupplierAuth();
+  const { supplier, supplierStatus, logout } = useSupplierAuth();
+  const isApproved = supplierStatus === 'approved';
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -110,22 +115,29 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
         {/* Navigation */}
         <nav className={styles.nav}>
-          {menuItems.map((item) => (
-            <button
-              key={item.key}
-              className={`${styles.navItem} ${isActiveRoute(item.path) ? styles.active : ''}`}
-              onClick={() => {
-                navigate(item.path);
-                setMobileMenuOpen(false);
-              }}
-              title={sidebarCollapsed ? t(item.labelKey) : undefined}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              {!sidebarCollapsed && (
-                <span className={styles.navLabel}>{t(item.labelKey)}</span>
-              )}
-            </button>
-          ))}
+          {menuItems.map((item) => {
+            const locked = item.requireApproved && !isApproved;
+            return (
+              <button
+                key={item.key}
+                className={`${styles.navItem} ${isActiveRoute(item.path) ? styles.active : ''} ${locked ? styles.navItemLocked : ''}`}
+                onClick={() => {
+                  if (locked) return;
+                  navigate(item.path);
+                  setMobileMenuOpen(false);
+                }}
+                title={locked
+                  ? t('supplier.pending.featureLocked')
+                  : sidebarCollapsed ? t(item.labelKey) : undefined}
+                disabled={locked}
+              >
+                <span className={styles.navIcon}>{locked ? <Lock size={20} /> : item.icon}</span>
+                {!sidebarCollapsed && (
+                  <span className={styles.navLabel}>{t(item.labelKey)}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Sidebar Footer */}
@@ -201,6 +213,14 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
+
+        {/* Pending Banner */}
+        {!isApproved && supplierStatus === 'pending' && (
+          <div className={styles.pendingBanner}>
+            <Clock size={18} />
+            <span>{t('supplier.pending.banner')}</span>
+          </div>
+        )}
 
         {/* Page Content */}
         <main className={styles.content}>

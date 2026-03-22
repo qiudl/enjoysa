@@ -75,7 +75,7 @@ export const SupplierRegisterPage: React.FC<SupplierRegisterPageProps> = ({
       setError(t('supplier.register.errorEmailRequired'));
       return false;
     }
-    if (!formData.password || formData.password.length < 6) {
+    if (!formData.password || formData.password.length < 8) {
       setError(t('supplier.register.errorPasswordLength'));
       return false;
     }
@@ -108,6 +108,7 @@ export const SupplierRegisterPage: React.FC<SupplierRegisterPageProps> = ({
         contact_name: formData.contactName,
         phone: formData.phone,
         email: formData.email,
+        contact_email: formData.email,
         password: formData.password,
         business_license: formData.businessLicense || undefined,
       });

@@ -57,20 +57,20 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
     const load = async () => {
       try {
         const [dash, orderResult, enh, trend, top, channels, al] = await Promise.all([
-          get<DashboardData>('/supplier/dashboard', 'supplier'),
-          listSupplierOrders({ page: 1, page_size: 5 }),
+          get<DashboardData>('/supplier/dashboard', 'supplier').catch(() => null),
+          listSupplierOrders({ page: 1, page_size: 5 }).catch(() => ({ orders: [], total: 0 })),
           getEnhancedStats().catch(() => null),
           getRevenueTrend(14).catch(() => []),
           getTopProducts(30, 5).catch(() => []),
           getChannelStats(30).catch(() => []),
           getScheduleAlerts().catch(() => null),
         ]);
-        setDashData(dash);
-        setRecentOrders(orderResult.orders || []);
+        if (dash) setDashData(dash);
+        setRecentOrders(orderResult?.orders || []);
         setEnhanced(enh);
-        setRevenueTrend(trend);
-        setTopProducts(top);
-        setChannelStats(channels);
+        setRevenueTrend(trend || []);
+        setTopProducts(top || []);
+        setChannelStats(channels || []);
         setAlerts(al);
       } catch {
         // Fallback: keep defaults
