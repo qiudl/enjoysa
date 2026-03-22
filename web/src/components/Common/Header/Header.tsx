@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, X, ShoppingCart, Heart, User, Search, LogOut, Package } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './Header.module.css';
 import { LanguageSwitcher } from '../LanguageSwitcher';
+import UserAuthContext from '../../../contexts/UserAuthContext';
 
 export interface HeaderProps {
   /** Logo 图片 URL */
@@ -54,6 +55,14 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
 }) => {
   const { t } = useTranslation();
+
+  // Read auth state from context (auto-detects login status on all pages)
+  // Falls back to props when context is unavailable (e.g. Storybook)
+  const authContext = useContext(UserAuthContext);
+  const effectiveLoggedIn = authContext ? authContext.isAuthenticated : isLoggedIn;
+  const effectiveUserName = authContext ? authContext.user?.name : userName;
+  const effectiveOnLogout = authContext ? authContext.logout : onLogout;
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -135,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {isLoggedIn ? (
+          {effectiveLoggedIn ? (
             <>
               {/* Favorites */}
               <button
@@ -156,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
                   <User size={20} />
-                  <span className={styles.userName}>{userName || t('nav.profile')}</span>
+                  <span className={styles.userName}>{effectiveUserName || t('nav.profile')}</span>
                 </button>
                 {userMenuOpen && (
                   <div className={styles.userDropdown}>
@@ -177,7 +186,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className={styles.dropdownDivider} />
                     <button
                       className={clsx(styles.dropdownItem, styles.dropdownItemDanger)}
-                      onClick={() => { onLogout?.(); setUserMenuOpen(false); }}
+                      onClick={() => { effectiveOnLogout?.(); setUserMenuOpen(false); }}
                     >
                       <LogOut size={16} />
                       <span>{t('user.dropdown.logout')}</span>
@@ -256,7 +265,7 @@ export const Header: React.FC<HeaderProps> = ({
             {cartCount > 0 && <span className={styles.mobileBadge}>{cartCount}</span>}
           </button>
 
-          {isLoggedIn ? (
+          {effectiveLoggedIn ? (
             <>
               <button
                 className={styles.mobileNavItem}
@@ -291,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 className={clsx(styles.mobileNavItem, styles.mobileLogout)}
                 onClick={() => {
-                  onLogout?.();
+                  effectiveOnLogout?.();
                   setMobileMenuOpen(false);
                 }}
               >
