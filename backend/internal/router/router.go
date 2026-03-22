@@ -170,6 +170,7 @@ func Setup(cfg Config) *gin.Engine {
 			// User contacts
 			authProtected.GET("/contacts", userContactHandler.List)
 			authProtected.POST("/contacts", userContactHandler.Create)
+			authProtected.POST("/contacts/upsert", userContactHandler.Upsert)
 			authProtected.PUT("/contacts/:id", userContactHandler.Update)
 			authProtected.DELETE("/contacts/:id", userContactHandler.Delete)
 		}

@@ -56,3 +56,7 @@ export async function updateContact(id: number, input: ContactInput): Promise<Us
 export async function deleteContact(id: number): Promise<void> {
   await del<ApiResponse>(`/auth/contacts/${id}`, 'user');
 }
+
+export async function upsertContact(input: ContactInput): Promise<void> {
+  await post<ApiResponse>('/auth/contacts/upsert', input, 'user');
+}

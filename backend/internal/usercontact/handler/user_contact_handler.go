@@ -240,6 +240,97 @@ func (h *UserContactHandler) Update(c *gin.Context) {
 	response.Success(c, toResponse(contact))
 }
 
+// Upsert creates or updates a contact matched by first_name + last_name
+func (h *UserContactHandler) Upsert(c *gin.Context) {
+	user := getUser(c)
+	if user == nil {
+		response.Unauthorized(c, "Not authenticated")
+		return
+	}
+
+	var req ContactRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Try to find existing contact by name
+	existing, _ := h.store.FindByName(user.ID, req.FirstName, req.LastName)
+
+	if existing != nil {
+		// Update existing
+		existing.Email = req.Email
+		existing.Phone = req.Phone
+		existing.Nationality = req.Nationality
+		existing.SpecialRequirements = req.SpecialRequirements
+		if req.DefaultType != "" {
+			existing.DefaultType = req.DefaultType
+		}
+		if req.DateOfBirth != "" {
+			t, err := parseDate(req.DateOfBirth)
+			if err == nil {
+				existing.DateOfBirth = &t
+			}
+		}
+		if req.PassportNumber != "" {
+			encrypted, err := model.Encrypt(req.PassportNumber)
+			if err == nil {
+				existing.PassportNumber = encrypted
+			}
+		}
+		if err := h.store.Update(existing); err != nil {
+			response.ServerError(c, "Failed to update contact")
+			return
+		}
+		response.Success(c, toResponse(existing))
+		return
+	}
+
+	// Create new — check limit
+	count, err := h.store.CountByUserID(user.ID)
+	if err != nil {
+		response.ServerError(c, "Failed to check contact count")
+		return
+	}
+	if count >= maxContacts {
+		// Silently succeed — don't block auto-save
+		response.Success(c, gin.H{"skipped": true, "reason": "limit_reached"})
+		return
+	}
+
+	contact := &model.UserContact{
+		UserID:              user.ID,
+		FirstName:           req.FirstName,
+		LastName:            req.LastName,
+		Email:               req.Email,
+		Phone:               req.Phone,
+		Nationality:         req.Nationality,
+		DefaultType:         req.DefaultType,
+		SpecialRequirements: req.SpecialRequirements,
+	}
+	if contact.DefaultType == "" {
+		contact.DefaultType = "adult"
+	}
+	if req.DateOfBirth != "" {
+		t, err := parseDate(req.DateOfBirth)
+		if err == nil {
+			contact.DateOfBirth = &t
+		}
+	}
+	if req.PassportNumber != "" {
+		encrypted, err := model.Encrypt(req.PassportNumber)
+		if err == nil {
+			contact.PassportNumber = encrypted
+		}
+	}
+
+	if err := h.store.Create(contact); err != nil {
+		response.ServerError(c, "Failed to create contact")
+		return
+	}
+	response.Created(c, toResponse(contact))
+}
+
 // Delete removes a contact
 func (h *UserContactHandler) Delete(c *gin.Context) {
 	user := getUser(c)

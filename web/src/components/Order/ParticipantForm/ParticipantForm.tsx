@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { User, Plus, Trash2, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Input } from '../../Common/Input';
 import { ContactPicker } from '../ContactPicker';
 import type { UserContact } from '../../../services/userContactService';
+import { upsertContact } from '../../../services/userContactService';
 import styles from './ParticipantForm.module.css';
 import type { ParticipantDetail } from '../../../types';
 
@@ -57,6 +58,53 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   const [expandedIds, setExpandedIds] = useState<string[]>(
     participants.length > 0 ? [participants[0].id] : []
   );
+
+  // Auto-save contacts with debounce
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savedSnapshots = useRef<Record<string, string>>({});
+
+  const autoSaveContact = useCallback((p: ParticipantDetail) => {
+    if (!isAuthenticated || readonly) return;
+    if (!p.firstName.trim() || !p.lastName.trim()) return;
+
+    const snapshot = JSON.stringify({
+      first_name: p.firstName, last_name: p.lastName,
+      email: p.email, phone: p.phone, date_of_birth: p.dateOfBirth,
+      nationality: p.nationality, passport_number: p.passportNumber,
+      special_requirements: p.specialRequirements, default_type: p.type,
+    });
+
+    if (savedSnapshots.current[p.id] === snapshot) return;
+
+    if (saveTimers.current[p.id]) clearTimeout(saveTimers.current[p.id]);
+    saveTimers.current[p.id] = setTimeout(() => {
+      savedSnapshots.current[p.id] = snapshot;
+      upsertContact({
+        first_name: p.firstName.trim(),
+        last_name: p.lastName.trim(),
+        email: p.email?.trim() || undefined,
+        phone: p.phone?.trim() || undefined,
+        date_of_birth: p.dateOfBirth || undefined,
+        nationality: p.nationality?.trim() || undefined,
+        passport_number: p.passportNumber?.trim() || undefined,
+        special_requirements: p.specialRequirements?.trim() || undefined,
+        default_type: p.type || 'adult',
+      }).catch(() => {
+        // Remove snapshot so next change retries
+        delete savedSnapshots.current[p.id];
+      });
+    }, 2000);
+  }, [isAuthenticated, readonly]);
+
+  useEffect(() => {
+    participants.forEach(autoSaveContact);
+  }, [participants, autoSaveContact]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const timers = saveTimers.current;
+    return () => { Object.values(timers).forEach(clearTimeout); };
+  }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev =>

@@ -43,6 +43,15 @@ func (s *UserContactStore) Update(contact *model.UserContact) error {
 	return s.db.Save(contact).Error
 }
 
+func (s *UserContactStore) FindByName(userID uint, firstName, lastName string) (*model.UserContact, error) {
+	var contact model.UserContact
+	err := s.db.Where("user_id = ? AND first_name = ? AND last_name = ?", userID, firstName, lastName).First(&contact).Error
+	if err != nil {
+		return nil, err
+	}
+	return &contact, nil
+}
+
 func (s *UserContactStore) Delete(id, userID uint) error {
 	return s.db.Where("id = ? AND user_id = ?", id, userID).Delete(&model.UserContact{}).Error
 }
