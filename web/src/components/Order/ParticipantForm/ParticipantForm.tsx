@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { User, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Plus, Trash2, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Input } from '../../Common/Input';
+import { ContactPicker } from '../ContactPicker';
+import type { UserContact } from '../../../services/userContactService';
 import styles from './ParticipantForm.module.css';
 import type { ParticipantDetail } from '../../../types';
 
@@ -23,6 +25,8 @@ export interface ParticipantFormProps {
   errors?: Record<number, Record<string, string>>;
   /** 字段修改时清除对应错误 */
   onFieldChange?: (index: number, field: string) => void;
+  /** 是否已登录（显示常用联系人按钮） */
+  isAuthenticated?: boolean;
 }
 
 const defaultParticipant: Omit<ParticipantDetail, 'id'> = {
@@ -46,8 +50,10 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   readonly = false,
   errors,
   onFieldChange,
+  isAuthenticated = false,
 }) => {
   const { t } = useTranslation();
+  const [pickerTarget, setPickerTarget] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<string[]>(
     participants.length > 0 ? [participants[0].id] : []
   );
@@ -86,6 +92,26 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
         p.id === id ? { ...p, [field]: value } : p
       )
     );
+  };
+
+  const handleContactSelect = (contact: UserContact) => {
+    if (!pickerTarget) return;
+    onChange?.(
+      participants.map(p =>
+        p.id === pickerTarget ? {
+          ...p,
+          firstName: contact.first_name,
+          lastName: contact.last_name,
+          email: contact.email || p.email,
+          phone: contact.phone || p.phone,
+          dateOfBirth: contact.date_of_birth || p.dateOfBirth,
+          nationality: contact.nationality || p.nationality,
+          specialRequirements: contact.special_requirements || p.specialRequirements,
+          type: contact.default_type || p.type,
+        } : p
+      )
+    );
+    setPickerTarget(null);
   };
 
   const isExpanded = (id: string) => expandedIds.includes(id);
@@ -144,6 +170,16 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
 
             {isExpanded(participant.id) && (
               <div className={styles.cardContent}>
+                {!readonly && isAuthenticated && (
+                  <button
+                    type="button"
+                    className={styles.selectContactBtn}
+                    onClick={() => setPickerTarget(participant.id)}
+                  >
+                    <Users size={14} />
+                    {t('contacts.selectContact')}
+                  </button>
+                )}
                 <div className={styles.row}>
                   <Input
                     label={t('participant.firstName')}
@@ -240,6 +276,12 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
           {t('participant.add')}
         </button>
       )}
+
+      <ContactPicker
+        isOpen={pickerTarget !== null}
+        onClose={() => setPickerTarget(null)}
+        onSelect={handleContactSelect}
+      />
     </div>
   );
 };

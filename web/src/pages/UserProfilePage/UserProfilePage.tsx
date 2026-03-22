@@ -96,12 +96,13 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {
+    if (!userName) return; // Skip API call when not logged in — avoids 401
     listOrders({ page: 1, page_size: 5 })
       .then((result) => {
         setRecentOrders((result.orders || []).map(transformOrder));
       })
       .catch(() => {});
-  }, []);
+  }, [userName]);
 
   const handleLogout = () => {
     setShowLogoutModal(false);
@@ -126,6 +127,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
   const quickActions = [
     { key: 'editProfile', label: t('user.editProfile'), icon: '⚙️', onClick: () => onEditProfile?.() },
+    { key: 'contacts', label: t('contacts.title'), icon: '👥', onClick: () => onNavClick?.('/profile/contacts') },
     { key: 'help', label: t('user.helpCenter'), icon: '❓' },
   ];
 

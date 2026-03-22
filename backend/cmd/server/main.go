@@ -24,6 +24,7 @@ import (
 	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
 	suppliermodel "enjoysa-backend/internal/supplier/model"
+	usercontactmodel "enjoysa-backend/internal/usercontact/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	productmodel "enjoysa-backend/internal/product/model"
 	"enjoysa-backend/internal/rbac"
@@ -193,6 +194,8 @@ func autoMigrate(db *gorm.DB) error {
 		// Chat
 		&chatmodel.ChatSession{},
 		&chatmodel.ChatMessage{},
+		// User contacts
+		&usercontactmodel.UserContact{},
 	)
 }
 

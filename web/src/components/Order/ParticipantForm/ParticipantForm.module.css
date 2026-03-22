@@ -167,6 +167,26 @@
   box-shadow: 0 0 0 3px var(--color-primary-50);
 }
 
+/* Select Contact Button */
+.selectContactBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+  border: 1px dashed var(--color-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+  align-self: flex-start;
+}
+
+.selectContactBtn:hover {
+  background: var(--color-primary-100, #dbeafe);
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .row {

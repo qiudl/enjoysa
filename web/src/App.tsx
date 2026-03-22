@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 // 首页同步加载（首屏性能）
@@ -37,6 +37,8 @@ const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierA
 const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
+// 用户中心
+const ContactsPage = React.lazy(() => import('./pages/ContactsPage/ContactsPage'));
 // 平台管理端页面
 const AdminLoginPage = React.lazy(() => import('./pages/Admin/AdminLoginPage/AdminLoginPage'));
 const DashboardPage = React.lazy(() => import('./pages/Admin/DashboardPage/DashboardPage'));
@@ -232,7 +234,7 @@ function ProductDetailPageWrapper() {
     <ProductDetailPage
       productId={id}
       cartCount={getCartCount()}
-      onBookNow={() => navigate('/checkout')}
+      onBookNow={() => navigate('/checkout', { state: { productId: id } })}
       onAddToCart={(product, selectedDate, selectedTime) => {
         addToCart(product, 1, selectedDate, selectedTime);
         // Show feedback (could be a toast notification)
@@ -249,9 +251,12 @@ function ProductDetailPageWrapper() {
 function CheckoutPageWrapper() {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
+  const location = useLocation();
+  const state = location.state as { productId?: string } | null;
 
   return (
     <CheckoutPage
+      productId={state?.productId}
       cartCount={getCartCount()}
       onOrderSuccess={(orderId) => navigate(`/orders?highlight=${orderId}`)}
       onLoginRequired={() => navigate('/login')}
@@ -352,6 +357,27 @@ function UserProfileEditPageWrapper() {
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：ContactsPage
+function ContactsPageWrapper() {
+  const navigate = useNavigate();
+  const { getCartCount } = useCart();
+  const { isAuthenticated } = useUserAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <ContactsPage
+      cartCount={getCartCount()}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onNavClick={(path) => navigate(path)}
+      onBack={() => navigate('/profile')}
     />
   );
 }
@@ -863,6 +889,7 @@ function App() {
         {/* 用户中心 */}
         <Route path="/profile" element={<UserProfilePageWrapper />} />
         <Route path="/profile/edit" element={<UserProfileEditPageWrapper />} />
+        <Route path="/profile/contacts" element={<ContactsPageWrapper />} />
 
         {/* 目的地页面 */}
         <Route path="/destinations" element={<DestinationsPageWrapper />} />

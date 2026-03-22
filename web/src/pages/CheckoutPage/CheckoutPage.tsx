@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -14,6 +14,7 @@ import {
 import type { Product, Destination, ProductCategory, ParticipantDetail, PaymentMethod } from '../../types';
 import { createOrder } from '../../services/orderService';
 import { post } from '../../services/api';
+import { productService, transformApiProduct, type ApiProductPackage } from '../../services/productService';
 import styles from './CheckoutPage.module.css';
 
 export interface CheckoutPageProps {
@@ -27,6 +28,8 @@ export interface CheckoutPageProps {
   cartCount?: number;
   /** 产品信息 */
   product?: Product;
+  /** 产品 ID（从路由 state 传入，用于获取真实产品数据） */
+  productId?: string;
   /** 出行日期 */
   travelDate?: string;
   /** 成人数量 */
@@ -115,7 +118,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   isLoggedIn = true,
   userName,
   cartCount = 0,
-  product = mockProduct,
+  product: productProp,
+  productId,
   travelDate = '2026-02-15',
   adultCount = 2,
   onSubmit,
@@ -138,6 +142,25 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [participantErrors, setParticipantErrors] = useState<Record<number, Record<string, string>>>({});
   const participantSectionRef = useRef<HTMLElement>(null);
+
+  // Fetch real product data (with packages) when productId is provided
+  const [fetchedProduct, setFetchedProduct] = useState<Product | null>(null);
+  const [packages, setPackages] = useState<ApiProductPackage[]>([]);
+  const [productLoading, setProductLoading] = useState(!!productId);
+
+  useEffect(() => {
+    if (!productId) return;
+    setProductLoading(true);
+    productService.getById(Number(productId))
+      .then((apiProduct) => {
+        setFetchedProduct(transformApiProduct(apiProduct));
+        setPackages(apiProduct.packages || []);
+      })
+      .catch(() => {})
+      .finally(() => setProductLoading(false));
+  }, [productId]);
+
+  const product = fetchedProduct || productProp || mockProduct;
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -206,12 +229,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
+    // Ensure we have a valid package
+    const packageId = packages[0]?.id;
+    if (!packageId) {
+      // Cannot create order without a valid package
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const order = await createOrder({
         product_id: Number(product.id),
-        package_id: 0,
+        package_id: packageId,
         quantity: adultCount,
         booking_date: travelDate,
         contact_name: participants[0]?.firstName
@@ -295,6 +325,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   requirePassport
                   errors={participantErrors}
                   onFieldChange={handleFieldChange}
+                  isAuthenticated
                 />
               </section>
 
@@ -341,8 +372,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   variant="primary"
                   size="lg"
                   fullWidth
-                  disabled={!agreed || submitting}
-                  loading={submitting}
+                  disabled={!agreed || submitting || productLoading || !packages[0]}
+                  loading={submitting || productLoading}
                   onClick={handleSubmit}
                 >
                   {submitting ? t('checkout.processing') : t('order.submitOrder')}

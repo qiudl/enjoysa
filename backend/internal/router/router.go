@@ -36,6 +36,8 @@ import (
 	supplierhandler "enjoysa-backend/internal/supplier/handler"
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
+	usercontacthandler "enjoysa-backend/internal/usercontact/handler"
+	usercontactstore "enjoysa-backend/internal/usercontact/store"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
@@ -80,6 +82,7 @@ func Setup(cfg Config) *gin.Engine {
 	scheduleStore := productstore.NewScheduleStore(cfg.DB)
 	oStore := orderstore.NewOrderStore(cfg.DB)
 
+	ucStore := usercontactstore.NewUserContactStore(cfg.DB)
 	cStore := contactstore.NewContactStore(cfg.DB)
 	stStore := settingsstore.NewSettingsStore(cfg.DB)
 	slStore := settlementstore.NewSettlementStore(cfg.DB)
@@ -127,6 +130,7 @@ func Setup(cfg Config) *gin.Engine {
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, auditLogger)
 	contactHandler := contacthandler.NewContactHandler(cStore)
+	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
 
@@ -162,6 +166,12 @@ func Setup(cfg Config) *gin.Engine {
 			authProtected.GET("/me", userAuthHandler.GetProfile)
 			authProtected.PUT("/me", userAuthHandler.UpdateProfile)
 			authProtected.PUT("/password", userAuthHandler.ChangePassword)
+
+			// User contacts
+			authProtected.GET("/contacts", userContactHandler.List)
+			authProtected.POST("/contacts", userContactHandler.Create)
+			authProtected.PUT("/contacts/:id", userContactHandler.Update)
+			authProtected.DELETE("/contacts/:id", userContactHandler.Delete)
 		}
 	}
 

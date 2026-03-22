@@ -1762,5 +1762,35 @@
       "prevMonth": "上個月",
       "nextMonth": "下個月"
     }
+  },
+  "contacts": {
+    "title": "常用聯絡人",
+    "addContact": "新增聯絡人",
+    "editContact": "編輯聯絡人",
+    "deleteContact": "刪除聯絡人",
+    "deleteConfirm": "確定刪除該聯絡人？刪除後不可恢復。",
+    "firstName": "名",
+    "lastName": "姓",
+    "email": "電子郵件",
+    "phone": "電話",
+    "dateOfBirth": "出生日期",
+    "nationality": "國籍",
+    "passportNumber": "護照號碼",
+    "passportPlaceholder": "留空則保持不變",
+    "type": "類型",
+    "typeAdult": "成人",
+    "typeChild": "兒童",
+    "typeInfant": "嬰兒",
+    "isSelf": "標記為本人",
+    "specialRequirements": "特殊需求",
+    "empty": "暫無常用聯絡人",
+    "emptyHint": "新增常用聯絡人後，下單時可快速填寫參與者資訊",
+    "limitReached": "最多保存 20 位聯絡人",
+    "saved": "聯絡人已保存",
+    "updated": "聯絡人已更新",
+    "deleted": "聯絡人已刪除",
+    "selectContact": "選擇常用聯絡人",
+    "saveAsContact": "保存為常用聯絡人",
+    "self": "本人"
   }
 }
