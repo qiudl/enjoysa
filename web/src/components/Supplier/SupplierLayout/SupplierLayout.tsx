@@ -14,10 +14,13 @@ import {
   ChevronDown,
   Clock,
   Lock,
+  MessageSquare,
+  Download,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
 import { BookmarkPanel } from '../BookmarkPanel/BookmarkPanel';
+import { NotificationPanel } from '../NotificationPanel/NotificationPanel';
 import { ShopPreviewModal } from '../ShopPreviewModal/ShopPreviewModal';
 import styles from './SupplierLayout.module.css';
 
@@ -38,7 +41,9 @@ const menuItems: MenuItem[] = [
   { key: 'dashboard', path: '/supplier', icon: <LayoutDashboard size={20} />, labelKey: 'supplier.nav.dashboard' },
   { key: 'products', path: '/supplier/products', icon: <Package size={20} />, labelKey: 'supplier.nav.products', requireApproved: true },
   { key: 'orders', path: '/supplier/orders', icon: <ShoppingCart size={20} />, labelKey: 'supplier.nav.orders', requireApproved: true },
+  { key: 'reviews', path: '/supplier/reviews', icon: <MessageSquare size={20} />, labelKey: 'supplier.nav.reviews', requireApproved: true },
   { key: 'settlement', path: '/supplier/settlement', icon: <DollarSign size={20} />, labelKey: 'supplier.nav.settlement', requireApproved: true },
+  { key: 'exports', path: '/supplier/exports', icon: <Download size={20} />, labelKey: 'supplier.nav.exports', requireApproved: true },
   { key: 'auditLogs', path: '/supplier/audit-logs', icon: <FileText size={20} />, labelKey: 'supplier.nav.auditLogs' },
   { key: 'settings', path: '/supplier/settings', icon: <Settings size={20} />, labelKey: 'supplier.nav.settings' },
 ];
@@ -171,6 +176,9 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
             {/* Bookmarks */}
             <BookmarkPanel />
+
+            {/* Notifications */}
+            <NotificationPanel />
 
             {/* Language Switcher */}
             <LanguageSwitcher

@@ -1586,7 +1586,9 @@
       "dashboard": "Dashboard",
       "products": "Products",
       "orders": "Orders",
+      "reviews": "Reviews",
       "settlement": "Settlement",
+      "exports": "Exports",
       "auditLogs": "Audit Logs",
       "settings": "Settings"
     },
@@ -1824,6 +1826,49 @@
       "today": "Today",
       "prevMonth": "Previous Month",
       "nextMonth": "Next Month"
+    },
+    "reviews": {
+      "title": "Review Management",
+      "all": "All",
+      "pendingReply": "Pending Reply",
+      "replied": "Replied",
+      "avgRating": "Average Rating",
+      "totalReviews": "Total Reviews",
+      "replyRate": "Reply Rate",
+      "reply": "Reply",
+      "supplierReply": "Supplier Reply",
+      "replyPlaceholder": "Type your reply...",
+      "submitReply": "Send Reply",
+      "noReviews": "No reviews yet"
+    },
+    "exports": {
+      "title": "Data Export",
+      "ordersTitle": "Orders Export",
+      "ordersDesc": "Export order data including details, customer info and amounts",
+      "settlementTitle": "Settlement Export",
+      "settlementDesc": "Export settlement records with periods, amounts and commissions",
+      "productsTitle": "Products Export",
+      "productsDesc": "Export product list with prices, stock and sales data",
+      "dateRange": "Date Range",
+      "format": "Format",
+      "exportBtn": "Export"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "unread",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications",
+      "ago": "ago",
+      "newOrder": "New Order",
+      "newOrderDesc": "You have received a new order, please process it promptly",
+      "systemUpdate": "System Update",
+      "systemUpdateDesc": "Platform features updated, data export now available",
+      "paymentReceived": "Payment Received",
+      "paymentReceivedDesc": "Your settlement of AUD 4,104.00 has been deposited",
+      "orderCancelled": "Order Cancelled",
+      "orderCancelledDesc": "A customer cancelled an order, refund processed automatically",
+      "maintenance": "System Maintenance",
+      "maintenanceDesc": "Scheduled maintenance this Saturday 02:00-06:00 ACDT"
     }
   },
   "contacts": {

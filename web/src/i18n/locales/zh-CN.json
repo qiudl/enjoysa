@@ -1664,7 +1664,9 @@
       "dashboard": "工作台",
       "products": "商品管理",
       "orders": "订单管理",
+      "reviews": "评价管理",
       "settlement": "财务结算",
+      "exports": "数据导出",
       "auditLogs": "操作日志",
       "settings": "店铺设置"
     },
@@ -1824,6 +1826,49 @@
       "today": "今天",
       "prevMonth": "上个月",
       "nextMonth": "下个月"
+    },
+    "reviews": {
+      "title": "评价管理",
+      "all": "全部",
+      "pendingReply": "待回复",
+      "replied": "已回复",
+      "avgRating": "平均评分",
+      "totalReviews": "评价总数",
+      "replyRate": "回复率",
+      "reply": "回复",
+      "supplierReply": "商家回复",
+      "replyPlaceholder": "输入回复内容...",
+      "submitReply": "发送回复",
+      "noReviews": "暂无评价"
+    },
+    "exports": {
+      "title": "数据导出",
+      "ordersTitle": "订单导出",
+      "ordersDesc": "导出订单数据，包含订单详情、客户信息和金额",
+      "settlementTitle": "结算导出",
+      "settlementDesc": "导出结算记录，包含周期、金额和佣金明细",
+      "productsTitle": "产品导出",
+      "productsDesc": "导出产品列表，包含价格、库存和销量数据",
+      "dateRange": "日期范围",
+      "format": "导出格式",
+      "exportBtn": "导出"
+    },
+    "notifications": {
+      "title": "消息通知",
+      "unread": "条未读",
+      "markAllRead": "全部已读",
+      "empty": "暂无通知",
+      "ago": "前",
+      "newOrder": "新订单",
+      "newOrderDesc": "您收到一笔新订单，请及时处理",
+      "systemUpdate": "系统更新",
+      "systemUpdateDesc": "平台功能已更新，新增数据导出功能",
+      "paymentReceived": "到账通知",
+      "paymentReceivedDesc": "您的结算款项 AUD 4,104.00 已到账",
+      "orderCancelled": "订单取消",
+      "orderCancelledDesc": "客户取消了一笔订单，已自动退款",
+      "maintenance": "系统维护",
+      "maintenanceDesc": "计划于本周六 02:00-06:00 进行系统维护"
     }
   },
   "contacts": {

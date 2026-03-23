@@ -33,7 +33,9 @@ const SupplierProductListPage = React.lazy(() => import('./pages/Supplier/Suppli
 const SupplierProductFormPage = React.lazy(() => import('./pages/Supplier/SupplierProductFormPage/SupplierProductFormPage'));
 const SupplierSchedulePage = React.lazy(() => import('./pages/Supplier/SupplierSchedulePage/SupplierSchedulePage'));
 const SupplierOrderListPage = React.lazy(() => import('./pages/Supplier/SupplierOrderListPage/SupplierOrderListPage'));
+const SupplierReviewsPage = React.lazy(() => import('./pages/Supplier/SupplierReviewsPage/SupplierReviewsPage'));
 const SupplierSettlementPage = React.lazy(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
+const SupplierExportPage = React.lazy(() => import('./pages/Supplier/SupplierExportPage/SupplierExportPage'));
 const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
 const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
@@ -684,6 +686,19 @@ function SupplierOrderListPageWrapper() {
   );
 }
 
+// 包装组件：SupplierReviewsPage
+function SupplierReviewsPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierLayout>
+      <SupplierReviewsPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
 // 包装组件：SupplierSettlementPage
 function SupplierSettlementPageWrapper() {
   const navigate = useNavigate();
@@ -691,6 +706,19 @@ function SupplierSettlementPageWrapper() {
   return (
     <SupplierLayout>
       <SupplierSettlementPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierExportPage
+function SupplierExportPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierLayout>
+      <SupplierExportPage
         onNavigate={(path) => navigate(path)}
       />
     </SupplierLayout>
@@ -945,7 +973,9 @@ function App() {
         <Route path="/supplier/products/:id/edit" element={<SupplierAuthGuard><SupplierProductEditPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/:id/schedules" element={<SupplierAuthGuard><SupplierSchedulePageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/orders" element={<SupplierAuthGuard><SupplierOrderListPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/reviews" element={<SupplierAuthGuard><SupplierReviewsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/exports" element={<SupplierAuthGuard><SupplierExportPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settings" element={<SupplierAuthGuard><SupplierSettingsPageWrapper /></SupplierAuthGuard>} />
 
