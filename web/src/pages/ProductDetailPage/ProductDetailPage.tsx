@@ -130,7 +130,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       const schedule = schedules.find((s) => s.date === dateStr);
       const available = scheduleDates.size === 0
         ? true
-        : schedule ? (schedule.total_slots - schedule.booked_slots > 0 && schedule.status === 'active') : false;
+        : schedule ? (schedule.total_slots - schedule.booked_slots > 0 && schedule.status === 'available') : false;
       dates.push({
         value: dateStr,
         label: date.toLocaleDateString(currentLang === 'zh' ? 'zh-CN' : 'en-US', {
