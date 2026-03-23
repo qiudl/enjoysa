@@ -1950,7 +1950,11 @@
       "orderCancelled": "Order Cancelled",
       "orderCancelledDesc": "A customer cancelled an order, refund processed automatically",
       "maintenance": "System Maintenance",
-      "maintenanceDesc": "Scheduled maintenance this Saturday 02:00-06:00 ACDT"
+      "maintenanceDesc": "Scheduled maintenance this Saturday 02:00-06:00 ACDT",
+      "all": "All",
+      "unreadTab": "Unread",
+      "readTab": "Read",
+      "viewAll": "View All"
     },
     "team": {
       "title": "Team Management",
@@ -1961,6 +1965,7 @@
       "roleAdmin": "Admin",
       "roleOperations": "Operations",
       "roleFinance": "Finance",
+      "roleStaff": "Staff",
       "roleSupport": "Support",
       "statusActive": "Active",
       "statusDisabled": "Disabled",

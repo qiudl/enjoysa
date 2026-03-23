@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
 	"enjoysa-backend/internal/models"
+	notifservice "enjoysa-backend/internal/notification/service"
 	orderstore "enjoysa-backend/internal/order/store"
 	productstore "enjoysa-backend/internal/product/store"
 	"enjoysa-backend/internal/review/model"
@@ -18,17 +20,20 @@ type ReviewHandler struct {
 	reviewStore  *store.ReviewStore
 	orderStore   *orderstore.OrderStore
 	productStore *productstore.ProductStore
+	notifSvc     *notifservice.NotificationService
 }
 
 func NewReviewHandler(
 	reviewStore *store.ReviewStore,
 	orderStore *orderstore.OrderStore,
 	productStore *productstore.ProductStore,
+	notifSvc *notifservice.NotificationService,
 ) *ReviewHandler {
 	return &ReviewHandler{
 		reviewStore:  reviewStore,
 		orderStore:   orderStore,
 		productStore: productStore,
+		notifSvc:     notifSvc,
 	}
 }
 
@@ -91,6 +96,14 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 	if err := h.reviewStore.Create(review); err != nil {
 		response.ServerError(c, "Failed to create review")
 		return
+	}
+
+	// Notify supplier
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", review.SupplierID, "new_review",
+			"New Review Received",
+			fmt.Sprintf("%d-star review for %s", review.Rating, order.ProductName),
+			"review", review.ID)
 	}
 
 	// Update product rating

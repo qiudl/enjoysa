@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	authmodel "enjoysa-backend/internal/auth/model"
 	authstore "enjoysa-backend/internal/auth/store"
 	"enjoysa-backend/internal/models"
+	notifservice "enjoysa-backend/internal/notification/service"
 	orderstore "enjoysa-backend/internal/order/store"
 	producthandler "enjoysa-backend/internal/product/handler"
 	productmodel "enjoysa-backend/internal/product/model"
@@ -28,6 +30,7 @@ type AdminHandler struct {
 	regionStore   *productstore.RegionStore
 	categoryStore *productstore.CategoryStore
 	audit         *audit.Logger
+	notifSvc      *notifservice.NotificationService
 }
 
 func NewAdminHandler(
@@ -39,6 +42,7 @@ func NewAdminHandler(
 	regionStore *productstore.RegionStore,
 	categoryStore *productstore.CategoryStore,
 	auditLogger *audit.Logger,
+	notifSvc *notifservice.NotificationService,
 ) *AdminHandler {
 	return &AdminHandler{
 		db:            db,
@@ -49,6 +53,7 @@ func NewAdminHandler(
 		regionStore:   regionStore,
 		categoryStore: categoryStore,
 		audit:         auditLogger,
+		notifSvc:      notifSvc,
 	}
 }
 
@@ -286,6 +291,14 @@ func (h *AdminHandler) ApproveProduct(c *gin.Context) {
 		return
 	}
 
+	// Notify supplier
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", product.SupplierID, "product_approved",
+			"Product Approved",
+			fmt.Sprintf("Your product '%s' has been approved and is now live", product.NameEn),
+			"product", product.ID)
+	}
+
 	// Update region attraction count
 	if product.RegionID > 0 {
 		h.regionStore.UpdateAttractionCount(product.RegionID)
@@ -316,6 +329,16 @@ func (h *AdminHandler) RejectProduct(c *gin.Context) {
 	if err := h.productStore.RejectWithReason(product.ID, req.Reason); err != nil {
 		response.ServerError(c, "Failed to reject product")
 		return
+	}
+
+	// Notify supplier
+	if h.notifSvc != nil {
+		content := fmt.Sprintf("Your product '%s' has been rejected", product.NameEn)
+		if req.Reason != "" {
+			content += ". Reason: " + req.Reason
+		}
+		_ = h.notifSvc.Send("supplier", product.SupplierID, "product_rejected",
+			"Product Rejected", content, "product", product.ID)
 	}
 
 	// Update region attraction count (product was potentially approved before)

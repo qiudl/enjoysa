@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
 	"enjoysa-backend/internal/models"
+	notifservice "enjoysa-backend/internal/notification/service"
 	ordermodel "enjoysa-backend/internal/order/model"
 	"enjoysa-backend/internal/order/store"
 	productstore "enjoysa-backend/internal/product/store"
@@ -17,17 +19,20 @@ type OrderHandler struct {
 	orderStore    *store.OrderStore
 	productStore  *productstore.ProductStore
 	scheduleStore *productstore.ScheduleStore
+	notifSvc      *notifservice.NotificationService
 }
 
 func NewOrderHandler(
 	orderStore *store.OrderStore,
 	productStore *productstore.ProductStore,
 	scheduleStore *productstore.ScheduleStore,
+	notifSvc *notifservice.NotificationService,
 ) *OrderHandler {
 	return &OrderHandler{
 		orderStore:    orderStore,
 		productStore:  productStore,
 		scheduleStore: scheduleStore,
+		notifSvc:      notifSvc,
 	}
 }
 
@@ -164,6 +169,14 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		Remark:       "Order created",
 	})
 
+	// Notify supplier
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", order.SupplierID, "new_order",
+			"New Order Received",
+			fmt.Sprintf("Order #%s for %s — %d unit(s), AUD %.2f", order.OrderNo, order.ProductName, order.Quantity, order.TotalPrice),
+			"order", order.ID)
+	}
+
 	response.Created(c, order)
 }
 
@@ -245,6 +258,14 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	if err := h.orderStore.Update(order); err != nil {
 		response.ServerError(c, "Failed to cancel order")
 		return
+	}
+
+	// Notify supplier
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", order.SupplierID, "order_cancelled",
+			"Order Cancelled",
+			fmt.Sprintf("Order #%s for %s has been cancelled", order.OrderNo, order.ProductName),
+			"order", order.ID)
 	}
 
 	// Release schedule slots if applicable

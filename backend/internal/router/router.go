@@ -132,7 +132,6 @@ func Setup(cfg Config) *gin.Engine {
 
 	// === Notification service ===
 	notifSvc := notifservice.NewNotificationService(nStore)
-	_ = notifSvc // available for event triggers
 
 	// === Handlers ===
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
@@ -141,11 +140,11 @@ func Setup(cfg Config) *gin.Engine {
 	publicProductHandler := producthandler.NewPublicProductHandler(cfg.DB, pStore, regionStore, categoryStore, scheduleStore)
 	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
-	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore)
+	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore, notifSvc)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
-	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger)
+	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
@@ -153,7 +152,7 @@ func Setup(cfg Config) *gin.Engine {
 
 	// New module handlers
 	exportHandler := exporthandler.NewExportHandler(cfg.DB)
-	reviewHandler := reviewhandler.NewReviewHandler(rvStore, oStore, pStore)
+	reviewHandler := reviewhandler.NewReviewHandler(rvStore, oStore, pStore, notifSvc)
 	notifHandler := notifhandler.NewNotificationHandler(nStore)
 	teamHandler := teamhandler.NewTeamHandler(tStore, emailService, cfg.FrontendURL)
 

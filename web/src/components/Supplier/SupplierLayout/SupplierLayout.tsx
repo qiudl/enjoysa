@@ -184,7 +184,7 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             <BookmarkPanel />
 
             {/* Notifications */}
-            <NotificationPanel />
+            <NotificationPanel onViewAll={() => navigate('/supplier/notifications')} />
 
             {/* Language Switcher */}
             <LanguageSwitcher

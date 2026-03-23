@@ -1950,7 +1950,11 @@
       "orderCancelled": "订单取消",
       "orderCancelledDesc": "客户取消了一笔订单，已自动退款",
       "maintenance": "系统维护",
-      "maintenanceDesc": "计划于本周六 02:00-06:00 进行系统维护"
+      "maintenanceDesc": "计划于本周六 02:00-06:00 进行系统维护",
+      "all": "全部",
+      "unreadTab": "未读",
+      "readTab": "已读",
+      "viewAll": "查看全部"
     },
     "team": {
       "title": "团队管理",
@@ -1961,6 +1965,7 @@
       "roleAdmin": "管理员",
       "roleOperations": "运营",
       "roleFinance": "财务",
+      "roleStaff": "员工",
       "roleSupport": "客服",
       "statusActive": "活跃",
       "statusDisabled": "已停用",
