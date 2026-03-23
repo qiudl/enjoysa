@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
+import { BookmarkPanel } from '../BookmarkPanel/BookmarkPanel';
+import { ShopPreviewModal } from '../ShopPreviewModal/ShopPreviewModal';
 import styles from './SupplierLayout.module.css';
 
 interface SupplierLayoutProps {
@@ -164,6 +166,12 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
           </div>
 
           <div className={styles.topBarRight}>
+            {/* Shop Preview */}
+            {isApproved && <ShopPreviewModal />}
+
+            {/* Bookmarks */}
+            <BookmarkPanel />
+
             {/* Language Switcher */}
             <LanguageSwitcher
               variant="dropdown"

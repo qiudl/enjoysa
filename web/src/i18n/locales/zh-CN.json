@@ -1643,6 +1643,21 @@
       "featureLocked": "此功能需审核通过后使用"
     },
     "logout": "退出登录",
+    "bookmarks": {
+      "title": "收藏夹",
+      "addCurrent": "收藏此页",
+      "alreadyAdded": "已收藏",
+      "empty": "暂无收藏的页面，点击「收藏此页」快速保存常用页面"
+    },
+    "shopPreview": {
+      "title": "店铺预览",
+      "button": "预览店铺",
+      "rating": "评分",
+      "products": "产品",
+      "reviews": "评价",
+      "allProducts": "全部产品",
+      "noProducts": "暂无产品"
+    },
     "productForm": {
       "steps": {
         "basic": "基本信息",

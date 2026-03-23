@@ -1565,6 +1565,21 @@
       "featureLocked": "This feature requires approval"
     },
     "logout": "Logout",
+    "bookmarks": {
+      "title": "Bookmarks",
+      "addCurrent": "Bookmark This",
+      "alreadyAdded": "Bookmarked",
+      "empty": "No bookmarked pages yet. Click \"Bookmark This\" to save frequently used pages."
+    },
+    "shopPreview": {
+      "title": "Shop Preview",
+      "button": "Preview Shop",
+      "rating": "Rating",
+      "products": "Products",
+      "reviews": "Reviews",
+      "allProducts": "All Products",
+      "noProducts": "No products yet"
+    },
     "login": {
       "brandTitle": "Supplier Portal",
       "feature1": "Hotel / B&B Management",
