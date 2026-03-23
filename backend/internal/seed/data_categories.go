@@ -48,6 +48,13 @@ func (s *Seeder) seedCategories() error {
 			Icon:      "\U0001F3AD", // performing arts
 			SortOrder: 6,
 		},
+		{
+			Slug:      "accommodation",
+			NameZh:    "住宿",
+			NameEn:    "Accommodation",
+			Icon:      "\U0001F3E8", // hotel
+			SortOrder: 7,
+		},
 	}
 
 	count := 0

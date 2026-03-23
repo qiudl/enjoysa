@@ -18,7 +18,114 @@
   background: white;
   border-radius: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem;
+  overflow: hidden;
+}
+
+/* Search Tabs */
+.searchTabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.searchTab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  position: relative;
+}
+
+.searchTab:hover {
+  color: #1a1a2e;
+  background: #f8fafc;
+}
+
+.searchTabActive {
+  color: var(--color-primary, #2563eb);
+  font-weight: 600;
+}
+
+.searchTabActive::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background: var(--color-primary, #2563eb);
+  border-radius: 1px;
+}
+
+.searchBody {
+  padding: 0.75rem;
+}
+
+/* Hotel Search Form (inside search container) */
+.hotelSearchForm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.hotelSelect {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #1a1a2e;
+  background: white;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.hotelSelect:focus {
+  outline: none;
+  border-color: var(--color-primary, #2563eb);
+}
+
+.hotelInput {
+  flex: 1.5;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #1a1a2e;
+  min-width: 0;
+}
+
+.hotelInput:focus {
+  outline: none;
+  border-color: var(--color-primary, #2563eb);
+}
+
+.hotelInput::placeholder {
+  color: #94a3b8;
+}
+
+.hotelSearchBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
+  background: var(--color-primary, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.hotelSearchBtn:hover {
+  background: #1d4ed8;
 }
 
 /* Sections */
@@ -234,5 +341,14 @@
 
   .searchContainer {
     border-radius: 0.75rem;
+  }
+
+  .hotelSearchForm {
+    flex-direction: column;
+  }
+
+  .searchTab {
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
   }
 }

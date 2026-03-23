@@ -89,6 +89,7 @@ func (s *Seeder) Seed() error {
 		{"Users", s.seedUsers},
 		{"Orders", s.seedOrders},
 		{"Settlements", s.seedSettlements},
+		{"Hotels", s.seedHotels},
 		{"Notifications", s.seedNotifications},
 		{"Banners", s.seedBanners},
 	}
@@ -119,6 +120,7 @@ func (s *Seeder) PrintSummary() {
 		"products", "product_images", "product_packages",
 		"product_highlights", "product_faqs", "product_schedules",
 		"users", "orders", "order_status_histories",
+		"hotels", "hotel_images", "hotel_packages",
 		"settlements", "notifications", "banners",
 	}
 	for _, table := range order {

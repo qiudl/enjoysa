@@ -819,7 +819,40 @@
     "easyBooking": "便捷预订",
     "easyBookingDesc": "支持多种支付方式，即时确认",
     "support247": "全天候服务",
-    "support247Desc": "中文客服团队，随时解答您的问题"
+    "support247Desc": "中文客服团队，随时解答您的问题",
+    "tabActivities": "体验活动",
+    "tabHotels": "酒店住宿"
+  },
+  "hotel": {
+    "searchTitle": "搜索南澳酒店",
+    "destination": "目的地",
+    "allRegions": "所有区域",
+    "keyword": "关键词",
+    "keywordPlaceholder": "酒店名称或地址...",
+    "search": "搜索",
+    "results": "搜索结果",
+    "hotelsFound": "家酒店",
+    "sortBy": "排序",
+    "sortOptions": {
+      "recommend": "推荐",
+      "priceLow": "价格从低到高",
+      "priceHigh": "价格从高到低",
+      "rating": "评分最高"
+    },
+    "priceRange": "价格范围",
+    "minPrice": "最低价",
+    "maxPrice": "最高价",
+    "starRating": "酒店星级",
+    "star": "星",
+    "accommodationType": "住宿类型",
+    "facilities": "酒店设施",
+    "clearFilters": "清除筛选",
+    "priceFrom": "起价",
+    "perNight": "晚",
+    "reviews": "条评价",
+    "distanceToCenter": "距市中心 {{km}}km",
+    "noResults": "未找到匹配的酒店",
+    "tryOther": "请尝试调整搜索条件"
   },
   "region": {
     "attractionCount": "{{count}} 个景点",

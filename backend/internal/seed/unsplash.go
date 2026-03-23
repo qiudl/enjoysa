@@ -93,3 +93,13 @@ func regionImage(index int) string {
 	photos := unsplashPhotos[cat]
 	return unsplashURL(photos[1], 800, 400)
 }
+
+func unsplashHotel(index int) string {
+	photos := unsplashPhotos["accommodation"]
+	return unsplashURL(photos[index%len(photos)], 800, 600)
+}
+
+func unsplashHotelRoom(index int) string {
+	photos := unsplashPhotos["accommodation"]
+	return unsplashURL(photos[(index+2)%len(photos)], 800, 600)
+}

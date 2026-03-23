@@ -137,6 +137,7 @@ func Setup(cfg Config) *gin.Engine {
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
 	supplierAuthHandler := authhandler.NewSupplierAuthHandler(supplierUserStore, cfg.JWTService)
 	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService, cfg.DB)
+	hotelStore := productstore.NewHotelStore(cfg.DB)
 	publicProductHandler := producthandler.NewPublicProductHandler(cfg.DB, pStore, regionStore, categoryStore, scheduleStore)
 	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
@@ -149,6 +150,8 @@ func Setup(cfg Config) *gin.Engine {
 	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
+
+	hotelHandler := producthandler.NewHotelHandler(hotelStore)
 
 	// New module handlers
 	exportHandler := exporthandler.NewExportHandler(cfg.DB)
@@ -242,6 +245,9 @@ func Setup(cfg Config) *gin.Engine {
 	v1.GET("/suppliers/:id", publicProductHandler.GetSupplier)
 	v1.GET("/suppliers/:id/products", publicProductHandler.GetSupplierProducts)
 	v1.GET("/banners", adminHandler.ListBanners)
+
+	// Hotel search (public)
+	v1.GET("/hotels/search", hotelHandler.Search)
 
 	// Product reviews (public)
 	v1.GET("/products/:id/reviews", reviewHandler.ListProductReviews)

@@ -16,6 +16,7 @@ import type { BannerSlide } from '../../components/Common/HeroBanner/HeroBanner'
 import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
+import { Search } from 'lucide-react';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -31,6 +32,8 @@ export interface HomePageProps {
   loading?: boolean;
   /** 搜索回调 */
   onSearch?: (keyword: string) => void;
+  /** 酒店搜索回调 */
+  onHotelSearch?: (params: { keyword?: string; regionId?: number }) => void;
   /** 产品点击 */
   onProductClick?: (product: Product) => void;
   /** 区域点击 */
@@ -80,6 +83,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   cartCount = 0,
   loading = false,
   onSearch,
+  onHotelSearch,
   onProductClick,
   onRegionClick,
   onAttractionClick,
@@ -90,7 +94,11 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
+  const isZh = currentLang === 'zh';
   const [, setSearchKeyword] = useState('');
+  const [searchTab, setSearchTab] = useState<'activity' | 'hotel'>('activity');
+  const [hotelKeyword, setHotelKeyword] = useState('');
+  const [hotelRegionId, setHotelRegionId] = useState<number | undefined>();
   const [regions, setRegions] = useState<Region[]>([]);
   const [categories, setCategories] = useState<(ProductCategory & { productCount?: number })[]>([]);
   const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
@@ -166,14 +174,66 @@ export const HomePage: React.FC<HomePageProps> = ({
         onSlideClick={onAttractionClick}
       />
 
-      {/* Search Bar */}
+      {/* Search Tabs */}
       <section className={styles.searchSection}>
         <div className={styles.searchContainer}>
-          <SearchBar
-            placeholder={t('home.searchPlaceholder')}
-            size="lg"
-            onSearch={handleSearch}
-          />
+          <div className={styles.searchTabs}>
+            <button
+              className={`${styles.searchTab} ${searchTab === 'activity' ? styles.searchTabActive : ''}`}
+              onClick={() => setSearchTab('activity')}
+            >
+              {t('home.tabActivities')}
+            </button>
+            <button
+              className={`${styles.searchTab} ${searchTab === 'hotel' ? styles.searchTabActive : ''}`}
+              onClick={() => setSearchTab('hotel')}
+            >
+              {t('home.tabHotels')}
+            </button>
+          </div>
+          {searchTab === 'activity' ? (
+            <div className={styles.searchBody}>
+              <SearchBar
+                placeholder={t('home.searchPlaceholder')}
+                size="lg"
+                onSearch={handleSearch}
+              />
+            </div>
+          ) : (
+            <div className={styles.searchBody}>
+              <div className={styles.hotelSearchForm}>
+                <select
+                  className={styles.hotelSelect}
+                  value={hotelRegionId || ''}
+                  onChange={(e) => setHotelRegionId(e.target.value ? Number(e.target.value) : undefined)}
+                >
+                  <option value="">{t('hotel.allRegions')}</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {isZh ? r.name : r.nameEn}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className={styles.hotelInput}
+                  type="text"
+                  value={hotelKeyword}
+                  onChange={(e) => setHotelKeyword(e.target.value)}
+                  placeholder={t('hotel.keywordPlaceholder')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onHotelSearch?.({ keyword: hotelKeyword, regionId: hotelRegionId });
+                  }}
+                />
+                <button
+                  className={styles.hotelSearchBtn}
+                  onClick={() => onHotelSearch?.({ keyword: hotelKeyword, regionId: hotelRegionId })}
+                >
+                  <Search size={18} />
+                  {t('hotel.search')}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

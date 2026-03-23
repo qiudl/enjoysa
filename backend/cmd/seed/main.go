@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"enjoysa-backend/internal/core/config"
+	productmodel "enjoysa-backend/internal/product/model"
 	"enjoysa-backend/internal/seed"
 
 	"gorm.io/driver/postgres"
@@ -41,6 +42,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
+
+	// Ensure schema is up to date (add new columns like metadata)
+	db.AutoMigrate(&productmodel.Product{})
 
 	seeder := seed.NewSeeder(db)
 

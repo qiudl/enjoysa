@@ -25,6 +25,7 @@ const SupplierShopPage = React.lazy(() => import('./pages/SupplierShopPage/Suppl
 const FaqPage = React.lazy(() => import('./pages/FaqPage/FaqPage'));
 const TermsPage = React.lazy(() => import('./pages/TermsPage/TermsPage'));
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage/PrivacyPage'));
+const HotelSearchPage = React.lazy(() => import('./pages/HotelSearchPage/HotelSearchPage'));
 const RegionPage = React.lazy(() => import('./pages/RegionPage/RegionPage'));
 const AttractionDetailPage = React.lazy(() => import('./pages/AttractionDetailPage/AttractionDetailPage'));
 // B端供应商页面
@@ -99,6 +100,31 @@ function HomePageWrapper() {
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
+      onHotelSearch={(params) => {
+        const qs = new URLSearchParams();
+        if (params.keyword) qs.set('keyword', params.keyword);
+        if (params.regionId) qs.set('region', String(params.regionId));
+        navigate(`/hotels?${qs.toString()}`);
+      }}
+      onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：HotelSearchPage
+function HotelSearchPageWrapper() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { getCartCount } = useCart();
+
+  return (
+    <HotelSearchPage
+      cartCount={getCartCount()}
+      initialKeyword={searchParams.get('keyword') || ''}
+      initialRegionId={searchParams.get('region') ? Number(searchParams.get('region')) : undefined}
+      onHotelClick={(hotelId) => navigate(`/product/${hotelId}`)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
     />
   );
@@ -1053,6 +1079,9 @@ function App() {
         {/* 区域与景点页面 */}
         <Route path="/regions/:id" element={<RegionPageWrapper />} />
         <Route path="/attractions/:id" element={<AttractionDetailPageWrapper />} />
+
+        {/* 酒店搜索 */}
+        <Route path="/hotels" element={<HotelSearchPageWrapper />} />
 
         {/* 产品页面 */}
         <Route path="/products" element={<ProductListPageWrapper />} />

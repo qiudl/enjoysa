@@ -103,6 +103,7 @@ export interface ApiProduct {
   packages?: ApiProductPackage[];
   highlights?: ApiProductHighlight[];
   faqs?: ApiProductFAQ[];
+  metadata?: Record<string, unknown>;
   total_stock?: number;
   available_stock?: number;
   created_at: string;

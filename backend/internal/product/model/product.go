@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"enjoysa-backend/internal/models"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -48,8 +49,9 @@ type Product struct {
 	// 元数据
 	Duration    string `gorm:"size:50" json:"duration"`      // e.g. "3 hours", "Full day"
 	GroupSize   string `gorm:"size:50" json:"group_size"`     // e.g. "2-15"
-	Tags        string `gorm:"type:jsonb;default:'[]'" json:"tags"` // JSON array of tag strings
-	IsFeatured  bool   `gorm:"default:false" json:"is_featured"`
+	Tags        string         `gorm:"type:jsonb;default:'[]'" json:"tags"` // JSON array of tag strings
+	Metadata    datatypes.JSON `gorm:"type:jsonb;default:'{}'" json:"metadata"`
+	IsFeatured  bool           `gorm:"default:false" json:"is_featured"`
 	SortOrder   int    `gorm:"default:0" json:"sort_order"`
 
 	// 评分

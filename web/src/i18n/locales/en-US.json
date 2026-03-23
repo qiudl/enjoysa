@@ -819,7 +819,40 @@
     "easyBooking": "Easy Booking",
     "easyBookingDesc": "Multiple payment methods, instant confirmation",
     "support247": "24/7 Support",
-    "support247Desc": "Chinese customer service team, always ready to help"
+    "support247Desc": "Chinese customer service team, always ready to help",
+    "tabActivities": "Activities",
+    "tabHotels": "Hotels"
+  },
+  "hotel": {
+    "searchTitle": "Search Hotels in South Australia",
+    "destination": "Destination",
+    "allRegions": "All Regions",
+    "keyword": "Keyword",
+    "keywordPlaceholder": "Hotel name or address...",
+    "search": "Search",
+    "results": "Search Results",
+    "hotelsFound": "hotels",
+    "sortBy": "Sort by",
+    "sortOptions": {
+      "recommend": "Recommended",
+      "priceLow": "Price: Low to High",
+      "priceHigh": "Price: High to Low",
+      "rating": "Highest Rated"
+    },
+    "priceRange": "Price Range",
+    "minPrice": "Min",
+    "maxPrice": "Max",
+    "starRating": "Star Rating",
+    "star": "Star",
+    "accommodationType": "Accommodation Type",
+    "facilities": "Facilities",
+    "clearFilters": "Clear Filters",
+    "priceFrom": "From",
+    "perNight": "night",
+    "reviews": "reviews",
+    "distanceToCenter": "{{km}}km to center",
+    "noResults": "No hotels found",
+    "tryOther": "Try adjusting your search criteria"
   },
   "region": {
     "attractionCount": "{{count}} attractions",
