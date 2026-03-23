@@ -17,6 +17,8 @@ import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import { Search } from 'lucide-react';
+import { TestimonialSection, PartnerSection, PopularSection } from '../../components/Homepage';
+import { homepagePublicService, type HomepageConfig } from '../../services/homepageService';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -104,6 +106,18 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig | null>(null);
+
+  // Fetch homepage CMS config
+  useEffect(() => {
+    homepagePublicService.getConfig().then(setHomepageConfig).catch(() => {});
+  }, []);
+
+  const isModuleVisible = (key: string) => {
+    if (!homepageConfig) return true; // show all by default while loading
+    const mod = homepageConfig.modules.find((m) => m.module_key === key);
+    return mod ? mod.is_visible : true;
+  };
 
   // Fetch banners from API
   useEffect(() => {
@@ -238,91 +252,133 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* Region Navigation */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t('region.title')}</h2>
-          <p className={styles.sectionSubtitle}>{t('region.subtitle')}</p>
-        </div>
-        <div className={styles.regionsGrid}>
-          {regions.map((region) => (
-            <RegionCard
-              key={region.id}
-              region={region}
-              onClick={onRegionClick}
-            />
-          ))}
-        </div>
-      </section>
+      {isModuleVisible('regions') && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t('region.title')}</h2>
+            <p className={styles.sectionSubtitle}>{t('region.subtitle')}</p>
+          </div>
+          <div className={styles.regionsGrid}>
+            {regions.map((region) => (
+              <RegionCard
+                key={region.id}
+                region={region}
+                onClick={onRegionClick}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured Products */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t('home.featuredProducts')}</h2>
-          <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
-        </div>
-        <div className={styles.productsGrid}>
-          {(loading || productsLoading) ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <CardSkeleton key={i} />
-            ))
-          ) : featuredProducts.length === 0 ? (
-            <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8' }}>{t('common.noData', 'No products yet')}</p>
-          ) : (
-            featuredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                language={currentLang}
-                onClick={onProductClick}
-              />
-            ))
-          )}
-        </div>
-      </section>
+      {isModuleVisible('featured') && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t('home.featuredProducts')}</h2>
+            <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
+          </div>
+          <div className={styles.productsGrid}>
+            {(loading || productsLoading) ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))
+            ) : featuredProducts.length === 0 ? (
+              <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8' }}>{t('common.noData', 'No products yet')}</p>
+            ) : (
+              featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  language={currentLang}
+                  onClick={onProductClick}
+                />
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Categories */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>{t('home.categories')}</h2>
-        <div className={styles.categoriesGrid}>
-          {categories.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              productCount={cat.productCount || 0}
-              icon={cat.icon}
-              language={currentLang}
-              onClick={onCategoryClick}
-            />
-          ))}
-        </div>
-      </section>
+      {isModuleVisible('categories') && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>{t('home.categories')}</h2>
+          <div className={styles.categoriesGrid}>
+            {categories.map((cat) => (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                productCount={cat.productCount || 0}
+                icon={cat.icon}
+                language={currentLang}
+                onClick={onCategoryClick}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Why Choose Us */}
-      <section className={styles.features}>
-        <h2 className={styles.sectionTitle}>{t('home.whyChooseUs')}</h2>
-        <div className={styles.featuresGrid}>
-          <div className={styles.featureCard}>
-            <span className={styles.featureIcon}>🇨🇳</span>
-            <h3>{t('home.localExpert')}</h3>
-            <p>{t('home.localExpertDesc')}</p>
+      {/* Why Choose Us — CMS driven */}
+      {isModuleVisible('features') && (
+        <section className={styles.features}>
+          <h2 className={styles.sectionTitle}>{t('home.whyChooseUs')}</h2>
+          <div className={styles.featuresGrid}>
+            {homepageConfig && homepageConfig.features.length > 0
+              ? homepageConfig.features.map((f) => (
+                  <div className={styles.featureCard} key={f.id}>
+                    <span className={styles.featureIcon}>{f.icon}</span>
+                    <h3>{isZh ? f.title_zh : f.title_en}</h3>
+                    <p>{isZh ? f.desc_zh : f.desc_en}</p>
+                  </div>
+                ))
+              : /* fallback while config loads */
+                <>
+                  <div className={styles.featureCard}>
+                    <span className={styles.featureIcon}>🇨🇳</span>
+                    <h3>{t('home.localExpert')}</h3>
+                    <p>{t('home.localExpertDesc')}</p>
+                  </div>
+                  <div className={styles.featureCard}>
+                    <span className={styles.featureIcon}>💳</span>
+                    <h3>{t('home.bestPrice')}</h3>
+                    <p>{t('home.bestPriceDesc')}</p>
+                  </div>
+                  <div className={styles.featureCard}>
+                    <span className={styles.featureIcon}>⭐</span>
+                    <h3>{t('home.easyBooking')}</h3>
+                    <p>{t('home.easyBookingDesc')}</p>
+                  </div>
+                  <div className={styles.featureCard}>
+                    <span className={styles.featureIcon}>💰</span>
+                    <h3>{t('home.support247')}</h3>
+                    <p>{t('home.support247Desc')}</p>
+                  </div>
+                </>
+            }
           </div>
-          <div className={styles.featureCard}>
-            <span className={styles.featureIcon}>💳</span>
-            <h3>{t('home.bestPrice')}</h3>
-            <p>{t('home.bestPriceDesc')}</p>
-          </div>
-          <div className={styles.featureCard}>
-            <span className={styles.featureIcon}>⭐</span>
-            <h3>{t('home.easyBooking')}</h3>
-            <p>{t('home.easyBookingDesc')}</p>
-          </div>
-          <div className={styles.featureCard}>
-            <span className={styles.featureIcon}>💰</span>
-            <h3>{t('home.support247')}</h3>
-            <p>{t('home.support247Desc')}</p>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* Popular Activities — CMS driven */}
+      {isModuleVisible('popular') && homepageConfig && homepageConfig.popular_products.length > 0 && (
+        <PopularSection
+          products={homepageConfig.popular_products}
+          language={currentLang}
+          onProductClick={onProductClick ? (id) => onProductClick({ id: String(id) } as Product) : undefined}
+        />
+      )}
+
+      {/* Testimonials — CMS driven */}
+      {isModuleVisible('testimonials') && homepageConfig && homepageConfig.testimonials.length > 0 && (
+        <TestimonialSection
+          testimonials={homepageConfig.testimonials}
+          language={currentLang}
+        />
+      )}
+
+      {/* Partners — CMS driven */}
+      {isModuleVisible('partners') && homepageConfig && homepageConfig.partners.length > 0 && (
+        <PartnerSection partners={homepageConfig.partners} />
+      )}
 
       <Footer />
     </div>

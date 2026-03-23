@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"enjoysa-backend/internal/core/config"
+	"enjoysa-backend/internal/homepage"
 	productmodel "enjoysa-backend/internal/product/model"
 	"enjoysa-backend/internal/seed"
 
@@ -43,8 +44,9 @@ func main() {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
 
-	// Ensure schema is up to date (add new columns like metadata)
+	// Ensure schema is up to date (add new columns/tables)
 	db.AutoMigrate(&productmodel.Product{})
+	db.AutoMigrate(&homepage.HomepageFeature{}, &homepage.HomepageTestimonial{}, &homepage.HomepagePartner{}, &homepage.HomepageModule{})
 
 	seeder := seed.NewSeeder(db)
 

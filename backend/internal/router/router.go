@@ -16,6 +16,7 @@ import (
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
+	"enjoysa-backend/internal/homepage"
 	"enjoysa-backend/internal/core/middleware"
 	"enjoysa-backend/internal/email"
 	exporthandler "enjoysa-backend/internal/export/handler"
@@ -152,6 +153,7 @@ func Setup(cfg Config) *gin.Engine {
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
 
 	hotelHandler := producthandler.NewHotelHandler(hotelStore)
+	homepageHandler := homepage.NewHandler(cfg.DB)
 
 	// New module handlers
 	exportHandler := exporthandler.NewExportHandler(cfg.DB)
@@ -248,6 +250,9 @@ func Setup(cfg Config) *gin.Engine {
 
 	// Hotel search (public)
 	v1.GET("/hotels/search", hotelHandler.Search)
+
+	// Homepage config (public)
+	v1.GET("/homepage/config", homepageHandler.GetConfig)
 
 	// Product reviews (public)
 	v1.GET("/products/:id/reviews", reviewHandler.ListProductReviews)
@@ -467,6 +472,29 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/categories", adminHandler.CreateCategory)
 		adminGroup.PUT("/categories/:id", adminHandler.UpdateCategory)
 		adminGroup.DELETE("/categories/:id", adminHandler.DeleteCategory)
+
+		// Homepage CMS
+		adminHomepage := adminGroup.Group("/homepage")
+		{
+			adminHomepage.GET("/features", homepageHandler.ListFeatures)
+			adminHomepage.POST("/features", homepageHandler.CreateFeature)
+			adminHomepage.PUT("/features/:id", homepageHandler.UpdateFeature)
+			adminHomepage.DELETE("/features/:id", homepageHandler.DeleteFeature)
+
+			adminHomepage.GET("/testimonials", homepageHandler.ListTestimonials)
+			adminHomepage.POST("/testimonials", homepageHandler.CreateTestimonial)
+			adminHomepage.POST("/testimonials/sync", homepageHandler.SyncTestimonials)
+			adminHomepage.PUT("/testimonials/:id", homepageHandler.UpdateTestimonial)
+			adminHomepage.DELETE("/testimonials/:id", homepageHandler.DeleteTestimonial)
+
+			adminHomepage.GET("/partners", homepageHandler.ListPartners)
+			adminHomepage.POST("/partners", homepageHandler.CreatePartner)
+			adminHomepage.PUT("/partners/:id", homepageHandler.UpdatePartner)
+			adminHomepage.DELETE("/partners/:id", homepageHandler.DeletePartner)
+
+			adminHomepage.GET("/modules", homepageHandler.ListModules)
+			adminHomepage.PUT("/modules", homepageHandler.UpdateModules)
+		}
 
 		// Settings
 		adminGroup.GET("/settings", settingsHandler.GetAll)

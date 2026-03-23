@@ -55,6 +55,10 @@ func (s *Seeder) Clean() error {
 		"suppliers",
 		"users",
 		"banners",
+		"homepage_modules",
+		"homepage_partners",
+		"homepage_testimonials",
+		"homepage_features",
 		"admins",
 		"regions",
 		"categories",
@@ -92,6 +96,7 @@ func (s *Seeder) Seed() error {
 		{"Hotels", s.seedHotels},
 		{"Notifications", s.seedNotifications},
 		{"Banners", s.seedBanners},
+		{"Homepage", s.seedHomepage},
 	}
 
 	for _, step := range steps {
@@ -122,6 +127,7 @@ func (s *Seeder) PrintSummary() {
 		"users", "orders", "order_status_histories",
 		"hotels", "hotel_images", "hotel_packages",
 		"settlements", "notifications", "banners",
+		"homepage_features", "homepage_testimonials", "homepage_partners", "homepage_modules",
 	}
 	for _, table := range order {
 		if count, ok := s.counts[table]; ok {

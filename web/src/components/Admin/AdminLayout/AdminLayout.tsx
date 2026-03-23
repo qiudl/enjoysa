@@ -18,6 +18,7 @@ import {
   Image,
   MapPin,
   Tag,
+  Home,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
@@ -46,6 +47,7 @@ const menuItems: MenuItem[] = [
   { key: 'banners', path: '/admin/banners', icon: <Image size={20} />, labelKey: 'admin.menu.banners' },
   { key: 'regions', path: '/admin/regions', icon: <MapPin size={20} />, labelKey: 'admin.menu.regions' },
   { key: 'categories', path: '/admin/categories', icon: <Tag size={20} />, labelKey: 'admin.menu.categories' },
+  { key: 'homepage', path: '/admin/homepage', icon: <Home size={20} />, labelKey: 'admin.menu.homepage' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
 ];
 

@@ -64,6 +64,7 @@ const SettingsPage = React.lazy(() => import('./pages/Admin/SettingsPage/Setting
 const BannerList = React.lazy(() => import('./pages/Admin/BannerList/BannerList'));
 const RegionList = React.lazy(() => import('./pages/Admin/RegionList/RegionList'));
 const CategoryList = React.lazy(() => import('./pages/Admin/CategoryList/CategoryList'));
+const HomepageCMS = React.lazy(() => import('./pages/Admin/HomepageCMS/HomepageCMS'));
 
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
@@ -1023,6 +1024,15 @@ function AdminCategoriesWrapper() {
   );
 }
 
+// 包装组件：AdminHomepageCMSWrapper
+function AdminHomepageCMSWrapper() {
+  return (
+    <AdminLayout>
+      <HomepageCMS />
+    </AdminLayout>
+  );
+}
+
 // 404 Page
 function NotFoundPage() {
   const navigate = useNavigate();
@@ -1163,6 +1173,7 @@ function App() {
         <Route path="/admin/banners" element={<AdminAuthGuard><AdminBannersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/regions" element={<AdminAuthGuard><AdminRegionsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/homepage" element={<AdminAuthGuard><AdminHomepageCMSWrapper /></AdminAuthGuard>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

@@ -21,6 +21,7 @@ import (
 	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/models"
 	chatmodel "enjoysa-backend/internal/chat/model"
+	"enjoysa-backend/internal/homepage"
 	notifmodel "enjoysa-backend/internal/notification/model"
 	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
@@ -205,6 +206,11 @@ func autoMigrate(db *gorm.DB) error {
 		&notifmodel.Notification{},
 		// Team invitations
 		&teammodel.SupplierInvitation{},
+		// Homepage CMS
+		&homepage.HomepageFeature{},
+		&homepage.HomepageTestimonial{},
+		&homepage.HomepagePartner{},
+		&homepage.HomepageModule{},
 	)
 }
 

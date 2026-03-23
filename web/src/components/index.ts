@@ -27,3 +27,6 @@ export * from './Supplier';
 
 // Admin
 export * from './Admin';
+
+// Homepage
+export * from './Homepage';
