@@ -43,7 +43,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [categories, setCategories] = useState<(ProductCategory & { productCount?: number })[]>([]);
 
   useEffect(() => {
     regionService.getCategories().then((cats) => {
@@ -52,6 +52,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
         name: c.name,
         nameEn: c.nameEn,
         icon: c.icon,
+        productCount: c.productCount,
       })));
     }).catch(() => {});
   }, []);
@@ -93,7 +94,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  productCount={0}
+                  productCount={category.productCount || 0}
                   icon={category.icon}
                   language={currentLang}
                   onClick={onCategoryClick}
@@ -110,7 +111,7 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
                 <CategoryCard
                   key={category.id}
                   category={category}
-                  productCount={0}
+                  productCount={category.productCount || 0}
                   icon={category.icon}
                   language={currentLang}
                   onClick={onCategoryClick}

@@ -21,8 +21,8 @@ function transformSupplier(s: ApiSupplier): Supplier {
     contactPhone: s.phone,
     contactEmail: s.email,
     status: s.status as SupplierStatus,
-    productCount: 0,
-    orderCount: 0,
+    productCount: s.product_count ?? 0,
+    orderCount: s.order_count ?? 0,
     createdAt: s.created_at,
     logo: s.logo,
   };

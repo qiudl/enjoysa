@@ -15,6 +15,9 @@ import {
   X,
   ChevronDown,
   Bell,
+  Image,
+  MapPin,
+  Tag,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
@@ -40,6 +43,9 @@ const menuItems: MenuItem[] = [
   { key: 'users', path: '/admin/users', icon: <Users size={20} />, labelKey: 'admin.menu.users', permission: 'users.view' },
   { key: 'finance', path: '/admin/finance', icon: <DollarSign size={20} />, labelKey: 'admin.menu.finance', permission: 'finance.view' },
   { key: 'admins', path: '/admin/admins', icon: <Shield size={20} />, labelKey: 'admin.menu.admins', permission: 'admins.view' },
+  { key: 'banners', path: '/admin/banners', icon: <Image size={20} />, labelKey: 'admin.menu.banners' },
+  { key: 'regions', path: '/admin/regions', icon: <MapPin size={20} />, labelKey: 'admin.menu.regions' },
+  { key: 'categories', path: '/admin/categories', icon: <Tag size={20} />, labelKey: 'admin.menu.categories' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
 ];
 

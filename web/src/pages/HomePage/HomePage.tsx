@@ -13,8 +13,6 @@ import { CategoryCard } from '../../components/Category';
 import type { Product, ProductCategory } from '../../types';
 import type { Region } from '../../data/types';
 import type { BannerSlide } from '../../components/Common/HeroBanner/HeroBanner';
-import { regions as staticRegions } from '../../data/regions';
-import { bannerSlides as staticBannerSlides } from '../../data/bannerSlides';
 import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
@@ -49,13 +47,6 @@ export interface HomePageProps {
   onNavClick?: (path: string) => void;
 }
 
-
-// Default categories (overridden by API data when available)
-const defaultCategories: ProductCategory[] = [
-  { id: '1', name: '景点体验', nameEn: 'Attractions & Experiences', icon: '🎯' },
-  { id: '2', name: '美食美酒', nameEn: 'Food & Wine', icon: '🍷' },
-  { id: '3', name: '特色住宿', nameEn: 'Unique Stays', icon: '🏡' },
-];
 
 interface ApiBanner {
   id: number;
@@ -100,47 +91,42 @@ export const HomePage: React.FC<HomePageProps> = ({
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
   const [, setSearchKeyword] = useState('');
-  const [regions, setRegions] = useState<Region[]>(staticRegions);
-  const [categories, setCategories] = useState<ProductCategory[]>(defaultCategories);
-  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>(staticBannerSlides);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [categories, setCategories] = useState<(ProductCategory & { productCount?: number })[]>([]);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
   // Fetch banners from API
   useEffect(() => {
     get<ApiBanner[]>('/banners').then((apiBanners) => {
-      if (apiBanners.length > 0) {
-        setBannerSlides(apiBanners.map(transformBanner));
-      }
+      setBannerSlides(apiBanners.map(transformBanner));
     }).catch(() => {
-      // Fallback to static banners
+      // API error - banners stay empty
     });
   }, []);
 
   // Fetch regions from API
   useEffect(() => {
     regionService.getAll().then((apiRegions) => {
-      if (apiRegions.length > 0) {
-        setRegions(apiRegions);
-      }
+      setRegions(apiRegions);
     }).catch(() => {
-      // Fallback to static data on error
+      // API error - regions stay empty
     });
   }, []);
 
   // Fetch categories from API
   useEffect(() => {
     regionService.getCategories().then((apiCategories) => {
-      if (apiCategories.length > 0) {
-        setCategories(apiCategories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          nameEn: c.nameEn,
-          icon: c.icon,
-        })));
-      }
+      setCategories(apiCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        nameEn: c.nameEn,
+        icon: c.icon,
+        productCount: c.productCount,
+      })));
     }).catch(() => {
-      // Fallback to static data on error
+      // API error - categories stay empty
     });
   }, []);
 
@@ -242,7 +228,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <CategoryCard
               key={cat.id}
               category={cat}
-              productCount={0}
+              productCount={cat.productCount || 0}
               icon={cat.icon}
               language={currentLang}
               onClick={onCategoryClick}

@@ -13,6 +13,10 @@ Thumbs.db
 
 # Binary
 backend/enjoysa-backend
+backend/enjoysa-backend-linux
+
+# Configs with secrets
+backend/configs/config.yaml
 
 # Subprojects
 tuangou/

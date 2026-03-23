@@ -843,6 +843,9 @@
       "users": "Users",
       "finance": "Finance",
       "admins": "Admins",
+      "banners": "Banners",
+      "regions": "Regions",
+      "categories": "Categories",
       "settings": "Settings"
     },
     "logout": "Logout",

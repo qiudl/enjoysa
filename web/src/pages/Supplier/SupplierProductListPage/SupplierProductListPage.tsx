@@ -38,9 +38,9 @@ function transformProduct(p: ApiProduct): SupplierProduct {
     titleEn: p.name_en,
     image: cover?.url || '',
     price: p.price_from,
-    stock: 0,
+    stock: p.available_stock ?? p.total_stock ?? 0,
     status: statusMap[p.status] || 'inactive',
-    soldCount: 0,
+    soldCount: (p.total_stock ?? 0) - (p.available_stock ?? 0),
     createdAt: p.created_at?.split('T')[0] || '',
   };
 }

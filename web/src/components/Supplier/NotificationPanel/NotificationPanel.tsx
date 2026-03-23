@@ -1,79 +1,88 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, ShoppingCart, Settings, DollarSign, Check } from 'lucide-react';
+import { Bell, ShoppingCart, Settings, DollarSign, Check, Star } from 'lucide-react';
+import { supplierNotificationService, type ApiNotification } from '../../../services/supplierNotificationService';
 import styles from './NotificationPanel.module.css';
 
-interface Notification {
-  id: string;
-  type: 'order' | 'system' | 'settlement';
-  titleKey: string;
-  descKey: string;
-  time: string;
-  read: boolean;
-}
-
-const mockNotifications: Notification[] = [
-  {
-    id: 'n1',
-    type: 'order',
-    titleKey: 'supplier.notifications.newOrder',
-    descKey: 'supplier.notifications.newOrderDesc',
-    time: '5m',
-    read: false,
-  },
-  {
-    id: 'n2',
-    type: 'system',
-    titleKey: 'supplier.notifications.systemUpdate',
-    descKey: 'supplier.notifications.systemUpdateDesc',
-    time: '30m',
-    read: false,
-  },
-  {
-    id: 'n3',
-    type: 'settlement',
-    titleKey: 'supplier.notifications.paymentReceived',
-    descKey: 'supplier.notifications.paymentReceivedDesc',
-    time: '2h',
-    read: false,
-  },
-  {
-    id: 'n4',
-    type: 'order',
-    titleKey: 'supplier.notifications.orderCancelled',
-    descKey: 'supplier.notifications.orderCancelledDesc',
-    time: '5h',
-    read: true,
-  },
-  {
-    id: 'n5',
-    type: 'system',
-    titleKey: 'supplier.notifications.maintenance',
-    descKey: 'supplier.notifications.maintenanceDesc',
-    time: '1d',
-    read: true,
-  },
-];
-
 const typeIcons: Record<string, React.ReactNode> = {
-  order: <ShoppingCart size={16} />,
-  system: <Settings size={16} />,
+  new_order: <ShoppingCart size={16} />,
+  order_cancelled: <ShoppingCart size={16} />,
+  product_approved: <Check size={16} />,
+  product_rejected: <Settings size={16} />,
+  new_review: <Star size={16} />,
   settlement: <DollarSign size={16} />,
+  system: <Settings size={16} />,
+  order: <ShoppingCart size={16} />,
 };
 
 const typeColors: Record<string, string> = {
-  order: '#3b82f6',
-  system: '#8b5cf6',
+  new_order: '#3b82f6',
+  order_cancelled: '#ef4444',
+  product_approved: '#10b981',
+  product_rejected: '#f59e0b',
+  new_review: '#8b5cf6',
   settlement: '#10b981',
+  system: '#6b7280',
+  order: '#3b82f6',
 };
 
-export const NotificationPanel: React.FC = () => {
+function formatTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  return date.toLocaleDateString();
+}
+
+interface NotificationPanelProps {
+  onViewAll?: () => void;
+}
+
+export const NotificationPanel: React.FC<NotificationPanelProps> = ({ onViewAll }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const data = await supplierNotificationService.getUnreadCount();
+      setUnreadCount(data.count);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await supplierNotificationService.list({ page: 1, page_size: 5 });
+      setNotifications(data.items || []);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  // Poll unread count every 30 seconds
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
+
+  // Fetch notifications when panel opens
+  useEffect(() => {
+    if (open) {
+      fetchNotifications();
+    }
+  }, [open, fetchNotifications]);
 
   // Close panel on outside click
   useEffect(() => {
@@ -88,14 +97,26 @@ export const NotificationPanel: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllRead = async () => {
+    try {
+      await supplierNotificationService.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch {
+      // silently fail
+    }
   };
 
-  const handleNotificationClick = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  const handleNotificationClick = async (id: number) => {
+    try {
+      await supplierNotificationService.markRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch {
+      // silently fail
+    }
   };
 
   return (
@@ -107,7 +128,7 @@ export const NotificationPanel: React.FC = () => {
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className={styles.badge}>{unreadCount}</span>
+          <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
       </button>
 
@@ -137,33 +158,48 @@ export const NotificationPanel: React.FC = () => {
                 <p className={styles.emptyText}>{t('supplier.notifications.empty')}</p>
               </div>
             ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`${styles.item} ${!notification.read ? styles.unread : ''}`}
-                  onClick={() => handleNotificationClick(notification.id)}
-                >
+              notifications.map((notification) => {
+                const color = typeColors[notification.type] || '#6b7280';
+                const icon = typeIcons[notification.type] || <Bell size={16} />;
+                return (
                   <div
-                    className={styles.itemIcon}
-                    style={{
-                      backgroundColor: `${typeColors[notification.type]}15`,
-                      color: typeColors[notification.type],
-                    }}
+                    key={notification.id}
+                    className={`${styles.item} ${!notification.is_read ? styles.unread : ''}`}
+                    onClick={() => handleNotificationClick(notification.id)}
                   >
-                    {typeIcons[notification.type]}
+                    <div
+                      className={styles.itemIcon}
+                      style={{
+                        backgroundColor: `${color}15`,
+                        color: color,
+                      }}
+                    >
+                      {icon}
+                    </div>
+                    <div className={styles.itemContent}>
+                      <span className={styles.itemTitle}>{notification.title}</span>
+                      <span className={styles.itemDesc}>{notification.content}</span>
+                      <span className={styles.itemTime}>
+                        {formatTime(notification.created_at)} {t('supplier.notifications.ago')}
+                      </span>
+                    </div>
+                    {!notification.is_read && <div className={styles.unreadDot} />}
                   </div>
-                  <div className={styles.itemContent}>
-                    <span className={styles.itemTitle}>{t(notification.titleKey)}</span>
-                    <span className={styles.itemDesc}>{t(notification.descKey)}</span>
-                    <span className={styles.itemTime}>
-                      {notification.time} {t('supplier.notifications.ago')}
-                    </span>
-                  </div>
-                  {!notification.read && <div className={styles.unreadDot} />}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
+
+          {onViewAll && (
+            <div style={{ padding: '8px 12px', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <button
+                onClick={() => { setOpen(false); onViewAll(); }}
+                style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 13 }}
+              >
+                {t('supplier.notifications.viewAll', 'View All')}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

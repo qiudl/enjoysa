@@ -103,6 +103,8 @@ export interface ApiProduct {
   packages?: ApiProductPackage[];
   highlights?: ApiProductHighlight[];
   faqs?: ApiProductFAQ[];
+  total_stock?: number;
+  available_stock?: number;
   created_at: string;
   updated_at: string;
 }
@@ -205,6 +207,36 @@ export const productService = {
   /** 产品排期（未来60天） */
   async getSchedules(id: number): Promise<ApiProductSchedule[]> {
     return get<ApiProductSchedule[]>(`/products/${id}/schedules`);
+  },
+};
+
+// 供应商公开信息
+export interface ApiSupplierProfile {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  logo: string;
+  phone: string;
+  website: string;
+  city: string;
+  state: string;
+  country: string;
+  rating: number;
+  review_count: number;
+  product_count: number;
+}
+
+export const supplierPublicService = {
+  /** 获取供应商公开信息 */
+  async getProfile(id: number): Promise<ApiSupplierProfile> {
+    return get<ApiSupplierProfile>(`/suppliers/${id}`);
+  },
+
+  /** 获取供应商产品列表 */
+  async getProducts(id: number, filter: ProductFilter = {}): Promise<PaginatedProductResponse> {
+    const params = buildParams(filter);
+    return get<PaginatedProductResponse>(`/suppliers/${id}/products${params}`);
   },
 };
 

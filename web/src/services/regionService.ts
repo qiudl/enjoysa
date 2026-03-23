@@ -30,6 +30,7 @@ export interface ApiCategory {
   name_en: string;
   icon: string;
   sort_order: number;
+  product_count?: number;
 }
 
 export interface Category {
@@ -38,6 +39,7 @@ export interface Category {
   name: string;
   nameEn: string;
   icon: string;
+  productCount?: number;
 }
 
 /** 将后端 Region 转换为前端 Region 类型 */
@@ -63,6 +65,7 @@ function transformCategory(c: ApiCategory): Category {
     name: c.name_zh,
     nameEn: c.name_en,
     icon: c.icon,
+    productCount: c.product_count,
   };
 }
 

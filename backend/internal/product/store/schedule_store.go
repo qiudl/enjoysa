@@ -213,6 +213,39 @@ func (s *ScheduleStore) BatchDeleteByProduct(ids []uint, productID uint) (delete
 	return
 }
 
+// ProductStockItem 产品库存聚合
+type ProductStockItem struct {
+	ProductID  uint `json:"product_id"`
+	TotalSlots int  `json:"total_slots"`
+	BookedSlots int `json:"booked_slots"`
+}
+
+// GetStockByProductIDs 批量查询产品未来排期的库存聚合
+func (s *ScheduleStore) GetStockByProductIDs(productIDs []uint) (map[uint]ProductStockItem, error) {
+	if len(productIDs) == 0 {
+		return make(map[uint]ProductStockItem), nil
+	}
+
+	var items []ProductStockItem
+	err := s.db.Raw(`
+		SELECT product_id,
+		       COALESCE(SUM(total_slots), 0) as total_slots,
+		       COALESCE(SUM(booked_slots), 0) as booked_slots
+		FROM product_schedules
+		WHERE product_id IN ? AND date >= CURRENT_DATE
+		GROUP BY product_id
+	`, productIDs).Scan(&items).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[uint]ProductStockItem, len(items))
+	for _, item := range items {
+		result[item.ProductID] = item
+	}
+	return result, nil
+}
+
 // ListByProductAndPackage 按产品和套餐查询日期范围内的排期
 func (s *ScheduleStore) ListByProductAndPackage(productID, packageID uint, from, to time.Time) ([]model.ProductSchedule, error) {
 	var schedules []model.ProductSchedule

@@ -1,11 +1,40 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SupplierAfterSalesPage } from '../SupplierAfterSalesPage';
+import { listSupplierOrders, refundOrder } from '../../../../services/orderService';
+
+// Mock order service
+vi.mock('../../../../services/orderService', () => ({
+  listSupplierOrders: vi.fn(),
+  refundOrder: vi.fn(),
+}));
+
+const mockCancelled = {
+  orders: [
+    {
+      id: 1, order_no: 'ORD-001', status: 'cancelled', product_name: 'Test Tour',
+      contact_name: 'Alice', user_name: 'Alice Wang', total_price: 199,
+      refund_amount: 0, cancel_reason: 'Weather', supplier_remark: '',
+      cancelled_at: '2026-03-20T10:00:00Z', refunded_at: null,
+      created_at: '2026-03-19T10:00:00Z', updated_at: '2026-03-20T10:00:00Z',
+    },
+  ],
+};
+
+const mockRefunded = {
+  orders: [
+    {
+      id: 2, order_no: 'ORD-002', status: 'refunded', product_name: 'Wine Tour',
+      contact_name: 'Bob', user_name: 'Bob Zhang', total_price: 299,
+      refund_amount: 299, cancel_reason: '', supplier_remark: '',
+      cancelled_at: null, refunded_at: '2026-03-21T10:00:00Z',
+      created_at: '2026-03-18T10:00:00Z', updated_at: '2026-03-21T10:00:00Z',
+    },
+  ],
+};
 
 /**
- * Helper: the filter toolbar buttons and ticket status badges share the same
- * i18n key text (e.g. "supplier.afterSales.statusPending"). This helper finds
- * the filter button specifically by looking for a <button> element among all
- * matches.
+ * Helper: find a filter <button> when the same i18n key text also
+ * appears as a status badge elsewhere in the DOM.
  */
 function getFilterButton(text: string): HTMLButtonElement {
   const all = screen.getAllByText(text);
@@ -15,34 +44,74 @@ function getFilterButton(text: string): HTMLButtonElement {
 }
 
 describe('SupplierAfterSalesPage', () => {
-  it('renders without crashing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (listSupplierOrders as ReturnType<typeof vi.fn>)
+      .mockImplementation((filter: { status: string }) => {
+        if (filter.status === 'cancelled') return Promise.resolve(mockCancelled);
+        if (filter.status === 'refunded') return Promise.resolve(mockRefunded);
+        return Promise.resolve({ orders: [] });
+      });
+    (refundOrder as ReturnType<typeof vi.fn>).mockResolvedValue({});
+  });
+
+  it('renders without crashing and shows the page title', () => {
     render(<SupplierAfterSalesPage />);
     expect(screen.getByText('supplier.afterSales.title')).toBeInTheDocument();
   });
 
-  it('displays the page title as h1', () => {
+  it('shows loading state initially before data loads', () => {
+    // Make the API never resolve so loading stays visible
+    (listSupplierOrders as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     render(<SupplierAfterSalesPage />);
-    const title = screen.getByText('supplier.afterSales.title');
-    expect(title.tagName).toBe('H1');
+
+    // The loading spinner (Loader2 icon) should be rendered; no tickets visible yet
+    expect(screen.queryByText('ORD-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('ORD-002')).not.toBeInTheDocument();
   });
 
-  it('renders stat cards with correct values', () => {
+  it('shows tickets from both cancelled and refunded orders after data loads', async () => {
     render(<SupplierAfterSalesPage />);
-    // Total tickets = 6
-    expect(screen.getByText('6')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+    expect(screen.getByText('ORD-002')).toBeInTheDocument();
+
+    // Customer names derived from contact_name
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+
+    // Product names
+    expect(screen.getByText('Test Tour')).toBeInTheDocument();
+    expect(screen.getByText('Wine Tour')).toBeInTheDocument();
+  });
+
+  it('shows stat cards with correct counts', async () => {
+    render(<SupplierAfterSalesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+
+    // Total tickets = 2 (1 cancelled + 1 refunded)
     expect(screen.getByText('supplier.afterSales.totalTickets')).toBeInTheDocument();
-    // Pending tickets = 2
+
+    // orderToTicket maps:
+    //   cancelled (refund_amount=0) -> status='rejected'
+    //   refunded -> status='resolved'
+    // So: pending=0, resolved=1, rejected=1
     expect(screen.getByText('supplier.afterSales.pendingTickets')).toBeInTheDocument();
-    // Avg response
-    expect(screen.getByText('4.2h')).toBeInTheDocument();
-    expect(screen.getByText('supplier.afterSales.avgResponse')).toBeInTheDocument();
-    // SLA rate
-    expect(screen.getByText('87%')).toBeInTheDocument();
+
+    // SLA rate = resolved/total = 1/2 = 50%
+    expect(screen.getByText('50%')).toBeInTheDocument();
     expect(screen.getByText('supplier.afterSales.slaRate')).toBeInTheDocument();
   });
 
-  it('renders all filter buttons', () => {
+  it('renders all filter buttons', async () => {
     render(<SupplierAfterSalesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
+
     expect(getFilterButton('supplier.afterSales.all')).toBeInTheDocument();
     expect(getFilterButton('supplier.afterSales.statusPending')).toBeInTheDocument();
     expect(getFilterButton('supplier.afterSales.statusProcessing')).toBeInTheDocument();
@@ -50,104 +119,16 @@ describe('SupplierAfterSalesPage', () => {
     expect(getFilterButton('supplier.afterSales.statusRejected')).toBeInTheDocument();
   });
 
-  it('renders all tickets by default (all filter)', () => {
+  it('shows empty state when filtered to a status with no tickets', async () => {
     render(<SupplierAfterSalesPage />);
-    expect(screen.getByText('AS-20260320-001')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260319-002')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260318-003')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260317-004')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260315-005')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260314-006')).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByText('ORD-001')).toBeInTheDocument();
+    });
 
-  it('displays ticket descriptions and customer names', () => {
-    render(<SupplierAfterSalesPage />);
-    expect(screen.getByText('Alice Wang')).toBeInTheDocument();
-    expect(screen.getByText('Weather cancellation, requesting full refund')).toBeInTheDocument();
-    expect(screen.getByText('Bob Zhang')).toBeInTheDocument();
-  });
-
-  it('shows Chinese product names when i18n.language is zh', () => {
-    render(<SupplierAfterSalesPage />);
-    // Default mock i18n.language is 'zh'
-    expect(screen.getByText('袋鼠岛一日游')).toBeInTheDocument();
-    expect(screen.getByText('巴罗萨谷品酒之旅')).toBeInTheDocument();
-  });
-
-  it('filters tickets by pending status', () => {
-    render(<SupplierAfterSalesPage />);
+    // No tickets have status 'pending', so filtering by pending should show empty state
     fireEvent.click(getFilterButton('supplier.afterSales.statusPending'));
-
-    // Only 2 pending tickets (t1, t3)
-    expect(screen.getByText('AS-20260320-001')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260318-003')).toBeInTheDocument();
-    // Should not show resolved/rejected tickets
-    expect(screen.queryByText('AS-20260317-004')).not.toBeInTheDocument();
-    expect(screen.queryByText('AS-20260315-005')).not.toBeInTheDocument();
-  });
-
-  it('filters tickets by resolved status', () => {
-    render(<SupplierAfterSalesPage />);
-    fireEvent.click(getFilterButton('supplier.afterSales.statusResolved'));
-
-    // 2 resolved tickets (t4, t6)
-    expect(screen.getByText('AS-20260317-004')).toBeInTheDocument();
-    expect(screen.getByText('AS-20260314-006')).toBeInTheDocument();
-    expect(screen.queryByText('AS-20260320-001')).not.toBeInTheDocument();
-  });
-
-  it('shows only rejected tickets when rejected filter is active', () => {
-    render(<SupplierAfterSalesPage />);
-    fireEvent.click(getFilterButton('supplier.afterSales.statusRejected'));
-
-    // Only 1 rejected ticket (t5)
-    expect(screen.getByText('AS-20260315-005')).toBeInTheDocument();
-    expect(screen.queryByText('AS-20260320-001')).not.toBeInTheDocument();
-    expect(screen.queryByText('AS-20260319-002')).not.toBeInTheDocument();
-  });
-
-  it('processes a pending ticket via the process action button', () => {
-    render(<SupplierAfterSalesPage />);
-
-    // Filter to pending to easily find action buttons
-    fireEvent.click(getFilterButton('supplier.afterSales.statusPending'));
-
-    // Click the first "Process" button
-    const processBtns = screen.getAllByText('supplier.afterSales.actionProcess');
-    fireEvent.click(processBtns[0]);
-
-    // After processing, that ticket leaves the pending filter
-    // Now only 1 pending ticket remains (t3)
-    expect(screen.queryByText('AS-20260320-001')).not.toBeInTheDocument();
-    expect(screen.getByText('AS-20260318-003')).toBeInTheDocument();
-  });
-
-  it('resolves a ticket via the resolve action button', () => {
-    render(<SupplierAfterSalesPage />);
-
-    // Filter to pending
-    fireEvent.click(getFilterButton('supplier.afterSales.statusPending'));
-
-    // Click the first "Resolve" button
-    const resolveBtns = screen.getAllByText('supplier.afterSales.actionResolve');
-    fireEvent.click(resolveBtns[0]);
-
-    // That ticket is now resolved and no longer in pending filter
-    expect(screen.queryByText('AS-20260320-001')).not.toBeInTheDocument();
-  });
-
-  it('shows SLA hours remaining for active tickets', () => {
-    render(<SupplierAfterSalesPage />);
-    // t1 has 18h left, t2 has 6h left, t3 has 2h left
-    expect(screen.getByText('18h supplier.afterSales.slaLeft')).toBeInTheDocument();
-    expect(screen.getByText('6h supplier.afterSales.slaLeft')).toBeInTheDocument();
-    expect(screen.getByText('2h supplier.afterSales.slaLeft')).toBeInTheDocument();
-  });
-
-  it('displays refund amounts for refund tickets', () => {
-    render(<SupplierAfterSalesPage />);
-    expect(screen.getByText('AUD $398.00')).toBeInTheDocument();
-    expect(screen.getByText('AUD $178.00')).toBeInTheDocument();
-    expect(screen.getByText('AUD $89.00')).toBeInTheDocument();
+    expect(screen.queryByText('ORD-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('ORD-002')).not.toBeInTheDocument();
+    expect(screen.getByText('supplier.afterSales.noTickets')).toBeInTheDocument();
   });
 });

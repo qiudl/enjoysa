@@ -20,13 +20,14 @@ import (
 )
 
 type AdminHandler struct {
-	db           *gorm.DB
-	adminStore   *authstore.AdminStore
-	userStore    *authstore.UserStore
-	orderStore   *orderstore.OrderStore
-	productStore *productstore.ProductStore
-	regionStore  *productstore.RegionStore
-	audit        *audit.Logger
+	db            *gorm.DB
+	adminStore    *authstore.AdminStore
+	userStore     *authstore.UserStore
+	orderStore    *orderstore.OrderStore
+	productStore  *productstore.ProductStore
+	regionStore   *productstore.RegionStore
+	categoryStore *productstore.CategoryStore
+	audit         *audit.Logger
 }
 
 func NewAdminHandler(
@@ -36,16 +37,18 @@ func NewAdminHandler(
 	orderStore *orderstore.OrderStore,
 	productStore *productstore.ProductStore,
 	regionStore *productstore.RegionStore,
+	categoryStore *productstore.CategoryStore,
 	auditLogger *audit.Logger,
 ) *AdminHandler {
 	return &AdminHandler{
-		db:           db,
-		adminStore:   adminStore,
-		userStore:    userStore,
-		orderStore:   orderStore,
-		productStore: productStore,
-		regionStore:  regionStore,
-		audit:        auditLogger,
+		db:            db,
+		adminStore:    adminStore,
+		userStore:     userStore,
+		orderStore:    orderStore,
+		productStore:  productStore,
+		regionStore:   regionStore,
+		categoryStore: categoryStore,
+		audit:         auditLogger,
 	}
 }
 
@@ -78,6 +81,13 @@ func (h *AdminHandler) DashboardStats(c *gin.Context) {
 
 // === Supplier Management ===
 
+// SupplierWithStats wraps supplier with aggregated counts
+type SupplierWithStats struct {
+	models.Supplier
+	ProductCount int `json:"product_count"`
+	OrderCount   int `json:"order_count"`
+}
+
 func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -95,7 +105,46 @@ func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 	offset := (page - 1) * pageSize
 	query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&suppliers)
 
-	response.Paginated(c, suppliers, total, page, pageSize)
+	// Aggregate product and order counts per supplier
+	supplierIDs := make([]uint, len(suppliers))
+	for i, s := range suppliers {
+		supplierIDs[i] = s.ID
+	}
+
+	type countItem struct {
+		SupplierID uint `json:"supplier_id"`
+		Count      int  `json:"count"`
+	}
+
+	productCounts := make(map[uint]int)
+	orderCounts := make(map[uint]int)
+
+	if len(supplierIDs) > 0 {
+		var pCounts []countItem
+		h.db.Raw(`SELECT supplier_id, COUNT(*) as count FROM products
+			WHERE supplier_id IN ? AND deleted_at IS NULL GROUP BY supplier_id`, supplierIDs).Scan(&pCounts)
+		for _, pc := range pCounts {
+			productCounts[pc.SupplierID] = pc.Count
+		}
+
+		var oCounts []countItem
+		h.db.Raw(`SELECT supplier_id, COUNT(*) as count FROM orders
+			WHERE supplier_id IN ? AND deleted_at IS NULL GROUP BY supplier_id`, supplierIDs).Scan(&oCounts)
+		for _, oc := range oCounts {
+			orderCounts[oc.SupplierID] = oc.Count
+		}
+	}
+
+	result := make([]SupplierWithStats, len(suppliers))
+	for i, s := range suppliers {
+		result[i] = SupplierWithStats{
+			Supplier:     s,
+			ProductCount: productCounts[s.ID],
+			OrderCount:   orderCounts[s.ID],
+		}
+	}
+
+	response.Paginated(c, result, total, page, pageSize)
 }
 
 func (h *AdminHandler) GetSupplier(c *gin.Context) {
@@ -562,6 +611,13 @@ func (h *AdminHandler) ListOrders(c *gin.Context) {
 
 // === User Management ===
 
+// UserWithStats wraps user with aggregated order stats
+type UserWithStats struct {
+	models.User
+	OrderCount int     `json:"order_count"`
+	TotalSpent float64 `json:"total_spent"`
+}
+
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -574,7 +630,40 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, users, total, page, pageSize)
+	// Aggregate order stats per user
+	userIDs := make([]uint, len(users))
+	for i, u := range users {
+		userIDs[i] = u.ID
+	}
+
+	type userOrderStat struct {
+		UserID     uint    `json:"user_id"`
+		OrderCount int     `json:"order_count"`
+		TotalSpent float64 `json:"total_spent"`
+	}
+
+	orderStats := make(map[uint]userOrderStat)
+
+	if len(userIDs) > 0 {
+		var stats []userOrderStat
+		h.db.Raw(`SELECT user_id, COUNT(*) as order_count, COALESCE(SUM(total_price), 0) as total_spent
+			FROM orders WHERE user_id IN ? AND deleted_at IS NULL GROUP BY user_id`, userIDs).Scan(&stats)
+		for _, s := range stats {
+			orderStats[s.UserID] = s
+		}
+	}
+
+	result := make([]UserWithStats, len(users))
+	for i, u := range users {
+		stat := orderStats[u.ID]
+		result[i] = UserWithStats{
+			User:       u,
+			OrderCount: stat.OrderCount,
+			TotalSpent: stat.TotalSpent,
+		}
+	}
+
+	response.Paginated(c, result, total, page, pageSize)
 }
 
 func (h *AdminHandler) GetUser(c *gin.Context) {
@@ -1013,4 +1102,315 @@ func (h *AdminHandler) ListBanners(c *gin.Context) {
 	var banners []Banner
 	h.db.Where("status = ?", "active").Order("sort_order ASC").Find(&banners)
 	response.Success(c, banners)
+}
+
+func (h *AdminHandler) ListAllBanners(c *gin.Context) {
+	var banners []Banner
+	h.db.Order("sort_order ASC").Find(&banners)
+	response.Success(c, banners)
+}
+
+type BannerRequest struct {
+	TitleZh    string `json:"title_zh"`
+	TitleEn    string `json:"title_en"`
+	SubtitleZh string `json:"subtitle_zh"`
+	SubtitleEn string `json:"subtitle_en"`
+	Image      string `json:"image"`
+	LinkURL    string `json:"link_url"`
+	SortOrder  int    `json:"sort_order"`
+	Status     string `json:"status"`
+}
+
+func (h *AdminHandler) CreateBanner(c *gin.Context) {
+	var req BannerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	status := "active"
+	if req.Status != "" {
+		status = req.Status
+	}
+
+	banner := Banner{
+		TitleZh:    req.TitleZh,
+		TitleEn:    req.TitleEn,
+		SubtitleZh: req.SubtitleZh,
+		SubtitleEn: req.SubtitleEn,
+		Image:      req.Image,
+		LinkURL:    req.LinkURL,
+		SortOrder:  req.SortOrder,
+		Status:     status,
+	}
+
+	if err := h.db.Create(&banner).Error; err != nil {
+		response.ServerError(c, "Failed to create banner")
+		return
+	}
+
+	response.Created(c, banner)
+}
+
+func (h *AdminHandler) UpdateBanner(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid banner ID")
+		return
+	}
+
+	var banner Banner
+	if err := h.db.First(&banner, uint(id)).Error; err != nil {
+		response.NotFound(c, "Banner not found")
+		return
+	}
+
+	var req BannerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	banner.TitleZh = req.TitleZh
+	banner.TitleEn = req.TitleEn
+	banner.SubtitleZh = req.SubtitleZh
+	banner.SubtitleEn = req.SubtitleEn
+	banner.Image = req.Image
+	banner.LinkURL = req.LinkURL
+	banner.SortOrder = req.SortOrder
+	if req.Status != "" {
+		banner.Status = req.Status
+	}
+
+	if err := h.db.Save(&banner).Error; err != nil {
+		response.ServerError(c, "Failed to update banner")
+		return
+	}
+
+	response.Success(c, banner)
+}
+
+func (h *AdminHandler) DeleteBanner(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid banner ID")
+		return
+	}
+
+	if err := h.db.Delete(&Banner{}, uint(id)).Error; err != nil {
+		response.ServerError(c, "Failed to delete banner")
+		return
+	}
+
+	response.SuccessMessage(c, "Banner deleted")
+}
+
+// === Region Admin ===
+
+type RegionRequest struct {
+	Slug      string `json:"slug"`
+	NameZh    string `json:"name_zh" binding:"required"`
+	NameEn    string `json:"name_en" binding:"required"`
+	DescZh    string `json:"desc_zh"`
+	DescEn    string `json:"desc_en"`
+	TaglineZh string `json:"tagline_zh"`
+	TaglineEn string `json:"tagline_en"`
+	Image     string `json:"image"`
+	SortOrder int    `json:"sort_order"`
+}
+
+func (h *AdminHandler) ListRegions(c *gin.Context) {
+	regions, err := h.regionStore.List()
+	if err != nil {
+		response.ServerError(c, "Failed to list regions")
+		return
+	}
+	response.Success(c, regions)
+}
+
+func (h *AdminHandler) CreateRegion(c *gin.Context) {
+	var req RegionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	region := &productmodel.Region{
+		Slug:      req.Slug,
+		NameZh:    req.NameZh,
+		NameEn:    req.NameEn,
+		DescZh:    req.DescZh,
+		DescEn:    req.DescEn,
+		TaglineZh: req.TaglineZh,
+		TaglineEn: req.TaglineEn,
+		Image:     req.Image,
+		SortOrder: req.SortOrder,
+	}
+
+	if err := h.regionStore.Create(region); err != nil {
+		response.ServerError(c, "Failed to create region")
+		return
+	}
+
+	response.Created(c, region)
+}
+
+func (h *AdminHandler) UpdateRegion(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid region ID")
+		return
+	}
+
+	region, err := h.regionStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Region not found")
+		return
+	}
+
+	var req RegionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	if req.Slug != "" {
+		region.Slug = req.Slug
+	}
+	region.NameZh = req.NameZh
+	region.NameEn = req.NameEn
+	region.DescZh = req.DescZh
+	region.DescEn = req.DescEn
+	region.TaglineZh = req.TaglineZh
+	region.TaglineEn = req.TaglineEn
+	region.Image = req.Image
+	region.SortOrder = req.SortOrder
+
+	if err := h.regionStore.Update(region); err != nil {
+		response.ServerError(c, "Failed to update region")
+		return
+	}
+
+	response.Success(c, region)
+}
+
+func (h *AdminHandler) DeleteRegion(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid region ID")
+		return
+	}
+
+	if err := h.regionStore.Delete(uint(id)); err != nil {
+		response.ServerError(c, "Failed to delete region")
+		return
+	}
+
+	response.SuccessMessage(c, "Region deleted")
+}
+
+// === Category Admin ===
+
+type CategoryRequest struct {
+	Slug      string `json:"slug"`
+	NameZh    string `json:"name_zh" binding:"required"`
+	NameEn    string `json:"name_en" binding:"required"`
+	Icon      string `json:"icon"`
+	SortOrder int    `json:"sort_order"`
+}
+
+func (h *AdminHandler) ListCategories(c *gin.Context) {
+	categories, err := h.categoryStore.List()
+	if err != nil {
+		response.ServerError(c, "Failed to list categories")
+		return
+	}
+
+	counts, _ := h.categoryStore.GetProductCounts()
+
+	type catWithCount struct {
+		productmodel.Category
+		ProductCount int `json:"product_count"`
+	}
+	result := make([]catWithCount, len(categories))
+	for i, cat := range categories {
+		result[i] = catWithCount{Category: cat}
+		if count, ok := counts[cat.ID]; ok {
+			result[i].ProductCount = count
+		}
+	}
+	response.Success(c, result)
+}
+
+func (h *AdminHandler) CreateCategory(c *gin.Context) {
+	var req CategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	cat := &productmodel.Category{
+		Slug:      req.Slug,
+		NameZh:    req.NameZh,
+		NameEn:    req.NameEn,
+		Icon:      req.Icon,
+		SortOrder: req.SortOrder,
+	}
+
+	if err := h.categoryStore.Create(cat); err != nil {
+		response.ServerError(c, "Failed to create category")
+		return
+	}
+
+	response.Created(c, cat)
+}
+
+func (h *AdminHandler) UpdateCategory(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid category ID")
+		return
+	}
+
+	cat, err := h.categoryStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Category not found")
+		return
+	}
+
+	var req CategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	if req.Slug != "" {
+		cat.Slug = req.Slug
+	}
+	cat.NameZh = req.NameZh
+	cat.NameEn = req.NameEn
+	cat.Icon = req.Icon
+	cat.SortOrder = req.SortOrder
+
+	if err := h.categoryStore.Update(cat); err != nil {
+		response.ServerError(c, "Failed to update category")
+		return
+	}
+
+	response.Success(c, cat)
+}
+
+func (h *AdminHandler) DeleteCategory(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid category ID")
+		return
+	}
+
+	if err := h.categoryStore.Delete(uint(id)); err != nil {
+		response.ServerError(c, "Failed to delete category")
+		return
+	}
+
+	response.SuccessMessage(c, "Category deleted")
 }

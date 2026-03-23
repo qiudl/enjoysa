@@ -843,6 +843,9 @@
       "users": "用户管理",
       "finance": "财务管理",
       "admins": "管理员",
+      "banners": "轮播管理",
+      "regions": "区域管理",
+      "categories": "分类管理",
       "settings": "系统设置"
     },
     "logout": "退出登录",

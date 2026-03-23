@@ -37,6 +37,7 @@ const SupplierReviewsPage = React.lazy(() => import('./pages/Supplier/SupplierRe
 const SupplierSettlementPage = React.lazy(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
 const SupplierExportPage = React.lazy(() => import('./pages/Supplier/SupplierExportPage/SupplierExportPage'));
 const SupplierTeamPage = React.lazy(() => import('./pages/Supplier/SupplierTeamPage/SupplierTeamPage'));
+const SupplierNotificationsPage = React.lazy(() => import('./pages/Supplier/SupplierNotificationsPage/SupplierNotificationsPage'));
 const SupplierAfterSalesPage = React.lazy(() => import('./pages/Supplier/SupplierAfterSalesPage/SupplierAfterSalesPage'));
 const SupplierReportsPage = React.lazy(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
 const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
@@ -59,6 +60,9 @@ const UserList = React.lazy(() => import('./pages/Admin/UserList/UserList'));
 const FinanceList = React.lazy(() => import('./pages/Admin/FinanceList/FinanceList'));
 const AdminList = React.lazy(() => import('./pages/Admin/AdminList/AdminList'));
 const SettingsPage = React.lazy(() => import('./pages/Admin/SettingsPage/SettingsPage'));
+const BannerList = React.lazy(() => import('./pages/Admin/BannerList/BannerList'));
+const RegionList = React.lazy(() => import('./pages/Admin/RegionList/RegionList'));
+const CategoryList = React.lazy(() => import('./pages/Admin/CategoryList/CategoryList'));
 
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
@@ -744,6 +748,19 @@ function SupplierTeamPageWrapper() {
   );
 }
 
+// 包装组件：SupplierNotificationsPage
+function SupplierNotificationsPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierLayout>
+      <SupplierNotificationsPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
 // 包装组件：SupplierAfterSalesPage
 function SupplierAfterSalesPageWrapper() {
   const navigate = useNavigate();
@@ -953,6 +970,33 @@ function AdminSettingsWrapper() {
   );
 }
 
+// 包装组件：AdminBannersWrapper
+function AdminBannersWrapper() {
+  return (
+    <AdminLayout>
+      <BannerList />
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminRegionsWrapper
+function AdminRegionsWrapper() {
+  return (
+    <AdminLayout>
+      <RegionList />
+    </AdminLayout>
+  );
+}
+
+// 包装组件：AdminCategoriesWrapper
+function AdminCategoriesWrapper() {
+  return (
+    <AdminLayout>
+      <CategoryList />
+    </AdminLayout>
+  );
+}
+
 // 404 Page
 function NotFoundPage() {
   const navigate = useNavigate();
@@ -1063,6 +1107,7 @@ function App() {
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/exports" element={<SupplierAuthGuard><SupplierExportPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/team" element={<SupplierAuthGuard><SupplierTeamPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/notifications" element={<SupplierAuthGuard><SupplierNotificationsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/after-sales" element={<SupplierAuthGuard><SupplierAfterSalesPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/reports" element={<SupplierAuthGuard><SupplierReportsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
@@ -1086,6 +1131,9 @@ function App() {
         <Route path="/admin/finance" element={<AdminAuthGuard requiredPermission="finance.view"><AdminFinanceWrapper /></AdminAuthGuard>} />
         <Route path="/admin/admins" element={<AdminAuthGuard requiredPermission="admins.view"><AdminAdminsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/settings" element={<AdminAuthGuard requiredPermission="settings.view"><AdminSettingsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/banners" element={<AdminAuthGuard><AdminBannersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/regions" element={<AdminAuthGuard><AdminRegionsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

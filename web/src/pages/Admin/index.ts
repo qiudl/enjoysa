@@ -8,3 +8,6 @@ export { UserList } from './UserList';
 export { FinanceList } from './FinanceList';
 export { AdminList } from './AdminList';
 export { SettingsPage } from './SettingsPage';
+export { BannerList } from './BannerList';
+export { RegionList } from './RegionList';
+export { CategoryList } from './CategoryList';

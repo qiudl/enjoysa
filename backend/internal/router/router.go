@@ -18,6 +18,10 @@ import (
 	"enjoysa-backend/internal/core/config"
 	"enjoysa-backend/internal/core/middleware"
 	"enjoysa-backend/internal/email"
+	exporthandler "enjoysa-backend/internal/export/handler"
+	notifhandler "enjoysa-backend/internal/notification/handler"
+	notifservice "enjoysa-backend/internal/notification/service"
+	notifstore "enjoysa-backend/internal/notification/store"
 	octohandler "enjoysa-backend/internal/octo/handler"
 	octomw "enjoysa-backend/internal/octo/middleware"
 	octostore "enjoysa-backend/internal/octo/store"
@@ -29,12 +33,16 @@ import (
 	productstore "enjoysa-backend/internal/product/store"
 	rbachandler "enjoysa-backend/internal/rbac/handler"
 	rbacstore "enjoysa-backend/internal/rbac/store"
+	reviewhandler "enjoysa-backend/internal/review/handler"
+	reviewstore "enjoysa-backend/internal/review/store"
 	settlementhandler "enjoysa-backend/internal/settlement/handler"
 	settlementstore "enjoysa-backend/internal/settlement/store"
 	settingshandler "enjoysa-backend/internal/settings/handler"
 	settingsstore "enjoysa-backend/internal/settings/store"
 	supplierhandler "enjoysa-backend/internal/supplier/handler"
 	supplierstore "enjoysa-backend/internal/supplier/store"
+	teamhandler "enjoysa-backend/internal/team/handler"
+	teamstore "enjoysa-backend/internal/team/store"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 	usercontacthandler "enjoysa-backend/internal/usercontact/handler"
 	usercontactstore "enjoysa-backend/internal/usercontact/store"
@@ -117,22 +125,37 @@ func Setup(cfg Config) *gin.Engine {
 	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
 	supplierAuditLogHandler := supplierhandler.NewAuditLogHandler(supplierAuditStore)
 
+	// === New module stores ===
+	rvStore := reviewstore.NewReviewStore(cfg.DB)
+	nStore := notifstore.NewNotificationStore(cfg.DB)
+	tStore := teamstore.NewTeamStore(cfg.DB)
+
+	// === Notification service ===
+	notifSvc := notifservice.NewNotificationService(nStore)
+	_ = notifSvc // available for event triggers
+
 	// === Handlers ===
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
 	supplierAuthHandler := authhandler.NewSupplierAuthHandler(supplierUserStore, cfg.JWTService)
 	adminAuthHandler := authhandler.NewAdminAuthHandler(adminStore, cfg.JWTService, cfg.DB)
-	publicProductHandler := producthandler.NewPublicProductHandler(pStore, regionStore, categoryStore, scheduleStore)
+	publicProductHandler := producthandler.NewPublicProductHandler(cfg.DB, pStore, regionStore, categoryStore, scheduleStore)
 	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
-	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, auditLogger)
+	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
 	settlementHandler := settlementhandler.NewSettlementHandler(slStore)
+
+	// New module handlers
+	exportHandler := exporthandler.NewExportHandler(cfg.DB)
+	reviewHandler := reviewhandler.NewReviewHandler(rvStore, oStore, pStore)
+	notifHandler := notifhandler.NewNotificationHandler(nStore)
+	teamHandler := teamhandler.NewTeamHandler(tStore, emailService, cfg.FrontendURL)
 
 	// RBAC handlers
 	roleHandler := rbachandler.NewRoleHandler(roleStore, menuStore, roleMenuStore, cfg.CasbinEnforcer)
@@ -217,7 +240,12 @@ func Setup(cfg Config) *gin.Engine {
 	v1.GET("/products/featured", publicProductHandler.ListFeatured)
 	v1.GET("/products/:id", publicProductHandler.GetProduct)
 	v1.GET("/products/:id/schedules", publicProductHandler.GetSchedules)
+	v1.GET("/suppliers/:id", publicProductHandler.GetSupplier)
+	v1.GET("/suppliers/:id/products", publicProductHandler.GetSupplierProducts)
 	v1.GET("/banners", adminHandler.ListBanners)
+
+	// Product reviews (public)
+	v1.GET("/products/:id/reviews", reviewHandler.ListProductReviews)
 
 	// Contact (public)
 	v1.POST("/contact", contactHandler.Submit)
@@ -300,6 +328,53 @@ func Setup(cfg Config) *gin.Engine {
 		supplierSettlements.GET("/stats", settlementHandler.SupplierStats)
 	}
 
+	// Supplier export routes (requires approved supplier)
+	supplierExport := v1.Group("/supplier/export")
+	supplierExport.Use(supplierAuth, middleware.RequireApprovedSupplier())
+	{
+		supplierExport.GET("/orders", exportHandler.ExportOrders)
+		supplierExport.GET("/settlements", exportHandler.ExportSettlements)
+		supplierExport.GET("/products", exportHandler.ExportProducts)
+	}
+
+	// Supplier review routes (requires approved supplier)
+	supplierReviews := v1.Group("/supplier/reviews")
+	supplierReviews.Use(supplierAuth, middleware.RequireApprovedSupplier())
+	{
+		supplierReviews.GET("", reviewHandler.SupplierListReviews)
+		supplierReviews.GET("/stats", reviewHandler.SupplierGetStats)
+		supplierReviews.POST("/:id/reply", reviewHandler.SupplierReply)
+	}
+
+	// Supplier notification routes
+	supplierNotifs := v1.Group("/supplier/notifications")
+	supplierNotifs.Use(supplierAuth)
+	{
+		supplierNotifs.GET("", notifHandler.List)
+		supplierNotifs.GET("/unread-count", notifHandler.UnreadCount)
+		supplierNotifs.POST("/:id/read", notifHandler.MarkRead)
+		supplierNotifs.POST("/read-all", notifHandler.MarkAllRead)
+		supplierNotifs.DELETE("/:id", notifHandler.Delete)
+	}
+
+	// Supplier team routes (requires approved supplier)
+	supplierTeam := v1.Group("/supplier/team")
+	supplierTeam.Use(supplierAuth, middleware.RequireApprovedSupplier())
+	{
+		supplierTeam.GET("", teamHandler.ListMembers)
+		supplierTeam.POST("/invite", teamHandler.InviteMember)
+		supplierTeam.PUT("/:id/role", teamHandler.UpdateRole)
+		supplierTeam.PUT("/:id/status", teamHandler.UpdateStatus)
+		supplierTeam.DELETE("/:id", teamHandler.RemoveMember)
+		supplierTeam.POST("/:id/reset-password", teamHandler.ResetPassword)
+		supplierTeam.GET("/invitations", teamHandler.ListInvitations)
+		supplierTeam.DELETE("/invitations/:id", teamHandler.RevokeInvitation)
+		supplierTeam.POST("/invitations/:id/resend", teamHandler.ResendInvitation)
+	}
+
+	// Public invite accept (no auth)
+	v1.POST("/supplier/invite/accept", teamHandler.AcceptInvitation)
+
 	// ========================================
 	// C端 Order routes
 	// ========================================
@@ -311,6 +386,7 @@ func Setup(cfg Config) *gin.Engine {
 		orders.GET("/:id", orderHandler.GetOrder)
 		orders.POST("/:id/cancel", orderHandler.CancelOrder)
 		orders.GET("/:id/history", orderHandler.GetOrderHistory)
+		orders.POST("/:id/review", reviewHandler.CreateReview)
 	}
 
 	// ========================================
@@ -369,6 +445,24 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.GET("/contacts", contactHandler.List)
 		adminGroup.POST("/contacts/:id/read", contactHandler.MarkRead)
 
+		// Banner management
+		adminGroup.GET("/banners", adminHandler.ListAllBanners)
+		adminGroup.POST("/banners", adminHandler.CreateBanner)
+		adminGroup.PUT("/banners/:id", adminHandler.UpdateBanner)
+		adminGroup.DELETE("/banners/:id", adminHandler.DeleteBanner)
+
+		// Region management
+		adminGroup.GET("/regions", adminHandler.ListRegions)
+		adminGroup.POST("/regions", adminHandler.CreateRegion)
+		adminGroup.PUT("/regions/:id", adminHandler.UpdateRegion)
+		adminGroup.DELETE("/regions/:id", adminHandler.DeleteRegion)
+
+		// Category management
+		adminGroup.GET("/categories", adminHandler.ListCategories)
+		adminGroup.POST("/categories", adminHandler.CreateCategory)
+		adminGroup.PUT("/categories/:id", adminHandler.UpdateCategory)
+		adminGroup.DELETE("/categories/:id", adminHandler.DeleteCategory)
+
 		// Settings
 		adminGroup.GET("/settings", settingsHandler.GetAll)
 		adminGroup.GET("/settings/:group", settingsHandler.GetByGroup)
@@ -388,6 +482,10 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/menus", menuHandler.Create)
 		adminGroup.PUT("/menus/:id", menuHandler.Update)
 		adminGroup.DELETE("/menus/:id", menuHandler.Delete)
+
+		// Reviews
+		adminGroup.GET("/reviews", reviewHandler.AdminListReviews)
+		adminGroup.PUT("/reviews/:id/status", reviewHandler.AdminUpdateStatus)
 
 		// Audit logs
 		adminGroup.GET("/audit-logs", auditHandler.List)

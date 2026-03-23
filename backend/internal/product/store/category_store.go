@@ -41,3 +41,26 @@ func (s *CategoryStore) Update(cat *model.Category) error {
 func (s *CategoryStore) Delete(id uint) error {
 	return s.db.Delete(&model.Category{}, id).Error
 }
+
+// GetProductCounts returns approved product count per category
+func (s *CategoryStore) GetProductCounts() (map[uint]int, error) {
+	type countItem struct {
+		CategoryID uint `json:"category_id"`
+		Count      int  `json:"count"`
+	}
+	var items []countItem
+	err := s.db.Raw(`
+		SELECT category_id, COUNT(*) as count
+		FROM products
+		WHERE status = 'approved' AND deleted_at IS NULL AND category_id > 0
+		GROUP BY category_id
+	`).Scan(&items).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint]int, len(items))
+	for _, item := range items {
+		result[item.CategoryID] = item.Count
+	}
+	return result, nil
+}

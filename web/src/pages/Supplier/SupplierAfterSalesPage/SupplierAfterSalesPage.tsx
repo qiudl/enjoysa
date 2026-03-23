@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, CheckCircle, XCircle, AlertTriangle, Play } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Play, Loader2 } from 'lucide-react';
+import { listSupplierOrders, refundOrder, type Order } from '../../../services/orderService';
 import styles from './SupplierAfterSalesPage.module.css';
 
 export interface SupplierAfterSalesPageProps {
@@ -16,12 +17,11 @@ interface Ticket {
   type: TicketType;
   customer: string;
   product: string;
-  productEn: string;
   amount: number;
   status: TicketStatus;
-  slaHoursLeft: number;
   createdAt: string;
   description: string;
+  orderId: number;
 }
 
 const typeColors: Record<TicketType, string> = {
@@ -37,38 +37,79 @@ const statusIcons: Record<TicketStatus, React.ReactNode> = {
   rejected: <XCircle size={14} />,
 };
 
-const mockTickets: Ticket[] = [
-  { id: 't1', ticketNo: 'AS-20260320-001', type: 'refund', customer: 'Alice Wang', product: '袋鼠岛一日游', productEn: 'Kangaroo Island Day Tour', amount: 398, status: 'pending', slaHoursLeft: 18, createdAt: '2026-03-20 14:30', description: 'Weather cancellation, requesting full refund' },
-  { id: 't2', ticketNo: 'AS-20260319-002', type: 'complaint', customer: 'Bob Zhang', product: '巴罗萨谷品酒之旅', productEn: 'Barossa Valley Wine Tour', amount: 0, status: 'processing', slaHoursLeft: 6, createdAt: '2026-03-19 10:15', description: 'Tour guide was late by 30 minutes' },
-  { id: 't3', ticketNo: 'AS-20260318-003', type: 'exchange', customer: 'Carol Li', product: '阿德莱德城市观光', productEn: 'Adelaide City Sightseeing', amount: 0, status: 'pending', slaHoursLeft: 2, createdAt: '2026-03-18 16:00', description: 'Want to change travel date from Mar 25 to Apr 1' },
-  { id: 't4', ticketNo: 'AS-20260317-004', type: 'refund', customer: 'David Chen', product: '维克多港企鹅观赏', productEn: 'Victor Harbor Penguin Tour', amount: 178, status: 'resolved', slaHoursLeft: 0, createdAt: '2026-03-17 09:00', description: 'Trip cancelled due to illness' },
-  { id: 't5', ticketNo: 'AS-20260315-005', type: 'complaint', customer: 'Eva Liu', product: '格雷内尔格日落之旅', productEn: 'Glenelg Sunset Tour', amount: 0, status: 'rejected', slaHoursLeft: 0, createdAt: '2026-03-15 11:45', description: 'Unhappy with photo quality - not covered by policy' },
-  { id: 't6', ticketNo: 'AS-20260314-006', type: 'refund', customer: 'Frank Ma', product: '克莱兰德野生动物园', productEn: 'Cleland Wildlife Park Tour', amount: 89, status: 'resolved', slaHoursLeft: 0, createdAt: '2026-03-14 08:20', description: 'Partial refund for missing activity' },
-];
+/** Map an order to a ticket for display */
+function orderToTicket(order: Order): Ticket {
+  let type: TicketType = 'refund';
+  let status: TicketStatus = 'pending';
+  let description = order.cancel_reason || order.supplier_remark || '';
+
+  if (order.status === 'refunded') {
+    type = 'refund';
+    status = 'resolved';
+    description = description || 'Refund completed';
+  } else if (order.status === 'cancelled') {
+    if (order.refund_amount && order.refund_amount > 0) {
+      type = 'refund';
+      status = 'resolved';
+    } else {
+      type = 'exchange';
+      status = 'rejected';
+    }
+    description = order.cancel_reason || 'Order cancelled';
+  }
+
+  return {
+    id: String(order.id),
+    ticketNo: order.order_no,
+    type,
+    customer: order.contact_name || order.user_name || '-',
+    product: order.product_name,
+    amount: order.refund_amount || order.total_price,
+    status,
+    createdAt: order.cancelled_at || order.refunded_at || order.created_at,
+    description,
+    orderId: order.id,
+  };
+}
 
 export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ onNavigate }) => {
-  const { t, i18n } = useTranslation();
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+  const { t } = useTranslation();
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [filter, setFilter] = useState<'all' | TicketStatus>('all');
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      listSupplierOrders({ status: 'cancelled', page_size: 50 }).catch(() => ({ orders: [] as Order[] })),
+      listSupplierOrders({ status: 'refunded', page_size: 50 }).catch(() => ({ orders: [] as Order[] })),
+    ]).then(([cancelled, refunded]) => {
+      const allOrders = [...(cancelled.orders || []), ...(refunded.orders || [])];
+      // Sort by most recent first
+      allOrders.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      setTickets(allOrders.map(orderToTicket));
+    }).finally(() => setLoading(false));
+  }, []);
 
   const filteredTickets = filter === 'all' ? tickets : tickets.filter((tk) => tk.status === filter);
 
   const pendingCount = tickets.filter((tk) => tk.status === 'pending').length;
-  const avgResponseHours = 4.2;
-  const slaRate = 87;
+  const resolvedCount = tickets.filter((tk) => tk.status === 'resolved').length;
+  const totalCount = tickets.length;
 
-  const handleAction = (id: string, action: 'process' | 'resolve' | 'reject') => {
-    setTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.id !== id) return tk;
-        switch (action) {
-          case 'process': return { ...tk, status: 'processing' as TicketStatus };
-          case 'resolve': return { ...tk, status: 'resolved' as TicketStatus, slaHoursLeft: 0 };
-          case 'reject': return { ...tk, status: 'rejected' as TicketStatus, slaHoursLeft: 0 };
-          default: return tk;
-        }
-      })
-    );
+  const handleRefund = async (ticket: Ticket) => {
+    setActionLoading(ticket.id);
+    try {
+      await refundOrder(ticket.orderId, { type: 'full', reason: 'After-sales resolution' });
+      setTickets((prev) =>
+        prev.map((tk) => tk.id === ticket.id ? { ...tk, status: 'resolved' as TicketStatus } : tk)
+      );
+    } catch {
+      // refund failed
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filters: { key: 'all' | TicketStatus; labelKey: string }[] = [
@@ -79,6 +120,11 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
     { key: 'rejected', labelKey: 'supplier.afterSales.statusRejected' },
   ];
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    return dateStr.replace('T', ' ').slice(0, 16);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
@@ -88,7 +134,7 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
       {/* Stats */}
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <span className={styles.statValue}>{tickets.length}</span>
+          <span className={styles.statValue}>{totalCount}</span>
           <span className={styles.statLabel}>{t('supplier.afterSales.totalTickets')}</span>
         </div>
         <div className={styles.statCard}>
@@ -96,11 +142,13 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
           <span className={styles.statLabel}>{t('supplier.afterSales.pendingTickets')}</span>
         </div>
         <div className={styles.statCard}>
-          <span className={styles.statValue}>{avgResponseHours}h</span>
-          <span className={styles.statLabel}>{t('supplier.afterSales.avgResponse')}</span>
+          <span className={styles.statValue}>{resolvedCount}</span>
+          <span className={styles.statLabel}>{t('supplier.afterSales.statusResolved', 'Resolved')}</span>
         </div>
         <div className={styles.statCard}>
-          <span className={`${styles.statValue} ${slaRate >= 80 ? styles.statGood : styles.statWarning}`}>{slaRate}%</span>
+          <span className={`${styles.statValue} ${totalCount > 0 ? styles.statGood : ''}`}>
+            {totalCount > 0 ? Math.round((resolvedCount / totalCount) * 100) : 0}%
+          </span>
           <span className={styles.statLabel}>{t('supplier.afterSales.slaRate')}</span>
         </div>
       </div>
@@ -118,11 +166,15 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
         ))}
       </div>
 
-      {/* Ticket List */}
-      {filteredTickets.length > 0 ? (
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem 0' }}>
+          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: '#64748b' }} />
+        </div>
+      ) : filteredTickets.length > 0 ? (
         <div className={styles.ticketList}>
           {filteredTickets.map((ticket) => (
-            <div key={ticket.id} className={styles.ticketCard} onClick={() => onNavigate?.(`/supplier/after-sales/${ticket.id}`)} style={{ cursor: 'pointer' }}>
+            <div key={ticket.id} className={styles.ticketCard} onClick={() => onNavigate?.(`/supplier/orders/${ticket.orderId}`)} style={{ cursor: 'pointer' }}>
               <div className={styles.ticketHeader}>
                 <div className={styles.ticketId}>
                   <span className={styles.ticketNo}>{ticket.ticketNo}</span>
@@ -138,21 +190,13 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
                     {statusIcons[ticket.status]}
                     {t(`supplier.afterSales.status${ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}`)}
                   </span>
-                  {ticket.slaHoursLeft > 0 && (
-                    <span className={`${styles.slaBadge} ${ticket.slaHoursLeft <= 4 ? styles.slaUrgent : ''}`}>
-                      <AlertTriangle size={12} />
-                      {ticket.slaHoursLeft}h {t('supplier.afterSales.slaLeft')}
-                    </span>
-                  )}
                 </div>
               </div>
 
               <div className={styles.ticketBody}>
                 <div className={styles.ticketCustomer}>
                   <span className={styles.customerName}>{ticket.customer}</span>
-                  <span className={styles.ticketProduct}>
-                    {i18n.language === 'en' ? ticket.productEn : ticket.product}
-                  </span>
+                  <span className={styles.ticketProduct}>{ticket.product}</span>
                 </div>
                 <p className={styles.ticketDesc}>{ticket.description}</p>
                 {ticket.amount > 0 && (
@@ -161,22 +205,16 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
               </div>
 
               <div className={styles.ticketFooter}>
-                <span className={styles.ticketDate}>{ticket.createdAt}</span>
+                <span className={styles.ticketDate}>{formatDate(ticket.createdAt)}</span>
                 <div className={styles.ticketActions}>
                   {ticket.status === 'pending' && (
-                    <button className={styles.processBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'process'); }}>
-                      {t('supplier.afterSales.actionProcess')}
+                    <button
+                      className={styles.resolveBtn}
+                      disabled={actionLoading === ticket.id}
+                      onClick={(e) => { e.stopPropagation(); handleRefund(ticket); }}
+                    >
+                      {actionLoading === ticket.id ? '...' : t('supplier.afterSales.actionResolve')}
                     </button>
-                  )}
-                  {(ticket.status === 'pending' || ticket.status === 'processing') && (
-                    <>
-                      <button className={styles.resolveBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'resolve'); }}>
-                        {t('supplier.afterSales.actionResolve')}
-                      </button>
-                      <button className={styles.rejectBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'reject'); }}>
-                        {t('supplier.afterSales.actionReject')}
-                      </button>
-                    </>
                   )}
                 </div>
               </div>

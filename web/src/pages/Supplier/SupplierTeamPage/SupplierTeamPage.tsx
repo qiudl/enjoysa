@@ -1,56 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Edit2, UserX, UserCheck, X, Users, Shield, ShoppingCart, DollarSign, Headphones, Key, Link2, Clock, Check, Trash2 } from 'lucide-react';
+import { UserPlus, Edit2, UserX, UserCheck, X, Users, Shield, ShoppingCart, DollarSign, Headphones, Key, Link2, Clock, Check, Trash2, Loader2 } from 'lucide-react';
+import { supplierTeamService, type TeamMember as ApiMember, type TeamInvitation as ApiInvitation } from '../../../services/supplierTeamService';
 import styles from './SupplierTeamPage.module.css';
 
 export interface SupplierTeamPageProps {
   onNavigate?: (path: string) => void;
 }
 
-type Role = 'admin' | 'operations' | 'finance' | 'support';
+type Role = 'admin' | 'operations' | 'finance' | 'support' | 'staff';
 type TabKey = 'members' | 'permissions' | 'invitations';
 type AccessLevel = 'full' | 'readonly' | 'none';
 type InviteExpiry = '1d' | '3d' | '7d' | 'never';
 
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  status: 'active' | 'disabled';
-  lastLogin: string;
-  joinedAt: string;
-}
-
-interface Invitation {
-  id: string;
-  email: string;
-  role: Role;
-  status: 'pending' | 'accepted' | 'expired';
-  expiresAt: string;
-  createdAt: string;
-}
-
 interface PermissionRow {
   page: string;
   labelKey: string;
-  access: Record<Role, AccessLevel>;
+  access: Record<string, AccessLevel>;
 }
 
-const roleConfig: Record<Role, { color: string; icon: React.ReactNode; labelKey: string }> = {
+const roleConfig: Record<string, { color: string; icon: React.ReactNode; labelKey: string }> = {
   admin: { color: '#ef4444', icon: <Shield size={14} />, labelKey: 'supplier.team.roleAdmin' },
   operations: { color: '#3b82f6', icon: <ShoppingCart size={14} />, labelKey: 'supplier.team.roleOperations' },
   finance: { color: '#10b981', icon: <DollarSign size={14} />, labelKey: 'supplier.team.roleFinance' },
   support: { color: '#f59e0b', icon: <Headphones size={14} />, labelKey: 'supplier.team.roleSupport' },
+  staff: { color: '#6b7280', icon: <Users size={14} />, labelKey: 'supplier.team.roleStaff' },
 };
-
-const mockMembers: TeamMember[] = [
-  { id: 'm1', name: 'James Chen', email: 'james@adelaidetours.com', role: 'admin', status: 'active', lastLogin: '2026-03-23 10:30', joinedAt: '2025-06-01' },
-  { id: 'm2', name: 'Sarah Li', email: 'sarah@adelaidetours.com', role: 'operations', status: 'active', lastLogin: '2026-03-23 09:15', joinedAt: '2025-08-15' },
-  { id: 'm3', name: 'Michael Wang', email: 'michael@adelaidetours.com', role: 'operations', status: 'active', lastLogin: '2026-03-22 16:45', joinedAt: '2025-10-01' },
-  { id: 'm4', name: 'Emily Zhang', email: 'emily@adelaidetours.com', role: 'finance', status: 'active', lastLogin: '2026-03-21 14:20', joinedAt: '2025-11-20' },
-  { id: 'm5', name: 'David Liu', email: 'david@adelaidetours.com', role: 'support', status: 'disabled', lastLogin: '2026-02-28 11:00', joinedAt: '2026-01-10' },
-];
 
 const defaultPermissions: PermissionRow[] = [
   { page: 'dashboard', labelKey: 'supplier.nav.dashboard', access: { admin: 'full', operations: 'full', finance: 'full', support: 'full' } },
@@ -63,77 +38,91 @@ const defaultPermissions: PermissionRow[] = [
   { page: 'settings', labelKey: 'supplier.nav.settings', access: { admin: 'full', operations: 'none', finance: 'none', support: 'none' } },
 ];
 
-const mockInvitations: Invitation[] = [
-  { id: 'inv1', email: 'lucy@adelaidetours.com', role: 'operations', status: 'pending', expiresAt: '2026-03-26', createdAt: '2026-03-23' },
-  { id: 'inv2', email: 'tom@adelaidetours.com', role: 'support', status: 'accepted', expiresAt: '2026-03-20', createdAt: '2026-03-17' },
-  { id: 'inv3', email: 'kate@adelaidetours.com', role: 'finance', status: 'expired', expiresAt: '2026-03-15', createdAt: '2026-03-08' },
-];
-
 const accessCycle: AccessLevel[] = ['full', 'readonly', 'none'];
 
 export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
   const { t } = useTranslation();
-  const [members, setMembers] = useState<TeamMember[]>(mockMembers);
+  const [members, setMembers] = useState<ApiMember[]>([]);
+  const [invitations, setInvitations] = useState<ApiInvitation[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('members');
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('operations');
   const [inviteExpiry, setInviteExpiry] = useState<InviteExpiry>('3d');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [permissions, setPermissions] = useState<PermissionRow[]>(defaultPermissions);
-  const [invitations, setInvitations] = useState<Invitation[]>(mockInvitations);
-  const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [resetPasswordId, setResetPasswordId] = useState<number | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchMembers = useCallback(async () => {
+    try {
+      const data = await supplierTeamService.listMembers();
+      setMembers(data || []);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  const fetchInvitations = useCallback(async () => {
+    try {
+      const data = await supplierTeamService.listInvitations();
+      setInvitations(data || []);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    Promise.all([fetchMembers(), fetchInvitations()]).finally(() => setLoading(false));
+  }, [fetchMembers, fetchInvitations]);
 
   const activeCount = members.filter((m) => m.status === 'active').length;
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
-    const newMember: TeamMember = {
-      id: `m${Date.now()}`,
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole,
-      status: 'active',
-      lastLogin: '-',
-      joinedAt: new Date().toISOString().slice(0, 10),
-    };
-    setMembers((prev) => [...prev, newMember]);
-
-    const expiryDays = inviteExpiry === '1d' ? 1 : inviteExpiry === '3d' ? 3 : inviteExpiry === '7d' ? 7 : 365;
-    const expDate = new Date();
-    expDate.setDate(expDate.getDate() + expiryDays);
-    const newInvite: Invitation = {
-      id: `inv${Date.now()}`,
-      email: inviteEmail,
-      role: inviteRole,
-      status: 'accepted',
-      expiresAt: expDate.toISOString().slice(0, 10),
-      createdAt: new Date().toISOString().slice(0, 10),
-    };
-    setInvitations((prev) => [newInvite, ...prev]);
-
-    setInviteEmail('');
-    setInviteRole('operations');
-    setInviteExpiry('3d');
-    setShowInvite(false);
+    setActionLoading(true);
+    try {
+      await supplierTeamService.inviteMember({
+        email: inviteEmail,
+        role: inviteRole,
+        expiry: inviteExpiry,
+      });
+      setInviteEmail('');
+      setInviteRole('operations');
+      setInviteExpiry('3d');
+      setShowInvite(false);
+      fetchInvitations();
+    } catch {
+      // silently fail
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, status: m.status === 'active' ? 'disabled' : 'active' } : m
-      )
-    );
+  const handleToggleStatus = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    try {
+      await supplierTeamService.updateStatus(id, newStatus);
+      fetchMembers();
+    } catch {
+      // silently fail
+    }
   };
 
-  const handleRoleChange = (id: string, role: Role) => {
-    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role } : m)));
+  const handleRoleChange = async (id: number, role: string) => {
+    try {
+      await supplierTeamService.updateRole(id, role);
+      fetchMembers();
+    } catch {
+      // silently fail
+    }
     setEditingId(null);
   };
 
-  const handlePermissionToggle = (pageIdx: number, role: Role) => {
-    if (role === 'admin') return; // Admin always full
+  const handlePermissionToggle = (pageIdx: number, role: string) => {
+    if (role === 'admin') return;
     setPermissions((prev) => {
       const updated = [...prev];
       const current = updated[pageIdx].access[role];
@@ -146,27 +135,33 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
     });
   };
 
-  const handleResetPassword = (id: string) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-    let pw = '';
-    for (let i = 0; i < 10; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+  const handleResetPassword = async (id: number) => {
     setResetPasswordId(id);
-    setTempPassword(pw);
+    setTempPassword(null);
+    try {
+      const data = await supplierTeamService.resetPassword(id);
+      setTempPassword(data.temp_password);
+    } catch {
+      setTempPassword('Error generating password');
+    }
   };
 
-  const handleRevokeInvite = (id: string) => {
-    setInvitations((prev) => prev.filter((inv) => inv.id !== id));
+  const handleRevokeInvite = async (id: number) => {
+    try {
+      await supplierTeamService.revokeInvitation(id);
+      fetchInvitations();
+    } catch {
+      // silently fail
+    }
   };
 
-  const handleResendInvite = (id: string) => {
-    setInvitations((prev) =>
-      prev.map((inv) => {
-        if (inv.id !== id) return inv;
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + 3);
-        return { ...inv, status: 'pending', expiresAt: expDate.toISOString().slice(0, 10) };
-      })
-    );
+  const handleResendInvite = async (id: number) => {
+    try {
+      await supplierTeamService.resendInvitation(id);
+      fetchInvitations();
+    } catch {
+      // silently fail
+    }
   };
 
   const tabs: { key: TabKey; labelKey: string }[] = [
@@ -174,6 +169,18 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
     { key: 'permissions', labelKey: 'supplier.team.tabPermissions' },
     { key: 'invitations', labelKey: 'supplier.team.tabInvitations' },
   ];
+
+  const permRoles = ['admin', 'operations', 'finance', 'support'];
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+          <Loader2 size={32} style={{ animation: 'spin 0.8s linear infinite' }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -217,10 +224,15 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
       {/* Members Tab */}
       {activeTab === 'members' && (
         <div className={styles.memberList}>
-          {members.map((member) => {
-            const rc = roleConfig[member.role];
+          {members.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Users size={32} className={styles.emptyIcon} />
+              <p>{t('supplier.team.noMembers', 'No team members yet')}</p>
+            </div>
+          ) : members.map((member) => {
+            const rc = roleConfig[member.role] || roleConfig.staff;
             return (
-              <div key={member.id} className={`${styles.memberCard} ${member.status === 'disabled' ? styles.disabled : ''}`}>
+              <div key={member.id} className={`${styles.memberCard} ${member.status !== 'active' ? styles.disabled : ''}`}>
                 <div className={styles.memberInfo}>
                   <div className={styles.avatar} style={{ backgroundColor: rc.color }}>
                     {member.name.charAt(0)}
@@ -236,11 +248,11 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                     <select
                       className={styles.roleSelect}
                       value={member.role}
-                      onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
+                      onChange={(e) => handleRoleChange(member.id, e.target.value)}
                       onBlur={() => setEditingId(null)}
                       autoFocus
                     >
-                      {(Object.keys(roleConfig) as Role[]).map((r) => (
+                      {Object.keys(roleConfig).map((r) => (
                         <option key={r} value={r}>{t(roleConfig[r].labelKey)}</option>
                       ))}
                     </select>
@@ -259,7 +271,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                   </span>
 
                   <span className={styles.lastLogin}>
-                    {t('supplier.team.lastLogin')}: {member.lastLogin}
+                    {t('supplier.team.lastLogin')}: {member.last_login_at ? new Date(member.last_login_at).toLocaleDateString() : '-'}
                   </span>
                 </div>
 
@@ -280,7 +292,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                   </button>
                   <button
                     className={`${styles.actionBtn} ${member.status === 'active' ? styles.dangerAction : styles.successAction}`}
-                    onClick={() => handleToggleStatus(member.id)}
+                    onClick={() => handleToggleStatus(member.id, member.status)}
                     title={member.status === 'active' ? t('supplier.team.disable') : t('supplier.team.enable')}
                   >
                     {member.status === 'active' ? <UserX size={16} /> : <UserCheck size={16} />}
@@ -301,7 +313,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
               <thead>
                 <tr>
                   <th>{t('supplier.team.page')}</th>
-                  {(Object.keys(roleConfig) as Role[]).map((role) => (
+                  {permRoles.map((role) => (
                     <th key={role}>{t(roleConfig[role].labelKey)}</th>
                   ))}
                 </tr>
@@ -310,8 +322,8 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                 {permissions.map((row, idx) => (
                   <tr key={row.page}>
                     <td className={styles.pageName}>{t(row.labelKey)}</td>
-                    {(Object.keys(roleConfig) as Role[]).map((role) => {
-                      const level = row.access[role];
+                    {permRoles.map((role) => {
+                      const level = row.access[role] || 'none';
                       return (
                         <td key={role}>
                           <button
@@ -345,7 +357,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
             </div>
           ) : (
             invitations.map((inv) => {
-              const rc = roleConfig[inv.role];
+              const rc = roleConfig[inv.role] || roleConfig.staff;
               return (
                 <div key={inv.id} className={styles.invitationCard}>
                   <div className={styles.invitationInfo}>
@@ -363,7 +375,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                       {t(`supplier.team.inv${inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}`)}
                     </span>
                     <span className={styles.invitationDate}>
-                      {t('supplier.team.expires')}: {inv.expiresAt}
+                      {t('supplier.team.expires')}: {new Date(inv.expires_at).toLocaleDateString()}
                     </span>
                   </div>
                   <div className={styles.invitationActions}>
@@ -413,7 +425,7 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as Role)}
                 >
-                  {(Object.keys(roleConfig) as Role[]).map((r) => (
+                  {Object.keys(roleConfig).map((r) => (
                     <option key={r} value={r}>{t(roleConfig[r].labelKey)}</option>
                   ))}
                 </select>
@@ -440,9 +452,9 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
               <button
                 className={styles.submitBtn}
                 onClick={handleInvite}
-                disabled={!inviteEmail.trim()}
+                disabled={!inviteEmail.trim() || actionLoading}
               >
-                <Users size={16} />
+                {actionLoading ? <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> : <Users size={16} />}
                 {t('supplier.team.sendInvite')}
               </button>
             </div>
@@ -468,6 +480,11 @@ export const SupplierTeamPage: React.FC<SupplierTeamPageProps> = () => {
                 <div className={styles.tempPasswordBox}>
                   <span className={styles.tempPasswordLabel}>{t('supplier.team.tempPassword')}</span>
                   <code className={styles.tempPasswordCode}>{tempPassword}</code>
+                </div>
+              )}
+              {!tempPassword && (
+                <div style={{ textAlign: 'center', padding: 20 }}>
+                  <Loader2 size={24} style={{ animation: 'spin 0.8s linear infinite' }} />
                 </div>
               )}
             </div>

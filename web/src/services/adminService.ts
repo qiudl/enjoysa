@@ -26,6 +26,8 @@ export interface ApiSupplier {
   phone: string;
   logo?: string;
   description?: string;
+  product_count?: number;
+  order_count?: number;
   created_at: string;
 }
 
@@ -64,6 +66,8 @@ export interface ApiUser {
   phone?: string;
   avatar?: string;
   status: string;
+  order_count?: number;
+  total_spent?: number;
   created_at: string;
   updated_at: string;
 }
@@ -264,6 +268,57 @@ export const adminService = {
     return put<void>(`/admin/roles/${roleId}/menus`, { menu_ids: menuIds }, 'admin');
   },
 
+  // === Banners ===
+  async listBanners() {
+    return get<ApiBanner[]>('/admin/banners', 'admin');
+  },
+
+  async createBanner(data: Omit<ApiBanner, 'id' | 'created_at' | 'updated_at'>) {
+    return post<ApiBanner>('/admin/banners', data, 'admin');
+  },
+
+  async updateBanner(id: number, data: Partial<ApiBanner>) {
+    return put<ApiBanner>(`/admin/banners/${id}`, data, 'admin');
+  },
+
+  async deleteBanner(id: number) {
+    return del<void>(`/admin/banners/${id}`, 'admin');
+  },
+
+  // === Regions ===
+  async listRegions() {
+    return get<ApiRegionAdmin[]>('/admin/regions', 'admin');
+  },
+
+  async createRegion(data: Omit<ApiRegionAdmin, 'id' | 'created_at' | 'updated_at' | 'attraction_count'>) {
+    return post<ApiRegionAdmin>('/admin/regions', data, 'admin');
+  },
+
+  async updateRegion(id: number, data: Partial<ApiRegionAdmin>) {
+    return put<ApiRegionAdmin>(`/admin/regions/${id}`, data, 'admin');
+  },
+
+  async deleteRegion(id: number) {
+    return del<void>(`/admin/regions/${id}`, 'admin');
+  },
+
+  // === Categories ===
+  async listCategories() {
+    return get<ApiCategoryAdmin[]>('/admin/categories', 'admin');
+  },
+
+  async createCategory(data: Omit<ApiCategoryAdmin, 'id' | 'created_at' | 'updated_at' | 'product_count'>) {
+    return post<ApiCategoryAdmin>('/admin/categories', data, 'admin');
+  },
+
+  async updateCategory(id: number, data: Partial<ApiCategoryAdmin>) {
+    return put<ApiCategoryAdmin>(`/admin/categories/${id}`, data, 'admin');
+  },
+
+  async deleteCategory(id: number) {
+    return del<void>(`/admin/categories/${id}`, 'admin');
+  },
+
   // === RBAC: Menus ===
   async listMenus() {
     return get<ApiMenu[]>('/admin/menus', 'admin');
@@ -319,6 +374,51 @@ export interface ApiMenu {
   status: number;
   hidden: boolean;
   children?: ApiMenu[];
+}
+
+// Banner
+export interface ApiBanner {
+  id: number;
+  title_zh: string;
+  title_en: string;
+  subtitle_zh: string;
+  subtitle_en: string;
+  image: string;
+  link_url: string;
+  sort_order: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Region (admin)
+export interface ApiRegionAdmin {
+  id: number;
+  slug: string;
+  name_zh: string;
+  name_en: string;
+  desc_zh: string;
+  desc_en: string;
+  tagline_zh: string;
+  tagline_en: string;
+  image: string;
+  sort_order: number;
+  attraction_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Category (admin, with product_count)
+export interface ApiCategoryAdmin {
+  id: number;
+  slug: string;
+  name_zh: string;
+  name_en: string;
+  icon: string;
+  sort_order: number;
+  product_count?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export default adminService;

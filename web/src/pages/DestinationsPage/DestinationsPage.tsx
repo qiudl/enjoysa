@@ -44,7 +44,7 @@ export const DestinationsPage: React.FC<DestinationsPageProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
-  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [destinations, setDestinations] = useState<(Destination & { attractionCount?: number })[]>([]);
 
   useEffect(() => {
     regionService.getAll().then((regions) => {
@@ -57,6 +57,7 @@ export const DestinationsPage: React.FC<DestinationsPageProps> = ({
         description: r.description,
         descriptionEn: r.descriptionEn,
         image: r.image,
+        attractionCount: r.attractionCount,
       })));
     }).catch(() => {});
   }, []);
@@ -103,7 +104,7 @@ export const DestinationsPage: React.FC<DestinationsPageProps> = ({
               <DestinationCard
                 key={destination.id}
                 destination={destination}
-                productCount={0}
+                productCount={destination.attractionCount || 0}
                 coverImage={destination.image}
                 language={currentLang}
                 onClick={onDestinationClick}

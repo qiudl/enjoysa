@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, DollarSign, Package, FileDown } from 'lucide-react';
-import { exportToCsv } from '../../../utils/csvExport';
+import { ShoppingCart, DollarSign, Package, FileDown, Loader2 } from 'lucide-react';
+import { supplierExportService } from '../../../services/supplierExportService';
 import styles from './SupplierExportPage.module.css';
 
 export interface SupplierExportPageProps {
@@ -40,43 +40,6 @@ const exportCards: ExportCard[] = [
   },
 ];
 
-function generateMockOrdersCsv(): { headers: string[]; rows: string[][] } {
-  return {
-    headers: ['Order No', 'Product', 'Customer', 'Travel Date', 'Quantity', 'Amount (AUD)', 'Status', 'Created'],
-    rows: [
-      ['ORD-20260301-001', 'Kangaroo Island Day Tour', 'Alice Wang', '2026-03-05', '2', '398.00', 'Completed', '2026-03-01'],
-      ['ORD-20260302-002', 'Barossa Valley Wine Tour', 'Bob Zhang', '2026-03-08', '4', '596.00', 'Confirmed', '2026-03-02'],
-      ['ORD-20260305-003', 'Adelaide City Sightseeing', 'Carol Li', '2026-03-10', '1', '89.00', 'Pending', '2026-03-05'],
-      ['ORD-20260308-004', 'Cleland Wildlife Park Tour', 'David Chen', '2026-03-12', '3', '267.00', 'Completed', '2026-03-08'],
-      ['ORD-20260310-005', 'Victor Harbor Penguin Tour', 'Eva Liu', '2026-03-15', '2', '178.00', 'Cancelled', '2026-03-10'],
-    ],
-  };
-}
-
-function generateMockSettlementCsv(): { headers: string[]; rows: string[][] } {
-  return {
-    headers: ['Settlement No', 'Period', 'Order Count', 'Gross Amount (AUD)', 'Commission (AUD)', 'Net Amount (AUD)', 'Status'],
-    rows: [
-      ['STL-202603-001', '2026-03-01 ~ 2026-03-15', '12', '4560.00', '456.00', '4104.00', 'Completed'],
-      ['STL-202602-002', '2026-02-16 ~ 2026-02-28', '8', '3200.00', '320.00', '2880.00', 'Completed'],
-      ['STL-202602-001', '2026-02-01 ~ 2026-02-15', '15', '5890.00', '589.00', '5301.00', 'Completed'],
-    ],
-  };
-}
-
-function generateMockProductsCsv(): { headers: string[]; rows: string[][] } {
-  return {
-    headers: ['Product ID', 'Product Name', 'Category', 'Price (AUD)', 'Stock', 'Sold', 'Status', 'Rating'],
-    rows: [
-      ['P001', 'Kangaroo Island Day Tour', 'Tour', '199.00', 'Unlimited', '156', 'Active', '4.8'],
-      ['P002', 'Barossa Valley Wine Tour', 'Tour', '149.00', '20', '89', 'Active', '4.6'],
-      ['P003', 'Adelaide City Sightseeing', 'Tour', '89.00', '30', '234', 'Active', '4.3'],
-      ['P004', 'Cleland Wildlife Park Tour', 'Tour', '89.00', '15', '67', 'Active', '4.9'],
-      ['P005', 'Victor Harbor Penguin Tour', 'Tour', '89.00', '10', '45', 'Inactive', '4.1'],
-    ],
-  };
-}
-
 export const SupplierExportPage: React.FC<SupplierExportPageProps> = () => {
   const { t } = useTranslation();
   const [dateRanges, setDateRanges] = useState<Record<string, { start: string; end: string }>>({
@@ -84,6 +47,8 @@ export const SupplierExportPage: React.FC<SupplierExportPageProps> = () => {
     settlement: { start: '', end: '' },
     products: { start: '', end: '' },
   });
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDateChange = (cardKey: string, field: 'start' | 'end', value: string) => {
     setDateRanges((prev) => ({
@@ -92,29 +57,28 @@ export const SupplierExportPage: React.FC<SupplierExportPageProps> = () => {
     }));
   };
 
-  const handleExport = (cardKey: string) => {
-    const now = new Date().toISOString().slice(0, 10);
-    let data: { headers: string[]; rows: string[][] };
-    let filename: string;
+  const handleExport = async (cardKey: string) => {
+    setLoading(cardKey);
+    setError(null);
 
-    switch (cardKey) {
-      case 'orders':
-        data = generateMockOrdersCsv();
-        filename = `orders_export_${now}.csv`;
-        break;
-      case 'settlement':
-        data = generateMockSettlementCsv();
-        filename = `settlement_export_${now}.csv`;
-        break;
-      case 'products':
-        data = generateMockProductsCsv();
-        filename = `products_export_${now}.csv`;
-        break;
-      default:
-        return;
+    try {
+      const range = dateRanges[cardKey];
+      switch (cardKey) {
+        case 'orders':
+          await supplierExportService.exportOrders(range.start || undefined, range.end || undefined);
+          break;
+        case 'settlement':
+          await supplierExportService.exportSettlements(range.start || undefined, range.end || undefined);
+          break;
+        case 'products':
+          await supplierExportService.exportProducts();
+          break;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setLoading(null);
     }
-
-    exportToCsv(filename, data.headers, data.rows);
   };
 
   return (
@@ -123,6 +87,12 @@ export const SupplierExportPage: React.FC<SupplierExportPageProps> = () => {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{t('supplier.exports.title')}</h1>
       </div>
+
+      {error && (
+        <div style={{ padding: '12px 16px', background: '#fef2f2', color: '#dc2626', borderRadius: 8, marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
 
       {/* Export Cards */}
       <div className={styles.exportGrid}>
@@ -175,9 +145,10 @@ export const SupplierExportPage: React.FC<SupplierExportPageProps> = () => {
               className={styles.exportBtn}
               onClick={() => handleExport(card.key)}
               style={{ backgroundColor: card.color }}
+              disabled={loading === card.key}
             >
-              <FileDown size={16} />
-              {t('supplier.exports.exportBtn')}
+              {loading === card.key ? <Loader2 size={16} className={styles.spinner} /> : <FileDown size={16} />}
+              {loading === card.key ? t('common.loading', 'Loading...') : t('supplier.exports.exportBtn')}
             </button>
           </div>
         ))}

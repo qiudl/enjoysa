@@ -34,6 +34,13 @@ func (h *SupplierProductHandler) getSupplierID(c *gin.Context) uint {
 	return id.(uint)
 }
 
+// ProductWithStock 带库存信息的产品
+type ProductWithStock struct {
+	model.Product
+	TotalStock     int `json:"total_stock"`
+	AvailableStock int `json:"available_stock"`
+}
+
 func (h *SupplierProductHandler) ListProducts(c *gin.Context) {
 	supplierID := h.getSupplierID(c)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -50,7 +57,26 @@ func (h *SupplierProductHandler) ListProducts(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, products, total, page, pageSize)
+	// Collect product IDs and query stock
+	productIDs := make([]uint, len(products))
+	for i, p := range products {
+		productIDs[i] = p.ID
+	}
+
+	stockMap, _ := h.scheduleStore.GetStockByProductIDs(productIDs)
+
+	// Build response with stock info
+	result := make([]ProductWithStock, len(products))
+	for i, p := range products {
+		item := ProductWithStock{Product: p}
+		if stock, ok := stockMap[p.ID]; ok {
+			item.TotalStock = stock.TotalSlots
+			item.AvailableStock = stock.TotalSlots - stock.BookedSlots
+		}
+		result[i] = item
+	}
+
+	response.Paginated(c, result, total, page, pageSize)
 }
 
 type CreateProductRequest struct {

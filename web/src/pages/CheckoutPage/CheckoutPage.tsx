@@ -11,7 +11,7 @@ import {
   PaymentMethodSelector,
   ParticipantForm,
 } from '../../components/Order';
-import type { Product, Destination, ProductCategory, ParticipantDetail, PaymentMethod } from '../../types';
+import type { Product, ParticipantDetail, PaymentMethod } from '../../types';
 import { createOrder } from '../../services/orderService';
 import { post } from '../../services/api';
 import { productService, transformApiProduct, type ApiProductPackage } from '../../services/productService';
@@ -54,50 +54,6 @@ export interface CheckoutPageProps {
   /** 需要登录回调 */
   onLoginRequired?: () => void;
 }
-
-// Mock destination and category for product
-const mockDestination: Destination = {
-  id: 'kangaroo-island',
-  name: '袋鼠岛',
-  nameEn: 'Kangaroo Island',
-  region: '南澳大利亚',
-  regionEn: 'South Australia',
-};
-
-const mockCategory: ProductCategory = {
-  id: 'day-tour',
-  name: '一日游',
-  nameEn: 'Day Tours',
-};
-
-// Mock product
-const mockProduct: Product = {
-  id: '1',
-  title: '袋鼠岛一日游',
-  titleEn: 'Kangaroo Island Day Tour',
-  description: '探索南澳最著名的野生动物天堂',
-  images: ['https://images.unsplash.com/photo-1494947665470-20322015e3a8?w=400'],
-  price: 389,
-  currency: 'CNY',
-  rating: 4.8,
-  reviewCount: 126,
-  location: '阿德莱德出发',
-  locationEn: 'Depart from Adelaide',
-  duration: '1天',
-  durationEn: '1 Day',
-  highlights: ['野生动物', '海豹湾', '神奇岩石'],
-  inclusions: ['往返交通', '午餐', '导游'],
-  exclusions: ['个人消费'],
-  tags: ['hot', 'recommended'],
-  category: mockCategory,
-  destination: mockDestination,
-  availability: 'available',
-  instantConfirmation: true,
-  freeCancellation: true,
-  supplierId: 'sup-1',
-  createdAt: '2025-01-01',
-  updatedAt: '2025-01-01',
-};
 
 // Default participant
 const createDefaultParticipant = (): ParticipantDetail => ({
@@ -160,7 +116,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       .finally(() => setProductLoading(false));
   }, [productId]);
 
-  const product = fetchedProduct || productProp || mockProduct;
+  const product = fetchedProduct || productProp;
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -222,7 +178,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
-    if (!agreed) return;
+    if (!agreed || !product) return;
 
     if (!validateParticipants()) {
       participantSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -311,6 +267,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <h1 className={styles.title}>{t('checkout.title')}</h1>
           </div>
 
+          {productLoading ? (
+            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#64748b' }}>
+              {t('common.loading', 'Loading...')}
+            </div>
+          ) : !product ? (
+            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#94a3b8' }}>
+              {t('common.notFound', 'Product not found')}
+            </div>
+          ) : (
           <div className={styles.content}>
             {/* Left Column */}
             <div className={styles.leftColumn}>
@@ -381,6 +346,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
 

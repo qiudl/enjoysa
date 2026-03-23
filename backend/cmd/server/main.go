@@ -21,9 +21,12 @@ import (
 	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/models"
 	chatmodel "enjoysa-backend/internal/chat/model"
+	notifmodel "enjoysa-backend/internal/notification/model"
 	octomodel "enjoysa-backend/internal/octo/model"
 	ordermodel "enjoysa-backend/internal/order/model"
+	reviewmodel "enjoysa-backend/internal/review/model"
 	suppliermodel "enjoysa-backend/internal/supplier/model"
+	teammodel "enjoysa-backend/internal/team/model"
 	usercontactmodel "enjoysa-backend/internal/usercontact/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	productmodel "enjoysa-backend/internal/product/model"
@@ -196,6 +199,12 @@ func autoMigrate(db *gorm.DB) error {
 		&chatmodel.ChatMessage{},
 		// User contacts
 		&usercontactmodel.UserContact{},
+		// Reviews
+		&reviewmodel.Review{},
+		// Notifications
+		&notifmodel.Notification{},
+		// Team invitations
+		&teammodel.SupplierInvitation{},
 	)
 }
 

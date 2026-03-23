@@ -40,8 +40,8 @@ function transformUser(u: ApiUser): UserData {
     phone: u.phone,
     avatar: u.avatar,
     status: mapStatus(u.status),
-    orderCount: 0,
-    totalSpent: 0,
+    orderCount: u.order_count ?? 0,
+    totalSpent: u.total_spent ?? 0,
     createdAt: u.created_at,
     lastLoginAt: u.updated_at,
   };
