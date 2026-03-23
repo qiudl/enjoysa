@@ -493,6 +493,7 @@ func Setup(cfg Config) *gin.Engine {
 			adminHomepage.DELETE("/partners/:id", homepageHandler.DeletePartner)
 
 			adminHomepage.GET("/modules", homepageHandler.ListModules)
+			adminHomepage.POST("/modules", homepageHandler.CreateModule)
 			adminHomepage.PUT("/modules", homepageHandler.UpdateModules)
 		}
 

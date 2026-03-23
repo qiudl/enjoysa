@@ -7,6 +7,7 @@ import (
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -397,6 +398,37 @@ func (h *Handler) ListModules(c *gin.Context) {
 	var items []HomepageModule
 	h.db.Order("sort_order ASC").Find(&items)
 	response.Success(c, items)
+}
+
+type ModuleCreateRequest struct {
+	ModuleKey string `json:"module_key" binding:"required"`
+	TitleZh   string `json:"title_zh"`
+	TitleEn   string `json:"title_en"`
+	SortOrder int    `json:"sort_order"`
+	IsVisible bool   `json:"is_visible"`
+	Config    string `json:"config"`
+}
+
+func (h *Handler) CreateModule(c *gin.Context) {
+	var req ModuleCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	cfg := req.Config
+	if cfg == "" {
+		cfg = "{}"
+	}
+	item := HomepageModule{
+		ModuleKey: req.ModuleKey, TitleZh: req.TitleZh, TitleEn: req.TitleEn,
+		SortOrder: req.SortOrder, IsVisible: req.IsVisible,
+		Config: datatypes.JSON([]byte(cfg)),
+	}
+	if err := h.db.Create(&item).Error; err != nil {
+		response.ServerError(c, "Failed to create module")
+		return
+	}
+	response.Created(c, item)
 }
 
 func (h *Handler) UpdateModules(c *gin.Context) {
