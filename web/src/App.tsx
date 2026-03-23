@@ -54,6 +54,7 @@ const ContactsPage = React.lazy(() => import('./pages/ContactsPage/ContactsPage'
 const AdminLoginPage = React.lazy(() => import('./pages/Admin/AdminLoginPage/AdminLoginPage'));
 const DashboardPage = React.lazy(() => import('./pages/Admin/DashboardPage/DashboardPage'));
 const SupplierList = React.lazy(() => import('./pages/Admin/SupplierList/SupplierList'));
+const SupplierDetailPage = React.lazy(() => import('./pages/Admin/SupplierDetailPage/SupplierDetailPage'));
 const ProductReviewList = React.lazy(() => import('./pages/Admin/ProductReviewList/ProductReviewList'));
 const AdminProductFormPage = React.lazy(() => import('./pages/Admin/AdminProductFormPage/AdminProductFormPage'));
 const OrderList = React.lazy(() => import('./pages/Admin/OrderList/OrderList'));
@@ -79,8 +80,45 @@ function PageLoading() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <div style={{ width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+}
+
+// Error Boundary for debugging blank pages
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[AppErrorBoundary]', error, info.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '2rem', fontFamily: 'monospace' }}>
+          <h1 style={{ color: 'red' }}>Page Crashed</h1>
+          <pre style={{ whiteSpace: 'pre-wrap', background: '#f5f5f5', padding: '1rem', borderRadius: '8px' }}>
+            {this.state.error?.message}
+            {'\n\n'}
+            {this.state.error?.stack}
+          </pre>
+          <button onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // 包装组件：HomePage
@@ -921,6 +959,15 @@ function AdminSuppliersWrapper() {
   );
 }
 
+// 包装组件：AdminSupplierDetailWrapper
+function AdminSupplierDetailWrapper() {
+  return (
+    <AdminLayout>
+      <SupplierDetailPage />
+    </AdminLayout>
+  );
+}
+
 // 包装组件：AdminProductsWrapper
 function AdminProductsWrapper() {
   const navigate = useNavigate();
@@ -1068,6 +1115,7 @@ function NotFoundPage() {
 
 function App() {
   return (
+    <AppErrorBoundary>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <BrowserRouter>
       <CartProvider>
@@ -1162,6 +1210,7 @@ function App() {
         <Route path="/admin" element={<AdminAuthGuard requiredPermission="dashboard.view"><AdminDashboardWrapper /></AdminAuthGuard>} />
         <Route path="/admin/dashboard" element={<AdminAuthGuard requiredPermission="dashboard.view"><AdminDashboardWrapper /></AdminAuthGuard>} />
         <Route path="/admin/suppliers" element={<AdminAuthGuard requiredPermission="suppliers.view"><AdminSuppliersWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/suppliers/:id" element={<AdminAuthGuard requiredPermission="suppliers.view"><AdminSupplierDetailWrapper /></AdminAuthGuard>} />
         <Route path="/admin/products" element={<AdminAuthGuard requiredPermission="products.view"><AdminProductsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/products/new" element={<AdminAuthGuard requiredPermission="products.manage"><AdminProductNewWrapper /></AdminAuthGuard>} />
         <Route path="/admin/products/:id/edit" element={<AdminAuthGuard requiredPermission="products.manage"><AdminProductEditWrapper /></AdminAuthGuard>} />
@@ -1187,6 +1236,7 @@ function App() {
       </CartProvider>
     </BrowserRouter>
     </GoogleOAuthProvider>
+    </AppErrorBoundary>
   );
 }
 

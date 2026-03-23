@@ -28,7 +28,91 @@ export interface ApiSupplier {
   description?: string;
   product_count?: number;
   order_count?: number;
+  revenue?: number;
+  avg_rating?: number;
+  review_count?: number;
+  tier?: string;
+  rating?: number;
   created_at: string;
+}
+
+// 供应商详情
+export interface ApiSupplierDetail {
+  supplier: ApiSupplier & {
+    website?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    bank_name?: string;
+    bank_account?: string;
+    bank_bsb?: string;
+    account_holder?: string;
+  };
+  users: Array<{ id: number; name: string; email: string; role: string; status: string }>;
+  stats: {
+    total_revenue: number;
+    total_orders: number;
+    avg_rating: number;
+    cancel_rate: number;
+    product_count: number;
+    active_products: number;
+    pending_settlement: number;
+  };
+}
+
+// 收入趋势
+export interface ApiRevenueTrendItem {
+  date: string;
+  revenue: number;
+  order_count: number;
+}
+
+// 审计日志
+export interface ApiAuditLogItem {
+  id: number;
+  source: 'admin' | 'supplier';
+  action: string;
+  detail: string;
+  user_name: string;
+  created_at: string;
+}
+
+// 结算统计
+export interface ApiSettlementStats {
+  pending_amount: number;
+  completed_amount: number;
+  pending_count: number;
+  completed_count: number;
+}
+
+// 结算记录
+export interface ApiSettlement {
+  id: number;
+  supplier_id: number;
+  order_id: number;
+  gross_amount: number;
+  commission_rate: number;
+  commission_amount: number;
+  net_amount: number;
+  status: string;
+  created_at: string;
+}
+
+// 评价
+export interface ApiReview {
+  id: number;
+  user_id: number;
+  product_id: number;
+  supplier_id: number;
+  order_id: number;
+  rating: number;
+  content: string;
+  reply?: string;
+  status: string;
+  created_at: string;
+  user?: { id: number; name: string; avatar?: string };
+  product?: { id: number; name_zh: string; name_en: string };
 }
 
 // 后端 Order 响应
@@ -99,11 +183,19 @@ function buildParams(params: Record<string, string | number | undefined>): strin
 
 export const adminService = {
   // === Suppliers ===
-  async listSuppliers(params: { page?: number; page_size?: number; status?: string } = {}) {
+  async listSuppliers(params: { page?: number; page_size?: number; status?: string; type?: string; keyword?: string; sort_by?: string; sort_order?: string } = {}) {
     return get<PaginatedResponse<ApiSupplier>>(
       `/admin/suppliers${buildParams(params)}`,
       'admin',
     );
+  },
+
+  async getSupplierDetail(id: number) {
+    return get<ApiSupplierDetail>(`/admin/suppliers/${id}/detail`, 'admin');
+  },
+
+  async updateSupplier(id: number, data: Record<string, unknown>) {
+    return put<ApiSupplier>(`/admin/suppliers/${id}`, data, 'admin');
   },
 
   async approveSupplier(id: number) {
@@ -116,6 +208,46 @@ export const adminService = {
 
   async suspendSupplier(id: number) {
     return post<void>(`/admin/suppliers/${id}/suspend`, undefined, 'admin');
+  },
+
+  async getSupplierProducts(id: number, params: { page?: number; page_size?: number; status?: string } = {}) {
+    return get<PaginatedResponse<ApiAdminProduct>>(`/admin/suppliers/${id}/products${buildParams(params)}`, 'admin');
+  },
+
+  async getSupplierOrders(id: number, params: { page?: number; page_size?: number; status?: string; keyword?: string; start_date?: string; end_date?: string } = {}) {
+    return get<PaginatedResponse<ApiOrder>>(`/admin/suppliers/${id}/orders${buildParams(params)}`, 'admin');
+  },
+
+  async getSupplierSettlements(id: number, params: { page?: number; page_size?: number } = {}) {
+    return get<PaginatedResponse<ApiSettlement>>(`/admin/suppliers/${id}/settlements${buildParams(params)}`, 'admin');
+  },
+
+  async getSupplierSettlementStats(id: number) {
+    return get<ApiSettlementStats>(`/admin/suppliers/${id}/settlements/stats`, 'admin');
+  },
+
+  async getSupplierReviews(id: number, params: { page?: number; page_size?: number } = {}) {
+    return get<PaginatedResponse<ApiReview>>(`/admin/suppliers/${id}/reviews${buildParams(params)}`, 'admin');
+  },
+
+  async getSupplierAuditLogs(id: number, params: { page?: number; page_size?: number } = {}) {
+    return get<{ items: ApiAuditLogItem[]; total: number }>(`/admin/suppliers/${id}/audit-logs${buildParams(params)}`, 'admin');
+  },
+
+  async getSupplierRevenueTrend(id: number, days = 30) {
+    return get<ApiRevenueTrendItem[]>(`/admin/suppliers/${id}/revenue-trend?days=${days}`, 'admin');
+  },
+
+  async forceOfflineProduct(supplierId: number, productId: number, reason: string) {
+    return post<void>(`/admin/suppliers/${supplierId}/products/${productId}/force-offline`, { reason }, 'admin');
+  },
+
+  async restoreProduct(supplierId: number, productId: number) {
+    return post<void>(`/admin/suppliers/${supplierId}/products/${productId}/restore`, undefined, 'admin');
+  },
+
+  async refundOrder(orderId: number, data: { amount: number; reason: string; refund_type: 'full' | 'partial' }) {
+    return post<void>(`/admin/orders/${orderId}/refund`, data, 'admin');
   },
 
   // === Orders ===

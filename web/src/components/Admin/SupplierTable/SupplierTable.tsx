@@ -18,6 +18,9 @@ export interface Supplier {
   status: SupplierStatus;
   productCount: number;
   orderCount: number;
+  revenue: number;
+  avgRating: number;
+  tier: string;
   createdAt: string;
   logo?: string;
 }
@@ -92,6 +95,11 @@ export const SupplierTable: React.FC<SupplierTableProps> = ({
     }
   };
 
+  const getTierLabel = (t2: string) => {
+    const labels: Record<string, string> = { silver: 'Silver', gold: 'Gold', diamond: 'Diamond' };
+    return labels[t2] || t2;
+  };
+
   if (loading) {
     return (
       <div className={styles.tableWrapper}>
@@ -104,6 +112,9 @@ export const SupplierTable: React.FC<SupplierTableProps> = ({
               <th>{t('admin.suppliers.table.contact')}</th>
               <th>{t('admin.suppliers.table.products')}</th>
               <th>{t('admin.suppliers.table.orders')}</th>
+              <th>{t('admin.suppliers.table.revenue')}</th>
+              <th>{t('admin.suppliers.table.rating')}</th>
+              <th>{t('admin.suppliers.table.tier')}</th>
               <th>{t('admin.suppliers.table.status')}</th>
               <th>{t('admin.suppliers.table.joinDate')}</th>
               <th>{t('admin.suppliers.table.actions')}</th>
@@ -112,15 +123,9 @@ export const SupplierTable: React.FC<SupplierTableProps> = ({
           <tbody>
             {[1, 2, 3, 4, 5].map((i) => (
               <tr key={i} className={styles.skeletonRow}>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
-                <td><div className={styles.skeleton} /></td>
+                {Array.from({ length: 12 }).map((_, j) => (
+                  <td key={j}><div className={styles.skeleton} /></td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -154,6 +159,9 @@ export const SupplierTable: React.FC<SupplierTableProps> = ({
             <th>{t('admin.suppliers.table.contact')}</th>
             <th>{t('admin.suppliers.table.products')}</th>
             <th>{t('admin.suppliers.table.orders')}</th>
+            <th>{t('admin.suppliers.table.revenue')}</th>
+            <th>{t('admin.suppliers.table.rating')}</th>
+            <th>{t('admin.suppliers.table.tier')}</th>
             <th>{t('admin.suppliers.table.status')}</th>
             <th>{t('admin.suppliers.table.joinDate')}</th>
             <th>{t('admin.suppliers.table.actions')}</th>
@@ -197,6 +205,13 @@ export const SupplierTable: React.FC<SupplierTableProps> = ({
               </td>
               <td>{supplier.productCount}</td>
               <td>{supplier.orderCount}</td>
+              <td>${supplier.revenue?.toFixed(2) || '0.00'}</td>
+              <td>{supplier.avgRating?.toFixed(1) || '0.0'}</td>
+              <td>
+                <span className={clsx(styles.statusBadge, styles[supplier.tier || 'silver'])}>
+                  {getTierLabel(supplier.tier || 'silver')}
+                </span>
+              </td>
               <td>
                 <span className={clsx(styles.statusBadge, styles[supplier.status])}>
                   {getStatusLabel(supplier.status)}

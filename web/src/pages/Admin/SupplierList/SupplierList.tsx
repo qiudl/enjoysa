@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Download, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { SupplierStats } from '../../../components/Admin/SupplierStats';
@@ -23,6 +24,9 @@ function transformSupplier(s: ApiSupplier): Supplier {
     status: s.status as SupplierStatus,
     productCount: s.product_count ?? 0,
     orderCount: s.order_count ?? 0,
+    revenue: s.revenue ?? 0,
+    avgRating: s.avg_rating ?? s.rating ?? 0,
+    tier: s.tier ?? 'silver',
     createdAt: s.created_at,
     logo: s.logo,
   };
@@ -40,6 +44,7 @@ type TabKey = 'all' | 'pending' | 'approved' | 'suspended';
 
 export const SupplierList: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stats, setStats] = useState<SupplierStatsData>(defaultStats);
@@ -98,8 +103,7 @@ export const SupplierList: React.FC = () => {
   });
 
   const handleView = (supplier: Supplier) => {
-    setSelectedSupplier(supplier);
-    setDetailOpen(true);
+    navigate(`/admin/suppliers/${supplier.id}`);
   };
 
   const handleApprove = async (supplier: Supplier) => {

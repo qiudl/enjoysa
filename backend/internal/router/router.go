@@ -146,7 +146,7 @@ func Setup(cfg Config) *gin.Engine {
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
-	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc)
+	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc, aStore, rvStore, slStore, supplierAuditStore)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
@@ -422,9 +422,20 @@ func Setup(cfg Config) *gin.Engine {
 		// Supplier management
 		adminGroup.GET("/suppliers", adminHandler.ListSuppliers)
 		adminGroup.GET("/suppliers/:id", adminHandler.GetSupplier)
+		adminGroup.PUT("/suppliers/:id", adminHandler.UpdateSupplier)
 		adminGroup.POST("/suppliers/:id/approve", adminHandler.ApproveSupplier)
 		adminGroup.POST("/suppliers/:id/reject", adminHandler.RejectSupplier)
 		adminGroup.POST("/suppliers/:id/suspend", adminHandler.SuspendSupplier)
+		adminGroup.GET("/suppliers/:id/detail", adminHandler.GetSupplierDetail)
+		adminGroup.GET("/suppliers/:id/products", adminHandler.GetSupplierProducts)
+		adminGroup.GET("/suppliers/:id/orders", adminHandler.GetSupplierOrders)
+		adminGroup.GET("/suppliers/:id/settlements", adminHandler.GetSupplierSettlements)
+		adminGroup.GET("/suppliers/:id/settlements/stats", adminHandler.GetSupplierSettlementStats)
+		adminGroup.GET("/suppliers/:id/reviews", adminHandler.GetSupplierReviews)
+		adminGroup.GET("/suppliers/:id/audit-logs", adminHandler.GetSupplierAuditLogs)
+		adminGroup.GET("/suppliers/:id/revenue-trend", adminHandler.GetSupplierRevenueTrend)
+		adminGroup.POST("/suppliers/:id/products/:pid/force-offline", adminHandler.ForceOfflineProduct)
+		adminGroup.POST("/suppliers/:id/products/:pid/restore", adminHandler.RestoreProduct)
 
 		// Product management
 		adminGroup.GET("/products", adminHandler.ListProducts)
@@ -437,6 +448,7 @@ func Setup(cfg Config) *gin.Engine {
 
 		// Order management
 		adminGroup.GET("/orders", adminHandler.ListOrders)
+		adminGroup.POST("/orders/:id/refund", adminHandler.AdminRefundOrder)
 
 		// User management
 		adminGroup.GET("/users", adminHandler.ListUsers)

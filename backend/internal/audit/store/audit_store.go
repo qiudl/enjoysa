@@ -59,3 +59,29 @@ func (s *AuditStore) List(params ListParams) ([]model.AuditLog, int64, error) {
 
 	return logs, total, nil
 }
+
+// ListByResource returns audit logs for a specific resource type and ID
+func (s *AuditStore) ListByResource(resource string, resourceID uint, page, pageSize int) ([]model.AuditLog, int64, error) {
+	var logs []model.AuditLog
+	var total int64
+
+	q := s.db.Model(&model.AuditLog{}).Where("resource = ? AND resource_id = ?", resource, resourceID)
+	q.Count(&total)
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	offset := (page - 1) * pageSize
+	if err := q.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&logs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return logs, total, nil
+}

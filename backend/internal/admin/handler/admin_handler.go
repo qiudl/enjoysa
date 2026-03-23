@@ -6,14 +6,20 @@ import (
 	"time"
 
 	"enjoysa-backend/internal/audit"
+	auditstore "enjoysa-backend/internal/audit/store"
 	authmodel "enjoysa-backend/internal/auth/model"
 	authstore "enjoysa-backend/internal/auth/store"
 	"enjoysa-backend/internal/models"
 	notifservice "enjoysa-backend/internal/notification/service"
+	ordermodel "enjoysa-backend/internal/order/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	producthandler "enjoysa-backend/internal/product/handler"
 	productmodel "enjoysa-backend/internal/product/model"
 	productstore "enjoysa-backend/internal/product/store"
+	reviewstore "enjoysa-backend/internal/review/store"
+	settlementstore "enjoysa-backend/internal/settlement/store"
+	supplierauditstore "enjoysa-backend/internal/supplier/store"
+	"enjoysa-backend/internal/supplier/tier"
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -22,15 +28,19 @@ import (
 )
 
 type AdminHandler struct {
-	db            *gorm.DB
-	adminStore    *authstore.AdminStore
-	userStore     *authstore.UserStore
-	orderStore    *orderstore.OrderStore
-	productStore  *productstore.ProductStore
-	regionStore   *productstore.RegionStore
-	categoryStore *productstore.CategoryStore
-	audit         *audit.Logger
-	notifSvc      *notifservice.NotificationService
+	db                 *gorm.DB
+	adminStore         *authstore.AdminStore
+	userStore          *authstore.UserStore
+	orderStore         *orderstore.OrderStore
+	productStore       *productstore.ProductStore
+	regionStore        *productstore.RegionStore
+	categoryStore      *productstore.CategoryStore
+	audit              *audit.Logger
+	notifSvc           *notifservice.NotificationService
+	auditStore         *auditstore.AuditStore
+	reviewStore        *reviewstore.ReviewStore
+	settlementStore    *settlementstore.SettlementStore
+	supplierAuditStore *supplierauditstore.AuditLogStore
 }
 
 func NewAdminHandler(
@@ -43,17 +53,25 @@ func NewAdminHandler(
 	categoryStore *productstore.CategoryStore,
 	auditLogger *audit.Logger,
 	notifSvc *notifservice.NotificationService,
+	aStore *auditstore.AuditStore,
+	rvStore *reviewstore.ReviewStore,
+	slStore *settlementstore.SettlementStore,
+	saStore *supplierauditstore.AuditLogStore,
 ) *AdminHandler {
 	return &AdminHandler{
-		db:            db,
-		adminStore:    adminStore,
-		userStore:     userStore,
-		orderStore:    orderStore,
-		productStore:  productStore,
-		regionStore:   regionStore,
-		categoryStore: categoryStore,
-		audit:         auditLogger,
-		notifSvc:      notifSvc,
+		db:                 db,
+		adminStore:         adminStore,
+		userStore:          userStore,
+		orderStore:         orderStore,
+		productStore:       productStore,
+		regionStore:        regionStore,
+		categoryStore:      categoryStore,
+		audit:              auditLogger,
+		notifSvc:           notifSvc,
+		auditStore:         aStore,
+		reviewStore:        rvStore,
+		settlementStore:    slStore,
+		supplierAuditStore: saStore,
 	}
 }
 
@@ -89,14 +107,21 @@ func (h *AdminHandler) DashboardStats(c *gin.Context) {
 // SupplierWithStats wraps supplier with aggregated counts
 type SupplierWithStats struct {
 	models.Supplier
-	ProductCount int `json:"product_count"`
-	OrderCount   int `json:"order_count"`
+	ProductCount int     `json:"product_count"`
+	OrderCount   int     `json:"order_count"`
+	Revenue      float64 `json:"revenue"`
+	AvgRating    float64 `json:"avg_rating"`
+	ReviewCount  int     `json:"review_count"`
 }
 
 func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	status := c.Query("status")
+	supplierType := c.Query("type")
+	keyword := c.Query("keyword")
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
 
 	var suppliers []models.Supplier
 	var total int64
@@ -105,9 +130,17 @@ func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
+	if supplierType != "" {
+		query = query.Where("type = ?", supplierType)
+	}
+	if keyword != "" {
+		kw := "%" + keyword + "%"
+		query = query.Where("name ILIKE ? OR email ILIKE ?", kw, kw)
+	}
 	query.Count(&total)
 
 	offset := (page - 1) * pageSize
+	// Default sort by id DESC; will re-sort by aggregated fields below if needed
 	query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&suppliers)
 
 	// Aggregate product and order counts per supplier
@@ -120,9 +153,14 @@ func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 		SupplierID uint `json:"supplier_id"`
 		Count      int  `json:"count"`
 	}
+	type revenueItem struct {
+		SupplierID uint    `json:"supplier_id"`
+		Revenue    float64 `json:"revenue"`
+	}
 
 	productCounts := make(map[uint]int)
 	orderCounts := make(map[uint]int)
+	revenues := make(map[uint]float64)
 
 	if len(supplierIDs) > 0 {
 		var pCounts []countItem
@@ -138,6 +176,13 @@ func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 		for _, oc := range oCounts {
 			orderCounts[oc.SupplierID] = oc.Count
 		}
+
+		var revs []revenueItem
+		h.db.Raw(`SELECT supplier_id, COALESCE(SUM(total_price), 0) as revenue FROM orders
+			WHERE supplier_id IN ? AND status = 'completed' AND deleted_at IS NULL GROUP BY supplier_id`, supplierIDs).Scan(&revs)
+		for _, r := range revs {
+			revenues[r.SupplierID] = r.Revenue
+		}
 	}
 
 	result := make([]SupplierWithStats, len(suppliers))
@@ -146,6 +191,30 @@ func (h *AdminHandler) ListSuppliers(c *gin.Context) {
 			Supplier:     s,
 			ProductCount: productCounts[s.ID],
 			OrderCount:   orderCounts[s.ID],
+			Revenue:      revenues[s.ID],
+			AvgRating:    s.Rating,
+			ReviewCount:  s.ReviewCount,
+		}
+	}
+
+	// Sort by aggregated field if requested
+	if sortBy == "revenue" || sortBy == "orders" || sortBy == "rating" {
+		isAsc := sortOrder == "asc"
+		for i := 0; i < len(result); i++ {
+			for j := i + 1; j < len(result); j++ {
+				swap := false
+				switch sortBy {
+				case "revenue":
+					swap = (isAsc && result[i].Revenue > result[j].Revenue) || (!isAsc && result[i].Revenue < result[j].Revenue)
+				case "orders":
+					swap = (isAsc && result[i].OrderCount > result[j].OrderCount) || (!isAsc && result[i].OrderCount < result[j].OrderCount)
+				case "rating":
+					swap = (isAsc && result[i].AvgRating > result[j].AvgRating) || (!isAsc && result[i].AvgRating < result[j].AvgRating)
+				}
+				if swap {
+					result[i], result[j] = result[j], result[i]
+				}
+			}
 		}
 	}
 
@@ -251,6 +320,501 @@ func (h *AdminHandler) SuspendSupplier(c *gin.Context) {
 	}
 
 	response.SuccessMessage(c, "Supplier suspended")
+}
+
+// === Supplier Detail & Enhanced Operations ===
+
+func (h *AdminHandler) GetSupplierDetail(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	var supplier models.Supplier
+	if err := h.db.First(&supplier, uint(id)).Error; err != nil {
+		response.NotFound(c, "Supplier not found")
+		return
+	}
+
+	// Get supplier users
+	var users []models.SupplierUser
+	h.db.Where("supplier_id = ?", supplier.ID).Find(&users)
+
+	// Get order stats
+	orderStats, _ := h.orderStore.GetStats(supplier.ID)
+
+	// Get settlement stats
+	settlementStats, _ := h.settlementStore.SupplierStats(supplier.ID)
+
+	// Count products
+	var productCount, activeProducts int64
+	h.db.Model(&productmodel.Product{}).Where("supplier_id = ? AND deleted_at IS NULL", supplier.ID).Count(&productCount)
+	h.db.Model(&productmodel.Product{}).Where("supplier_id = ? AND status = 'approved' AND deleted_at IS NULL", supplier.ID).Count(&activeProducts)
+
+	// Cancel rate
+	cancelRate := 0.0
+	if orderStats.Total > 0 {
+		cancelRate = float64(orderStats.Cancelled) / float64(orderStats.Total) * 100
+	}
+
+	// Update tier lazily
+	newTier := tier.Calculate(orderStats.Total, supplier.Rating, cancelRate)
+	if newTier != supplier.Tier {
+		supplier.Tier = newTier
+		h.db.Model(&supplier).Update("tier", newTier)
+	}
+
+	pendingSettlement := 0.0
+	if settlementStats != nil {
+		if v, ok := settlementStats["pending_amount"]; ok {
+			if f, ok := v.(float64); ok {
+				pendingSettlement = f
+			}
+		}
+	}
+
+	response.Success(c, gin.H{
+		"supplier": supplier,
+		"users":    users,
+		"stats": gin.H{
+			"total_revenue":      orderStats.TotalAmount,
+			"total_orders":       orderStats.Total,
+			"avg_rating":         supplier.Rating,
+			"cancel_rate":        cancelRate,
+			"product_count":      productCount,
+			"active_products":    activeProducts,
+			"pending_settlement": pendingSettlement,
+		},
+	})
+}
+
+func (h *AdminHandler) GetSupplierProducts(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	status := c.Query("status")
+
+	products, total, err := h.productStore.ListBySupplier(uint(id), productstore.ProductFilter{
+		Status:   status,
+		Page:     page,
+		PageSize: pageSize,
+	})
+	if err != nil {
+		response.ServerError(c, "Failed to list products")
+		return
+	}
+
+	response.Paginated(c, products, total, page, pageSize)
+}
+
+func (h *AdminHandler) GetSupplierOrders(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	orders, total, err := h.orderStore.List(orderstore.OrderFilter{
+		SupplierID: uint(id),
+		Status:     c.Query("status"),
+		Keyword:    c.Query("keyword"),
+		StartDate:  c.Query("start_date"),
+		EndDate:    c.Query("end_date"),
+		Page:       page,
+		PageSize:   pageSize,
+	})
+	if err != nil {
+		response.ServerError(c, "Failed to list orders")
+		return
+	}
+
+	response.Paginated(c, orders, total, page, pageSize)
+}
+
+func (h *AdminHandler) GetSupplierSettlements(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	settlements, total, err := h.settlementStore.ListBySupplier(uint(id), page, pageSize)
+	if err != nil {
+		response.ServerError(c, "Failed to list settlements")
+		return
+	}
+
+	response.Paginated(c, settlements, total, page, pageSize)
+}
+
+func (h *AdminHandler) GetSupplierSettlementStats(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	stats, err := h.settlementStore.SupplierStats(uint(id))
+	if err != nil {
+		response.ServerError(c, "Failed to get settlement stats")
+		return
+	}
+
+	response.Success(c, stats)
+}
+
+func (h *AdminHandler) GetSupplierReviews(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	reviews, total, err := h.reviewStore.ListBySupplier(reviewstore.ReviewFilter{
+		SupplierID: uint(id),
+		Page:       page,
+		PageSize:   pageSize,
+	})
+	if err != nil {
+		response.ServerError(c, "Failed to list reviews")
+		return
+	}
+
+	response.Paginated(c, reviews, total, page, pageSize)
+}
+
+// GetSupplierAuditLogs merges admin audit_logs and supplier_audit_logs
+func (h *AdminHandler) GetSupplierAuditLogs(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	// Admin audit logs for this supplier
+	adminLogs, _, _ := h.auditStore.ListByResource("supplier", uint(id), page, pageSize)
+
+	// Supplier's own audit logs
+	supplierLogs, _, _ := h.supplierAuditStore.List(supplierauditstore.AuditLogFilter{
+		SupplierID: uint(id),
+		Page:       page,
+		PageSize:   pageSize,
+	})
+
+	// Merge into unified format
+	type mergedLog struct {
+		ID        uint      `json:"id"`
+		Source    string    `json:"source"` // "admin" or "supplier"
+		Action    string    `json:"action"`
+		Detail    string    `json:"detail"`
+		UserName  string    `json:"user_name"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	var merged []mergedLog
+	for _, l := range adminLogs {
+		merged = append(merged, mergedLog{
+			ID:        l.ID,
+			Source:    "admin",
+			Action:    l.Action,
+			Detail:    l.Detail,
+			UserName:  l.AdminName,
+			CreatedAt: l.CreatedAt,
+		})
+	}
+	for _, l := range supplierLogs {
+		merged = append(merged, mergedLog{
+			ID:        l.ID,
+			Source:    "supplier",
+			Action:    l.Action,
+			Detail:    l.Detail,
+			UserName:  l.UserName,
+			CreatedAt: l.CreatedAt,
+		})
+	}
+
+	// Sort by created_at DESC
+	for i := 0; i < len(merged); i++ {
+		for j := i + 1; j < len(merged); j++ {
+			if merged[j].CreatedAt.After(merged[i].CreatedAt) {
+				merged[i], merged[j] = merged[j], merged[i]
+			}
+		}
+	}
+
+	response.Success(c, gin.H{
+		"items": merged,
+		"total": len(merged),
+	})
+}
+
+func (h *AdminHandler) ForceOfflineProduct(c *gin.Context) {
+	supplierID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+	productID, err := strconv.ParseUint(c.Param("pid"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Reason is required")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(productID))
+	if err != nil || product.SupplierID != uint(supplierID) {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	if err := h.productStore.UpdateStatus(product.ID, productmodel.ProductStatusOffline); err != nil {
+		response.ServerError(c, "Failed to force offline")
+		return
+	}
+
+	if product.RegionID > 0 {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
+	}
+
+	h.audit.Log(c, "force_offline", "product", product.ID, req.Reason)
+
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", product.SupplierID, "product_force_offline",
+			"Product Forced Offline",
+			fmt.Sprintf("Your product '%s' has been forced offline. Reason: %s", product.NameEn, req.Reason),
+			"product", product.ID)
+	}
+
+	response.SuccessMessage(c, "Product forced offline")
+}
+
+func (h *AdminHandler) RestoreProduct(c *gin.Context) {
+	supplierID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+	productID, err := strconv.ParseUint(c.Param("pid"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(productID))
+	if err != nil || product.SupplierID != uint(supplierID) {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	if err := h.productStore.UpdateStatus(product.ID, productmodel.ProductStatusApproved); err != nil {
+		response.ServerError(c, "Failed to restore product")
+		return
+	}
+
+	if product.RegionID > 0 {
+		h.regionStore.UpdateAttractionCount(product.RegionID)
+	}
+
+	h.audit.Log(c, "restore", "product", product.ID, product.NameEn)
+
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", product.SupplierID, "product_restored",
+			"Product Restored",
+			fmt.Sprintf("Your product '%s' has been restored and is now live", product.NameEn),
+			"product", product.ID)
+	}
+
+	response.SuccessMessage(c, "Product restored")
+}
+
+type UpdateSupplierRequest struct {
+	Name          *string `json:"name"`
+	Description   *string `json:"description"`
+	Logo          *string `json:"logo"`
+	Phone         *string `json:"phone"`
+	Website       *string `json:"website"`
+	Address       *string `json:"address"`
+	City          *string `json:"city"`
+	State         *string `json:"state"`
+	PostalCode    *string `json:"postal_code"`
+	BankName      *string `json:"bank_name"`
+	BankAccount   *string `json:"bank_account"`
+	BankBSB       *string `json:"bank_bsb"`
+	AccountHolder *string `json:"account_holder"`
+}
+
+func (h *AdminHandler) UpdateSupplier(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	var supplier models.Supplier
+	if err := h.db.First(&supplier, uint(id)).Error; err != nil {
+		response.NotFound(c, "Supplier not found")
+		return
+	}
+
+	var req UpdateSupplierRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+
+	if req.Name != nil {
+		supplier.Name = *req.Name
+	}
+	if req.Description != nil {
+		supplier.Description = *req.Description
+	}
+	if req.Logo != nil {
+		supplier.Logo = *req.Logo
+	}
+	if req.Phone != nil {
+		supplier.Phone = *req.Phone
+	}
+	if req.Website != nil {
+		supplier.Website = *req.Website
+	}
+	if req.Address != nil {
+		supplier.Address = *req.Address
+	}
+	if req.City != nil {
+		supplier.City = *req.City
+	}
+	if req.State != nil {
+		supplier.State = *req.State
+	}
+	if req.PostalCode != nil {
+		supplier.PostalCode = *req.PostalCode
+	}
+	if req.BankName != nil {
+		supplier.BankName = *req.BankName
+	}
+	if req.BankAccount != nil {
+		supplier.BankAccount = *req.BankAccount
+	}
+	if req.BankBSB != nil {
+		supplier.BankBSB = *req.BankBSB
+	}
+	if req.AccountHolder != nil {
+		supplier.AccountHolder = *req.AccountHolder
+	}
+
+	if err := h.db.Save(&supplier).Error; err != nil {
+		response.ServerError(c, "Failed to update supplier")
+		return
+	}
+
+	h.audit.Log(c, "update", "supplier", supplier.ID, supplier.Name)
+	response.Success(c, supplier)
+}
+
+func (h *AdminHandler) GetSupplierRevenueTrend(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid supplier ID")
+		return
+	}
+
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if days < 1 || days > 365 {
+		days = 30
+	}
+
+	items, err := h.orderStore.GetRevenueTrend(uint(id), days)
+	if err != nil {
+		response.ServerError(c, "Failed to get revenue trend")
+		return
+	}
+
+	response.Success(c, items)
+}
+
+func (h *AdminHandler) AdminRefundOrder(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	var req struct {
+		Amount     float64 `json:"amount" binding:"required"`
+		Reason     string  `json:"reason" binding:"required"`
+		RefundType string  `json:"refund_type" binding:"required,oneof=full partial"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: amount, reason, and refund_type (full/partial) are required")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+
+	now := time.Now()
+	order.Status = ordermodel.OrderStatusRefunded
+	order.RefundedAt = &now
+	order.RefundAmount = req.Amount
+	order.RefundType = req.RefundType
+	order.RefundReason = req.Reason
+	order.RefundStatus = "completed"
+
+	if err := h.orderStore.Update(order); err != nil {
+		response.ServerError(c, "Failed to refund order")
+		return
+	}
+
+	// Record status history
+	adminID := c.MustGet("admin_id").(uint)
+	_ = h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   ordermodel.OrderStatusCompleted,
+		ToStatus:     ordermodel.OrderStatusRefunded,
+		OperatorID:   &adminID,
+		OperatorType: "admin",
+		Remark:       fmt.Sprintf("Admin refund (%s): %s", req.RefundType, req.Reason),
+	})
+
+	h.audit.Log(c, "refund", "order", order.ID, fmt.Sprintf("%s refund $%.2f: %s", req.RefundType, req.Amount, req.Reason))
+
+	// Notify supplier
+	if h.notifSvc != nil {
+		_ = h.notifSvc.Send("supplier", order.SupplierID, "order_refunded",
+			"Order Refunded by Admin",
+			fmt.Sprintf("Order %s has been refunded ($%.2f). Reason: %s", order.OrderNo, req.Amount, req.Reason),
+			"order", order.ID)
+	}
+
+	response.SuccessMessage(c, "Order refunded")
 }
 
 // === Product Management ===

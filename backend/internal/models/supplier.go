@@ -53,6 +53,9 @@ type Supplier struct {
 	Rating      float64 `gorm:"type:decimal(3,2);default:0" json:"rating"`
 	ReviewCount int     `gorm:"default:0" json:"review_count"`
 
+	// 等级
+	Tier string `gorm:"size:20;default:silver" json:"tier"`
+
 	// 设置
 	AutoAccept  bool `gorm:"default:false" json:"auto_accept"`
 	NotifyEmail bool `gorm:"default:true" json:"notify_email"`
