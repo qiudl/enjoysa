@@ -228,6 +228,14 @@ func expiredOrderCleanup(ctx context.Context, oStore *orderstore.OrderStore) {
 }
 
 func seedData(db *gorm.DB) {
+	// If seed tool has already been run (>5 suppliers), skip server seeding
+	// to avoid overriding seed tool's richer data set.
+	var supplierCount int64
+	db.Model(&models.Supplier{}).Count(&supplierCount)
+	if supplierCount > 5 {
+		return
+	}
+
 	seedAdmin(db)
 	seedSupplier(db)
 	seedRegions(db)

@@ -18,5 +18,8 @@ backend/enjoysa-backend-linux
 # Configs with secrets
 backend/configs/config.yaml
 
+# Generated seed data
+backend/seeds/
+
 # Subprojects
 tuangou/
