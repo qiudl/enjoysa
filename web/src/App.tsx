@@ -21,6 +21,7 @@ const AboutPage = React.lazy(() => import('./pages/AboutPage/AboutPage'));
 const ContactPage = React.lazy(() => import('./pages/ContactPage/ContactPage'));
 const CartPage = React.lazy(() => import('./pages/CartPage/CartPage'));
 const FavoritesPage = React.lazy(() => import('./pages/FavoritesPage/FavoritesPage'));
+const SupplierShopPage = React.lazy(() => import('./pages/SupplierShopPage/SupplierShopPage'));
 const FaqPage = React.lazy(() => import('./pages/FaqPage/FaqPage'));
 const TermsPage = React.lazy(() => import('./pages/TermsPage/TermsPage'));
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage/PrivacyPage'));
@@ -462,6 +463,25 @@ function CartPageWrapper() {
       onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
       onCheckout={() => navigate('/checkout')}
       onContinueShopping={() => navigate('/products')}
+    />
+  );
+}
+
+// 包装组件：SupplierShopPage
+function SupplierShopPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getCartCount } = useCart();
+
+  return (
+    <SupplierShopPage
+      supplierId={id}
+      cartCount={getCartCount()}
+      onProductClick={(product) => navigate(`/product/${product.id}`)}
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
+      onNavClick={(path) => navigate(path)}
+      onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
     />
   );
 }
@@ -909,6 +929,9 @@ function App() {
         {/* 购物车和收藏 */}
         <Route path="/cart" element={<CartPageWrapper />} />
         <Route path="/favorites" element={<FavoritesPageWrapper />} />
+
+        {/* 供应商店铺页 */}
+        <Route path="/shop/:id" element={<SupplierShopPageWrapper />} />
 
         {/* B端供应商后台 - 登录/注册页无需保护 */}
         <Route path="/supplier/login" element={<SupplierLoginPageWrapper />} />

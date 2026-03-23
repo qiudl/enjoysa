@@ -688,6 +688,16 @@
     "hoursAgo": "{{n}}h ago",
     "daysAgo": "{{n}}d ago"
   },
+  "shop": {
+    "rating": "Rating",
+    "products": "Products",
+    "reviews": "Reviews",
+    "allProducts": "All Products",
+    "items": "items",
+    "recentReviews": "Recent Reviews",
+    "noProducts": "No products yet",
+    "noReviews": "No reviews yet"
+  },
   "footer": {
     "about": "About Us",
     "aboutText": "EnjoySA is a one-stop booking platform offering uniquely local 'premium experiences + food & wine + accommodation' for travellers in Australia.",

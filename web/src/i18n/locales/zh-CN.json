@@ -688,6 +688,16 @@
     "hoursAgo": "{{n}}小时前",
     "daysAgo": "{{n}}天前"
   },
+  "shop": {
+    "rating": "评分",
+    "products": "产品",
+    "reviews": "评价",
+    "allProducts": "全部产品",
+    "items": "个产品",
+    "recentReviews": "最近评价",
+    "noProducts": "暂无产品",
+    "noReviews": "暂无评价"
+  },
   "footer": {
     "about": "关于我们",
     "aboutText": "EnjoySA是为澳洲旅客提供独具本地特色的\"轻奢体验+美食+住宿\"一站式预定平台。",
