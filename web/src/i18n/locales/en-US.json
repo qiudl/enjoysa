@@ -1503,7 +1503,27 @@
       "viewDetail": "Detail",
       "download": "Download",
       "noSettlements": "No settlement records",
-      "noRecords": "No settlement records"
+      "noRecords": "No settlement records",
+      "detail": {
+        "title": "Settlement Details",
+        "orderNo": "Order No.",
+        "product": "Product",
+        "date": "Date",
+        "amount": "Order Amount",
+        "total": "Total",
+        "exportCsv": "Export CSV"
+      },
+      "dispute": {
+        "title": "Raise Dispute",
+        "raise": "Dispute",
+        "amount": "Disputed Amount",
+        "reason": "Reason",
+        "reasonPlaceholder": "Please describe the dispute reason in detail...",
+        "submit": "Submit Dispute",
+        "submitted": "Dispute Submitted",
+        "submittedDesc": "We will process your dispute within 1-3 business days",
+        "status": "Disputed"
+      }
     },
     "auditLog": {
       "title": "Audit Logs",

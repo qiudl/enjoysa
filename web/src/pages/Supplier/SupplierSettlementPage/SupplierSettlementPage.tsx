@@ -4,6 +4,8 @@ import { Button } from '../../../components/Common';
 import { get } from '../../../services/api';
 import type { PaginatedResponse } from '../../../services/api';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
+import { SettlementDetailDrawer } from '../../../components/Supplier/SettlementDetailDrawer/SettlementDetailDrawer';
+import { DisputeModal } from '../../../components/Supplier/DisputeModal/DisputeModal';
 import styles from './SupplierSettlementPage.module.css';
 
 export interface Settlement {
@@ -75,6 +77,9 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
   const [settledAmount, setSettledAmount] = useState(0);
   const [monthSales, setMonthSales] = useState(0);
   const [profile, setProfile] = useState<SupplierProfile | null>(null);
+  const [detailSettlement, setDetailSettlement] = useState<Settlement | null>(null);
+  const [disputeSettlement, setDisputeSettlement] = useState<Settlement | null>(null);
+  const [disputes, setDisputes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     get<PaginatedResponse<ApiSettlement>>('/supplier/settlements?page=1&page_size=50', 'supplier')
@@ -260,10 +265,19 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
                           {settlement.paidAt && (
                             <span>{t('supplier.settlement.paidAt')}: {settlement.paidAt}</span>
                           )}
+                          {disputes[settlement.id] && (
+                            <span style={{ color: '#f59e0b', fontWeight: 500 }}>
+                              ⚠️ {t('supplier.settlement.dispute.status')}
+                            </span>
+                          )}
                         </div>
                         <div className={styles.settlementActions}>
-                          <Button size="sm" variant="outline">{t('supplier.settlement.viewDetail')}</Button>
-                          <Button size="sm" variant="outline">{t('supplier.settlement.download')}</Button>
+                          <Button size="sm" variant="outline" onClick={() => setDetailSettlement(settlement)}>
+                            {t('supplier.settlement.viewDetail')}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setDisputeSettlement(settlement)}>
+                            {t('supplier.settlement.dispute.raise')}
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -277,6 +291,25 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
               </div>
             )}
           </section>
+
+      {/* Detail Drawer */}
+      {detailSettlement && (
+        <SettlementDetailDrawer
+          settlement={detailSettlement}
+          onClose={() => setDetailSettlement(null)}
+        />
+      )}
+
+      {/* Dispute Modal */}
+      {disputeSettlement && (
+        <DisputeModal
+          settlement={disputeSettlement}
+          onClose={() => setDisputeSettlement(null)}
+          onSubmit={(id, reason) => {
+            setDisputes(prev => ({ ...prev, [id]: reason }));
+          }}
+        />
+      )}
     </div>
   );
 };
