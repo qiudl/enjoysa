@@ -16,6 +16,9 @@ import {
   Lock,
   MessageSquare,
   Download,
+  Users,
+  Headphones,
+  BarChart3,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
@@ -44,6 +47,9 @@ const menuItems: MenuItem[] = [
   { key: 'reviews', path: '/supplier/reviews', icon: <MessageSquare size={20} />, labelKey: 'supplier.nav.reviews', requireApproved: true },
   { key: 'settlement', path: '/supplier/settlement', icon: <DollarSign size={20} />, labelKey: 'supplier.nav.settlement', requireApproved: true },
   { key: 'exports', path: '/supplier/exports', icon: <Download size={20} />, labelKey: 'supplier.nav.exports', requireApproved: true },
+  { key: 'team', path: '/supplier/team', icon: <Users size={20} />, labelKey: 'supplier.nav.team', requireApproved: true },
+  { key: 'afterSales', path: '/supplier/after-sales', icon: <Headphones size={20} />, labelKey: 'supplier.nav.afterSales', requireApproved: true },
+  { key: 'reports', path: '/supplier/reports', icon: <BarChart3 size={20} />, labelKey: 'supplier.nav.reports', requireApproved: true },
   { key: 'auditLogs', path: '/supplier/audit-logs', icon: <FileText size={20} />, labelKey: 'supplier.nav.auditLogs' },
   { key: 'settings', path: '/supplier/settings', icon: <Settings size={20} />, labelKey: 'supplier.nav.settings' },
 ];

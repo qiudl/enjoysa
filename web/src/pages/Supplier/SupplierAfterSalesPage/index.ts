@@ -1,0 +1,1 @@
+export { SupplierAfterSalesPage } from './SupplierAfterSalesPage';

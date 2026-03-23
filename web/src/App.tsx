@@ -36,6 +36,9 @@ const SupplierOrderListPage = React.lazy(() => import('./pages/Supplier/Supplier
 const SupplierReviewsPage = React.lazy(() => import('./pages/Supplier/SupplierReviewsPage/SupplierReviewsPage'));
 const SupplierSettlementPage = React.lazy(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
 const SupplierExportPage = React.lazy(() => import('./pages/Supplier/SupplierExportPage/SupplierExportPage'));
+const SupplierTeamPage = React.lazy(() => import('./pages/Supplier/SupplierTeamPage/SupplierTeamPage'));
+const SupplierAfterSalesPage = React.lazy(() => import('./pages/Supplier/SupplierAfterSalesPage/SupplierAfterSalesPage'));
+const SupplierReportsPage = React.lazy(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
 const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
 const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
@@ -725,6 +728,37 @@ function SupplierExportPageWrapper() {
   );
 }
 
+// 包装组件：SupplierTeamPage
+function SupplierTeamPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierLayout>
+      <SupplierTeamPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierAfterSalesPage
+function SupplierAfterSalesPageWrapper() {
+  return (
+    <SupplierLayout>
+      <SupplierAfterSalesPage />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierReportsPage
+function SupplierReportsPageWrapper() {
+  return (
+    <SupplierLayout>
+      <SupplierReportsPage />
+    </SupplierLayout>
+  );
+}
+
 // 包装组件：SupplierAuditLogPage
 function SupplierAuditLogPageWrapper() {
   return (
@@ -976,6 +1010,9 @@ function App() {
         <Route path="/supplier/reviews" element={<SupplierAuthGuard><SupplierReviewsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settlement" element={<SupplierAuthGuard><SupplierSettlementPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/exports" element={<SupplierAuthGuard><SupplierExportPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/team" element={<SupplierAuthGuard><SupplierTeamPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/after-sales" element={<SupplierAuthGuard><SupplierAfterSalesPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/reports" element={<SupplierAuthGuard><SupplierReportsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settings" element={<SupplierAuthGuard><SupplierSettingsPageWrapper /></SupplierAuthGuard>} />
 
