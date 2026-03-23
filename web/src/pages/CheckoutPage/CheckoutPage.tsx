@@ -71,7 +71,7 @@ const createDefaultParticipant = (): ParticipantDetail => ({
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   language,
-  isLoggedIn = true,
+  isLoggedIn = false,
   userName,
   cartCount = 0,
   product: productProp,

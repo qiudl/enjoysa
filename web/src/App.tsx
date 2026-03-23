@@ -329,12 +329,14 @@ function ProductDetailPageWrapper() {
 function CheckoutPageWrapper() {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
+  const { isAuthenticated } = useUserAuth();
   const location = useLocation();
   const state = location.state as { productId?: string } | null;
 
   return (
     <CheckoutPage
       productId={state?.productId}
+      isLoggedIn={isAuthenticated}
       cartCount={getCartCount()}
       onOrderSuccess={(orderId) => navigate(`/orders?highlight=${orderId}`)}
       onLoginRequired={() => navigate('/login')}
