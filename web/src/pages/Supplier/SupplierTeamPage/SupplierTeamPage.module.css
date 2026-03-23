@@ -67,6 +67,38 @@
   color: #64748b;
 }
 
+/* Tabs */
+.tabBar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 0;
+}
+
+.tabBtn {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  background: none;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tabBtn:hover {
+  color: #334155;
+}
+
+.tabActive {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  font-weight: 600;
+}
+
 /* Member List */
 .memberList {
   display: flex;
@@ -222,6 +254,284 @@
   background: #ecfdf5;
 }
 
+/* Permission Section */
+.permissionSection {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.permissionHint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0 0 1.25rem 0;
+}
+
+.permissionTable {
+  overflow-x: auto;
+}
+
+.permissionTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.permissionTable th {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.permissionTable th:first-child {
+  text-align: left;
+}
+
+.permissionTable td {
+  padding: 0.625rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pageName {
+  text-align: left !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.accessBtn {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 56px;
+}
+
+.accessBtn:disabled {
+  cursor: default;
+}
+
+.access_full {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.access_readonly {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.access_none {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+.accessBtn:not(:disabled):hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+/* Invitation List */
+.invitationList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.invitationCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.invitationInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.invitationEmail {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #1a1a2e;
+}
+
+.invitationMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.invitationStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.invStatus_pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.invStatus_accepted {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.invStatus_expired {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.invitationDate {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.invitationActions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.resendBtn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #3b82f6;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resendBtn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.revokeBtn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.revokeBtn:hover {
+  border-color: #fca5a5;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.emptyIcon {
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  color: #64748b;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+/* Invite Expiry Options */
+.expiryOptions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.expiryBtn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expiryBtn:hover {
+  border-color: #cbd5e1;
+}
+
+.expiryActive {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Reset Password Modal */
+.resetInfo {
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tempPasswordBox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.tempPasswordLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.tempPasswordCode {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 2px;
+}
+
 /* Modal */
 .overlay {
   position: fixed;
@@ -375,5 +685,19 @@
 
   .lastLogin {
     display: none;
+  }
+
+  .invitationCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .permissionTable {
+    font-size: 0.75rem;
+  }
+
+  .tabBar {
+    overflow-x: auto;
   }
 }

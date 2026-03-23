@@ -478,12 +478,36 @@
     "features": {
       "title": "Why Choose Us",
       "items": [
-        { "icon": "🇨🇳", "title": "Chinese Service", "description": "Chinese-speaking guides and customer support" },
-        { "icon": "💳", "title": "Local Payment", "description": "Accept WeChat Pay, Alipay and more" },
-        { "icon": "⭐", "title": "Quality Assured", "description": "Carefully selected quality suppliers" },
-        { "icon": "💰", "title": "Transparent Pricing", "description": "No hidden fees, clear pricing" },
-        { "icon": "🔒", "title": "Safe Travel", "description": "Comprehensive insurance coverage" },
-        { "icon": "📞", "title": "24/7 Support", "description": "Round-the-clock customer service" }
+        {
+          "icon": "🇨🇳",
+          "title": "Chinese Service",
+          "description": "Chinese-speaking guides and customer support"
+        },
+        {
+          "icon": "💳",
+          "title": "Local Payment",
+          "description": "Accept WeChat Pay, Alipay and more"
+        },
+        {
+          "icon": "⭐",
+          "title": "Quality Assured",
+          "description": "Carefully selected quality suppliers"
+        },
+        {
+          "icon": "💰",
+          "title": "Transparent Pricing",
+          "description": "No hidden fees, clear pricing"
+        },
+        {
+          "icon": "🔒",
+          "title": "Safe Travel",
+          "description": "Comprehensive insurance coverage"
+        },
+        {
+          "icon": "📞",
+          "title": "24/7 Support",
+          "description": "Round-the-clock customer service"
+        }
       ]
     },
     "team": {
@@ -501,10 +525,30 @@
     "contactInfo": {
       "title": "Contact Information",
       "items": [
-        { "icon": "📞", "label": "Phone", "value": "+61 8 1234 5678", "description": "Mon-Sun 9:00-21:00 (ACST)" },
-        { "icon": "📱", "label": "WeChat", "value": "EnjoySA_Service", "description": "Scan to add, chat online" },
-        { "icon": "✉️", "label": "Email", "value": "service@enjoysa.com.au", "description": "We reply within 24 hours" },
-        { "icon": "📍", "label": "Address", "value": "Adelaide CBD", "description": "Level 5, 123 King William Street, Adelaide SA 5000" }
+        {
+          "icon": "📞",
+          "label": "Phone",
+          "value": "+61 8 1234 5678",
+          "description": "Mon-Sun 9:00-21:00 (ACST)"
+        },
+        {
+          "icon": "📱",
+          "label": "WeChat",
+          "value": "EnjoySA_Service",
+          "description": "Scan to add, chat online"
+        },
+        {
+          "icon": "✉️",
+          "label": "Email",
+          "value": "service@enjoysa.com.au",
+          "description": "We reply within 24 hours"
+        },
+        {
+          "icon": "📍",
+          "label": "Address",
+          "value": "Adelaide CBD",
+          "description": "Level 5, 123 King William Street, Adelaide SA 5000"
+        }
       ]
     },
     "form": {
@@ -528,9 +572,18 @@
     "workingHours": {
       "title": "Working Hours",
       "items": [
-        { "day": "Monday - Friday", "hours": "9:00 AM - 6:00 PM" },
-        { "day": "Saturday", "hours": "10:00 AM - 4:00 PM" },
-        { "day": "Sunday & Holidays", "hours": "Closed (Leave a message)" }
+        {
+          "day": "Monday - Friday",
+          "hours": "9:00 AM - 6:00 PM"
+        },
+        {
+          "day": "Saturday",
+          "hours": "10:00 AM - 4:00 PM"
+        },
+        {
+          "day": "Sunday & Holidays",
+          "hours": "Closed (Leave a message)"
+        }
       ]
     }
   },
@@ -545,24 +598,60 @@
     },
     "faqs": {
       "booking": [
-        { "question": "How do I book a tour?", "answer": "Browse our products, select your preferred date and number of participants, then click \"Book Now\". Complete the payment to confirm your booking. You will receive a confirmation email with your e-ticket." },
-        { "question": "How far in advance should I book?", "answer": "We recommend booking at least 24-48 hours in advance. During peak seasons (school holidays, public holidays), booking 1 week ahead is advised. Popular products may require earlier booking." },
-        { "question": "Can I book for someone else?", "answer": "Yes. You can book for family and friends. Just enter the actual participant information when making the booking." }
+        {
+          "question": "How do I book a tour?",
+          "answer": "Browse our products, select your preferred date and number of participants, then click \"Book Now\". Complete the payment to confirm your booking. You will receive a confirmation email with your e-ticket."
+        },
+        {
+          "question": "How far in advance should I book?",
+          "answer": "We recommend booking at least 24-48 hours in advance. During peak seasons (school holidays, public holidays), booking 1 week ahead is advised. Popular products may require earlier booking."
+        },
+        {
+          "question": "Can I book for someone else?",
+          "answer": "Yes. You can book for family and friends. Just enter the actual participant information when making the booking."
+        }
       ],
       "payment": [
-        { "question": "What payment methods are accepted?", "answer": "We accept multiple payment methods including WeChat Pay, Alipay, UnionPay, Visa/Mastercard credit cards. All payments are processed through secure encrypted channels." },
-        { "question": "How do I request a refund?", "answer": "To request a refund, go to \"My Orders\", find the relevant order, and click \"Request Refund\". We will review your request within 1-3 business days. Eligible refunds will be processed within 5-10 business days." },
-        { "question": "What is the refund policy?", "answer": "Full refund for cancellations 7+ days before departure; 50% refund for 3-7 days; no refund within 72 hours. Specific policies may vary by product - please check the product details." }
+        {
+          "question": "What payment methods are accepted?",
+          "answer": "We accept multiple payment methods including WeChat Pay, Alipay, UnionPay, Visa/Mastercard credit cards. All payments are processed through secure encrypted channels."
+        },
+        {
+          "question": "How do I request a refund?",
+          "answer": "To request a refund, go to \"My Orders\", find the relevant order, and click \"Request Refund\". We will review your request within 1-3 business days. Eligible refunds will be processed within 5-10 business days."
+        },
+        {
+          "question": "What is the refund policy?",
+          "answer": "Full refund for cancellations 7+ days before departure; 50% refund for 3-7 days; no refund within 72 hours. Specific policies may vary by product - please check the product details."
+        }
       ],
       "tour": [
-        { "question": "Is hotel pickup included?", "answer": "Most products include pickup from Adelaide CBD hotels. Please check product details for specific pickup arrangements. Some products may require self-transport to the meeting point." },
-        { "question": "Will tours be cancelled due to weather?", "answer": "If severe weather makes the activity unsafe, we will notify you in advance and arrange a reschedule or full refund. Please ensure your contact details are accurate." },
-        { "question": "What should I bring?", "answer": "Depending on the activity, we recommend: comfortable walking shoes, sunscreen, hat, camera, drinking water. Check the product details page for specific recommendations." }
+        {
+          "question": "Is hotel pickup included?",
+          "answer": "Most products include pickup from Adelaide CBD hotels. Please check product details for specific pickup arrangements. Some products may require self-transport to the meeting point."
+        },
+        {
+          "question": "Will tours be cancelled due to weather?",
+          "answer": "If severe weather makes the activity unsafe, we will notify you in advance and arrange a reschedule or full refund. Please ensure your contact details are accurate."
+        },
+        {
+          "question": "What should I bring?",
+          "answer": "Depending on the activity, we recommend: comfortable walking shoes, sunscreen, hat, camera, drinking water. Check the product details page for specific recommendations."
+        }
       ],
       "other": [
-        { "question": "How can I contact customer service?", "answer": "You can reach us by: Phone +61 8 XXXX XXXX (business hours), Email support@enjoysa.com.au, or use the live chat feature on our website. We will respond as soon as possible." },
-        { "question": "How do I submit a review?", "answer": "After completing your tour, you can leave a review in \"My Orders\". Your honest feedback helps other users make decisions and helps us improve our services." },
-        { "question": "How can I become a partner?", "answer": "If you are a South Australian tourism provider, we welcome partnerships. Please email partner@enjoysa.com.au with your company introduction and product information." }
+        {
+          "question": "How can I contact customer service?",
+          "answer": "You can reach us by: Phone +61 8 XXXX XXXX (business hours), Email support@enjoysa.com.au, or use the live chat feature on our website. We will respond as soon as possible."
+        },
+        {
+          "question": "How do I submit a review?",
+          "answer": "After completing your tour, you can leave a review in \"My Orders\". Your honest feedback helps other users make decisions and helps us improve our services."
+        },
+        {
+          "question": "How can I become a partner?",
+          "answer": "If you are a South Australian tourism provider, we welcome partnerships. Please email partner@enjoysa.com.au with your company introduction and product information."
+        }
       ]
     },
     "contact": "Didn't find your answer?",
@@ -1319,10 +1408,13 @@
   },
   "supplier": {
     "types": {
-      "travel_agency": "Travel Agency",
+      "travelAgency": "Travel Agency",
       "hotel": "Hotel",
-      "attraction": "Attraction",
+      "scenic": "Attraction",
       "restaurant": "Restaurant",
+      "carRental": "Car Rental",
+      "travel_agency": "Travel Agency",
+      "attraction": "Attraction",
       "car_rental": "Car Rental"
     },
     "dashboard": {
@@ -1640,16 +1732,6 @@
       "errorInvalid": "Invalid email or password",
       "errorNetwork": "Network error, please try again"
     },
-    "types": {
-      "travelAgency": "Travel Agency",
-      "hotel": "Hotel",
-      "scenic": "Attraction",
-      "restaurant": "Restaurant",
-      "carRental": "Car Rental",
-      "travel_agency": "Travel Agency",
-      "attraction": "Attraction",
-      "car_rental": "Car Rental"
-    },
     "register": {
       "brandTitle": "Become a Partner",
       "benefit1": "Zero upfront costs, pay per transaction",
@@ -1727,7 +1809,6 @@
       "addressPlaceholder": "Enter address",
       "tags": "Tags",
       "tagsHint": "Separate multiple tags with commas",
-
       "imageUpload": "Product Images",
       "imageUploadHint": "Upload up to 5 images, first one is the cover",
       "dragToSort": "Drag to sort",
@@ -1736,7 +1817,6 @@
       "setCover": "Set as Cover",
       "maxImages": "Maximum 5 images",
       "uploading": "Uploading...",
-
       "packages": "Packages",
       "packagesHint": "Add at least one package",
       "addPackage": "Add Package",
@@ -1746,7 +1826,6 @@
       "packageDescEn": "Description (English)",
       "packagePrice": "Price (AUD)",
       "noPackages": "No packages yet, click the button above to add",
-
       "highlights": "Highlights",
       "addHighlight": "Add Highlight",
       "highlightTitleZh": "Title (Chinese)",
@@ -1754,7 +1833,6 @@
       "highlightDescZh": "Description (Chinese)",
       "highlightDescEn": "Description (English)",
       "noHighlights": "No highlights yet, click the button above to add",
-
       "faqs": "FAQ",
       "addFaq": "Add Question",
       "faqQuestionZh": "Question (Chinese)",
@@ -1762,7 +1840,6 @@
       "faqAnswerZh": "Answer (Chinese)",
       "faqAnswerEn": "Answer (English)",
       "noFaqs": "No FAQ yet, click the button above to add",
-
       "preview": "Product Preview",
       "previewBasic": "Basic Info",
       "previewImages": "Images",
@@ -1770,7 +1847,6 @@
       "previewHighlights": "Highlights",
       "previewFaqs": "FAQ",
       "noData": "Not filled",
-
       "saveDraft": "Save Draft",
       "saveAndSubmit": "Save & Submit for Review",
       "saving": "Saving...",
@@ -1893,7 +1969,29 @@
       "email": "Email Address",
       "emailPlaceholder": "Enter member email",
       "role": "Select Role",
-      "sendInvite": "Send Invite"
+      "sendInvite": "Send Invite",
+      "tabMembers": "Members",
+      "tabPermissions": "Permissions",
+      "tabInvitations": "Invitations",
+      "resetPassword": "Reset Password",
+      "resetPasswordInfo": "A temporary password will be generated for {{name}}. The user must change it on next login.",
+      "tempPassword": "Temporary Password",
+      "permissionHint": "Configure access permissions for each role across different pages",
+      "page": "Page",
+      "accessFull": "Full",
+      "accessReadonly": "Read-only",
+      "accessNone": "None",
+      "noInvitations": "No invitations yet",
+      "invPending": "Pending",
+      "invAccepted": "Accepted",
+      "invExpired": "Expired",
+      "expires": "Expires",
+      "resend": "Resend",
+      "linkExpiry": "Link Expiry",
+      "expiry1d": "1 day",
+      "expiry3d": "3 days",
+      "expiry7d": "7 days",
+      "expiryNever": "Never"
     },
     "afterSales": {
       "title": "After-Sales Tickets",
@@ -1928,6 +2026,89 @@
       "ordersChart": "Orders Analysis",
       "productRanking": "Product Ranking",
       "orderUnit": "orders"
+    },
+    "ticket": {
+      "backToList": "Back to List",
+      "ticketInfo": "Ticket Info",
+      "customer": "Customer",
+      "email": "Email",
+      "product": "Product",
+      "amount": "Amount",
+      "slaRemaining": "SLA Remaining",
+      "created": "Created",
+      "timeline": "Timeline",
+      "replyPlaceholder": "Type your reply... (Ctrl+Enter to send)",
+      "internalNote": "Internal Note",
+      "send": "Send",
+      "attachFile": "Attach File",
+      "refundApproval": "Refund Approval",
+      "refundAmount": "Refund Amount",
+      "refundReason": "Reason",
+      "refundStatus": "Approval Status",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectReason": "Rejection Reason",
+      "rejectReasonPlaceholder": "Enter the reason for rejection...",
+      "attachments": "Attachments",
+      "statusPending": "Pending",
+      "statusApproved": "Approved",
+      "statusRejected": "Rejected",
+      "statusExecuted": "Executed",
+      "messageSystem": "System",
+      "status": "Status",
+      "type": "Type",
+      "approver": "Approver",
+      "approvedAt": "Approved At",
+      "cancel": "Cancel",
+      "internal": "Internal"
+    },
+    "orderDetail": {
+      "backToList": "Back to List",
+      "timeline": "Timeline",
+      "remark": "Remark",
+      "orderInfo": "Order Info",
+      "product": "Product",
+      "travelDate": "Travel Date",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "totalAmount": "Total Amount",
+      "paymentMethod": "Payment Method",
+      "paidAt": "Paid At",
+      "channel": "Channel",
+      "travelers": "Travelers",
+      "travelerAdult": "Adult",
+      "travelerChild": "Child",
+      "verification": "Verification",
+      "verified": "Verified",
+      "notVerified": "Not Verified",
+      "verify": "Verify",
+      "verifyConfirm": "Confirm Verification",
+      "verifyCode": "Verification Code",
+      "statusPending": "Pending",
+      "statusConfirmed": "Confirmed",
+      "statusVerified": "Verified",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "eventCreated": "Order Created",
+      "eventPaid": "Payment Completed",
+      "eventConfirmed": "Order Confirmed",
+      "eventVerified": "Verified",
+      "eventCompleted": "Order Completed"
+    },
+    "preview": {
+      "title": "Product Preview",
+      "customerView": "Customer View",
+      "editProduct": "Edit Product",
+      "imagePlaceholder": "Image",
+      "rating": "reviews",
+      "perPerson": "per person",
+      "selectDate": "Select Date",
+      "highlights": "Highlights",
+      "description": "Description",
+      "schedule": "Itinerary",
+      "includes": "What's Included",
+      "excludes": "Not Included",
+      "notices": "Important Notes"
     }
   },
   "contacts": {

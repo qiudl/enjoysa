@@ -285,6 +285,12 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                       >
                         {t('supplier.products.schedules')}
                       </button>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => onNavigate?.(`/supplier/products/${product.id}/preview`)}
+                      >
+                        {t('supplier.preview.title')}
+                      </button>
                       {product.status === 'active' ? (
                         <button className={styles.actionBtn} onClick={() => handleToggleStatus(product)}>{t('supplier.products.setOffline')}</button>
                       ) : product.status === 'inactive' ? (

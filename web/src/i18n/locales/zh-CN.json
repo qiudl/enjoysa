@@ -478,12 +478,36 @@
     "features": {
       "title": "为什么选择我们",
       "items": [
-        { "icon": "🇨🇳", "title": "中文服务", "description": "全程中文导游和客服支持，沟通无障碍" },
-        { "icon": "💳", "title": "本地支付", "description": "支持微信、支付宝等多种中国支付方式" },
-        { "icon": "⭐", "title": "品质保障", "description": "精选优质供应商，确保行程质量" },
-        { "icon": "💰", "title": "价格透明", "description": "无隐藏费用，明码标价" },
-        { "icon": "🔒", "title": "安全出行", "description": "完善的保险保障，让您安心出游" },
-        { "icon": "📞", "title": "24/7 支持", "description": "全天候客户服务，随时解答您的疑问" }
+        {
+          "icon": "🇨🇳",
+          "title": "中文服务",
+          "description": "全程中文导游和客服支持，沟通无障碍"
+        },
+        {
+          "icon": "💳",
+          "title": "本地支付",
+          "description": "支持微信、支付宝等多种中国支付方式"
+        },
+        {
+          "icon": "⭐",
+          "title": "品质保障",
+          "description": "精选优质供应商，确保行程质量"
+        },
+        {
+          "icon": "💰",
+          "title": "价格透明",
+          "description": "无隐藏费用，明码标价"
+        },
+        {
+          "icon": "🔒",
+          "title": "安全出行",
+          "description": "完善的保险保障，让您安心出游"
+        },
+        {
+          "icon": "📞",
+          "title": "24/7 支持",
+          "description": "全天候客户服务，随时解答您的疑问"
+        }
       ]
     },
     "team": {
@@ -501,10 +525,30 @@
     "contactInfo": {
       "title": "联系方式",
       "items": [
-        { "icon": "📞", "label": "客服电话", "value": "+61 8 1234 5678", "description": "周一至周日 9:00-21:00 (澳洲时间)" },
-        { "icon": "📱", "label": "微信客服", "value": "EnjoySA_Service", "description": "扫码添加，在线咨询" },
-        { "icon": "✉️", "label": "电子邮箱", "value": "service@enjoysa.com.au", "description": "我们会在24小时内回复" },
-        { "icon": "📍", "label": "办公地址", "value": "阿德莱德市中心", "description": "Level 5, 123 King William Street, Adelaide SA 5000" }
+        {
+          "icon": "📞",
+          "label": "客服电话",
+          "value": "+61 8 1234 5678",
+          "description": "周一至周日 9:00-21:00 (澳洲时间)"
+        },
+        {
+          "icon": "📱",
+          "label": "微信客服",
+          "value": "EnjoySA_Service",
+          "description": "扫码添加，在线咨询"
+        },
+        {
+          "icon": "✉️",
+          "label": "电子邮箱",
+          "value": "service@enjoysa.com.au",
+          "description": "我们会在24小时内回复"
+        },
+        {
+          "icon": "📍",
+          "label": "办公地址",
+          "value": "阿德莱德市中心",
+          "description": "Level 5, 123 King William Street, Adelaide SA 5000"
+        }
       ]
     },
     "form": {
@@ -528,9 +572,18 @@
     "workingHours": {
       "title": "工作时间",
       "items": [
-        { "day": "周一至周五", "hours": "9:00 - 18:00" },
-        { "day": "周六", "hours": "10:00 - 16:00" },
-        { "day": "周日及节假日", "hours": "休息（紧急情况可留言）" }
+        {
+          "day": "周一至周五",
+          "hours": "9:00 - 18:00"
+        },
+        {
+          "day": "周六",
+          "hours": "10:00 - 16:00"
+        },
+        {
+          "day": "周日及节假日",
+          "hours": "休息（紧急情况可留言）"
+        }
       ]
     }
   },
@@ -545,24 +598,60 @@
     },
     "faqs": {
       "booking": [
-        { "question": "如何预订旅游产品？", "answer": "您可以在我们的网站上浏览产品，选择合适的日期和人数后，点击「立即预订」按钮。按照提示完成支付即可完成预订。预订成功后，您将收到确认邮件和电子票据。" },
-        { "question": "预订需要提前多久？", "answer": "建议您至少提前24-48小时预订，旺季期间（如学校假期、公共假日）建议提前1周预订。部分热门产品可能需要更早预订。" },
-        { "question": "可以为他人预订吗？", "answer": "可以。您可以为家人、朋友预订产品，只需在预订时填写实际参与者的信息即可。" }
+        {
+          "question": "如何预订旅游产品？",
+          "answer": "您可以在我们的网站上浏览产品，选择合适的日期和人数后，点击「立即预订」按钮。按照提示完成支付即可完成预订。预订成功后，您将收到确认邮件和电子票据。"
+        },
+        {
+          "question": "预订需要提前多久？",
+          "answer": "建议您至少提前24-48小时预订，旺季期间（如学校假期、公共假日）建议提前1周预订。部分热门产品可能需要更早预订。"
+        },
+        {
+          "question": "可以为他人预订吗？",
+          "answer": "可以。您可以为家人、朋友预订产品，只需在预订时填写实际参与者的信息即可。"
+        }
       ],
       "payment": [
-        { "question": "支持哪些支付方式？", "answer": "我们支持多种支付方式，包括：微信支付、支付宝、银联卡、Visa/Mastercard信用卡等。所有支付均通过安全加密通道处理。" },
-        { "question": "如何申请退款？", "answer": "如需退款，请在「我的订单」中找到相应订单，点击「申请退款」。我们会在1-3个工作日内审核您的申请。符合退款条件的订单将在5-10个工作日内退回原支付账户。" },
-        { "question": "退款政策是怎样的？", "answer": "出发前7天以上取消可全额退款；出发前3-7天取消退还50%；出发前72小时内取消不予退款。具体政策可能因产品而异，请查看产品详情页的退款说明。" }
+        {
+          "question": "支持哪些支付方式？",
+          "answer": "我们支持多种支付方式，包括：微信支付、支付宝、银联卡、Visa/Mastercard信用卡等。所有支付均通过安全加密通道处理。"
+        },
+        {
+          "question": "如何申请退款？",
+          "answer": "如需退款，请在「我的订单」中找到相应订单，点击「申请退款」。我们会在1-3个工作日内审核您的申请。符合退款条件的订单将在5-10个工作日内退回原支付账户。"
+        },
+        {
+          "question": "退款政策是怎样的？",
+          "answer": "出发前7天以上取消可全额退款；出发前3-7天取消退还50%；出发前72小时内取消不予退款。具体政策可能因产品而异，请查看产品详情页的退款说明。"
+        }
       ],
       "tour": [
-        { "question": "行程包含接送吗？", "answer": "大部分产品提供阿德莱德市区酒店接送服务，具体接送安排请查看产品详情。部分产品可能需要自行前往集合点。" },
-        { "question": "行程会因天气取消吗？", "answer": "如遇恶劣天气导致活动无法安全进行，我们会提前通知您并安排改期或全额退款。请确保预留准确的联系方式。" },
-        { "question": "需要带什么物品？", "answer": "根据不同的活动类型，建议携带：舒适的步行鞋、防晒用品、帽子、相机、饮用水等。具体需携带物品请参考产品详情页的「温馨提示」。" }
+        {
+          "question": "行程包含接送吗？",
+          "answer": "大部分产品提供阿德莱德市区酒店接送服务，具体接送安排请查看产品详情。部分产品可能需要自行前往集合点。"
+        },
+        {
+          "question": "行程会因天气取消吗？",
+          "answer": "如遇恶劣天气导致活动无法安全进行，我们会提前通知您并安排改期或全额退款。请确保预留准确的联系方式。"
+        },
+        {
+          "question": "需要带什么物品？",
+          "answer": "根据不同的活动类型，建议携带：舒适的步行鞋、防晒用品、帽子、相机、饮用水等。具体需携带物品请参考产品详情页的「温馨提示」。"
+        }
       ],
       "other": [
-        { "question": "如何联系客服？", "answer": "您可以通过以下方式联系我们：电话 +61 8 XXXX XXXX（工作时间）、邮箱 support@enjoysa.com.au、或在网站上使用在线客服功能。我们会尽快回复您的问题。" },
-        { "question": "产品评价如何提交？", "answer": "完成行程后，您可以在「我的订单」中对已完成的订单进行评价。您的真实评价将帮助其他用户做出选择，也帮助我们不断改进服务。" },
-        { "question": "如何成为合作伙伴？", "answer": "如果您是南澳旅游服务提供商，欢迎与我们合作。请发送邮件至 partner@enjoysa.com.au，附上您的公司介绍和产品信息，我们会尽快与您联系。" }
+        {
+          "question": "如何联系客服？",
+          "answer": "您可以通过以下方式联系我们：电话 +61 8 XXXX XXXX（工作时间）、邮箱 support@enjoysa.com.au、或在网站上使用在线客服功能。我们会尽快回复您的问题。"
+        },
+        {
+          "question": "产品评价如何提交？",
+          "answer": "完成行程后，您可以在「我的订单」中对已完成的订单进行评价。您的真实评价将帮助其他用户做出选择，也帮助我们不断改进服务。"
+        },
+        {
+          "question": "如何成为合作伙伴？",
+          "answer": "如果您是南澳旅游服务提供商，欢迎与我们合作。请发送邮件至 partner@enjoysa.com.au，附上您的公司介绍和产品信息，我们会尽快与您联系。"
+        }
       ]
     },
     "contact": "没有找到答案？",
@@ -1319,11 +1408,14 @@
   },
   "supplier": {
     "types": {
-      "travel_agency": "旅行社",
+      "travelAgency": "旅行社",
       "hotel": "酒店",
-      "attraction": "景区",
+      "scenic": "景区",
       "restaurant": "餐厅",
-      "car_rental": "租车公司"
+      "carRental": "租车",
+      "travel_agency": "旅行社",
+      "attraction": "景区",
+      "car_rental": "租车"
     },
     "login": {
       "brandTitle": "供应商平台",
@@ -1349,16 +1441,6 @@
       "errorRequired": "请输入邮箱和密码",
       "errorInvalid": "邮箱或密码错误",
       "errorNetwork": "网络错误，请重试"
-    },
-    "types": {
-      "travelAgency": "旅行社",
-      "hotel": "酒店",
-      "scenic": "景区",
-      "restaurant": "餐厅",
-      "carRental": "租车",
-      "travel_agency": "旅行社",
-      "attraction": "景区",
-      "car_rental": "租车"
     },
     "register": {
       "brandTitle": "供应商入驻",
@@ -1727,7 +1809,6 @@
       "addressPlaceholder": "请输入地址",
       "tags": "产品标签",
       "tagsHint": "用逗号分隔多个标签",
-
       "imageUpload": "产品图片",
       "imageUploadHint": "最多上传5张，第一张为封面图",
       "dragToSort": "拖拽排序",
@@ -1736,7 +1817,6 @@
       "setCover": "设为封面",
       "maxImages": "最多5张图片",
       "uploading": "上传中...",
-
       "packages": "套餐价格",
       "packagesHint": "至少添加一个套餐",
       "addPackage": "添加套餐",
@@ -1746,7 +1826,6 @@
       "packageDescEn": "套餐说明（英文）",
       "packagePrice": "价格（AUD）",
       "noPackages": "暂无套餐，点击上方按钮添加",
-
       "highlights": "产品亮点",
       "addHighlight": "添加亮点",
       "highlightTitleZh": "亮点标题（中文）",
@@ -1754,7 +1833,6 @@
       "highlightDescZh": "亮点描述（中文）",
       "highlightDescEn": "亮点描述（英文）",
       "noHighlights": "暂无亮点，点击上方按钮添加",
-
       "faqs": "常见问题",
       "addFaq": "添加问题",
       "faqQuestionZh": "问题（中文）",
@@ -1762,7 +1840,6 @@
       "faqAnswerZh": "回答（中文）",
       "faqAnswerEn": "回答（英文）",
       "noFaqs": "暂无常见问题，点击上方按钮添加",
-
       "preview": "产品预览",
       "previewBasic": "基本信息",
       "previewImages": "图片",
@@ -1770,7 +1847,6 @@
       "previewHighlights": "亮点",
       "previewFaqs": "常见问题",
       "noData": "未填写",
-
       "saveDraft": "保存草稿",
       "saveAndSubmit": "保存并提交审核",
       "saving": "保存中...",
@@ -1893,7 +1969,29 @@
       "email": "邮箱地址",
       "emailPlaceholder": "输入成员邮箱",
       "role": "选择角色",
-      "sendInvite": "发送邀请"
+      "sendInvite": "发送邀请",
+      "tabMembers": "成员",
+      "tabPermissions": "权限",
+      "tabInvitations": "邀请",
+      "resetPassword": "重置密码",
+      "resetPasswordInfo": "将为 {{name}} 生成临时密码，用户下次登录时需修改密码。",
+      "tempPassword": "临时密码",
+      "permissionHint": "配置各角色对不同功能页面的访问权限",
+      "page": "功能页面",
+      "accessFull": "完全",
+      "accessReadonly": "只读",
+      "accessNone": "无",
+      "noInvitations": "暂无邀请记录",
+      "invPending": "待接受",
+      "invAccepted": "已接受",
+      "invExpired": "已过期",
+      "expires": "有效期至",
+      "resend": "重新发送",
+      "linkExpiry": "链接有效期",
+      "expiry1d": "1天",
+      "expiry3d": "3天",
+      "expiry7d": "7天",
+      "expiryNever": "永不过期"
     },
     "afterSales": {
       "title": "售后工单管理",
@@ -1928,6 +2026,89 @@
       "ordersChart": "订单分析",
       "productRanking": "产品排行榜",
       "orderUnit": "单"
+    },
+    "ticket": {
+      "backToList": "返回列表",
+      "ticketInfo": "工单信息",
+      "customer": "客户",
+      "email": "邮箱",
+      "product": "产品",
+      "amount": "金额",
+      "slaRemaining": "SLA 剩余",
+      "created": "创建时间",
+      "timeline": "沟通时间线",
+      "replyPlaceholder": "输入回复内容... (Ctrl+Enter 发送)",
+      "internalNote": "内部备注",
+      "send": "发送",
+      "attachFile": "添加附件",
+      "refundApproval": "退款审批",
+      "refundAmount": "退款金额",
+      "refundReason": "原因",
+      "refundStatus": "审批状态",
+      "approve": "批准",
+      "reject": "拒绝",
+      "rejectReason": "拒绝原因",
+      "rejectReasonPlaceholder": "请输入拒绝原因...",
+      "attachments": "附件",
+      "statusPending": "待审批",
+      "statusApproved": "已批准",
+      "statusRejected": "已拒绝",
+      "statusExecuted": "已执行",
+      "messageSystem": "系统",
+      "status": "状态",
+      "type": "类型",
+      "approver": "审批人",
+      "approvedAt": "审批时间",
+      "cancel": "取消",
+      "internal": "内部"
+    },
+    "orderDetail": {
+      "backToList": "返回列表",
+      "timeline": "时间线",
+      "remark": "备注",
+      "orderInfo": "订单信息",
+      "product": "产品",
+      "travelDate": "出行日期",
+      "quantity": "数量",
+      "unitPrice": "单价",
+      "totalAmount": "总金额",
+      "paymentMethod": "支付方式",
+      "paidAt": "支付时间",
+      "channel": "渠道",
+      "travelers": "出行人信息",
+      "travelerAdult": "成人",
+      "travelerChild": "儿童",
+      "verification": "核销验证",
+      "verified": "已核销",
+      "notVerified": "待核销",
+      "verify": "核销",
+      "verifyConfirm": "确认核销",
+      "verifyCode": "核销码",
+      "statusPending": "待确认",
+      "statusConfirmed": "已确认",
+      "statusVerified": "已核销",
+      "statusCompleted": "已完成",
+      "statusCancelled": "已取消",
+      "eventCreated": "订单创建",
+      "eventPaid": "支付完成",
+      "eventConfirmed": "订单确认",
+      "eventVerified": "已核销",
+      "eventCompleted": "订单完成"
+    },
+    "preview": {
+      "title": "产品预览",
+      "customerView": "客户视角",
+      "editProduct": "编辑产品",
+      "imagePlaceholder": "图片",
+      "rating": "条评价",
+      "perPerson": "每人",
+      "selectDate": "选择日期",
+      "highlights": "产品亮点",
+      "description": "产品介绍",
+      "schedule": "行程安排",
+      "includes": "费用包含",
+      "excludes": "费用不含",
+      "notices": "注意事项"
     }
   },
   "contacts": {

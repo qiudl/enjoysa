@@ -46,7 +46,7 @@ const mockTickets: Ticket[] = [
   { id: 't6', ticketNo: 'AS-20260314-006', type: 'refund', customer: 'Frank Ma', product: '克莱兰德野生动物园', productEn: 'Cleland Wildlife Park Tour', amount: 89, status: 'resolved', slaHoursLeft: 0, createdAt: '2026-03-14 08:20', description: 'Partial refund for missing activity' },
 ];
 
-export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = () => {
+export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ onNavigate }) => {
   const { t, i18n } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
   const [filter, setFilter] = useState<'all' | TicketStatus>('all');
@@ -122,7 +122,7 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = () 
       {filteredTickets.length > 0 ? (
         <div className={styles.ticketList}>
           {filteredTickets.map((ticket) => (
-            <div key={ticket.id} className={styles.ticketCard}>
+            <div key={ticket.id} className={styles.ticketCard} onClick={() => onNavigate?.(`/supplier/after-sales/${ticket.id}`)} style={{ cursor: 'pointer' }}>
               <div className={styles.ticketHeader}>
                 <div className={styles.ticketId}>
                   <span className={styles.ticketNo}>{ticket.ticketNo}</span>
@@ -164,16 +164,16 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = () 
                 <span className={styles.ticketDate}>{ticket.createdAt}</span>
                 <div className={styles.ticketActions}>
                   {ticket.status === 'pending' && (
-                    <button className={styles.processBtn} onClick={() => handleAction(ticket.id, 'process')}>
+                    <button className={styles.processBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'process'); }}>
                       {t('supplier.afterSales.actionProcess')}
                     </button>
                   )}
                   {(ticket.status === 'pending' || ticket.status === 'processing') && (
                     <>
-                      <button className={styles.resolveBtn} onClick={() => handleAction(ticket.id, 'resolve')}>
+                      <button className={styles.resolveBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'resolve'); }}>
                         {t('supplier.afterSales.actionResolve')}
                       </button>
-                      <button className={styles.rejectBtn} onClick={() => handleAction(ticket.id, 'reject')}>
+                      <button className={styles.rejectBtn} onClick={(e) => { e.stopPropagation(); handleAction(ticket.id, 'reject'); }}>
                         {t('supplier.afterSales.actionReject')}
                       </button>
                     </>

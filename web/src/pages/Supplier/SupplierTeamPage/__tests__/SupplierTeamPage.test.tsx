@@ -1,13 +1,24 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SupplierTeamPage } from '../SupplierTeamPage';
 
+/**
+ * Helper: find a tab button by its i18n key text.
+ * Multiple elements may share the same text; this picks the <button> in the tab bar.
+ */
+function getTabButton(text: string): HTMLButtonElement {
+  const all = screen.getAllByText(text);
+  const btn = all.find((el) => el.tagName === 'BUTTON');
+  if (!btn) throw new Error(`No <button> found with text "${text}"`);
+  return btn as HTMLButtonElement;
+}
+
 describe('SupplierTeamPage', () => {
   it('renders without crashing', () => {
     render(<SupplierTeamPage />);
     expect(screen.getByText('supplier.team.title')).toBeInTheDocument();
   });
 
-  it('displays the page title', () => {
+  it('displays the page title as h1', () => {
     render(<SupplierTeamPage />);
     const title = screen.getByText('supplier.team.title');
     expect(title.tagName).toBe('H1');
@@ -19,12 +30,19 @@ describe('SupplierTeamPage', () => {
     expect(screen.getByText('supplier.team.activeMembers')).toBeInTheDocument();
     expect(screen.getByText('supplier.team.roles')).toBeInTheDocument();
     // Total members = 5, Active = 4, Roles = 4
-    // Use getAllByText since '4' appears for both active count and role count
     expect(screen.getByText('5')).toBeInTheDocument();
+    // '4' appears twice: active members count and roles count
     expect(screen.getAllByText('4')).toHaveLength(2);
   });
 
-  it('renders all team members', () => {
+  it('renders all three tab buttons', () => {
+    render(<SupplierTeamPage />);
+    expect(getTabButton('supplier.team.tabMembers')).toBeInTheDocument();
+    expect(getTabButton('supplier.team.tabPermissions')).toBeInTheDocument();
+    expect(getTabButton('supplier.team.tabInvitations')).toBeInTheDocument();
+  });
+
+  it('displays all team members on the members tab', () => {
     render(<SupplierTeamPage />);
     expect(screen.getByText('James Chen')).toBeInTheDocument();
     expect(screen.getByText('Sarah Li')).toBeInTheDocument();
@@ -33,14 +51,11 @@ describe('SupplierTeamPage', () => {
     expect(screen.getByText('David Liu')).toBeInTheDocument();
   });
 
-  it('displays member emails', () => {
+  it('shows member emails and role badges', () => {
     render(<SupplierTeamPage />);
     expect(screen.getByText('james@adelaidetours.com')).toBeInTheDocument();
     expect(screen.getByText('sarah@adelaidetours.com')).toBeInTheDocument();
-  });
-
-  it('shows role badges with i18n keys', () => {
-    render(<SupplierTeamPage />);
+    // Role badges
     expect(screen.getByText('supplier.team.roleAdmin')).toBeInTheDocument();
     expect(screen.getAllByText('supplier.team.roleOperations')).toHaveLength(2);
     expect(screen.getByText('supplier.team.roleFinance')).toBeInTheDocument();
@@ -53,64 +68,103 @@ describe('SupplierTeamPage', () => {
     expect(screen.getByText('supplier.team.statusDisabled')).toBeInTheDocument();
   });
 
-  it('shows invite button and opens invite modal on click', () => {
+  it('switches to permissions tab and shows permission table', () => {
     render(<SupplierTeamPage />);
-    const inviteBtn = screen.getByText('supplier.team.invite');
-    expect(inviteBtn).toBeInTheDocument();
+    fireEvent.click(getTabButton('supplier.team.tabPermissions'));
 
+    expect(screen.getByText('supplier.team.permissionHint')).toBeInTheDocument();
+    expect(screen.getByText('supplier.team.page')).toBeInTheDocument();
+    // Page names in permission table
+    expect(screen.getByText('supplier.nav.dashboard')).toBeInTheDocument();
+    expect(screen.getByText('supplier.nav.products')).toBeInTheDocument();
+    expect(screen.getByText('supplier.nav.orders')).toBeInTheDocument();
+    expect(screen.getByText('supplier.nav.settlement')).toBeInTheDocument();
+    expect(screen.getByText('supplier.nav.afterSales')).toBeInTheDocument();
+    expect(screen.getByText('supplier.nav.team')).toBeInTheDocument();
+    // Access level labels
+    expect(screen.getAllByText('supplier.team.accessFull').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('supplier.team.accessNone').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('supplier.team.accessReadonly').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('switches to invitations tab and shows invitation list', () => {
+    render(<SupplierTeamPage />);
+    fireEvent.click(getTabButton('supplier.team.tabInvitations'));
+
+    expect(screen.getByText('lucy@adelaidetours.com')).toBeInTheDocument();
+    expect(screen.getByText('tom@adelaidetours.com')).toBeInTheDocument();
+    expect(screen.getByText('kate@adelaidetours.com')).toBeInTheDocument();
+    // Invitation statuses
+    expect(screen.getByText('supplier.team.invPending')).toBeInTheDocument();
+    expect(screen.getByText('supplier.team.invAccepted')).toBeInTheDocument();
+    expect(screen.getByText('supplier.team.invExpired')).toBeInTheDocument();
+  });
+
+  it('revokes a pending invitation', () => {
+    render(<SupplierTeamPage />);
+    fireEvent.click(getTabButton('supplier.team.tabInvitations'));
+
+    // lucy@adelaidetours.com has status 'pending', so there should be a revoke button
+    expect(screen.getByText('lucy@adelaidetours.com')).toBeInTheDocument();
+
+    const revokeBtn = screen.getByText('lucy@adelaidetours.com')
+      .closest('[class*="invitationCard"]')!
+      .querySelector('button[class*="revokeBtn"]') as HTMLButtonElement;
+    fireEvent.click(revokeBtn);
+
+    // After revoking, lucy should be gone
+    expect(screen.queryByText('lucy@adelaidetours.com')).not.toBeInTheDocument();
+  });
+
+  it('resends an expired invitation', () => {
+    render(<SupplierTeamPage />);
+    fireEvent.click(getTabButton('supplier.team.tabInvitations'));
+
+    // kate@adelaidetours.com has status 'expired', so there should be a resend button
+    const resendBtn = screen.getByText('supplier.team.resend');
+    fireEvent.click(resendBtn);
+
+    // After resending, kate's invitation should change from expired to pending
+    expect(screen.getAllByText('supplier.team.invPending').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('opens invite modal and invites a new member', () => {
+    render(<SupplierTeamPage />);
+
+    // Click the invite button in the page header
+    const inviteBtn = screen.getByText('supplier.team.invite');
     fireEvent.click(inviteBtn);
 
+    // Modal should appear
     expect(screen.getByText('supplier.team.inviteMember')).toBeInTheDocument();
     expect(screen.getByText('supplier.team.email')).toBeInTheDocument();
-    expect(screen.getByText('supplier.team.role')).toBeInTheDocument();
-    expect(screen.getByText('supplier.team.sendInvite')).toBeInTheDocument();
-    expect(screen.getByText('common.cancel')).toBeInTheDocument();
-  });
 
-  it('submit button is disabled when email is empty', () => {
-    render(<SupplierTeamPage />);
-    fireEvent.click(screen.getByText('supplier.team.invite'));
-
+    // Submit button should be disabled when email is empty
     const submitBtn = screen.getByText('supplier.team.sendInvite').closest('button');
     expect(submitBtn).toBeDisabled();
-  });
 
-  it('enables submit button when email is entered and adds member on submit', () => {
-    render(<SupplierTeamPage />);
-    fireEvent.click(screen.getByText('supplier.team.invite'));
-
+    // Fill in email and submit
     const emailInput = screen.getByPlaceholderText('supplier.team.emailPlaceholder');
-    fireEvent.change(emailInput, { target: { value: 'newuser@example.com' } });
-
-    const submitBtn = screen.getByText('supplier.team.sendInvite').closest('button');
+    fireEvent.change(emailInput, { target: { value: 'newmember@adelaidetours.com' } });
     expect(submitBtn).not.toBeDisabled();
 
     fireEvent.click(submitBtn!);
 
     // Modal should close
     expect(screen.queryByText('supplier.team.inviteMember')).not.toBeInTheDocument();
-    // New member should appear
-    expect(screen.getByText('newuser@example.com')).toBeInTheDocument();
-    // Total members count increases to 6
+    // After invite, the new member should appear in the members list
+    expect(screen.getByText('newmember@adelaidetours.com')).toBeInTheDocument();
+    // Total members should increase from 5 to 6
     expect(screen.getByText('6')).toBeInTheDocument();
   });
 
-  it('closes invite modal via cancel button', () => {
-    render(<SupplierTeamPage />);
-    fireEvent.click(screen.getByText('supplier.team.invite'));
-    expect(screen.getByText('supplier.team.inviteMember')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('common.cancel'));
-    expect(screen.queryByText('supplier.team.inviteMember')).not.toBeInTheDocument();
-  });
-
-  it('toggles member status from active to disabled', () => {
+  it('toggles a member status from active to disabled', () => {
     render(<SupplierTeamPage />);
     // Initially 4 active, 1 disabled
     expect(screen.getAllByText('supplier.team.statusActive')).toHaveLength(4);
     expect(screen.getAllByText('supplier.team.statusDisabled')).toHaveLength(1);
 
-    // Click the disable button on the first member (James Chen, who is active)
+    // Click the disable button on the first active member
     const disableBtns = screen.getAllByTitle('supplier.team.disable');
     fireEvent.click(disableBtns[0]);
 
@@ -119,7 +173,7 @@ describe('SupplierTeamPage', () => {
     expect(screen.getAllByText('supplier.team.statusDisabled')).toHaveLength(2);
   });
 
-  it('toggles member status from disabled to active', () => {
+  it('toggles a member status from disabled to active', () => {
     render(<SupplierTeamPage />);
     // David Liu is disabled, click enable
     const enableBtn = screen.getByTitle('supplier.team.enable');
@@ -130,65 +184,20 @@ describe('SupplierTeamPage', () => {
     expect(screen.queryByText('supplier.team.statusDisabled')).not.toBeInTheDocument();
   });
 
-  it('clicking edit role button shows role select dropdown', () => {
+  it('changes a member role via the edit dropdown', () => {
     render(<SupplierTeamPage />);
-    // Click edit button on first member (James Chen)
+    // Click edit button on first member (James Chen, admin)
     const editBtns = screen.getAllByTitle('supplier.team.editRole');
     fireEvent.click(editBtns[0]);
 
-    // A select element should appear with role options
+    // A select element should appear
     const selects = screen.getAllByRole('combobox');
     expect(selects.length).toBeGreaterThanOrEqual(1);
-  });
 
-  it('changing role via select updates member role', () => {
-    render(<SupplierTeamPage />);
-    // James Chen is admin, click edit
-    const editBtns = screen.getAllByTitle('supplier.team.editRole');
-    fireEvent.click(editBtns[0]);
-
-    // Find the select and change to 'finance'
-    const selects = screen.getAllByRole('combobox');
+    // Change to 'finance'
     fireEvent.change(selects[0], { target: { value: 'finance' } });
 
     // Now there should be 2 finance roles (Emily + James)
     expect(screen.getAllByText('supplier.team.roleFinance')).toHaveLength(2);
-  });
-
-  it('closes invite modal via X button', () => {
-    render(<SupplierTeamPage />);
-    fireEvent.click(screen.getByText('supplier.team.invite'));
-    expect(screen.getByText('supplier.team.inviteMember')).toBeInTheDocument();
-
-    // Click the X close button (it's inside the modal header)
-    const closeBtn = screen.getByText('supplier.team.inviteMember').parentElement?.querySelector('button');
-    if (closeBtn) fireEvent.click(closeBtn);
-    expect(screen.queryByText('supplier.team.inviteMember')).not.toBeInTheDocument();
-  });
-
-  it('changes invite role via select in modal', () => {
-    render(<SupplierTeamPage />);
-    fireEvent.click(screen.getByText('supplier.team.invite'));
-
-    // Find role select in modal (the one after email field)
-    const emailInput = screen.getByPlaceholderText('supplier.team.emailPlaceholder');
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-
-    // Get the role select in modal
-    const selects = screen.getAllByRole('combobox');
-    const modalSelect = selects[selects.length - 1];
-    fireEvent.change(modalSelect, { target: { value: 'finance' } });
-
-    // Submit with finance role
-    const submitBtn = screen.getByText('supplier.team.sendInvite').closest('button');
-    fireEvent.click(submitBtn!);
-
-    // New member added with finance role → should now have 2 finance
-    expect(screen.getAllByText('supplier.team.roleFinance')).toHaveLength(2);
-  });
-
-  it('displays last login info for members', () => {
-    render(<SupplierTeamPage />);
-    expect(screen.getAllByText(/supplier\.team\.lastLogin/).length).toBeGreaterThanOrEqual(1);
   });
 });

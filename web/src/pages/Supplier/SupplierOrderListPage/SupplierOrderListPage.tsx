@@ -50,7 +50,7 @@ function transformOrder(o: ApiOrder): SupplierOrder {
   };
 }
 
-export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = () => {
+export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({ onNavigate }) => {
   const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<SupplierOrder[]>([]);
   const [filter, setFilter] = useState<string>('all');
@@ -266,7 +266,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = () =>
               {filteredOrders.map((order) => {
                 const statusStyle = getStatusStyle(order.status);
                 return (
-                  <div key={order.id} className={styles.orderCard}>
+                  <div key={order.id} className={styles.orderCard} onClick={() => onNavigate?.(`/supplier/orders/${order.numericId}`)} style={{ cursor: 'pointer' }}>
                     <div className={styles.orderHeader}>
                       <div className={styles.orderHeaderLeft}>
                         <span className={styles.orderId}>{order.id}</span>
@@ -300,7 +300,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = () =>
                     </div>
                     <div className={styles.orderFooter}>
                       <span className={styles.orderTime}>{order.createdAt}</span>
-                      <div className={styles.orderActions}>
+                      <div className={styles.orderActions} onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="outline" onClick={() => handleRemark(order)}>
                           {t('supplier.orders.addRemark')}
                         </Button>

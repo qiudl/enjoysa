@@ -41,6 +41,9 @@ const SupplierAfterSalesPage = React.lazy(() => import('./pages/Supplier/Supplie
 const SupplierReportsPage = React.lazy(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
 const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
 const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
+const SupplierTicketDetailPage = React.lazy(() => import('./pages/Supplier/SupplierTicketDetailPage/SupplierTicketDetailPage'));
+const SupplierOrderDetailPage = React.lazy(() => import('./pages/Supplier/SupplierOrderDetailPage/SupplierOrderDetailPage'));
+const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewPage/SupplierProductPreviewPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
 // 用户中心
@@ -743,9 +746,13 @@ function SupplierTeamPageWrapper() {
 
 // 包装组件：SupplierAfterSalesPage
 function SupplierAfterSalesPageWrapper() {
+  const navigate = useNavigate();
+
   return (
     <SupplierLayout>
-      <SupplierAfterSalesPage />
+      <SupplierAfterSalesPage
+        onNavigate={(path) => navigate(path)}
+      />
     </SupplierLayout>
   );
 }
@@ -773,6 +780,51 @@ function SupplierSettingsPageWrapper() {
   return (
     <SupplierLayout>
       <SupplierSettingsPage />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierTicketDetailPage
+function SupplierTicketDetailPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  return (
+    <SupplierLayout>
+      <SupplierTicketDetailPage
+        ticketId={id}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierOrderDetailPage
+function SupplierOrderDetailPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  return (
+    <SupplierLayout>
+      <SupplierOrderDetailPage
+        orderId={id}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
+// 包装组件：SupplierProductPreviewPage
+function SupplierProductPreviewPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  return (
+    <SupplierLayout>
+      <SupplierProductPreviewPage
+        productId={id}
+        onNavigate={(path) => navigate(path)}
+      />
     </SupplierLayout>
   );
 }
@@ -1015,6 +1067,9 @@ function App() {
         <Route path="/supplier/reports" element={<SupplierAuthGuard><SupplierReportsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settings" element={<SupplierAuthGuard><SupplierSettingsPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/after-sales/:id" element={<SupplierAuthGuard><SupplierTicketDetailPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/orders/:id" element={<SupplierAuthGuard><SupplierOrderDetailPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/products/:id/preview" element={<SupplierAuthGuard><SupplierProductPreviewPageWrapper /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
