@@ -272,6 +272,14 @@
   cursor: not-allowed;
 }
 
+.addedToCart {
+  background: #059669;
+}
+
+.addedToCart:hover:not(:disabled) {
+  background: #059669;
+}
+
 /* Variants */
 .compact .imageWrapper {
   aspect-ratio: 1;

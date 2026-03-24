@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -306,7 +306,6 @@ function ProductDetailPageWrapper() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { addToCart, getCartCount } = useCart();
-  const { t } = useTranslation();
 
   return (
     <ProductDetailPage
@@ -315,8 +314,6 @@ function ProductDetailPageWrapper() {
       onBookNow={() => navigate('/checkout', { state: { productId: id } })}
       onAddToCart={(product, selectedDate, selectedTime) => {
         addToCart(product, 1, selectedDate, selectedTime);
-        // Show feedback (could be a toast notification)
-        alert(t('cart.addedToCart'));
       }}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
@@ -1115,6 +1112,54 @@ function NotFoundPage() {
   );
 }
 
+// 加购反馈 Toast（全局，自动响应 addToCart 调用）
+function CartFeedbackToast() {
+  const { lastAddedAt } = useCart();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [visible, setVisible] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (lastAddedAt > 0) {
+      setVisible(true);
+      setLeaving(false);
+      const timer = setTimeout(() => {
+        setLeaving(true);
+        setTimeout(() => setVisible(false), 300);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastAddedAt]);
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: `translateX(-50%) ${leaving ? 'translateY(20px)' : 'translateY(0)'}`,
+      background: '#065f46', color: 'white', padding: '12px 20px', borderRadius: 12,
+      display: 'flex', alignItems: 'center', gap: 12, zIndex: 9999,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.2)', fontSize: 14, fontWeight: 500,
+      opacity: leaving ? 0 : 1, transition: 'opacity 0.3s, transform 0.3s',
+    }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      {t('cart.addedToCart')}
+      <button
+        onClick={() => { setVisible(false); navigate('/cart'); }}
+        style={{
+          background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white',
+          padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13,
+          fontWeight: 500, marginLeft: 4,
+        }}
+      >
+        {t('cart.viewCart')}
+      </button>
+    </div>
+  );
+}
+
 function App() {
   return (
     <AppErrorBoundary>
@@ -1231,6 +1276,7 @@ function App() {
       </Routes>
       </Suspense>
       <ChatWidget />
+      <CartFeedbackToast />
       </AdminAuthProvider>
       </SupplierAuthProvider>
       </ChatProvider>

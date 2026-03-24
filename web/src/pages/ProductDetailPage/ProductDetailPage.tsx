@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Header,
@@ -58,6 +58,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<ApiProductSchedule[]>([]);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const addedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (!productId) return;
@@ -114,6 +116,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const handleAddToCart = () => {
     if (selectedDate && onAddToCart) {
       onAddToCart(product, selectedDate);
+      setAddedToCart(true);
+      if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+      addedTimerRef.current = setTimeout(() => setAddedToCart(false), 1500);
     }
   };
 
@@ -353,13 +358,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {t('product.buyNow')}
               </Button>
               <Button
-                variant="outline"
+                variant={addedToCart ? 'success' : 'outline'}
                 size="lg"
                 fullWidth
                 disabled={!selectedDate}
                 onClick={handleAddToCart}
               >
-                {t('product.addToCart')}
+                {addedToCart ? `${t('cart.added')} ✓` : t('product.addToCart')}
               </Button>
             </div>
           </aside>

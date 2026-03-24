@@ -216,7 +216,9 @@
     "travelTime": "出行時間",
     "participants": "出行人數",
     "changeDate": "修改日期",
-    "addedToCart": "已加入購物車"
+    "addedToCart": "已加入購物車",
+    "viewCart": "查看購物車",
+    "added": "已添加"
   },
   "checkout": {
     "title": "訂單確認",

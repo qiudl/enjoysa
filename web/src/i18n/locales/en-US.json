@@ -240,7 +240,9 @@
     "travelTime": "Travel Time",
     "participants": "Participants",
     "changeDate": "Change Date",
-    "addedToCart": "Added to cart"
+    "addedToCart": "Added to cart",
+    "viewCart": "View Cart",
+    "added": "Added"
   },
   "checkout": {
     "title": "Order Confirmation",

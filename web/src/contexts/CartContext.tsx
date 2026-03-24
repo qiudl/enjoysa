@@ -16,6 +16,8 @@ interface CartContextType {
   clearCart: () => void;
   getCartCount: () => number;
   getCartTotal: () => number;
+  /** Timestamp of last addToCart call; components can react to changes */
+  lastAddedAt: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -23,6 +25,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = 'enjoysa_cart';
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [lastAddedAt, setLastAddedAt] = useState(0);
+
   const [items, setItems] = useState<CartItem[]>(() => {
     // Load from localStorage on init
     try {
@@ -62,6 +66,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return [...prev, { product, quantity, selectedDate, selectedTime }];
       }
     });
+    setLastAddedAt(Date.now());
   };
 
   const removeFromCart = (productId: string) => {
@@ -103,6 +108,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearCart,
         getCartCount,
         getCartTotal,
+        lastAddedAt,
       }}
     >
       {children}

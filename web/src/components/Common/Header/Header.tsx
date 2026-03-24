@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import styles from './Header.module.css';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import UserAuthContext from '../../../contexts/UserAuthContext';
+import { useCart } from '../../../contexts/CartContext';
 
 export interface HeaderProps {
   /** Logo 图片 URL */
@@ -68,6 +69,18 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchKeyword, setSearchKeyword] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Cart badge bounce animation
+  let cartLastAddedAt = 0;
+  try { cartLastAddedAt = useCart().lastAddedAt; } catch { /* outside CartProvider */ }
+  const [badgeBouncing, setBadgeBouncing] = useState(false);
+  useEffect(() => {
+    if (cartLastAddedAt > 0) {
+      setBadgeBouncing(true);
+      const timer = setTimeout(() => setBadgeBouncing(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [cartLastAddedAt]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -140,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <ShoppingCart size={20} />
             {cartCount > 0 && (
-              <span className={styles.badge}>{cartCount}</span>
+              <span className={clsx(styles.badge, badgeBouncing && styles.badgeBounce)}>{cartCount}</span>
             )}
           </button>
 

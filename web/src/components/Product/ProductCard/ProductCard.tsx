@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { Star, MapPin, Clock, Heart, Check, Zap } from 'lucide-react';
@@ -61,9 +61,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     onFavoriteToggle?.(product);
   };
 
+  const [addedToCart, setAddedToCart] = useState(false);
+  const addedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     onAddToCart?.(product);
+    setAddedToCart(true);
+    if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+    addedTimerRef.current = setTimeout(() => setAddedToCart(false), 1500);
   };
 
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
@@ -187,13 +193,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* 预订按钮（仅在 horizontal 变体显示） */}
         {variant === 'horizontal' && (
           <button
-            className={styles.addToCartButton}
+            className={clsx(styles.addToCartButton, addedToCart && styles.addedToCart)}
             onClick={handleAddToCart}
             disabled={product.availability === 'sold_out'}
           >
             {product.availability === 'sold_out'
               ? t('product.soldOut')
-              : t('product.addToCart')
+              : addedToCart
+                ? `${t('cart.added')} ✓`
+                : t('product.addToCart')
             }
           </button>
         )}
