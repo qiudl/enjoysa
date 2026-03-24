@@ -99,7 +99,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
     if (!userName) return; // Skip API call when not logged in — avoids 401
     listOrders({ page: 1, page_size: 5 })
       .then((result) => {
-        setRecentOrders((result.orders || []).map(transformOrder));
+        setRecentOrders((result.items || []).map(transformOrder));
       })
       .catch(() => {});
   }, [userName]);

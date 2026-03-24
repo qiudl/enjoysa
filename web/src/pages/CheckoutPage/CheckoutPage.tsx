@@ -401,7 +401,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   requirePassport
                   errors={participantErrors}
                   onFieldChange={handleFieldChange}
-                  isAuthenticated
+                  isAuthenticated={isLoggedIn}
                 />
               </section>
 

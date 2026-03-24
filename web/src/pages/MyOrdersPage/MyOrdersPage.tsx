@@ -120,9 +120,11 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
     setApiLoading(true);
     listOrders({ page: 1, page_size: 50 })
       .then((result) => {
-        setOrders((result.orders || []).map(transformOrder));
+        setOrders((result.items || []).map(transformOrder));
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[MyOrdersPage] Failed to load orders:', err);
+      })
       .finally(() => setApiLoading(false));
   }, []);
 

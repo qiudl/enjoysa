@@ -82,9 +82,9 @@ export interface ListFilter {
   keyword?: string;
 }
 
-// 列表结果
+// 列表结果 (后端 PaginatedData 返回 items)
 export interface ListResult {
-  orders: Order[];
+  items: Order[];
   total: number;
   page: number;
   page_size: number;

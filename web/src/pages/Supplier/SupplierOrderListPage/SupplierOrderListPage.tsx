@@ -74,7 +74,7 @@ export const SupplierOrderListPage: React.FC<SupplierOrderListPageProps> = ({ on
     }
     listSupplierOrders(params as never)
       .then((result) => {
-        setOrders((result.orders || []).map(transformOrder));
+        setOrders((result.items || []).map(transformOrder));
       })
       .catch(() => {});
   }, [channelFilter]);

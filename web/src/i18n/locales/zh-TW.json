@@ -366,7 +366,8 @@
     "childAdultRequired": "12 歲以下兒童須有至少一名成人陪同",
     "childHeightLimit": "部分活動可能有身高限制（如≥110cm）",
     "childNoteAge": "請在「特殊需求」中備註兒童實際年齡",
-    "childSpecialPlaceholder": "請備註兒童實際年齡和身高，如: 7歲，125cm"
+    "childSpecialPlaceholder": "請備註兒童實際年齡和身高，如: 7歲，125cm",
+    "savedToContacts": "已儲存"
   },
   "review": {
     "title": "評價",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { User, Plus, Trash2, ChevronDown, ChevronUp, Users, AlertTriangle } from 'lucide-react';
+import { User, Plus, Trash2, ChevronDown, ChevronUp, Users, AlertTriangle, Check } from 'lucide-react';
 import { Input } from '../../Common/Input';
 import { ContactPicker } from '../ContactPicker';
 import type { UserContact } from '../../../services/userContactService';
@@ -72,6 +72,8 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
     participants.length > 0 ? [participants[0].id] : []
   );
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Track which participants were just saved to contacts
+  const [savedContactIds, setSavedContactIds] = useState<Set<string>>(new Set());
 
   // Auto-expand error cards when errors change
   useEffect(() => {
@@ -127,6 +129,15 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
         passport_number: p.passportNumber?.trim() || undefined,
         special_requirements: p.specialRequirements?.trim() || undefined,
         default_type: p.type || 'adult',
+      }).then(() => {
+        setSavedContactIds(prev => new Set(prev).add(p.id));
+        setTimeout(() => {
+          setSavedContactIds(prev => {
+            const next = new Set(prev);
+            next.delete(p.id);
+            return next;
+          });
+        }, 3000);
       }).catch(() => {
         delete savedSnapshots.current[p.id];
       });
@@ -217,6 +228,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
           phone: contact.phone || p.phone,
           dateOfBirth: contact.date_of_birth || p.dateOfBirth,
           nationality: contact.nationality || p.nationality,
+          passportNumber: contact.passport_number || p.passportNumber,
           specialRequirements: contact.special_requirements || p.specialRequirements,
           type: contact.default_type || p.type,
         } : p
@@ -293,6 +305,12 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   </span>
                 </div>
                 <div className={styles.cardActions}>
+                  {savedContactIds.has(participant.id) && (
+                    <span className={styles.savedIndicator}>
+                      <Check size={12} />
+                      {t('participant.savedToContacts', 'Saved')}
+                    </span>
+                  )}
                   <span className={clsx(styles.statusBadge, status.className)}>
                     {status.text}
                   </span>

@@ -395,7 +395,8 @@
     "childAdultRequired": "Children under 12 must be accompanied by an adult",
     "childHeightLimit": "Some activities may have height limits (e.g. ≥110cm)",
     "childNoteAge": "Please note actual age in special requirements",
-    "childSpecialPlaceholder": "Note age and height, e.g. 7 years old, 125cm"
+    "childSpecialPlaceholder": "Note age and height, e.g. 7 years old, 125cm",
+    "savedToContacts": "Saved"
   },
   "review": {
     "title": "Review",
