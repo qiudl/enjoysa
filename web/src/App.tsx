@@ -325,7 +325,7 @@ function ProductDetailPageWrapper() {
 // 包装组件：CheckoutPage
 function CheckoutPageWrapper() {
   const navigate = useNavigate();
-  const { getCartCount } = useCart();
+  const { items, getCartCount, clearCart } = useCart();
   const { isAuthenticated } = useUserAuth();
   const location = useLocation();
   const state = location.state as { productId?: string } | null;
@@ -335,9 +335,12 @@ function CheckoutPageWrapper() {
       productId={state?.productId}
       isLoggedIn={isAuthenticated}
       cartCount={getCartCount()}
+      cartItems={!state?.productId ? items : undefined}
+      onClearCart={clearCart}
       onOrderSuccess={(orderId) => navigate(`/orders?highlight=${orderId}`)}
       onLoginRequired={() => navigate('/login')}
       onNavClick={(path) => navigate(path)}
+      onBack={() => navigate(-1)}
     />
   );
 }

@@ -12,6 +12,7 @@ import {
   ParticipantForm,
 } from '../../components/Order';
 import type { Product, ParticipantDetail, PaymentMethod } from '../../types';
+import type { CartItem } from '../../contexts/CartContext';
 import { createOrder } from '../../services/orderService';
 import { post } from '../../services/api';
 import { productService, transformApiProduct, type ApiProductPackage } from '../../services/productService';
@@ -53,6 +54,10 @@ export interface CheckoutPageProps {
   onOrderSuccess?: (orderId: string) => void;
   /** 需要登录回调 */
   onLoginRequired?: () => void;
+  /** 购物车商品（从购物车结算时传入） */
+  cartItems?: CartItem[];
+  /** 清空购物车 */
+  onClearCart?: () => void;
 }
 
 // Default participant
@@ -85,6 +90,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onNavClick,
   onOrderSuccess,
   onLoginRequired,
+  cartItems,
+  onClearCart,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = language || (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
@@ -115,6 +122,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       .catch(() => {})
       .finally(() => setProductLoading(false));
   }, [productId]);
+
+  // Cart mode: checkout multiple items from cart
+  const isCartMode = !productId && cartItems && cartItems.length > 0;
+  const [cartPackages, setCartPackages] = useState<Record<string, ApiProductPackage[]>>({});
+
+  useEffect(() => {
+    if (!isCartMode || !cartItems) return;
+    setProductLoading(true);
+    Promise.all(
+      cartItems.map((item) =>
+        productService
+          .getById(Number(item.product.id))
+          .then((apiProduct) => ({
+            productId: item.product.id,
+            packages: apiProduct.packages || [],
+          }))
+      )
+    )
+      .then((results) => {
+        const pkgMap: Record<string, ApiProductPackage[]> = {};
+        results.forEach((r) => {
+          pkgMap[r.productId] = r.packages;
+        });
+        setCartPackages(pkgMap);
+      })
+      .catch(() => {})
+      .finally(() => setProductLoading(false));
+  }, [isCartMode, cartItems]);
+
+  const cartTotal = cartItems?.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  ) || 0;
 
   const product = fetchedProduct || productProp;
 
@@ -178,66 +218,99 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
-    if (!agreed || !product) return;
+    if (!agreed) return;
+    if (!isCartMode && !product) return;
 
     if (!validateParticipants()) {
       participantSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
 
-    // Ensure we have a valid package
-    const packageId = packages[0]?.id;
-    if (!packageId) {
-      // Cannot create order without a valid package
-      return;
-    }
+    const contactName = participants[0]?.firstName
+      ? `${participants[0].firstName} ${participants[0].lastName}`
+      : '';
+    const contactPhone = participants[0]?.phone || '';
+    const contactEmail = participants[0]?.email || '';
 
     setSubmitting(true);
 
     try {
-      const order = await createOrder({
-        product_id: Number(product.id),
-        package_id: packageId,
-        quantity: adultCount,
-        booking_date: travelDate,
-        contact_name: participants[0]?.firstName
-          ? `${participants[0].firstName} ${participants[0].lastName}`
-          : '',
-        contact_phone: participants[0]?.phone || '',
-        contact_email: participants[0]?.email || '',
-      });
+      if (isCartMode && cartItems) {
+        // Cart mode: create one order per cart item
+        let firstOrderId = '';
+        for (const item of cartItems) {
+          const pkgs = cartPackages[item.product.id];
+          const packageId = pkgs?.[0]?.id;
+          if (!packageId) continue;
 
-      const orderId = order.order_no || String(order.id);
-      const orderNumericId = order.id;
-
-      onSubmit?.({
-        product,
-        participants,
-        paymentMethod,
-        travelDate,
-      });
-
-      // Attempt Stripe checkout if payment gateway is available
-      if (paymentMethod === 'stripe' || paymentMethod === 'credit_card') {
-        try {
-          const checkoutResult = await post<{ session_id: string; checkout_url: string }>(
-            '/checkout/create-session',
-            { order_id: orderNumericId },
-            'user',
-          );
-          if (checkoutResult.checkout_url) {
-            window.location.href = checkoutResult.checkout_url;
-            return;
+          const order = await createOrder({
+            product_id: Number(item.product.id),
+            package_id: packageId,
+            quantity: item.quantity,
+            booking_date: item.selectedDate || travelDate,
+            contact_name: contactName,
+            contact_phone: contactPhone,
+            contact_email: contactEmail,
+          });
+          if (!firstOrderId) {
+            firstOrderId = order.order_no || String(order.id);
           }
-        } catch {
-          // Stripe not configured — fall through to success page
         }
-      }
 
-      if (onOrderSuccess) {
-        onOrderSuccess(orderId);
+        onClearCart?.();
+
+        if (onOrderSuccess && firstOrderId) {
+          onOrderSuccess(firstOrderId);
+        } else {
+          setShowSuccess(true);
+        }
       } else {
-        setShowSuccess(true);
+        // Single product mode
+        const packageId = packages[0]?.id;
+        if (!packageId) return;
+
+        const order = await createOrder({
+          product_id: Number(product!.id),
+          package_id: packageId,
+          quantity: adultCount,
+          booking_date: travelDate,
+          contact_name: contactName,
+          contact_phone: contactPhone,
+          contact_email: contactEmail,
+        });
+
+        const orderId = order.order_no || String(order.id);
+        const orderNumericId = order.id;
+
+        onSubmit?.({
+          product: product!,
+          participants,
+          paymentMethod,
+          travelDate,
+        });
+
+        // Attempt Stripe checkout if payment gateway is available
+        if (paymentMethod === 'stripe' || paymentMethod === 'credit_card') {
+          try {
+            const checkoutResult = await post<{ session_id: string; checkout_url: string }>(
+              '/checkout/create-session',
+              { order_id: orderNumericId },
+              'user',
+            );
+            if (checkoutResult.checkout_url) {
+              window.location.href = checkoutResult.checkout_url;
+              return;
+            }
+          } catch {
+            // Stripe not configured — fall through to success page
+          }
+        }
+
+        if (onOrderSuccess) {
+          onOrderSuccess(orderId);
+        } else {
+          setShowSuccess(true);
+        }
       }
     } catch {
       // order creation failed — could show error
@@ -271,7 +344,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#64748b' }}>
               {t('common.loading', 'Loading...')}
             </div>
-          ) : !product ? (
+          ) : !isCartMode && !product ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#94a3b8' }}>
               {t('common.notFound', 'Product not found')}
             </div>
@@ -285,7 +358,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <ParticipantForm
                   participants={participants}
                   onChange={handleParticipantsChange}
-                  maxParticipants={adultCount}
+                  maxParticipants={isCartMode ? 1 : adultCount}
                   minParticipants={1}
                   requirePassport
                   errors={participantErrors}
@@ -310,12 +383,47 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div className={styles.rightColumn}>
               <div className={styles.summaryCard}>
                 <h2 className={styles.sectionTitle}>{t('order.orderSummary')}</h2>
-                <OrderSummary
-                  product={product}
-                  travelDate={travelDate}
-                  adultCount={adultCount}
-                  language={currentLang}
-                />
+
+                {isCartMode && cartItems ? (
+                  /* Cart mode: show all cart items */
+                  <div className={styles.cartSummary}>
+                    {cartItems.map((item) => {
+                      const itemTitle = currentLang === 'en' && item.product.titleEn
+                        ? item.product.titleEn
+                        : item.product.title;
+                      return (
+                        <div key={item.product.id} className={styles.cartSummaryItem}>
+                          <img
+                            src={item.product.images[0]}
+                            alt={itemTitle}
+                            className={styles.cartSummaryImage}
+                          />
+                          <div className={styles.cartSummaryInfo}>
+                            <h4 className={styles.cartSummaryTitle}>{itemTitle}</h4>
+                            <p className={styles.cartSummaryMeta}>
+                              {item.selectedDate && <span>{item.selectedDate}</span>}
+                              <span>{item.quantity} x ¥{item.product.price}</span>
+                            </p>
+                            <span className={styles.cartSummaryPrice}>
+                              ¥{(item.product.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className={styles.cartSummaryTotal}>
+                      <span>{t('order.total')}</span>
+                      <span className={styles.cartSummaryTotalPrice}>¥{cartTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ) : product ? (
+                  <OrderSummary
+                    product={product}
+                    travelDate={travelDate}
+                    adultCount={adultCount}
+                    language={currentLang}
+                  />
+                ) : null}
 
                 {/* Agreement */}
                 <label className={styles.agreement}>
@@ -337,7 +445,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   variant="primary"
                   size="lg"
                   fullWidth
-                  disabled={!agreed || submitting || productLoading || !packages[0]}
+                  disabled={!agreed || submitting || productLoading || (isCartMode ? Object.keys(cartPackages).length === 0 : !packages[0])}
                   loading={submitting || productLoading}
                   onClick={handleSubmit}
                 >
