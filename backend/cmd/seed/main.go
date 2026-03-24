@@ -23,6 +23,7 @@ func main() {
 	clean := flag.Bool("clean", false, "Clean all business tables before seeding")
 	dump := flag.Bool("dump", false, "Dump seed data to SQL file after seeding")
 	verbose := flag.Bool("verbose", false, "Print verbose logs")
+	only := flag.String("only", "", "Run only specific seed steps (comma-separated, e.g. Homepage,Admins)")
 	flag.Parse()
 
 	cfg, err := config.Load(*configPath)
@@ -61,8 +62,14 @@ func main() {
 	}
 
 	fmt.Println("🌱 Seeding data...")
-	if err := seeder.Seed(); err != nil {
-		log.Fatalf("Seed failed: %v", err)
+	if *only != "" {
+		if err := seeder.SeedOnly(*only); err != nil {
+			log.Fatalf("Seed failed: %v", err)
+		}
+	} else {
+		if err := seeder.Seed(); err != nil {
+			log.Fatalf("Seed failed: %v", err)
+		}
 	}
 
 	seeder.PrintSummary()

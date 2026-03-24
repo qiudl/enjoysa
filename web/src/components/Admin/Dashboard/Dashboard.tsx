@@ -35,7 +35,7 @@ export interface RecentOrder {
   productNameEn?: string;
   customerName: string;
   amount: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: string;
   createdAt: string;
 }
 
@@ -70,12 +70,18 @@ export interface DashboardProps {
   onViewAllProducts?: () => void;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { labelZh: string; labelEn: string; color: string }> = {
   pending: { labelZh: '待支付', labelEn: 'Pending', color: 'var(--color-warning)' },
+  paid: { labelZh: '已支付', labelEn: 'Paid', color: '#1890ff' },
+  accepted: { labelZh: '已接单', labelEn: 'Accepted', color: '#13c2c2' },
+  processing: { labelZh: '进行中', labelEn: 'Processing', color: '#722ed1' },
   confirmed: { labelZh: '已确认', labelEn: 'Confirmed', color: 'var(--color-primary)' },
   completed: { labelZh: '已完成', labelEn: 'Completed', color: 'var(--color-success)' },
   cancelled: { labelZh: '已取消', labelEn: 'Cancelled', color: 'var(--color-text-muted)' },
+  refunded: { labelZh: '已退款', labelEn: 'Refunded', color: '#fa541c' },
 };
+
+const fallbackStatus = { labelZh: '未知', labelEn: 'Unknown', color: '#999' };
 
 const defaultStats: DashboardStats = {
   totalUsers: 0,
@@ -207,7 +213,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </thead>
                 <tbody>
                   {recentOrders.map((order) => {
-                    const statusInfo = statusConfig[order.status];
+                    const statusInfo = statusConfig[order.status] || fallbackStatus;
                     return (
                       <tr key={order.id} onClick={() => onViewOrder?.(order)}>
                         <td className={styles.orderNo}>{order.orderNo}</td>

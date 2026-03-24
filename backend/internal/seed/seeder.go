@@ -2,6 +2,7 @@ package seed
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -77,13 +78,13 @@ func (s *Seeder) Clean() error {
 	return nil
 }
 
-func (s *Seeder) Seed() error {
-	s.startAt = time.Now()
+type seedStep struct {
+	name string
+	fn   func() error
+}
 
-	steps := []struct {
-		name string
-		fn   func() error
-	}{
+func (s *Seeder) allSteps() []seedStep {
+	return []seedStep{
 		{"Regions", s.seedRegions},
 		{"Categories", s.seedCategories},
 		{"Admins", s.seedAdmins},
@@ -98,7 +99,9 @@ func (s *Seeder) Seed() error {
 		{"Banners", s.seedBanners},
 		{"Homepage", s.seedHomepage},
 	}
+}
 
+func (s *Seeder) runSteps(steps []seedStep) error {
 	for _, step := range steps {
 		fmt.Printf("  %-15s ", step.name+"...")
 		start := time.Now()
@@ -109,6 +112,30 @@ func (s *Seeder) Seed() error {
 		fmt.Printf("✅ (%s)\n", time.Since(start).Round(time.Millisecond))
 	}
 	return nil
+}
+
+func (s *Seeder) Seed() error {
+	s.startAt = time.Now()
+	return s.runSteps(s.allSteps())
+}
+
+// SeedOnly runs only the named steps (comma-separated, case-insensitive).
+func (s *Seeder) SeedOnly(names string) error {
+	s.startAt = time.Now()
+	filter := make(map[string]bool)
+	for _, n := range strings.Split(names, ",") {
+		filter[strings.ToLower(strings.TrimSpace(n))] = true
+	}
+	var filtered []seedStep
+	for _, step := range s.allSteps() {
+		if filter[strings.ToLower(step.name)] {
+			filtered = append(filtered, step)
+		}
+	}
+	if len(filtered) == 0 {
+		return fmt.Errorf("no matching seed steps for: %s", names)
+	}
+	return s.runSteps(filtered)
 }
 
 func (s *Seeder) record(table string, count int) {

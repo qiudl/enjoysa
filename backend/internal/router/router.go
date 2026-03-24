@@ -253,6 +253,7 @@ func Setup(cfg Config) *gin.Engine {
 
 	// Homepage config (public)
 	v1.GET("/homepage/config", homepageHandler.GetConfig)
+	v1.POST("/homepage/init", homepageHandler.InitHomepage)
 
 	// Product reviews (public)
 	v1.GET("/products/:id/reviews", reviewHandler.ListProductReviews)

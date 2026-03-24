@@ -17,8 +17,11 @@ func (s *Seeder) seedHomepage() error {
 		{Icon: "⭐", TitleZh: "轻松预订", TitleEn: "Easy Booking", DescZh: "即时确认，灵活取消，中文客服全程支持", DescEn: "Instant confirmation, flexible cancellation, bilingual support", SortOrder: 3, Status: "active"},
 		{Icon: "💰", TitleZh: "全天候服务", TitleEn: "24/7 Support", DescZh: "中英文双语客服，随时解答您的旅行疑问", DescEn: "Bilingual support team, always ready to assist with your travel needs", SortOrder: 4, Status: "active"},
 	}
-	if err := s.db.Create(&features).Error; err != nil {
-		return fmt.Errorf("insert homepage features: %w", err)
+	for i := range features {
+		result := s.db.Where("title_en = ?", features[i].TitleEn).FirstOrCreate(&features[i])
+		if result.Error != nil {
+			return fmt.Errorf("upsert homepage feature: %w", result.Error)
+		}
 	}
 	s.record("homepage_features", len(features))
 
@@ -29,8 +32,11 @@ func (s *Seeder) seedHomepage() error {
 		{Source: "manual", AuthorName: "李婷", ContentZh: "带孩子参加了野生动物园半日游，孩子们特别开心，近距离接触了考拉和袋鼠。客服沟通也非常及时。", ContentEn: "Took the kids on the wildlife park half-day tour. They were so happy to get up close with koalas and kangaroos. Customer service was very responsive.", Rating: 5, ProductNameZh: "克莱兰德野生动物园", ProductNameEn: "Cleland Wildlife Park", SortOrder: 3, Status: "active"},
 		{Source: "manual", AuthorName: "Mike Zhang", ContentZh: "阿德莱德城市徒步游很有意义，了解了很多历史文化。价格也很合理，性价比很高。", ContentEn: "The Adelaide city walking tour was very meaningful, learned a lot about history and culture. Great value for money.", Rating: 4, ProductNameZh: "阿德莱德城市徒步", ProductNameEn: "Adelaide City Walking Tour", SortOrder: 4, Status: "active"},
 	}
-	if err := s.db.Create(&testimonials).Error; err != nil {
-		return fmt.Errorf("insert homepage testimonials: %w", err)
+	for i := range testimonials {
+		result := s.db.Where("author_name = ? AND product_name_en = ?", testimonials[i].AuthorName, testimonials[i].ProductNameEn).FirstOrCreate(&testimonials[i])
+		if result.Error != nil {
+			return fmt.Errorf("upsert homepage testimonial: %w", result.Error)
+		}
 	}
 	s.record("homepage_testimonials", len(testimonials))
 
@@ -42,8 +48,11 @@ func (s *Seeder) seedHomepage() error {
 		{Name: "Kangaroo Island Tours", Logo: "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=200&h=80&fit=crop", Website: "https://kangarooisland.sa.gov.au", SortOrder: 4, Status: "active"},
 		{Name: "Barossa Wine Region", Logo: "https://images.unsplash.com/photo-1474722883778-792e7990302f?w=200&h=80&fit=crop", Website: "https://barossa.com", SortOrder: 5, Status: "active"},
 	}
-	if err := s.db.Create(&partners).Error; err != nil {
-		return fmt.Errorf("insert homepage partners: %w", err)
+	for i := range partners {
+		result := s.db.Where("name = ?", partners[i].Name).FirstOrCreate(&partners[i])
+		if result.Error != nil {
+			return fmt.Errorf("upsert homepage partner: %w", result.Error)
+		}
 	}
 	s.record("homepage_partners", len(partners))
 
@@ -60,8 +69,11 @@ func (s *Seeder) seedHomepage() error {
 		{ModuleKey: "partners", TitleZh: "合作伙伴", TitleEn: "Our Partners", SortOrder: 8, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
 		{ModuleKey: "popular", TitleZh: "热门活动", TitleEn: "Popular Activities", SortOrder: 9, IsVisible: true, Config: datatypes.JSON(popularCfg)},
 	}
-	if err := s.db.Create(&modules).Error; err != nil {
-		return fmt.Errorf("insert homepage modules: %w", err)
+	for i := range modules {
+		result := s.db.Where("module_key = ?", modules[i].ModuleKey).FirstOrCreate(&modules[i])
+		if result.Error != nil {
+			return fmt.Errorf("upsert homepage module: %w", result.Error)
+		}
 	}
 	s.record("homepage_modules", len(modules))
 
