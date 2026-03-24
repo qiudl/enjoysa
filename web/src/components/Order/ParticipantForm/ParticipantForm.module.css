@@ -37,14 +37,28 @@
 /* Card */
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .card.expanded {
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50, rgba(37, 99, 235, 0.1));
+}
+
+.card.completed {
+  border-color: var(--color-success, #059669);
+}
+
+.card.completed.expanded {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.card.hasError {
+  border-color: var(--color-error, #dc2626);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 .cardHeader {
@@ -76,17 +90,80 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: var(--color-primary);
-  color: white;
+  background: var(--color-border, #e2e8f0);
+  color: var(--color-text-muted, #64748b);
   font-size: var(--text-sm);
   font-weight: var(--font-bold);
   border-radius: var(--radius-full);
+  transition: all 0.3s;
+}
+
+.expanded .number {
+  background: var(--color-primary);
+  color: white;
+}
+
+.numberDone {
+  background: var(--color-success, #059669) !important;
+  color: white !important;
+}
+
+.numberError {
+  background: var(--color-error, #dc2626) !important;
+  color: white !important;
 }
 
 .name {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--color-text);
+}
+
+/* Type badge next to name */
+.typeBadge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 99px;
+}
+
+.typeBadgeAdult {
+  background: var(--color-primary-50, #dbeafe);
+  color: var(--color-primary, #2563eb);
+}
+
+.typeBadgeChild {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* Status badge */
+.statusBadge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+}
+
+.statusPending {
+  background: #f1f5f9;
+  color: var(--color-text-muted, #64748b);
+}
+
+.statusFilling {
+  background: var(--color-primary-50, #dbeafe);
+  color: var(--color-primary, #2563eb);
+}
+
+.statusDone {
+  background: #d1fae5;
+  color: var(--color-success, #059669);
+}
+
+.statusError {
+  background: #fee2e2;
+  color: var(--color-error, #dc2626);
 }
 
 .cardActions {
@@ -131,6 +208,88 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Type selector */
+.typeSelector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.typeOption {
+  flex: 1;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  background: var(--color-surface, #f8fafc);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.typeOption:hover {
+  border-color: var(--color-primary-50, #dbeafe);
+}
+
+.typeOptionSelected {
+  border-color: var(--color-primary, #2563eb);
+  background: var(--color-primary-50, #dbeafe);
+}
+
+.typeIcon {
+  font-size: 1.25rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.typeLabel {
+  font-weight: 600;
+  display: block;
+}
+
+.typeDesc {
+  font-size: 0.7rem;
+  color: var(--color-text-muted, #64748b);
+  display: block;
+}
+
+/* Child alert */
+.childAlert {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  font-size: 0.8rem;
+  animation: slideDown 0.3s ease;
+}
+
+.childAlertTitle {
+  font-weight: 600;
+  color: #d97706;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.childAlertList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #92400e;
+}
+
+.childAlertList li {
+  padding: 0.2rem 0 0.2rem 1.25rem;
+  position: relative;
+}
+
+.childAlertList li::before {
+  content: '⚠';
+  position: absolute;
+  left: 0;
+  font-size: 0.7rem;
 }
 
 .row {
@@ -206,5 +365,9 @@
   .addButton {
     padding: var(--space-3);
     font-size: var(--text-sm);
+  }
+
+  .typeSelector {
+    flex-direction: column;
   }
 }

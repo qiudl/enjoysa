@@ -311,7 +311,7 @@ function ProductDetailPageWrapper() {
     <ProductDetailPage
       productId={id}
       cartCount={getCartCount()}
-      onBookNow={() => navigate('/checkout', { state: { productId: id } })}
+      onBookNow={(qty, date) => navigate('/checkout', { state: { productId: id, quantity: qty, travelDate: date } })}
       onAddToCart={(product, selectedDate, selectedTime) => {
         addToCart(product, 1, selectedDate, selectedTime);
       }}
@@ -328,11 +328,13 @@ function CheckoutPageWrapper() {
   const { items, getCartCount, clearCart } = useCart();
   const { isAuthenticated } = useUserAuth();
   const location = useLocation();
-  const state = location.state as { productId?: string } | null;
+  const state = location.state as { productId?: string; quantity?: number; travelDate?: string } | null;
 
   return (
     <CheckoutPage
       productId={state?.productId}
+      adultCount={state?.quantity}
+      travelDate={state?.travelDate}
       isLoggedIn={isAuthenticated}
       cartCount={getCartCount()}
       cartItems={!state?.productId ? items : undefined}
@@ -375,11 +377,17 @@ function OrderDetailPageWrapper() {
 function MyOrdersPageWrapper() {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
+  const { user, isAuthenticated } = useUserAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <MyOrdersPage
+      userName={user?.name}
       cartCount={getCartCount()}
-      onOrderClick={(order) => console.log('Order clicked:', order.id)}
+      onOrderClick={(order) => navigate(`/orders/${order.id}`)}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}

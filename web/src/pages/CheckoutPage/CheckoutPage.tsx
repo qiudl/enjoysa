@@ -81,8 +81,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   cartCount = 0,
   product: productProp,
   productId,
-  travelDate = '2026-02-15',
-  adultCount = 2,
+  travelDate: travelDateProp,
+  adultCount = 1,
   onSubmit,
   onBack,
   onLoginClick,
@@ -95,16 +95,51 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = language || (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
-  const [participants, setParticipants] = useState<ParticipantDetail[]>([
-    createDefaultParticipant(),
-  ]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit_card');
-  const [agreed, setAgreed] = useState(false);
+  const travelDate = travelDateProp || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  // Draft save/restore
+  const draftKey = productId ? `checkout_draft_${productId}` : 'checkout_draft_cart';
+  const loadDraft = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (!saved) return null;
+      return JSON.parse(saved) as {
+        participants: ParticipantDetail[];
+        paymentMethod: PaymentMethod;
+        agreed: boolean;
+      };
+    } catch { return null; }
+  }, [draftKey]);
+
+  // Initialize participants: from draft or generate based on adultCount
+  const [participants, setParticipants] = useState<ParticipantDetail[]>(() => {
+    const draft = loadDraft();
+    if (draft?.participants?.length) {
+      return draft.participants;
+    }
+    return Array.from({ length: adultCount }, () => createDefaultParticipant());
+  });
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
+    const draft = loadDraft();
+    return draft?.paymentMethod || 'credit_card';
+  });
+  const [agreed, setAgreed] = useState(() => {
+    const draft = loadDraft();
+    return draft?.agreed || false;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [participantErrors, setParticipantErrors] = useState<Record<number, Record<string, string>>>({});
   const participantSectionRef = useRef<HTMLElement>(null);
+
+  // Auto-save draft on change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem(draftKey, JSON.stringify({ participants, paymentMethod, agreed }));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [participants, paymentMethod, agreed, draftKey]);
 
   // Fetch real product data (with packages) when productId is provided
   const [fetchedProduct, setFetchedProduct] = useState<Product | null>(null);
@@ -258,6 +293,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         }
 
         onClearCart?.();
+        localStorage.removeItem(draftKey);
 
         if (onOrderSuccess && firstOrderId) {
           onOrderSuccess(firstOrderId);
@@ -305,6 +341,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             // Stripe not configured — fall through to success page
           }
         }
+
+        localStorage.removeItem(draftKey);
 
         if (onOrderSuccess) {
           onOrderSuccess(orderId);

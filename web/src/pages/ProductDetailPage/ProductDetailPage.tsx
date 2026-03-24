@@ -33,7 +33,7 @@ export interface ProductDetailPageProps {
   /** 导航点击 */
   onNavClick?: (path: string) => void;
   /** 立即预订 */
-  onBookNow?: () => void;
+  onBookNow?: (quantity: number, selectedDate: string) => void;
   /** 加入购物车 */
   onAddToCart?: (product: Product, selectedDate?: string, selectedTime?: string) => void;
 }
@@ -200,7 +200,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   const handleBook = () => {
     if (selectedDate && onBookNow) {
-      onBookNow();
+      onBookNow(quantity, selectedDate);
     }
   };
 

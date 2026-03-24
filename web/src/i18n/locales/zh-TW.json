@@ -352,7 +352,21 @@
     "passportNumber": "護照號碼",
     "passportPlaceholder": "請輸入護照號碼",
     "specialRequirements": "特殊需求",
-    "specialRequirementsPlaceholder": "如飲食禁忌、行動不便等"
+    "specialRequirementsPlaceholder": "如飲食禁忌、行動不便等",
+    "adult": "成人",
+    "child": "兒童",
+    "adultAge": "18歲及以上",
+    "childAge": "2-11歲",
+    "completed": "已完成",
+    "incomplete": "資訊不完整",
+    "filling": "填寫中",
+    "pending": "待填寫",
+    "childNotice": "兒童參與者須知",
+    "childAge2to11": "兒童年齡須在 2-11 周歲之間，請攜帶有效證件",
+    "childAdultRequired": "12 歲以下兒童須有至少一名成人陪同",
+    "childHeightLimit": "部分活動可能有身高限制（如≥110cm）",
+    "childNoteAge": "請在「特殊需求」中備註兒童實際年齡",
+    "childSpecialPlaceholder": "請備註兒童實際年齡和身高，如: 7歲，125cm"
   },
   "review": {
     "title": "評價",

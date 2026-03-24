@@ -82,10 +82,10 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      listSupplierOrders({ status: 'cancelled', page_size: 50 }).catch(() => ({ orders: [] as Order[] })),
-      listSupplierOrders({ status: 'refunded', page_size: 50 }).catch(() => ({ orders: [] as Order[] })),
+      listSupplierOrders({ status: 'cancelled', page_size: 50 }).catch(() => ({ items: [] as Order[], total: 0, page: 1, page_size: 50, total_pages: 0 })),
+      listSupplierOrders({ status: 'refunded', page_size: 50 }).catch(() => ({ items: [] as Order[], total: 0, page: 1, page_size: 50, total_pages: 0 })),
     ]).then(([cancelled, refunded]) => {
-      const allOrders = [...(cancelled.orders || []), ...(refunded.orders || [])];
+      const allOrders = [...(cancelled.items || []), ...(refunded.items || [])];
       // Sort by most recent first
       allOrders.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       setTickets(allOrders.map(orderToTicket));

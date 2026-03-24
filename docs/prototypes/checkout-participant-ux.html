@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EnjoySA - 结账页旅行者信息 UX 优化原型</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --primary-dark: #1d4ed8;
+    --success: #059669;
+    --success-light: #d1fae5;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --info: #0891b2;
+    --info-light: #cffafe;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    --border: #e2e8f0;
+    --surface: #f8fafc;
+    --card: #ffffff;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .header-right span { font-size: 0.875rem; color: var(--text-muted); }
+
+  /* ===== Prototype Banner ===== */
+  .proto-banner {
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    color: white;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+  }
+  .proto-banner strong { color: #a5b4fc; }
+
+  /* ===== Page Layout ===== */
+  .page { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .back-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 0.875rem; cursor: pointer; padding: 0.5rem 0.75rem;
+    border-radius: 8px; transition: all 0.2s;
+  }
+  .back-btn:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+  .page-title { font-size: 1.5rem; font-weight: 600; }
+
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .content { grid-template-columns: 1fr; }
+    .right-col { order: -1; }
+  }
+
+  /* ===== Section Card ===== */
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+  }
+  .section-title {
+    font-size: 1.1rem; font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  /* ===== Quantity Bug Demo ===== */
+  .bug-demo {
+    background: var(--danger-light);
+    border: 1px solid #fca5a5;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .bug-demo h3 { color: var(--danger); font-size: 0.875rem; margin-bottom: 0.5rem; }
+  .bug-demo p { font-size: 0.8rem; color: #991b1b; }
+
+  .fix-demo {
+    background: var(--success-light);
+    border: 1px solid #6ee7b7;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .fix-demo h3 { color: var(--success); font-size: 0.875rem; margin-bottom: 0.5rem; }
+  .fix-demo p { font-size: 0.8rem; color: #065f46; }
+
+  /* ===== Quantity Selector (inline in checkout) ===== */
+  .quantity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .quantity-row:last-child { border-bottom: none; }
+  .quantity-label { font-size: 0.9rem; }
+  .quantity-label small { color: var(--text-muted); font-size: 0.8rem; display: block; }
+  .quantity-controls {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .qty-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--border); background: var(--card);
+    font-size: 1.1rem; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.2s; color: var(--text);
+  }
+  .qty-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+  .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .qty-value { font-size: 1rem; font-weight: 600; min-width: 24px; text-align: center; }
+
+  /* ===== Participant Card ===== */
+  .participant-header-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .participant-count {
+    font-size: 0.85rem; color: var(--text-muted);
+  }
+
+  .p-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .p-card.active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+  .p-card.completed { border-color: var(--success); }
+  .p-card.has-error { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-light); }
+
+  .p-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.875rem 1rem;
+    cursor: pointer; user-select: none;
+    background: var(--surface);
+    transition: background 0.2s;
+  }
+  .p-card-header:hover { background: #f1f5f9; }
+
+  .p-card-left {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+
+  .p-number {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600;
+    background: var(--border); color: var(--text-muted);
+    transition: all 0.3s;
+  }
+  .p-card.active .p-number { background: var(--primary); color: white; }
+  .p-card.completed .p-number { background: var(--success); color: white; }
+  .p-card.has-error .p-number { background: var(--danger); color: white; }
+
+  .p-name { font-size: 0.9rem; font-weight: 500; }
+  .p-name .type-badge {
+    display: inline-block;
+    font-size: 0.7rem; font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 99px;
+    margin-left: 0.5rem;
+  }
+  .type-badge.adult { background: var(--primary-light); color: var(--primary); }
+  .type-badge.child { background: var(--warning-light); color: var(--warning); }
+
+  .p-status {
+    font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+  }
+  .p-status.pending { background: #f1f5f9; color: var(--text-muted); }
+  .p-status.filling { background: var(--primary-light); color: var(--primary); }
+  .p-status.done { background: var(--success-light); color: var(--success); }
+  .p-status.error { background: var(--danger-light); color: var(--danger); }
+
+  .p-card-right {
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .chevron {
+    width: 20px; height: 20px; color: var(--text-muted);
+    transition: transform 0.3s;
+  }
+  .p-card.expanded .chevron { transform: rotate(180deg); }
+
+  .p-card-body {
+    padding: 0 1rem 1rem;
+    display: none;
+  }
+  .p-card.expanded .p-card-body { display: block; }
+
+  /* ===== Contact Picker Button ===== */
+  .contact-picker-btn {
+    display: flex; align-items: center; gap: 0.4rem;
+    background: var(--primary-light); color: var(--primary);
+    border: none; border-radius: 8px;
+    padding: 0.5rem 0.875rem; font-size: 0.8rem;
+    cursor: pointer; margin-bottom: 1rem;
+    font-weight: 500; transition: all 0.2s;
+  }
+  .contact-picker-btn:hover { background: #bfdbfe; }
+
+  /* ===== Type Selector ===== */
+  .type-selector {
+    display: flex; gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .type-option {
+    flex: 1; padding: 0.625rem 0.75rem;
+    border: 2px solid var(--border); border-radius: 10px;
+    background: var(--card); cursor: pointer;
+    text-align: center; transition: all 0.2s;
+    font-size: 0.85rem;
+  }
+  .type-option:hover { border-color: var(--primary-light); }
+  .type-option.selected { border-color: var(--primary); background: var(--primary-light); }
+  .type-option .type-icon { font-size: 1.25rem; display: block; margin-bottom: 0.25rem; }
+  .type-option .type-label { font-weight: 600; }
+  .type-option .type-desc { font-size: 0.7rem; color: var(--text-muted); }
+
+  /* ===== Child Alert ===== */
+  .child-alert {
+    background: var(--warning-light);
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+  }
+  .child-alert-title {
+    font-weight: 600; color: var(--warning);
+    margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .child-alert ul {
+    list-style: none; padding: 0;
+    color: #92400e;
+  }
+  .child-alert li {
+    padding: 0.2rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+  }
+  .child-alert li::before {
+    content: '⚠';
+    position: absolute; left: 0; font-size: 0.7rem;
+  }
+
+  /* ===== Form Grid ===== */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+  .form-group { display: flex; flex-direction: column; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label {
+    font-size: 0.8rem; font-weight: 500; color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .form-label .required { color: var(--danger); }
+  .form-input {
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    background: var(--card);
+  }
+  .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  .form-input.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-light);
+  }
+  .form-error {
+    font-size: 0.75rem; color: var(--danger);
+    margin-top: 0.25rem;
+    display: flex; align-items: center; gap: 0.3rem;
+  }
+
+  /* ===== Auto-save Indicator ===== */
+  .autosave-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .autosave-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 0.4rem;
+  }
+  .autosave-dot.saving { background: var(--warning); animation: pulse 1s infinite; }
+  .autosave-dot.saved { background: var(--success); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ===== Right Column: Order Summary ===== */
+  .right-col { position: sticky; top: 5rem; }
+
+  .summary-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .summary-product {
+    display: flex; gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .summary-img {
+    width: 72px; height: 72px; border-radius: 8px;
+    object-fit: cover; flex-shrink: 0;
+    background: #e2e8f0;
+  }
+  .summary-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .summary-info p { font-size: 0.8rem; color: var(--text-muted); }
+
+  .summary-row {
+    display: flex; justify-content: space-between;
+    padding: 0.4rem 0; font-size: 0.875rem;
+  }
+  .summary-row.total {
+    border-top: 2px solid var(--border);
+    margin-top: 0.5rem; padding-top: 0.75rem;
+    font-weight: 700; font-size: 1rem;
+  }
+  .summary-row.total .price { color: var(--primary); font-size: 1.25rem; }
+
+  .checkout-btn {
+    width: 100%; padding: 0.875rem;
+    background: var(--primary); color: white;
+    border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: 600;
+    cursor: pointer; margin-top: 1rem;
+    transition: all 0.2s;
+  }
+  .checkout-btn:hover { background: var(--primary-dark); }
+  .checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .agreement {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);
+  }
+  .agreement input { margin-top: 0.2rem; }
+  .agreement a { color: var(--primary); text-decoration: none; }
+
+  /* ===== Validation Toast ===== */
+  .validation-toast {
+    position: fixed; bottom: 1.5rem; left: 50%;
+    transform: translateX(-50%);
+    background: #991b1b; color: white;
+    padding: 0.75rem 1.5rem; border-radius: 10px;
+    font-size: 0.875rem; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 999;
+    display: none;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+
+  /* ===== Scenario Tabs ===== */
+  .scenario-tabs {
+    display: flex; gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .scenario-tab {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border);
+    border-radius: 99px;
+    background: var(--card);
+    font-size: 0.8rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+    color: var(--text-muted);
+  }
+  .scenario-tab:hover { border-color: var(--primary-light); }
+  .scenario-tab.active {
+    border-color: var(--primary); background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  /* ===== No-adult Guard ===== */
+  .no-adult-guard {
+    background: var(--danger-light);
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #991b1b;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  /* ===== Draft Restore Banner ===== */
+  .draft-banner {
+    background: var(--info-light);
+    border: 1px solid #67e8f9;
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.85rem;
+  }
+  .draft-banner-left { display: flex; align-items: center; gap: 0.5rem; color: #155e75; }
+  .draft-banner-actions { display: flex; gap: 0.5rem; }
+  .draft-btn {
+    padding: 0.35rem 0.75rem; border-radius: 6px;
+    font-size: 0.8rem; cursor: pointer; border: none;
+    font-weight: 500;
+  }
+  .draft-btn.restore { background: var(--info); color: white; }
+  .draft-btn.discard { background: transparent; color: var(--text-muted); }
+  .draft-btn.discard:hover { background: rgba(0,0,0,0.05); }
+
+  /* ===== Annotations ===== */
+  .annotation {
+    position: relative;
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid var(--primary);
+    background: var(--primary-light);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.8rem;
+    color: #1e40af;
+  }
+  .annotation strong { display: block; margin-bottom: 0.25rem; }
+
+  /* ===== Smooth transitions ===== */
+  .fade-in {
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-banner">
+  PROTOTYPE — <strong>REQ-20260324-0013</strong> 结账页旅行者信息体验优化 &nbsp;|&nbsp; EnjoySA 畅游南澳
+</div>
+
+<div class="header">
+  <div class="header-logo">EnjoySA 畅游南澳</div>
+  <div class="header-right">
+    <span>🛒 3</span>
+    <span>Hi, 旅行者</span>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-header">
+    <button class="back-btn">← 返回</button>
+    <h1 class="page-title">确认订单</h1>
+  </div>
+
+  <!-- Scenario Switcher -->
+  <div class="scenario-tabs">
+    <button class="scenario-tab active" onclick="switchScenario('solo')">场景1: 1人出行</button>
+    <button class="scenario-tab" onclick="switchScenario('couple')">场景2: 2人出行</button>
+    <button class="scenario-tab" onclick="switchScenario('family')">场景3: 2大1小家庭</button>
+    <button class="scenario-tab" onclick="switchScenario('error')">场景4: 验证错误</button>
+  </div>
+
+  <!-- Scenario Annotations -->
+  <div id="anno-solo" class="annotation">
+    <strong>场景1: 修复人数 Bug</strong>
+    产品页选了1人 → 结账页正确显示1位成人，旅行者表单只需填写1人。之前默认2人的 Bug 已修复。
+  </div>
+  <div id="anno-couple" class="annotation" style="display:none">
+    <strong>场景2: 多人智能引导</strong>
+    2人出行：第1人展开填写，第2人折叠显示「待填写」。填完第1人后自动展开第2人并平滑滚动。
+  </div>
+  <div id="anno-family" class="annotation" style="display:none">
+    <strong>场景3: 儿童特殊提醒</strong>
+    家庭出行（2大1小）：儿童参与者显示黄色提醒卡片，包含年龄限制、监护人要求、证件说明。全是儿童无成人时拦截提交。
+  </div>
+  <div id="anno-error" class="annotation" style="display:none">
+    <strong>场景4: 增强验证 UX</strong>
+    提交时错误卡片红色高亮+自动展开+滚动到第一个错误。字段级实时提示，填写后自动清除。
+  </div>
+
+  <!-- Draft Restore Banner -->
+  <div class="draft-banner" id="draft-banner">
+    <div class="draft-banner-left">
+      💾 发现上次未完成的订单草稿（3分钟前保存）
+    </div>
+    <div class="draft-banner-actions">
+      <button class="draft-btn restore" onclick="restoreDraft()">恢复草稿</button>
+      <button class="draft-btn discard" onclick="discardDraft()">忽略</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Left Column -->
+    <div class="left-col">
+
+      <!-- Auto-save indicator -->
+      <div class="autosave-bar" id="autosave-bar">
+        <span>
+          <span class="autosave-dot saved" id="autosave-dot"></span>
+          <span id="autosave-text">草稿已自动保存</span>
+        </span>
+        <span style="font-size:0.75rem">localStorage · checkout_draft_1001</span>
+      </div>
+
+      <!-- Participant Section -->
+      <div class="section" id="participant-section">
+        <div class="section-title">
+          👤 旅行者信息
+        </div>
+
+        <div class="participant-header-bar">
+          <div class="participant-count" id="participant-count">1 / 1 位旅行者</div>
+        </div>
+
+        <!-- Participant Cards Container -->
+        <div id="participants-container">
+          <!-- Dynamically rendered -->
+        </div>
+
+        <!-- No-adult guard (hidden by default) -->
+        <div class="no-adult-guard" id="no-adult-guard" style="display:none">
+          ⛔ 至少需要一位成人参与者陪同，无法全部选择儿童
+        </div>
+
+      </div>
+
+      <!-- Payment Section -->
+      <div class="section">
+        <div class="section-title">💳 支付方式</div>
+        <div style="padding: 0.75rem; background: var(--surface); border-radius: 8px; display: flex; align-items: center; gap: 0.75rem; border: 2px solid var(--primary);">
+          <span style="font-size: 1.25rem">💳</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem">信用卡 / 借记卡</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted)">Visa, Mastercard, UnionPay</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.5rem; padding: 0.75rem; background: var(--surface); border-radius: 8px; display: flex; align-items: center; gap: 0.75rem; opacity: 0.5; border: 2px solid transparent;">
+          <span style="font-size: 1.25rem">📱</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem">微信支付 <span style="font-size:0.7rem; color:var(--text-muted)">(即将上线)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-col">
+      <div class="summary-card">
+        <div class="section-title">📋 订单摘要</div>
+
+        <div class="summary-product">
+          <div class="summary-img" style="background: linear-gradient(135deg, #4ade80, #2dd4bf); display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;">🏞️</div>
+          <div class="summary-info">
+            <h4>巴罗萨谷酒庄一日游</h4>
+            <p>📍 巴罗萨谷 · ⏱ 8小时</p>
+            <p>📅 2026-03-28 (周六)</p>
+          </div>
+        </div>
+
+        <div class="summary-row">
+          <span>成人 x <span id="summary-adults">1</span></span>
+          <span id="summary-adult-price">¥899.00</span>
+        </div>
+        <div class="summary-row" id="summary-child-row" style="display:none">
+          <span>儿童 x <span id="summary-children">0</span></span>
+          <span id="summary-child-price">¥0</span>
+        </div>
+        <div class="summary-row total">
+          <span>合计</span>
+          <span class="price" id="summary-total">¥899.00</span>
+        </div>
+
+        <div class="agreement">
+          <input type="checkbox" id="agree-check" checked>
+          <span>我已阅读并同意 <a href="#">服务条款</a> 和 <a href="#">隐私政策</a></span>
+        </div>
+
+        <button class="checkout-btn" id="submit-btn" onclick="handleSubmit()">
+          提交订单
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Validation Toast -->
+<div class="validation-toast" id="validation-toast">
+  ⚠ 请完善旅行者信息后再提交
+</div>
+
+<script>
+const PRICE = 899;
+const CHILD_PRICE = 450;
+
+const scenarios = {
+  solo: { adults: 1, children: 0 },
+  couple: { adults: 2, children: 0 },
+  family: { adults: 2, children: 1 },
+  error: { adults: 2, children: 0, showErrors: true },
+};
+
+let current = 'solo';
+
+function switchScenario(name) {
+  current = name;
+  document.querySelectorAll('.scenario-tab').forEach((t, i) => {
+    t.classList.toggle('active', t.textContent.includes(
+      name === 'solo' ? '1人' : name === 'couple' ? '2人' : name === 'family' ? '家庭' : '验证'
+    ));
+  });
+
+  // Hide all annotations, show current
+  ['solo','couple','family','error'].forEach(n => {
+    document.getElementById('anno-' + n).style.display = n === name ? 'block' : 'none';
+  });
+
+  renderParticipants(scenarios[name]);
+  updateSummary(scenarios[name]);
+}
+
+function renderParticipants(cfg) {
+  const container = document.getElementById('participants-container');
+  const total = cfg.adults + cfg.children;
+  document.getElementById('participant-count').textContent = `${total} / ${total} 位旅行者`;
+
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const isChild = i >= cfg.adults;
+    const isFirst = i === 0;
+    const isExpanded = isFirst || (current === 'error');
+    const statusClass = cfg.showErrors && i === 1 ? 'has-error' : isFirst ? 'active completed' : isExpanded ? 'active' : '';
+    const expandedClass = isExpanded ? 'expanded' : '';
+
+    let statusBadge;
+    if (cfg.showErrors && i === 1) {
+      statusBadge = '<span class="p-status error">信息不完整</span>';
+    } else if (isFirst) {
+      statusBadge = '<span class="p-status done">✓ 已完成</span>';
+    } else {
+      statusBadge = '<span class="p-status pending">待填写</span>';
+    }
+
+    const name = isFirst ? 'Zhang Wei' : (cfg.showErrors && i === 1 ? 'Li' : '');
+    const displayName = name || '未填写';
+    const typeBadge = isChild
+      ? '<span class="type-badge child">儿童</span>'
+      : '<span class="type-badge adult">成人</span>';
+
+    html += `
+      <div class="p-card ${statusClass} ${expandedClass} fade-in" id="p-card-${i}" style="animation-delay: ${i * 0.1}s">
+        <div class="p-card-header" onclick="toggleCard(${i})">
+          <div class="p-card-left">
+            <span class="p-number">${cfg.showErrors && i === 1 ? '!' : isFirst ? '✓' : (i + 1)}</span>
+            <span class="p-name">${displayName} ${typeBadge}</span>
+          </div>
+          <div class="p-card-right">
+            ${statusBadge}
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="p-card-body">
+          ${!isFirst ? `
+            <button class="contact-picker-btn">
+              👥 从常用联系人选择
+            </button>
+          ` : ''}
+
+          <!-- Type Selector -->
+          <div class="type-selector">
+            <div class="type-option ${!isChild ? 'selected' : ''}" onclick="selectType(${i}, 'adult')">
+              <span class="type-icon">🧑</span>
+              <span class="type-label">成人</span>
+              <span class="type-desc">18岁及以上</span>
+            </div>
+            <div class="type-option ${isChild ? 'selected' : ''}" onclick="selectType(${i}, 'child')">
+              <span class="type-icon">👦</span>
+              <span class="type-label">儿童</span>
+              <span class="type-desc">2-11岁</span>
+            </div>
+          </div>
+
+          ${isChild ? `
+            <div class="child-alert">
+              <div class="child-alert-title">⚠️ 儿童参与者须知</div>
+              <ul>
+                <li>儿童年龄须在 2-11 周岁之间，请携带有效证件</li>
+                <li>12 岁以下儿童须有至少一名成人陪同</li>
+                <li>部分活动可能有身高限制 (如≥110cm)</li>
+                <li>请在「特殊需求」中备注儿童实际年龄</li>
+              </ul>
+            </div>
+          ` : ''}
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">名 (拼音/英文) <span class="required">*</span></label>
+              <input class="form-input ${cfg.showErrors && i === 1 ? '' : ''}"
+                value="${isFirst ? 'Wei' : ''}"
+                placeholder="如: Wei" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">姓 (拼音/英文) <span class="required">*</span></label>
+              <input class="form-input ${cfg.showErrors && i === 1 ? 'error' : ''}"
+                value="${isFirst ? 'Zhang' : cfg.showErrors && i === 1 ? 'Li' : ''}"
+                placeholder="如: Zhang" />
+              ${cfg.showErrors && i === 1 ? '' : ''}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">邮箱 <span class="required">*</span></label>
+              <input class="form-input ${cfg.showErrors && i === 1 ? 'error' : ''}" type="email"
+                value="${isFirst ? 'zhang.wei@email.com' : ''}"
+                placeholder="用于接收确认邮件" />
+              ${cfg.showErrors && i === 1 ? '<div class="form-error">⚠ 请填写邮箱地址</div>' : ''}
+            </div>
+            <div class="form-group">
+              <label class="form-label">手机号 <span class="required">*</span></label>
+              <input class="form-input ${cfg.showErrors && i === 1 ? 'error' : ''}" type="tel"
+                value="${isFirst ? '+61 412 345 678' : ''}"
+                placeholder="+61 xxx xxx xxx" />
+              ${cfg.showErrors && i === 1 ? '<div class="form-error">⚠ 请填写手机号码</div>' : ''}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">出生日期</label>
+              <input class="form-input" type="date"
+                value="${isFirst ? '1990-05-15' : isChild ? '' : ''}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">国籍</label>
+              <input class="form-input"
+                value="${isFirst ? '中国' : ''}" placeholder="如: 中国" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full">
+              <label class="form-label">护照号码 <span class="required">*</span></label>
+              <input class="form-input ${cfg.showErrors && i === 1 ? 'error' : ''}"
+                value="${isFirst ? 'E12345678' : ''}"
+                placeholder="如: E12345678" />
+              ${cfg.showErrors && i === 1 ? '<div class="form-error">⚠ 请填写护照号码</div>' : ''}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full">
+              <label class="form-label">特殊需求</label>
+              <input class="form-input"
+                value="${isChild ? '儿童7岁，身高125cm' : ''}"
+                placeholder="${isChild ? '请备注儿童实际年龄和身高' : '如: 素食、轮椅通道等'}" />
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+  document.getElementById('no-adult-guard').style.display = 'none';
+}
+
+function toggleCard(index) {
+  const card = document.getElementById('p-card-' + index);
+  card.classList.toggle('expanded');
+}
+
+function selectType(index, type) {
+  // Visual feedback only in prototype
+  const card = document.getElementById('p-card-' + index);
+  const options = card.querySelectorAll('.type-option');
+  options.forEach(o => o.classList.remove('selected'));
+  options[type === 'adult' ? 0 : 1].classList.add('selected');
+
+  // Update badge
+  const badge = card.querySelector('.type-badge');
+  if (badge) {
+    badge.className = 'type-badge ' + type;
+    badge.textContent = type === 'adult' ? '成人' : '儿童';
+  }
+
+  // Show/hide child alert
+  const existingAlert = card.querySelector('.child-alert');
+  if (type === 'child' && !existingAlert) {
+    const alertHtml = `
+      <div class="child-alert fade-in">
+        <div class="child-alert-title">⚠️ 儿童参与者须知</div>
+        <ul>
+          <li>儿童年龄须在 2-11 周岁之间，请携带有效证件</li>
+          <li>12 岁以下儿童须有至少一名成人陪同</li>
+          <li>部分活动可能有身高限制 (如≥110cm)</li>
+          <li>请在「特殊需求」中备注儿童实际年龄</li>
+        </ul>
+      </div>
+    `;
+    const typeSelector = card.querySelector('.type-selector');
+    typeSelector.insertAdjacentHTML('afterend', alertHtml);
+  } else if (type === 'adult' && existingAlert) {
+    existingAlert.remove();
+  }
+}
+
+function updateSummary(cfg) {
+  document.getElementById('summary-adults').textContent = cfg.adults;
+  document.getElementById('summary-adult-price').textContent = `¥${(PRICE * cfg.adults).toFixed(2)}`;
+
+  const childRow = document.getElementById('summary-child-row');
+  if (cfg.children > 0) {
+    childRow.style.display = 'flex';
+    document.getElementById('summary-children').textContent = cfg.children;
+    document.getElementById('summary-child-price').textContent = `¥${(CHILD_PRICE * cfg.children).toFixed(2)}`;
+  } else {
+    childRow.style.display = 'none';
+  }
+
+  const total = PRICE * cfg.adults + CHILD_PRICE * cfg.children;
+  document.getElementById('summary-total').textContent = `¥${total.toFixed(2)}`;
+}
+
+function handleSubmit() {
+  if (current === 'error') {
+    // Show validation toast
+    const toast = document.getElementById('validation-toast');
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+
+    // Scroll to error card
+    const errorCard = document.querySelector('.p-card.has-error');
+    if (errorCard) {
+      errorCard.classList.add('expanded');
+      errorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  } else {
+    alert('✅ 订单提交成功！（原型演示）');
+  }
+}
+
+function restoreDraft() {
+  document.getElementById('draft-banner').style.display = 'none';
+  simulateAutoSave('恢复成功');
+}
+
+function discardDraft() {
+  document.getElementById('draft-banner').style.display = 'none';
+}
+
+function simulateAutoSave(msg) {
+  const dot = document.getElementById('autosave-dot');
+  const text = document.getElementById('autosave-text');
+  dot.className = 'autosave-dot saving';
+  text.textContent = msg || '正在保存...';
+  setTimeout(() => {
+    dot.className = 'autosave-dot saved';
+    text.textContent = '草稿已自动保存';
+  }, 1200);
+}
+
+// Auto-save simulation on input
+document.addEventListener('input', () => {
+  simulateAutoSave();
+});
+
+// Init
+switchScenario('solo');
+</script>
+
+</body>
+</html>

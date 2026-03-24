@@ -58,7 +58,7 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
       try {
         const [dash, orderResult, enh, trend, top, channels, al] = await Promise.all([
           get<DashboardData>('/supplier/dashboard', 'supplier').catch(() => null),
-          listSupplierOrders({ page: 1, page_size: 5 }).catch(() => ({ orders: [], total: 0 })),
+          listSupplierOrders({ page: 1, page_size: 5 }).catch(() => ({ items: [] as never[], total: 0, page: 1, page_size: 5, total_pages: 0 })),
           getEnhancedStats().catch(() => null),
           getRevenueTrend(14).catch(() => []),
           getTopProducts(30, 5).catch(() => []),
@@ -66,7 +66,7 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
           getScheduleAlerts().catch(() => null),
         ]);
         if (dash) setDashData(dash);
-        setRecentOrders(orderResult?.orders || []);
+        setRecentOrders(orderResult?.items || []);
         setEnhanced(enh);
         setRevenueTrend(trend || []);
         setTopProducts(top || []);
