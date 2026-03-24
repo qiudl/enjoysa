@@ -124,6 +124,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </button>
 
         {/* 可用性指示 */}
+        {product.availability === 'sold_out' && (
+          <div className={clsx(styles.availabilityBadge, styles.soldOutBadge)}>
+            {t('product.soldOut')}
+          </div>
+        )}
         {product.availability === 'limited' && (
           <div className={styles.availabilityBadge}>
             {t('product.limited')}

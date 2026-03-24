@@ -316,53 +316,201 @@
   font-size: 0.875rem;
 }
 
-.dateGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.dateButton {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.75rem 0.5rem;
-  border: 2px solid #e2e8f0;
+/* Sold Out Banner */
+.soldOutBanner {
+  background: #fef2f2;
+  color: #dc2626;
+  text-align: center;
+  padding: 0.75rem;
   border-radius: 8px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
 }
 
-.dateButton:hover:not(.disabled) {
-  border-color: var(--color-primary, #0066ff);
+/* Calendar */
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
 }
 
-.dateButton.selected {
-  border-color: var(--color-primary, #0066ff);
-  background: rgba(0, 102, 255, 0.05);
-}
-
-.dateButton.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #f8fafc;
-}
-
-.dateLabel {
-  font-size: 0.813rem;
-  font-weight: 500;
+.calendarTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
   color: var(--color-text, #1a1a2e);
 }
 
-.availability {
-  font-size: 0.688rem;
-  color: #16a34a;
-  margin-top: 0.25rem;
+.calendarNav {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  color: var(--color-text, #1a1a2e);
+  transition: all 0.15s ease;
 }
 
-.dateButton.disabled .availability {
-  color: #dc2626;
+.calendarNav:hover:not(:disabled) {
+  border-color: var(--color-primary, #0066ff);
+  color: var(--color-primary, #0066ff);
+}
+
+.calendarNav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.calendarWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 0.25rem;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 0.688rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #94a3b8);
+  padding: 0.25rem 0;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendarBlank {
+  aspect-ratio: 1;
+}
+
+.calendarDay {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  position: relative;
+  padding: 0;
+}
+
+.calendarDay:disabled {
+  cursor: default;
+}
+
+.dayNumber {
+  font-size: 0.813rem;
+  font-weight: 500;
+  color: var(--color-text, #1a1a2e);
+  line-height: 1;
+}
+
+.dayDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.dotAvailable {
+  background: #16a34a;
+}
+
+.dotFull {
+  background: #dc2626;
+}
+
+.pastDay {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pastDay .dayNumber {
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.todayDay {
+  background: #f1f5f9;
+}
+
+.todayDay .dayNumber {
+  font-weight: 700;
+}
+
+.availableDay:hover {
+  background: rgba(0, 102, 255, 0.08);
+}
+
+.selectedDay {
+  background: var(--color-primary, #0066ff) !important;
+}
+
+.selectedDay .dayNumber {
+  color: white !important;
+}
+
+.selectedDay .dayDot {
+  background: white !important;
+}
+
+.fullDay .dayNumber {
+  color: var(--color-text-muted, #94a3b8);
+}
+
+/* Time Slots */
+.timeSlots {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.timeSlotsLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #64748b);
+  margin-bottom: 0.5rem;
+}
+
+.timeSlotItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.813rem;
+}
+
+.timeSlotItem + .timeSlotItem {
+  border-top: 1px solid #f1f5f9;
+}
+
+.timeSlotTime {
+  font-weight: 500;
+  color: var(--color-text, #1a1a2e);
+  min-width: 4rem;
+}
+
+.timeSlotSlots {
+  color: #16a34a;
+  font-size: 0.75rem;
+}
+
+.timeSlotPrice {
+  margin-left: auto;
+  font-weight: 600;
+  color: #ef4444;
 }
 
 /* Quantity Selector */
@@ -471,21 +619,12 @@
     margin-bottom: 1rem;
   }
 
-  .dateGrid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.375rem;
+  .calendarDay {
+    border-radius: 6px;
   }
 
-  .dateButton {
-    padding: 0.5rem 0.25rem;
-  }
-
-  .dateLabel {
+  .dayNumber {
     font-size: 0.75rem;
-  }
-
-  .availability {
-    font-size: 0.625rem;
   }
 
   .totalSection {
@@ -539,8 +678,8 @@
     display: none;
   }
 
-  .dateGrid {
-    grid-template-columns: repeat(3, 1fr);
+  .calendarDay {
+    border-radius: 4px;
   }
 
   .bookingCard {

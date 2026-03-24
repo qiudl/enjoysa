@@ -63,7 +63,7 @@ func (h *PublicProductHandler) GetRegion(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"region":   region,
-		"products": products,
+		"products": h.attachStock(products),
 		"total":    total,
 	})
 }
@@ -93,6 +93,33 @@ func (h *PublicProductHandler) ListCategories(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// PublicProductWithStock wraps a product with stock info for public API
+type PublicProductWithStock struct {
+	model.Product
+	TotalStock     int `json:"total_stock"`
+	AvailableStock int `json:"available_stock"`
+}
+
+// attachStock injects stock data into a product list
+func (h *PublicProductHandler) attachStock(products []model.Product) []PublicProductWithStock {
+	ids := make([]uint, len(products))
+	for i, p := range products {
+		ids[i] = p.ID
+	}
+	stockMap, _ := h.scheduleStore.GetStockByProductIDs(ids)
+
+	result := make([]PublicProductWithStock, len(products))
+	for i, p := range products {
+		item := PublicProductWithStock{Product: p}
+		if stock, ok := stockMap[p.ID]; ok {
+			item.TotalStock = stock.TotalSlots
+			item.AvailableStock = stock.TotalSlots - stock.BookedSlots
+		}
+		result[i] = item
+	}
+	return result
+}
+
 func (h *PublicProductHandler) ListProducts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -112,7 +139,7 @@ func (h *PublicProductHandler) ListProducts(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, products, total, page, pageSize)
+	response.Paginated(c, h.attachStock(products), total, page, pageSize)
 }
 
 func (h *PublicProductHandler) ListFeatured(c *gin.Context) {
@@ -126,7 +153,7 @@ func (h *PublicProductHandler) ListFeatured(c *gin.Context) {
 		response.ServerError(c, "Failed to list featured products")
 		return
 	}
-	response.Success(c, products)
+	response.Success(c, h.attachStock(products))
 }
 
 func (h *PublicProductHandler) GetProduct(c *gin.Context) {
@@ -148,7 +175,14 @@ func (h *PublicProductHandler) GetProduct(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, product)
+	result := PublicProductWithStock{Product: *product}
+	stockMap, _ := h.scheduleStore.GetStockByProductIDs([]uint{product.ID})
+	if stock, ok := stockMap[product.ID]; ok {
+		result.TotalStock = stock.TotalSlots
+		result.AvailableStock = stock.TotalSlots - stock.BookedSlots
+	}
+
+	response.Success(c, result)
 }
 
 func (h *PublicProductHandler) GetSchedules(c *gin.Context) {
@@ -258,5 +292,5 @@ func (h *PublicProductHandler) GetSupplierProducts(c *gin.Context) {
 		return
 	}
 
-	response.Paginated(c, products, total, page, pageSize)
+	response.Paginated(c, h.attachStock(products), total, page, pageSize)
 }

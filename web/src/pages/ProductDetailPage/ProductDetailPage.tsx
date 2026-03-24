@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Header,
   Footer,
@@ -122,34 +123,94 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
-  // Generate next 7 days for date selection, using real schedule data when available
-  const getAvailableDates = () => {
-    const dates = [];
-    const today = new Date();
-    const scheduleDates = new Set(schedules.map((s) => s.date));
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      // Available if: no schedules exist yet (open booking) or schedule exists with remaining slots
-      const schedule = schedules.find((s) => s.date === dateStr);
-      const available = scheduleDates.size === 0
-        ? true
-        : schedule ? (schedule.total_slots - schedule.booked_slots > 0 && schedule.status === 'available') : false;
-      dates.push({
-        value: dateStr,
-        label: date.toLocaleDateString(currentLang === 'zh' ? 'zh-CN' : 'en-US', {
-          month: 'short',
-          day: 'numeric',
-          weekday: 'short',
-        }),
-        available,
+  // Calendar state
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  // Build a lookup: dateStr -> schedule info
+  const scheduleMap = useMemo(() => {
+    const map = new Map<string, { available: boolean; slots: number; total: number; price: number; timeSlot: string }>();
+    for (const s of schedules) {
+      const existing = map.get(s.date);
+      const avail = s.total_slots - s.booked_slots;
+      if (!existing) {
+        map.set(s.date, {
+          available: avail > 0 && s.status === 'available',
+          slots: avail,
+          total: s.total_slots,
+          price: s.price,
+          timeSlot: s.time_slot,
+        });
+      } else {
+        // Aggregate multiple time slots for same date
+        existing.slots += avail;
+        existing.total += s.total_slots;
+        if (avail > 0 && s.status === 'available') existing.available = true;
+      }
+    }
+    return map;
+  }, [schedules]);
+
+  const hasAnySchedule = schedules.length > 0;
+
+  // Check if product is completely sold out (has schedules but none available)
+  const isSoldOut = hasAnySchedule && ![...scheduleMap.values()].some((s) => s.available);
+
+  // Calendar navigation limits: today to +2 months
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const maxMonth = useMemo(() => new Date(today.getFullYear(), today.getMonth() + 2, 1), [today]);
+  const canGoPrev = calendarMonth > new Date(today.getFullYear(), today.getMonth(), 1);
+  const canGoNext = calendarMonth < maxMonth;
+
+  // Generate calendar grid for current month
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const days: { date: string; day: number; available: boolean; hasSchedule: boolean; isPast: boolean; isToday: boolean; slots?: number; total?: number }[] = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(year, month, d);
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isPast = dateObj < today;
+      const isToday = dateObj.getTime() === today.getTime();
+      const info = scheduleMap.get(dateStr);
+
+      days.push({
+        date: dateStr,
+        day: d,
+        available: !isPast && (!hasAnySchedule || (info?.available ?? false)),
+        hasSchedule: !!info,
+        isPast,
+        isToday,
+        slots: info?.slots,
+        total: info?.total,
       });
     }
-    return dates;
-  };
 
-  const availableDates = getAvailableDates();
+    return { days, leadingBlanks: firstDay };
+  }, [calendarMonth, scheduleMap, today, hasAnySchedule]);
+
+  // Time slots for selected date
+  const selectedDateSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    return schedules
+      .filter((s) => s.date === selectedDate && s.status === 'available' && s.total_slots - s.booked_slots > 0)
+      .map((s) => ({
+        time: s.time_slot,
+        slots: s.total_slots - s.booked_slots,
+        total: s.total_slots,
+        price: s.price,
+      }));
+  }, [selectedDate, schedules]);
 
   return (
     <div className={styles.page}>
@@ -295,24 +356,89 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               )}
             </div>
 
-            {/* Date Selection */}
+            {/* Sold Out Banner */}
+            {isSoldOut && (
+              <div className={styles.soldOutBanner}>
+                {t('product.soldOut')}
+              </div>
+            )}
+
+            {/* Calendar Date Selection */}
             <div className={styles.bookingSection}>
               <label className={styles.label}>{t('product.selectDate')}</label>
-              <div className={styles.dateGrid}>
-                {availableDates.map((date) => (
+
+              {/* Calendar Header */}
+              <div className={styles.calendarHeader}>
+                <button
+                  className={styles.calendarNav}
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                  disabled={!canGoPrev}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className={styles.calendarTitle}>
+                  {calendarMonth.toLocaleDateString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long' })}
+                </span>
+                <button
+                  className={styles.calendarNav}
+                  onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                  disabled={!canGoNext}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+
+              {/* Weekday Headers */}
+              <div className={styles.calendarWeekdays}>
+                {(currentLang === 'zh'
+                  ? ['日', '一', '二', '三', '四', '五', '六']
+                  : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+                ).map((d) => (
+                  <span key={d} className={styles.weekday}>{d}</span>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div className={styles.calendarGrid}>
+                {Array.from({ length: calendarDays.leadingBlanks }).map((_, i) => (
+                  <div key={`blank-${i}`} className={styles.calendarBlank} />
+                ))}
+                {calendarDays.days.map((day) => (
                   <button
-                    key={date.value}
-                    className={`${styles.dateButton} ${selectedDate === date.value ? styles.selected : ''} ${!date.available ? styles.disabled : ''}`}
-                    onClick={() => date.available && setSelectedDate(date.value)}
-                    disabled={!date.available}
+                    key={day.date}
+                    className={`${styles.calendarDay} ${day.isPast ? styles.pastDay : ''} ${day.isToday ? styles.todayDay : ''} ${selectedDate === day.date ? styles.selectedDay : ''} ${day.available ? styles.availableDay : ''} ${day.hasSchedule && !day.available && !day.isPast ? styles.fullDay : ''}`}
+                    onClick={() => day.available && setSelectedDate(day.date)}
+                    disabled={!day.available}
                   >
-                    <span className={styles.dateLabel}>{date.label}</span>
-                    <span className={styles.availability}>
-                      {date.available ? t('product.available') : t('product.soldOut')}
-                    </span>
+                    <span className={styles.dayNumber}>{day.day}</span>
+                    {day.hasSchedule && !day.isPast && (
+                      <span className={`${styles.dayDot} ${day.available ? styles.dotAvailable : styles.dotFull}`} />
+                    )}
                   </button>
                 ))}
               </div>
+
+              {/* Selected Date Time Slots */}
+              {selectedDate && selectedDateSlots.length > 0 && (
+                <div className={styles.timeSlots}>
+                  <label className={styles.timeSlotsLabel}>
+                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString(currentLang === 'zh' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
+                  </label>
+                  {selectedDateSlots.map((slot, i) => (
+                    <div key={i} className={styles.timeSlotItem}>
+                      <span className={styles.timeSlotTime}>{slot.time || t('product.allDay', 'All Day')}</span>
+                      <span className={styles.timeSlotSlots}>
+                        {slot.slots}/{slot.total} {t('product.slotsLeft', 'slots')}
+                      </span>
+                      {slot.price > 0 && (
+                        <span className={styles.timeSlotPrice}>
+                          A${slot.price}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quantity Selection */}
@@ -352,16 +478,16 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={!selectedDate}
+                disabled={!selectedDate || isSoldOut}
                 onClick={handleBook}
               >
-                {t('product.buyNow')}
+                {isSoldOut ? t('product.soldOut') : t('product.buyNow')}
               </Button>
               <Button
                 variant={addedToCart ? 'success' : 'outline'}
                 size="lg"
                 fullWidth
-                disabled={!selectedDate}
+                disabled={!selectedDate || isSoldOut}
                 onClick={handleAddToCart}
               >
                 {addedToCart ? `${t('cart.added')} ✓` : t('product.addToCart')}

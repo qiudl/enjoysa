@@ -135,6 +135,10 @@
   color: white;
 }
 
+.soldOutBadge {
+  background: var(--color-text-muted, #94a3b8);
+}
+
 /* Content */
 .content {
   display: flex;

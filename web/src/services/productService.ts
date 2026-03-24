@@ -180,7 +180,13 @@ export function transformApiProduct(p: ApiProduct): Product {
       ? { id: p.region.slug, name: p.region.name_zh, nameEn: p.region.name_en, region: '南澳大利亚', regionEn: 'South Australia' }
       : { id: '', name: '', nameEn: '', region: '', regionEn: '' },
     tags: parsedTags,
-    availability: p.status === 'approved' ? 'available' : 'limited',
+    availability: p.status !== 'approved'
+      ? 'limited'
+      : p.available_stock !== undefined && p.available_stock <= 0
+        ? 'sold_out'
+        : p.available_stock !== undefined && p.available_stock < 5
+          ? 'limited'
+          : 'available',
     instantConfirmation: true,
     freeCancellation: true,
     supplierId: String(p.supplier_id),

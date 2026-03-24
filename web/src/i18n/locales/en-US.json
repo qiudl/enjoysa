@@ -197,6 +197,8 @@
     "removeFromFavorites": "Remove from Favorites",
     "share": "Share",
     "selectDate": "Select Date",
+    "allDay": "All Day",
+    "slotsLeft": "slots",
     "selectTime": "Select Time",
     "selectParticipants": "Select Participants",
     "adult": "Adult",
