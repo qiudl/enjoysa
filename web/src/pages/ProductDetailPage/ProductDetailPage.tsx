@@ -80,50 +80,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       .finally(() => setLoading(false));
   }, [productId]);
 
-  const isLoading = loading || externalLoading || !product;
-
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <Header
-          isLoggedIn={isLoggedIn}
-          userName={userName}
-          cartCount={cartCount}
-          onLoginClick={onLoginClick}
-          onRegisterClick={onRegisterClick}
-          onNavClick={onNavClick}
-        />
-        <div className={styles.loadingContainer}>
-          <Loading size="lg" />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const title = currentLang === 'en' && product.titleEn ? product.titleEn : product.title;
-  const location = currentLang === 'en' && product.locationEn ? product.locationEn : product.location;
-  const duration = currentLang === 'en' && product.durationEn ? product.durationEn : product.duration;
-  const meetingPoint = product.meetingPoint;
-
-  const totalPrice = product.price * quantity;
-
-  const handleBook = () => {
-    if (selectedDate && onBookNow) {
-      onBookNow();
-    }
-  };
-
-  const handleAddToCart = () => {
-    if (selectedDate && onAddToCart) {
-      onAddToCart(product, selectedDate);
-      setAddedToCart(true);
-      if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
-      addedTimerRef.current = setTimeout(() => setAddedToCart(false), 1500);
-    }
-  };
-
-  // Calendar state
+  // Calendar state — must be before any early return to maintain hook order
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -211,6 +168,50 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         price: s.price,
       }));
   }, [selectedDate, schedules]);
+
+  // --- Early return for loading (after all hooks) ---
+  const isLoading = loading || externalLoading || !product;
+
+  if (isLoading) {
+    return (
+      <div className={styles.page}>
+        <Header
+          isLoggedIn={isLoggedIn}
+          userName={userName}
+          cartCount={cartCount}
+          onLoginClick={onLoginClick}
+          onRegisterClick={onRegisterClick}
+          onNavClick={onNavClick}
+        />
+        <div className={styles.loadingContainer}>
+          <Loading size="lg" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const title = currentLang === 'en' && product.titleEn ? product.titleEn : product.title;
+  const location = currentLang === 'en' && product.locationEn ? product.locationEn : product.location;
+  const duration = currentLang === 'en' && product.durationEn ? product.durationEn : product.duration;
+  const meetingPoint = product.meetingPoint;
+
+  const totalPrice = product.price * quantity;
+
+  const handleBook = () => {
+    if (selectedDate && onBookNow) {
+      onBookNow();
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (selectedDate && onAddToCart) {
+      onAddToCart(product, selectedDate);
+      setAddedToCart(true);
+      if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+      addedTimerRef.current = setTimeout(() => setAddedToCart(false), 1500);
+    }
+  };
 
   return (
     <div className={styles.page}>
