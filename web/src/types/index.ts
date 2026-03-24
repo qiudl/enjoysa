@@ -159,6 +159,7 @@ export interface Cart {
 // ===== 订单相关 - Order Types =====
 export interface Order {
   id: string;
+  numericId: number;
   orderNumber: string;
   userId: string;
   items: OrderItem[];

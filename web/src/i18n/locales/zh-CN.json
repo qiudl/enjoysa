@@ -191,6 +191,7 @@
     "available": "可预订",
     "limited": "库存紧张",
     "soldOut": "已售罄",
+    "allDatesSoldOut": "该套餐所有日期已售罄",
     "addToCart": "加入购物车",
     "buyNow": "立即预订",
     "addToFavorites": "收藏",
@@ -211,7 +212,12 @@
     "noReviews": "暂无评价",
     "writeReview": "写评价",
     "locationMap": "位置地图",
-    "navigateTo": "导航前往"
+    "navigateTo": "导航前往",
+    "selectPackage": "选择套餐",
+    "selectTimeSlot": "选择时段",
+    "unitPrice": "单价",
+    "slotsRemaining": "余位",
+    "allDatesSoldOut": "该套餐所有日期已售罄"
   },
   "tags": {
     "hot": "热卖",
@@ -255,6 +261,8 @@
     "successMessage": "您的订单已提交，请在30分钟内完成支付",
     "viewOrder": "查看订单",
     "continueShopping": "继续购物",
+    "packageName": "套餐",
+    "timeSlot": "时段",
     "errors": {
       "firstNameRequired": "请输入名字",
       "lastNameRequired": "请输入姓氏",

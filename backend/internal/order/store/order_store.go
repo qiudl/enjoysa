@@ -56,6 +56,14 @@ func (s *OrderStore) GetByID(id uint) (*model.Order, error) {
 	return &order, nil
 }
 
+func (s *OrderStore) GetByOrderNo(orderNo string) (*model.Order, error) {
+	var order model.Order
+	if err := s.db.Preload("User").Preload("Supplier").Where("order_no = ?", orderNo).First(&order).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+
 func (s *OrderStore) List(filter OrderFilter) ([]model.Order, int64, error) {
 	var orders []model.Order
 	var total int64

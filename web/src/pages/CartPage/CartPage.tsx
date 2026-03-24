@@ -98,6 +98,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         {item.selectedDate && (
                           <p className={styles.itemDate}>
                             {t('cart.travelDate')}: {item.selectedDate}
+                            {item.selectedTime && ` · ${item.selectedTime}`}
                           </p>
                         )}
                         <div className={styles.itemActions}>

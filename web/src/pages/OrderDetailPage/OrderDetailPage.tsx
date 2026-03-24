@@ -31,6 +31,7 @@ const statusMap: Record<string, OrderStatus> = {
 function transformOrder(o: ApiOrder): Order {
   return {
     id: o.order_no || String(o.id),
+    numericId: o.id,
     orderNumber: o.order_no || String(o.id),
     userId: String(o.user_id),
     items: [{
@@ -85,7 +86,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
     if (!orderId) return;
     try {
       setLoading(true);
-      const result = await getOrder(Number(orderId));
+      const result = await getOrder(/^\d+$/.test(orderId) ? Number(orderId) : orderId);
       setRawOrder(result);
       setOrder(transformOrder(result));
       setError(null);

@@ -56,6 +56,7 @@ const paymentStatusMap: Record<string, 'unpaid' | 'paid' | 'refunding' | 'refund
 function transformOrder(o: ApiOrder): Order {
   return {
     id: o.order_no || String(o.id),
+    numericId: o.id,
     orderNumber: o.order_no || String(o.id),
     userId: String(o.user_id),
     items: [{

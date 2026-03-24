@@ -311,9 +311,19 @@ function ProductDetailPageWrapper() {
     <ProductDetailPage
       productId={id}
       cartCount={getCartCount()}
-      onBookNow={(qty, date) => navigate('/checkout', { state: { productId: id, quantity: qty, travelDate: date } })}
-      onAddToCart={(product, selectedDate, selectedTime) => {
-        addToCart(product, 1, selectedDate, selectedTime);
+      onBookNow={(data) => navigate('/checkout', {
+        state: {
+          productId: id,
+          quantity: data.quantity,
+          travelDate: data.selectedDate,
+          packageId: data.packageId,
+          scheduleId: data.scheduleId,
+          selectedTime: data.timeSlot,
+          unitPrice: data.unitPrice,
+        }
+      })}
+      onAddToCart={(product, selectedDate, selectedTime, pkgId, schId) => {
+        addToCart(product, 1, selectedDate, selectedTime, pkgId, schId);
       }}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
@@ -328,13 +338,25 @@ function CheckoutPageWrapper() {
   const { items, getCartCount, clearCart } = useCart();
   const { isAuthenticated } = useUserAuth();
   const location = useLocation();
-  const state = location.state as { productId?: string; quantity?: number; travelDate?: string } | null;
+  const state = location.state as {
+    productId?: string;
+    quantity?: number;
+    travelDate?: string;
+    packageId?: number;
+    scheduleId?: number;
+    selectedTime?: string;
+    unitPrice?: number;
+  } | null;
 
   return (
     <CheckoutPage
       productId={state?.productId}
       adultCount={state?.quantity}
       travelDate={state?.travelDate}
+      packageId={state?.packageId}
+      scheduleId={state?.scheduleId}
+      selectedTime={state?.selectedTime}
+      unitPrice={state?.unitPrice}
       isLoggedIn={isAuthenticated}
       cartCount={getCartCount()}
       cartItems={!state?.productId ? items : undefined}
@@ -387,7 +409,7 @@ function MyOrdersPageWrapper() {
     <MyOrdersPage
       userName={user?.name}
       cartCount={getCartCount()}
-      onOrderClick={(order) => navigate(`/orders/${order.id}`)}
+      onOrderClick={(order) => navigate(`/orders/${order.numericId}`)}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}

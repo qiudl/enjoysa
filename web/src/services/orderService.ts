@@ -130,7 +130,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   return post<Order>('/orders', input, 'user');
 }
 
-export async function getOrder(id: number): Promise<Order> {
+export async function getOrder(id: number | string): Promise<Order> {
   return get<Order>(`/orders/${id}`, 'user');
 }
 

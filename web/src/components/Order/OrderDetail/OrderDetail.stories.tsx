@@ -6,6 +6,7 @@ import type { Order } from '../../../types';
 
 const pendingOrder: Order = {
   id: '1',
+  numericId: 1,
   orderNumber: 'ES20260130001',
   userId: 'u1',
   items: [
@@ -39,6 +40,7 @@ const pendingOrder: Order = {
 
 const confirmedOrder: Order = {
   id: '2',
+  numericId: 2,
   orderNumber: 'ES20260128002',
   userId: 'u1',
   items: [
@@ -73,6 +75,7 @@ const confirmedOrder: Order = {
 
 const completedOrder: Order = {
   id: '3',
+  numericId: 3,
   orderNumber: 'ES20260120003',
   userId: 'u1',
   items: [
@@ -108,6 +111,7 @@ const completedOrder: Order = {
 
 const cancelledOrder: Order = {
   id: '4',
+  numericId: 4,
   orderNumber: 'ES20260115004',
   userId: 'u1',
   items: [
@@ -141,6 +145,7 @@ const cancelledOrder: Order = {
 
 const multiItemOrder: Order = {
   id: '5',
+  numericId: 5,
   orderNumber: 'ES20260125005',
   userId: 'u1',
   items: [

@@ -191,6 +191,7 @@
     "available": "Available",
     "limited": "Limited Availability",
     "soldOut": "Sold Out",
+    "allDatesSoldOut": "All dates are sold out for this package",
     "addToCart": "Add to Cart",
     "buyNow": "Book Now",
     "addToFavorites": "Add to Favorites",
@@ -211,7 +212,12 @@
     "noReviews": "No reviews yet",
     "writeReview": "Write a Review",
     "locationMap": "Location Map",
-    "navigateTo": "Get Directions"
+    "navigateTo": "Get Directions",
+    "selectPackage": "Select Package",
+    "selectTimeSlot": "Select Time Slot",
+    "unitPrice": "Unit Price",
+    "slotsRemaining": "remaining",
+    "allDatesSoldOut": "All dates sold out for this package"
   },
   "tags": {
     "hot": "Hot",
@@ -255,6 +261,8 @@
     "successMessage": "Your order has been submitted. Please complete payment within 30 minutes.",
     "viewOrder": "View Order",
     "continueShopping": "Continue Shopping",
+    "packageName": "Package",
+    "timeSlot": "Time Slot",
     "errors": {
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",

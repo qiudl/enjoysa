@@ -7,6 +7,7 @@ import type { Order } from '../../../types';
 const mockOrders: Order[] = [
   {
     id: '1',
+    numericId: 1,
     orderNumber: 'ES20260130001',
     userId: 'u1',
     items: [
@@ -39,6 +40,7 @@ const mockOrders: Order[] = [
   },
   {
     id: '2',
+    numericId: 2,
     orderNumber: 'ES20260128002',
     userId: 'u1',
     items: [
@@ -72,6 +74,7 @@ const mockOrders: Order[] = [
   },
   {
     id: '3',
+    numericId: 3,
     orderNumber: 'ES20260120003',
     userId: 'u1',
     items: [
@@ -106,6 +109,7 @@ const mockOrders: Order[] = [
   },
   {
     id: '4',
+    numericId: 4,
     orderNumber: 'ES20260115004',
     userId: 'u1',
     items: [

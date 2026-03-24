@@ -116,11 +116,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       {/* Content */}
       <div className={styles.content}>
         <div className={styles.imageWrapper}>
+          {firstItem.productImage ? (
           <img
             src={firstItem.productImage}
             alt={title}
             className={styles.image}
           />
+          ) : (
+            <div className={styles.image} style={{ background: '#e2e8f0' }} />
+          )}
           {order.items.length > 1 && (
             <span className={styles.itemCount}>+{order.items.length - 1}</span>
           )}

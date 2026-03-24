@@ -167,6 +167,7 @@
     "available": "可預訂",
     "limited": "庫存緊張",
     "soldOut": "已售罄",
+    "allDatesSoldOut": "該套餐所有日期已售罄",
     "addToCart": "加入購物車",
     "buyNow": "立即預訂",
     "addToFavorites": "收藏",
@@ -187,7 +188,12 @@
     "noReviews": "暫無評價",
     "writeReview": "寫評價",
     "locationMap": "位置地圖",
-    "navigateTo": "導航前往"
+    "navigateTo": "導航前往",
+    "selectPackage": "選擇套餐",
+    "selectTimeSlot": "選擇時段",
+    "unitPrice": "單價",
+    "slotsRemaining": "餘位",
+    "allDatesSoldOut": "該套餐所有日期已售罄"
   },
   "tags": {
     "hot": "熱賣",
@@ -231,6 +237,8 @@
     "successMessage": "您的訂單已提交，請在30分鐘內完成支付",
     "viewOrder": "檢視訂單",
     "continueShopping": "繼續購物",
+    "packageName": "套餐",
+    "timeSlot": "時段",
     "errors": {
       "firstNameRequired": "請輸入名字",
       "lastNameRequired": "請輸入姓氏",

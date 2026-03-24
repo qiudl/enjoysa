@@ -35,6 +35,14 @@ export interface CheckoutPageProps {
   travelDate?: string;
   /** 成人数量 */
   adultCount?: number;
+  /** 套餐 ID */
+  packageId?: number;
+  /** 排期 ID */
+  scheduleId?: number;
+  /** 选中时段 */
+  selectedTime?: string;
+  /** 单价 */
+  unitPrice?: number;
   /** 提交订单 */
   onSubmit?: (data: {
     product: Product;
@@ -83,6 +91,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   productId,
   travelDate: travelDateProp,
   adultCount = 1,
+  packageId: packageIdProp,
+  scheduleId: scheduleIdProp,
+  selectedTime: selectedTimeProp,
+  unitPrice: unitPriceProp,
   onSubmit,
   onBack,
   onLoginClick,
@@ -275,12 +287,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         let firstOrderId = '';
         for (const item of cartItems) {
           const pkgs = cartPackages[item.product.id];
-          const packageId = pkgs?.[0]?.id;
-          if (!packageId) continue;
+          const cartPkgId = item.packageId || pkgs?.[0]?.id;
+          if (!cartPkgId) continue;
 
           const order = await createOrder({
             product_id: Number(item.product.id),
-            package_id: packageId,
+            package_id: cartPkgId,
+            schedule_id: item.scheduleId,
             quantity: item.quantity,
             booking_date: item.selectedDate || travelDate,
             contact_name: contactName,
@@ -302,12 +315,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         }
       } else {
         // Single product mode
-        const packageId = packages[0]?.id;
-        if (!packageId) return;
+        const resolvedPackageId = packageIdProp || packages[0]?.id;
+        if (!resolvedPackageId) return;
 
         const order = await createOrder({
           product_id: Number(product!.id),
-          package_id: packageId,
+          package_id: resolvedPackageId,
+          schedule_id: scheduleIdProp,
           quantity: adultCount,
           booking_date: travelDate,
           contact_name: contactName,
@@ -455,12 +469,43 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     </div>
                   </div>
                 ) : product ? (
-                  <OrderSummary
-                    product={product}
-                    travelDate={travelDate}
-                    adultCount={adultCount}
-                    language={currentLang}
-                  />
+                  <>
+                    <OrderSummary
+                      product={product}
+                      travelDate={travelDate}
+                      adultCount={adultCount}
+                      language={currentLang}
+                      unitPrice={unitPriceProp}
+                    />
+                    {/* Package & Time Slot details */}
+                    {(packageIdProp || selectedTimeProp) && (
+                      <div className={styles.bookingDetails}>
+                        {packageIdProp && packages.length > 0 && (() => {
+                          const pkg = packages.find(p => p.id === packageIdProp);
+                          if (!pkg) return null;
+                          const pkgName = currentLang === 'en' && pkg.name_en ? pkg.name_en : pkg.name_zh;
+                          return (
+                            <div className={styles.bookingDetailRow}>
+                              <span className={styles.bookingDetailLabel}>{t('checkout.packageName')}</span>
+                              <span className={styles.bookingDetailValue}>{pkgName}</span>
+                            </div>
+                          );
+                        })()}
+                        {selectedTimeProp && (
+                          <div className={styles.bookingDetailRow}>
+                            <span className={styles.bookingDetailLabel}>{t('checkout.timeSlot')}</span>
+                            <span className={styles.bookingDetailValue}>{selectedTimeProp}</span>
+                          </div>
+                        )}
+                        {unitPriceProp && (
+                          <div className={styles.bookingDetailRow}>
+                            <span className={styles.bookingDetailLabel}>{t('product.unitPrice')}</span>
+                            <span className={styles.bookingDetailValue}>¥{unitPriceProp}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 ) : null}
 
                 {/* Agreement */}
@@ -483,7 +528,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   variant="primary"
                   size="lg"
                   fullWidth
-                  disabled={!agreed || submitting || productLoading || (isCartMode ? Object.keys(cartPackages).length === 0 : !packages[0])}
+                  disabled={!agreed || submitting || productLoading || (isCartMode ? Object.keys(cartPackages).length === 0 : !(packageIdProp || packages[0]))}
                   loading={submitting || productLoading}
                   onClick={handleSubmit}
                 >

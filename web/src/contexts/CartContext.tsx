@@ -6,11 +6,13 @@ export interface CartItem {
   quantity: number;
   selectedDate?: string;
   selectedTime?: string;
+  packageId?: number;
+  scheduleId?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number, selectedDate?: string, selectedTime?: string) => void;
+  addToCart: (product: Product, quantity?: number, selectedDate?: string, selectedTime?: string, packageId?: number, scheduleId?: number) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -46,7 +48,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     product: Product,
     quantity: number = 1,
     selectedDate?: string,
-    selectedTime?: string
+    selectedTime?: string,
+    packageId?: number,
+    scheduleId?: number
   ) => {
     setItems((prev) => {
       const existingIndex = prev.findIndex((item) => item.product.id === product.id);
@@ -59,11 +63,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           quantity: updated[existingIndex].quantity + quantity,
           selectedDate: selectedDate || updated[existingIndex].selectedDate,
           selectedTime: selectedTime || updated[existingIndex].selectedTime,
+          packageId: packageId ?? updated[existingIndex].packageId,
+          scheduleId: scheduleId ?? updated[existingIndex].scheduleId,
         };
         return updated;
       } else {
         // Add new item
-        return [...prev, { product, quantity, selectedDate, selectedTime }];
+        return [...prev, { product, quantity, selectedDate, selectedTime, packageId, scheduleId }];
       }
     });
     setLastAddedAt(Date.now());

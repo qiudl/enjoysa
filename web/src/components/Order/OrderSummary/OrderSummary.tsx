@@ -24,6 +24,8 @@ export interface OrderSummaryProps {
   showDetails?: boolean;
   /** 语言 */
   language?: 'zh' | 'en';
+  /** 覆盖单价（套餐/时段价格优先于 product.price） */
+  unitPrice?: number;
 }
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -36,6 +38,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   discountAmount = 0,
   showDetails = true,
   language,
+  unitPrice: unitPriceOverride,
 }) => {
   const { t, i18n } = useTranslation();
   const isZh = language ? language === 'zh' : (i18n.language === 'zh' || i18n.language === 'zh-CN');
@@ -49,8 +52,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const actualAdultCount = cartItem?.quantity || adultCount;
   const actualChildCount = childCount;
 
-  const adultPrice = product.price * actualAdultCount;
-  const childPrice = product.price * 0.5 * actualChildCount; // Assume 50% for children
+  const effectivePrice = unitPriceOverride ?? product.price;
+  const adultPrice = effectivePrice * actualAdultCount;
+  const childPrice = effectivePrice * 0.5 * actualChildCount; // Assume 50% for children
   const subtotal = adultPrice + childPrice;
   const total = subtotal - discountAmount;
 

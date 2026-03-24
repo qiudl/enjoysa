@@ -202,13 +202,18 @@ func (h *OrderHandler) ListUserOrders(c *gin.Context) {
 
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		response.BadRequest(c, "Invalid order ID")
-		return
+	param := c.Param("id")
+
+	var order *ordermodel.Order
+	var err error
+
+	id, parseErr := strconv.ParseUint(param, 10, 32)
+	if parseErr == nil {
+		order, err = h.orderStore.GetByID(uint(id))
+	} else {
+		order, err = h.orderStore.GetByOrderNo(param)
 	}
 
-	order, err := h.orderStore.GetByID(uint(id))
 	if err != nil {
 		response.NotFound(c, "Order not found")
 		return
