@@ -116,10 +116,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       : schedules;
     const map = new Map<string, { available: boolean; slots: number; total: number; price: number }>();
     for (const s of filtered) {
-      const existing = map.get(s.date);
+      // Normalize date: "2026-03-27T00:00:00+10:30" → "2026-03-27"
+      const dateKey = s.date.length > 10 ? s.date.slice(0, 10) : s.date;
+      const existing = map.get(dateKey);
       const avail = s.total_slots - s.booked_slots;
       if (!existing) {
-        map.set(s.date, {
+        map.set(dateKey, {
           available: avail > 0 && s.status === 'available',
           slots: avail,
           total: s.total_slots,
@@ -175,7 +177,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     if (!selectedDate) return [];
     return schedules
       .filter((s) =>
-        s.date === selectedDate
+        (s.date.length > 10 ? s.date.slice(0, 10) : s.date) === selectedDate
         && (!selectedPackageId || s.package_id === selectedPackageId)
         && s.status === 'available'
         && s.total_slots - s.booked_slots > 0
@@ -400,6 +402,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {calendarDays.days.map((day) => {
                   const isLimited = day.hasSchedule && day.available && day.slots !== undefined && day.slots < 5;
                   const isDateSoldOut = day.hasSchedule && !day.available && !day.isPast;
+                  const info = day.hasSchedule ? scheduleMap.get(day.date) : undefined;
                   return (
                     <button key={day.date}
                       className={`${styles.calendarDay} ${day.isPast ? styles.pastDay : ''} ${day.isToday ? styles.todayDay : ''} ${selectedDate === day.date ? styles.selectedDay : ''} ${day.available ? styles.availableDay : ''} ${isDateSoldOut ? styles.fullDay : ''}`}
@@ -408,8 +411,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       <span className={styles.dayNumber}>{day.day}</span>
                       {isDateSoldOut ? (
                         <span className={styles.daySoldOut}>{isZh ? '满' : 'Full'}</span>
-                      ) : day.hasSchedule && !day.isPast ? (
-                        <span className={`${styles.dayDot} ${isLimited ? styles.dotLimited : styles.dotAvailable}`} />
+                      ) : day.hasSchedule && !day.isPast && info ? (
+                        <>
+                          {info.price > 0 && (
+                            <span className={styles.dayPrice}>{currencySymbol}{info.price}</span>
+                          )}
+                          <span className={`${styles.daySlots} ${isLimited ? styles.daySlotsLimited : styles.daySlotsAvailable}`}>
+                            {isZh ? `余${day.slots}` : `${day.slots} left`}
+                          </span>
+                        </>
                       ) : null}
                     </button>
                   );

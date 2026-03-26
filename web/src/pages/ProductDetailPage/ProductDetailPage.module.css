@@ -388,11 +388,10 @@
 }
 
 .calendarBlank {
-  aspect-ratio: 1;
+  min-height: 54px;
 }
 
 .calendarDay {
-  aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -403,7 +402,9 @@
   border-radius: 8px;
   transition: all 0.15s ease;
   position: relative;
-  padding: 0;
+  padding: 4px 2px;
+  min-height: 54px;
+  gap: 1px;
 }
 
 .calendarDay:disabled {
@@ -417,23 +418,27 @@
   line-height: 1;
 }
 
-.dayDot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  margin-top: 2px;
+.dayPrice {
+  font-size: 0.563rem;
+  font-weight: 600;
+  color: #ef4444;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.dotAvailable {
-  background: #16a34a;
+.daySlots {
+  font-size: 0.5rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.dotLimited {
-  background: #f59e0b;
+.daySlotsAvailable {
+  color: #16a34a;
 }
 
-.dotFull {
-  background: #dc2626;
+.daySlotsLimited {
+  color: #f59e0b;
 }
 
 .daySoldOut {
@@ -441,7 +446,14 @@
   color: #dc2626;
   font-weight: 600;
   line-height: 1;
-  margin-top: 1px;
+}
+
+.selectedDay .dayPrice {
+  color: white !important;
+}
+
+.selectedDay .daySlots {
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .pastDay {
@@ -473,8 +485,8 @@
   color: white !important;
 }
 
-.selectedDay .dayDot {
-  background: white !important;
+.selectedDay .daySoldOut {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 .fullDay .dayNumber {

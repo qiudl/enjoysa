@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商品详情页 - 日历库存显示原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #1a1a2e; }
+
+  .prototype-header {
+    background: #1a1a2e; color: white; padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .prototype-header h1 { font-size: 14px; font-weight: 500; opacity: 0.9; }
+  .prototype-header .badge { background: #0066ff; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+
+  .compare-container {
+    max-width: 1100px; margin: 24px auto; padding: 0 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+
+  .panel { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+  .panel-header h2 { font-size: 15px; font-weight: 600; }
+  .panel-header .tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .tag-before { background: #fef2f2; color: #dc2626; }
+  .tag-after { background: #f0fdf4; color: #16a34a; }
+  .panel-body { padding: 20px; }
+
+  /* ---- Booking Card ---- */
+  .booking-card { max-width: 360px; margin: 0 auto; }
+
+  .price-section { margin-bottom: 16px; }
+  .price { display: flex; align-items: baseline; gap: 2px; }
+  .currency { font-size: 16px; font-weight: 700; color: #ef4444; }
+  .amount { font-size: 28px; font-weight: 700; color: #ef4444; }
+  .suffix { font-size: 13px; color: #64748b; margin-left: 4px; }
+
+  .section-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+
+  /* Package */
+  .package-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .package-card {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer;
+    transition: all 0.2s; background: white; text-align: left;
+  }
+  .package-card:hover { border-color: rgba(0,102,255,0.4); }
+  .package-card.selected { border-color: #0066ff; background: rgba(0,102,255,0.04); }
+  .package-name { font-weight: 600; font-size: 14px; }
+  .package-desc { font-size: 12px; color: #64748b; }
+  .package-price { font-weight: 700; font-size: 14px; color: #ef4444; }
+
+  /* Calendar */
+  .calendar-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+  }
+  .calendar-nav {
+    width: 32px; height: 32px; border: none; background: none; cursor: pointer;
+    border-radius: 8px; font-size: 18px; color: #64748b; display: flex; align-items: center; justify-content: center;
+  }
+  .calendar-nav:hover { background: #f1f5f9; }
+  .calendar-title { font-size: 14px; font-weight: 600; }
+
+  .calendar-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px;
+  }
+  .weekday { text-align: center; font-size: 11px; font-weight: 500; color: #94a3b8; padding: 4px 0; }
+
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+  /* ---- BEFORE: dot style ---- */
+  .cal-day-old {
+    aspect-ratio: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: none; background: none; cursor: pointer; border-radius: 8px;
+    transition: all 0.15s; position: relative; padding: 0;
+  }
+  .cal-day-old .day-num { font-size: 13px; font-weight: 500; line-height: 1; }
+  .cal-day-old .dot {
+    width: 4px; height: 4px; border-radius: 50%; margin-top: 2px;
+  }
+  .dot-green { background: #16a34a; }
+  .dot-orange { background: #f59e0b; }
+  .cal-day-old .sold-out-text { font-size: 8px; color: #dc2626; font-weight: 600; margin-top: 1px; }
+  .cal-day-old.past { opacity: 0.3; cursor: default; }
+  .cal-day-old.today-bg { background: #f1f5f9; }
+  .cal-day-old.today-bg .day-num { font-weight: 700; }
+  .cal-day-old.selected-day { background: #0066ff; }
+  .cal-day-old.selected-day .day-num { color: white; }
+  .cal-day-old.selected-day .dot { background: white; }
+  .cal-day-old:not(.past):not(.sold-out):hover { background: rgba(0,102,255,0.08); }
+  .cal-day-old.sold-out .day-num { color: #94a3b8; }
+
+  /* ---- AFTER: price + slots style ---- */
+  .cal-day-new {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: none; background: none; cursor: pointer; border-radius: 8px;
+    transition: all 0.15s; position: relative;
+    padding: 4px 2px; min-height: 54px; gap: 1px;
+  }
+  .cal-day-new .day-num { font-size: 13px; font-weight: 500; line-height: 1; color: #1a1a2e; }
+  .cal-day-new .day-price { font-size: 9px; font-weight: 600; color: #ef4444; line-height: 1; white-space: nowrap; }
+  .cal-day-new .day-slots { font-size: 8px; font-weight: 500; line-height: 1; white-space: nowrap; }
+  .day-slots.green { color: #16a34a; }
+  .day-slots.orange { color: #f59e0b; }
+  .cal-day-new .sold-out-text { font-size: 8px; color: #dc2626; font-weight: 600; }
+  .cal-day-new.past { opacity: 0.3; cursor: default; }
+  .cal-day-new.today-bg { background: #f1f5f9; }
+  .cal-day-new.today-bg .day-num { font-weight: 700; }
+  .cal-day-new.selected-day { background: #0066ff; }
+  .cal-day-new.selected-day .day-num { color: white; }
+  .cal-day-new.selected-day .day-price { color: white; }
+  .cal-day-new.selected-day .day-slots { color: rgba(255,255,255,0.85); }
+  .cal-day-new:not(.past):not(.sold-out):hover { background: rgba(0,102,255,0.08); }
+  .cal-day-new.sold-out .day-num { color: #94a3b8; }
+
+  .cal-blank-old { aspect-ratio: 1; }
+  .cal-blank-new { min-height: 54px; }
+
+  /* Time slots */
+  .time-slots { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+  .time-slot-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; font-size: 13px; width: 100%;
+    border: 1.5px solid #e2e8f0; border-radius: 8px; background: white;
+    cursor: pointer; transition: all 0.15s; margin-bottom: 6px;
+  }
+  .time-slot-item:hover { border-color: rgba(0,102,255,0.4); }
+  .time-slot-item.selected { border-color: #0066ff; background: rgba(0,102,255,0.06); }
+  .slot-time { font-weight: 500; min-width: 4rem; }
+  .slot-left { color: #16a34a; font-size: 12px; }
+  .slot-price { margin-left: auto; font-weight: 600; color: #ef4444; }
+
+  /* Annotations */
+  .annotation {
+    margin-top: 16px; padding: 12px 16px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+    font-size: 12px; color: #92400e; line-height: 1.6;
+  }
+  .annotation strong { display: block; margin-bottom: 4px; font-size: 13px; }
+  .annotation ul { padding-left: 16px; margin-top: 4px; }
+  .annotation li { margin-bottom: 2px; }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 16px; margin-top: 10px; padding: 8px 0; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Full-width section */
+  .full-width { grid-column: 1 / -1; }
+
+  .design-notes {
+    max-width: 1100px; margin: 0 auto 32px; padding: 0 16px;
+  }
+  .design-notes .panel-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .note-group h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #1a1a2e; }
+  .note-group ul { font-size: 13px; color: #475569; line-height: 1.8; padding-left: 18px; }
+
+  @media (max-width: 768px) {
+    .compare-container { grid-template-columns: 1fr; }
+    .design-notes .panel-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="prototype-header">
+  <h1>EnjoySA 畅游南澳 / 商品详情页 - 日历库存显示设计</h1>
+  <span class="badge">Prototype v1</span>
+</div>
+
+<!-- ====== Before / After Comparison ====== -->
+<div class="compare-container">
+
+  <!-- BEFORE -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>改版前：圆点指示器</h2>
+      <span class="tag tag-before">Before</span>
+    </div>
+    <div class="panel-body">
+      <div class="booking-card">
+        <div class="price-section">
+          <div class="price">
+            <span class="currency">A$</span><span class="amount">89</span><span class="suffix">/人</span>
+          </div>
+        </div>
+
+        <div class="section-label">选择套餐</div>
+        <div class="package-list">
+          <div class="package-card selected">
+            <span class="package-name">标准团</span>
+            <span class="package-desc">含午餐、导游讲解</span>
+            <span class="package-price">A$89/人</span>
+          </div>
+          <div class="package-card">
+            <span class="package-name">VIP小团</span>
+            <span class="package-desc">含午餐、专属导游、优先登船</span>
+            <span class="package-price">A$139/人</span>
+          </div>
+        </div>
+
+        <div class="section-label">选择日期</div>
+        <div class="calendar-header">
+          <button class="calendar-nav">&lsaquo;</button>
+          <span class="calendar-title">2026年3月</span>
+          <button class="calendar-nav">&rsaquo;</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span class="weekday">日</span><span class="weekday">一</span><span class="weekday">二</span>
+          <span class="weekday">三</span><span class="weekday">四</span><span class="weekday">五</span><span class="weekday">六</span>
+        </div>
+        <div class="calendar-grid" id="cal-before"></div>
+
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#16a34a"></span> 可预订</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> 即将售罄</div>
+          <div class="legend-item"><span style="font-size:9px;color:#dc2626;font-weight:600">满</span> 已售罄</div>
+        </div>
+
+        <div class="annotation">
+          <strong>问题</strong>
+          <ul>
+            <li>只有一个小圆点，用户无法直观看到 <b>剩余名额</b></li>
+            <li>无法看到每天的 <b>价格</b>，需要点进去才知道</li>
+            <li>缺少关键决策信息，降低转化率</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>改版后：价格 + 库存数</h2>
+      <span class="tag tag-after">After</span>
+    </div>
+    <div class="panel-body">
+      <div class="booking-card">
+        <div class="price-section">
+          <div class="price">
+            <span class="currency">A$</span><span class="amount">89</span><span class="suffix">/人</span>
+          </div>
+        </div>
+
+        <div class="section-label">选择套餐</div>
+        <div class="package-list">
+          <div class="package-card selected">
+            <span class="package-name">标准团</span>
+            <span class="package-desc">含午餐、导游讲解</span>
+            <span class="package-price">A$89/人</span>
+          </div>
+          <div class="package-card">
+            <span class="package-name">VIP小团</span>
+            <span class="package-desc">含午餐、专属导游、优先登船</span>
+            <span class="package-price">A$139/人</span>
+          </div>
+        </div>
+
+        <div class="section-label">选择日期</div>
+        <div class="calendar-header">
+          <button class="calendar-nav">&lsaquo;</button>
+          <span class="calendar-title">2026年3月</span>
+          <button class="calendar-nav">&rsaquo;</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span class="weekday">日</span><span class="weekday">一</span><span class="weekday">二</span>
+          <span class="weekday">三</span><span class="weekday">四</span><span class="weekday">五</span><span class="weekday">六</span>
+        </div>
+        <div class="calendar-grid" id="cal-after"></div>
+
+        <div class="legend">
+          <div class="legend-item"><span style="font-size:9px;color:#ef4444;font-weight:600">A$89</span> 当日价格</div>
+          <div class="legend-item"><span style="font-size:9px;color:#16a34a;font-weight:500">余12</span> 充足</div>
+          <div class="legend-item"><span style="font-size:9px;color:#f59e0b;font-weight:500">余3</span> 紧张</div>
+          <div class="legend-item"><span style="font-size:9px;color:#dc2626;font-weight:600">满</span> 已售罄</div>
+        </div>
+
+        <!-- Simulated time slot after selecting a date -->
+        <div class="time-slots">
+          <div class="section-label">选择时间 — 3月28日</div>
+          <div class="time-slot-item selected">
+            <span class="slot-time">09:00</span>
+            <span class="slot-left">余8位</span>
+            <span class="slot-price">A$89</span>
+          </div>
+          <div class="time-slot-item">
+            <span class="slot-time">14:00</span>
+            <span class="slot-left">余4位</span>
+            <span class="slot-price">A$89</span>
+          </div>
+        </div>
+
+        <div class="annotation">
+          <strong>改进点</strong>
+          <ul>
+            <li>每个日期格显示 <b>价格</b> + <b>剩余名额</b></li>
+            <li>绿色=充足、橙色=紧张（&lt;5位）、红色=已满</li>
+            <li>选中日期后蓝底白字，价格和库存同步反白</li>
+            <li>参考 Klook / Viator / 携程 日历设计</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Design Notes ====== -->
+<div class="design-notes">
+  <div class="panel full-width">
+    <div class="panel-header"><h2>设计说明</h2></div>
+    <div class="panel-body">
+      <div class="note-group">
+        <h3>日历格内容结构</h3>
+        <ul>
+          <li><b>第一行</b>：日期数字（13px，500 weight）</li>
+          <li><b>第二行</b>：当日起步价（9px，600 weight，红色 #ef4444）</li>
+          <li><b>第三行</b>：剩余名额（8px，500 weight，绿/橙色）</li>
+          <li>格子高度从 aspect-ratio:1 改为 min-height: 54px</li>
+          <li>过去日期：仅显示日期数字，30% 透明度</li>
+          <li>无排期日期：仅显示日期数字，不可点击</li>
+          <li>售罄日期：显示日期 + "满" 红色文字</li>
+        </ul>
+      </div>
+      <div class="note-group">
+        <h3>交互行为</h3>
+        <ul>
+          <li>选中日期 → 蓝底 (#0066ff) 白字</li>
+          <li>选中日期 → 价格变白，库存变半透明白</li>
+          <li>hover 可选日期 → 浅蓝底 (8% opacity)</li>
+          <li>选中日期后展开时段选择器（已有功能）</li>
+          <li>时段选择器显示 时间 + 余位 + 价格</li>
+          <li>切换套餐 → 日历库存数据跟随刷新</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Generate calendar data for March 2026
+const scheduleData = {
+  '2026-03-26': { price: 89, slots: 12, status: 'available' },  // today
+  '2026-03-27': { price: 89, slots: 8, status: 'available' },
+  '2026-03-28': { price: 89, slots: 12, status: 'available' },
+  '2026-03-29': { price: 99, slots: 3, status: 'limited' },   // weekend premium
+  '2026-03-30': { price: 89, slots: 15, status: 'available' },
+  '2026-03-31': { price: 89, slots: 0, status: 'sold_out' },
+};
+
+// Add some earlier dates as past
+for (let d = 1; d <= 25; d++) {
+  const key = `2026-03-${String(d).padStart(2,'0')}`;
+  if (d >= 20) {
+    scheduleData[key] = { price: 89, slots: Math.floor(Math.random()*15)+1, status: 'available', past: true };
+  }
+}
+// Sold out on the 24th
+scheduleData['2026-03-24'] = { price: 89, slots: 0, status: 'sold_out', past: true };
+
+const todayDate = 26;
+const selectedDate = 28;
+const firstDayOfWeek = 0; // March 2026 starts on Sunday
+const daysInMonth = 31;
+
+function renderBefore() {
+  const grid = document.getElementById('cal-before');
+  // Leading blanks
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    grid.innerHTML += '<div class="cal-blank-old"></div>';
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `2026-03-${String(d).padStart(2,'0')}`;
+    const info = scheduleData[key];
+    const isPast = d < todayDate;
+    const isToday = d === todayDate;
+    const isSelected = d === selectedDate;
+    const isSoldOut = info && info.slots === 0;
+
+    let cls = 'cal-day-old';
+    if (isPast) cls += ' past';
+    if (isToday) cls += ' today-bg';
+    if (isSelected && !isPast) cls += ' selected-day';
+    if (isSoldOut && !isPast) cls += ' sold-out';
+
+    let inner = `<span class="day-num">${d}</span>`;
+    if (!isPast && info) {
+      if (isSoldOut) {
+        inner += '<span class="sold-out-text">满</span>';
+      } else if (info.slots < 5) {
+        inner += '<span class="dot dot-orange"></span>';
+      } else {
+        inner += '<span class="dot dot-green"></span>';
+      }
+    }
+
+    grid.innerHTML += `<button class="${cls}" ${isPast || (isSoldOut && !isPast) ? 'disabled' : ''}>${inner}</button>`;
+  }
+}
+
+function renderAfter() {
+  const grid = document.getElementById('cal-after');
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    grid.innerHTML += '<div class="cal-blank-new"></div>';
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `2026-03-${String(d).padStart(2,'0')}`;
+    const info = scheduleData[key];
+    const isPast = d < todayDate;
+    const isToday = d === todayDate;
+    const isSelected = d === selectedDate;
+    const isSoldOut = info && info.slots === 0;
+    const isLimited = info && info.slots > 0 && info.slots < 5;
+
+    let cls = 'cal-day-new';
+    if (isPast) cls += ' past';
+    if (isToday) cls += ' today-bg';
+    if (isSelected && !isPast) cls += ' selected-day';
+    if (isSoldOut && !isPast) cls += ' sold-out';
+
+    let inner = `<span class="day-num">${d}</span>`;
+    if (!isPast && info) {
+      if (isSoldOut) {
+        inner += '<span class="sold-out-text">满</span>';
+      } else {
+        inner += `<span class="day-price">A$${info.price}</span>`;
+        const slotsClass = isLimited ? 'orange' : 'green';
+        inner += `<span class="day-slots ${slotsClass}">余${info.slots}</span>`;
+      }
+    }
+
+    grid.innerHTML += `<button class="${cls}" ${isPast || (isSoldOut && !isPast) ? 'disabled' : ''}>${inner}</button>`;
+  }
+}
+
+renderBefore();
+renderAfter();
+
+// Add click interactivity for AFTER calendar
+document.querySelectorAll('#cal-after .cal-day-new:not(.past):not(.sold-out)').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#cal-after .cal-day-new').forEach(b => b.classList.remove('selected-day'));
+    btn.classList.add('selected-day');
+  });
+});
+</script>
+
+</body>
+</html>
