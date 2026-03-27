@@ -44,6 +44,8 @@ import (
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	teamhandler "enjoysa-backend/internal/team/handler"
 	teamstore "enjoysa-backend/internal/team/store"
+	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
+	aftersalesstore "enjoysa-backend/internal/aftersales/store"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 	usercontacthandler "enjoysa-backend/internal/usercontact/handler"
 	usercontactstore "enjoysa-backend/internal/usercontact/store"
@@ -54,14 +56,15 @@ import (
 )
 
 type Config struct {
-	FrontendURL    string
-	DB             *gorm.DB
-	JWTService     *auth.JWTService
-	UploadConfig   config.UploadConfig
-	StripeConfig   config.StripeConfig
-	ResendConfig   config.ResendConfig
-	AIConfig       config.AIConfig
-	CasbinEnforcer *casbin.SyncedEnforcer
+	FrontendURL      string
+	DB               *gorm.DB
+	JWTService       *auth.JWTService
+	UploadConfig     config.UploadConfig
+	StripeConfig     config.StripeConfig
+	ResendConfig     config.ResendConfig
+	AIConfig         config.AIConfig
+	AfterSalesConfig config.AfterSalesConfig
+	CasbinEnforcer   *casbin.SyncedEnforcer
 }
 
 func Setup(cfg Config) *gin.Engine {
@@ -553,6 +556,26 @@ func Setup(cfg Config) *gin.Engine {
 			superAdmin.POST("/admins/:id/status", adminHandler.ToggleAdminStatus)
 			superAdmin.POST("/admins/:id/reset-password", adminHandler.ResetAdminPassword)
 		}
+	}
+
+	// ========================================
+	// After-sales API (service-to-service, API Key auth)
+	// ========================================
+	asStore := aftersalesstore.NewTicketStore(cfg.DB)
+	asHandler := aftersaleshandler.NewAfterSalesHandler(asStore)
+
+	aftersalesGroup := v1.Group("/aftersales")
+	if cfg.AfterSalesConfig.ServiceKey != "" {
+		aftersalesGroup.Use(middleware.APIKeyAuth(cfg.AfterSalesConfig.ServiceKey))
+	}
+	{
+		aftersalesGroup.GET("/orders/:id", asHandler.GetOrder)
+		aftersalesGroup.GET("/orders", asHandler.SearchOrders)
+		aftersalesGroup.POST("/tickets", asHandler.CreateTicket)
+		aftersalesGroup.GET("/tickets/:id", asHandler.GetTicket)
+		aftersalesGroup.GET("/tickets", asHandler.ListTickets)
+		aftersalesGroup.PUT("/tickets/:id", asHandler.UpdateTicket)
+		aftersalesGroup.GET("/faq", asHandler.ListFAQs)
 	}
 
 	// ========================================

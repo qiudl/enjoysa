@@ -256,6 +256,28 @@ func OptionalUserAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc 
 	}
 }
 
+// APIKeyAuth validates X-Service-Key header for service-to-service calls
+func APIKeyAuth(validKey string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := c.GetHeader("X-Service-Key")
+		if apiKey == "" {
+			response.Unauthorized(c, "Missing service key")
+			c.Abort()
+			return
+		}
+
+		if apiKey != validKey {
+			response.Unauthorized(c, "Invalid service key")
+			c.Abort()
+			return
+		}
+
+		c.Set("service_name", "openclaw")
+		c.Set("is_service", true)
+		c.Next()
+	}
+}
+
 func getTokenFromHeader(c *gin.Context) (string, error) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {

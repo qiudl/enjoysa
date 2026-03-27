@@ -20,6 +20,7 @@ import (
 	"enjoysa-backend/internal/core/database"
 	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/models"
+	aftersalesmodel "enjoysa-backend/internal/aftersales/model"
 	chatmodel "enjoysa-backend/internal/chat/model"
 	"enjoysa-backend/internal/homepage"
 	notifmodel "enjoysa-backend/internal/notification/model"
@@ -107,8 +108,9 @@ func main() {
 		UploadConfig:   cfg.Upload,
 		StripeConfig:   cfg.Stripe,
 		ResendConfig:   cfg.Resend,
-		AIConfig:       cfg.AI,
-		CasbinEnforcer: enforcer,
+		AIConfig:         cfg.AI,
+		AfterSalesConfig: cfg.AfterSales,
+		CasbinEnforcer:   enforcer,
 	})
 
 	// Start expired order cleanup
@@ -206,6 +208,10 @@ func autoMigrate(db *gorm.DB) error {
 		&notifmodel.Notification{},
 		// Team invitations
 		&teammodel.SupplierInvitation{},
+		// After-sales
+		&aftersalesmodel.Ticket{},
+		&aftersalesmodel.TicketNote{},
+		&aftersalesmodel.FAQ{},
 		// Homepage CMS
 		&homepage.HomepageFeature{},
 		&homepage.HomepageTestimonial{},

@@ -17,7 +17,12 @@ type Config struct {
 	Stripe   StripeConfig   `mapstructure:"stripe"`
 	Upload   UploadConfig   `mapstructure:"upload"`
 	Resend   ResendConfig   `mapstructure:"resend"`
-	AI       AIConfig       `mapstructure:"ai"`
+	AI         AIConfig         `mapstructure:"ai"`
+	AfterSales AfterSalesConfig `mapstructure:"aftersales"`
+}
+
+type AfterSalesConfig struct {
+	ServiceKey string `mapstructure:"service_key"`
 }
 
 type AIConfig struct {
@@ -107,6 +112,7 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("ai.base_url", "ENJOYSA_AI_BASE_URL")
 	_ = v.BindEnv("ai.api_key", "ENJOYSA_AI_API_KEY")
 	_ = v.BindEnv("ai.model", "ENJOYSA_AI_MODEL")
+	_ = v.BindEnv("aftersales.service_key", "ENJOYSA_AFTERSALES_KEY")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)

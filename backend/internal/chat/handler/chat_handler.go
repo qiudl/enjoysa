@@ -1,3 +1,5 @@
+// Deprecated: This module has been migrated to ai-service (claw-master/ai-service).
+// Kept for backward compatibility. New features should be added to ai-service.
 package handler
 
 import (

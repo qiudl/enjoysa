@@ -17,6 +17,7 @@ backend/enjoysa-backend-linux
 
 # Configs with secrets
 backend/configs/config.yaml
+backend/.env
 
 # Generated seed data
 backend/seeds/
