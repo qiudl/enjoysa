@@ -196,6 +196,8 @@ func Setup(cfg Config) *gin.Engine {
 			authProtected.GET("/me", userAuthHandler.GetProfile)
 			authProtected.PUT("/me", userAuthHandler.UpdateProfile)
 			authProtected.PUT("/password", userAuthHandler.ChangePassword)
+			authProtected.POST("/google/bind", userAuthHandler.BindGoogle)
+			authProtected.DELETE("/google/bind", userAuthHandler.UnbindGoogle)
 
 			// User contacts
 			authProtected.GET("/contacts", userContactHandler.List)

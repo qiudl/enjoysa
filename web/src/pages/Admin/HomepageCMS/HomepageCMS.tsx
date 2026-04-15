@@ -1,7 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, RefreshCw, Save, Star, ExternalLink } from 'lucide-react';
-import { Modal, ConfirmModal } from '../../../components/Common';
+import { Plus, RefreshCw, Save, Star, ExternalLink, GripVertical, Eye, Image, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Modal, ConfirmModal, ToastContainer } from '../../../components/Common';
+import type { ToastItem } from '../../../components/Common/Toast/Toast';
 import {
   homepageAdminService,
   type HomepageFeature,
@@ -87,8 +98,112 @@ interface ModuleEditState {
   is_visible: boolean;
 }
 
+// ─── Validation errors ───
+interface ValidationErrors {
+  [key: string]: string;
+}
+
+// ─── Module descriptions ───
+const MODULE_DESCRIPTIONS: Record<string, { zh: string; en: string }> = {
+  banner: { zh: '首页轮播横幅图片', en: 'Homepage hero banner carousel' },
+  search: { zh: '搜索栏（活动/酒店切换）', en: 'Search bar with activity/hotel tabs' },
+  regions: { zh: '地区展示卡片', en: 'Region display cards' },
+  featured: { zh: '精选推荐产品', en: 'Featured/recommended products' },
+  categories: { zh: '分类浏览入口', en: 'Category browsing section' },
+  features: { zh: '"为什么选择我们" 特色亮点', en: '"Why Choose Us" feature highlights' },
+  testimonials: { zh: '用户评价展示', en: 'Customer testimonials section' },
+  partners: { zh: '合作伙伴 Logo 展示', en: 'Partner logos display' },
+  popular: { zh: '热门活动排行（自动按订单量排序）', en: 'Popular activities ranking (auto-sorted by orders)' },
+};
+
+// ─── Sortable Module Row ───
+function SortableModuleRow({
+  mod,
+  onFieldChange,
+}: {
+  mod: ModuleEditState;
+  onFieldChange: (id: number, field: keyof ModuleEditState, value: string | number | boolean) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const desc = MODULE_DESCRIPTIONS[mod.module_key];
+
+  return (
+    <tr ref={setNodeRef} style={style}>
+      <td>
+        <button type="button" className={styles.dragHandle} {...attributes} {...listeners}>
+          <GripVertical size={16} />
+        </button>
+      </td>
+      <td>
+        <div className={styles.moduleKeyCell}>
+          <span className={styles.moduleKey}>{mod.module_key}</span>
+          {desc && (
+            <span className={styles.moduleDesc} title={`${desc.zh}\n${desc.en}`}>
+              <Info size={13} />
+            </span>
+          )}
+        </div>
+      </td>
+      <td>
+        <input
+          type="text"
+          className={styles.titleInput}
+          value={mod.title_zh}
+          onChange={(e) => onFieldChange(mod.id, 'title_zh', e.target.value)}
+        />
+      </td>
+      <td>
+        <input
+          type="text"
+          className={styles.titleInput}
+          value={mod.title_en}
+          onChange={(e) => onFieldChange(mod.id, 'title_en', e.target.value)}
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          className={`${styles.switchTrack} ${mod.is_visible ? styles.switchChecked : ''}`}
+          onClick={() => onFieldChange(mod.id, 'is_visible', !mod.is_visible)}
+          aria-label={mod.is_visible ? 'Disable' : 'Enable'}
+        >
+          <span className={styles.switchThumb} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export const HomepageCMS: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // ─── Dirty tracking for Modules ───
+  const modulesSnapshot = useRef<string>('');
+
+  // ─── DnD sensors ───
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // ─── Toast state ───
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = useCallback((type: ToastItem['type'], message: string) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // ─── Tab state ───
   const [activeTab, setActiveTab] = useState<TabKey>('modules');
@@ -98,6 +213,13 @@ export const HomepageCMS: React.FC = () => {
   const [modulesLoading, setModulesLoading] = useState(false);
   const [modulesSaving, setModulesSaving] = useState(false);
 
+  // ─── Status filter ───
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // ─── Selection state (batch ops) ───
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [batchDeleteConfirmTab, setBatchDeleteConfirmTab] = useState<TabKey | null>(null);
+
   // ─── Features state ───
   const [features, setFeatures] = useState<HomepageFeature[]>([]);
   const [featuresLoading, setFeaturesLoading] = useState(false);
@@ -106,6 +228,7 @@ export const HomepageCMS: React.FC = () => {
   const [featureForm, setFeatureForm] = useState<FeatureFormData>(emptyFeatureForm);
   const [featureSaving, setFeatureSaving] = useState(false);
   const [featureDeleteConfirm, setFeatureDeleteConfirm] = useState<HomepageFeature | null>(null);
+  const [featureErrors, setFeatureErrors] = useState<ValidationErrors>({});
 
   // ─── Testimonials state ───
   const [testimonials, setTestimonials] = useState<HomepageTestimonial[]>([]);
@@ -115,6 +238,7 @@ export const HomepageCMS: React.FC = () => {
   const [testimonialForm, setTestimonialForm] = useState<TestimonialFormData>(emptyTestimonialForm);
   const [testimonialSaving, setTestimonialSaving] = useState(false);
   const [testimonialDeleteConfirm, setTestimonialDeleteConfirm] = useState<HomepageTestimonial | null>(null);
+  const [testimonialErrors, setTestimonialErrors] = useState<ValidationErrors>({});
   const [syncing, setSyncing] = useState(false);
 
   // ─── Partners state ───
@@ -125,6 +249,7 @@ export const HomepageCMS: React.FC = () => {
   const [partnerForm, setPartnerForm] = useState<PartnerFormData>(emptyPartnerForm);
   const [partnerSaving, setPartnerSaving] = useState(false);
   const [partnerDeleteConfirm, setPartnerDeleteConfirm] = useState<HomepagePartner | null>(null);
+  const [partnerErrors, setPartnerErrors] = useState<ValidationErrors>({});
 
   // ─── Load data on tab change ───
   useEffect(() => {
@@ -145,38 +270,69 @@ export const HomepageCMS: React.FC = () => {
   };
 
   // ════════════════════════════════════════
+  // Validation helpers
+  // ════════════════════════════════════════
+  const validateFeatureForm = (form: FeatureFormData): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    if (!form.title_zh.trim()) errors.title_zh = t('admin.homepage.validation.required', 'Required');
+    if (!form.title_en.trim()) errors.title_en = t('admin.homepage.validation.required', 'Required');
+    if (!form.icon.trim()) errors.icon = t('admin.homepage.validation.required', 'Required');
+    return errors;
+  };
+
+  const validateTestimonialForm = (form: TestimonialFormData): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    if (!form.author_name.trim()) errors.author_name = t('admin.homepage.validation.required', 'Required');
+    if (!form.content_zh.trim() && !form.content_en.trim()) {
+      errors.content_zh = t('admin.homepage.validation.contentRequired', 'At least one language required');
+    }
+    return errors;
+  };
+
+  const validatePartnerForm = (form: PartnerFormData): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    if (!form.name.trim()) errors.name = t('admin.homepage.validation.required', 'Required');
+    return errors;
+  };
+
+  // ════════════════════════════════════════
   // Modules
   // ════════════════════════════════════════
   const loadModules = async () => {
     setModulesLoading(true);
     try {
       const result = await homepageAdminService.listModules();
-      setModules(
-        (result || []).map((m) => ({
-          id: m.id,
-          module_key: m.module_key,
-          title_zh: m.title_zh,
-          title_en: m.title_en,
-          sort_order: m.sort_order,
-          is_visible: m.is_visible,
-        }))
-      );
+      const mapped = (result || []).map((m) => ({
+        id: m.id,
+        module_key: m.module_key,
+        title_zh: m.title_zh,
+        title_en: m.title_en,
+        sort_order: m.sort_order,
+        is_visible: m.is_visible,
+      }));
+      setModules(mapped);
+      modulesSnapshot.current = JSON.stringify(mapped);
     } catch {
-      /* ignore */
+      addToast('error', t('admin.homepage.loadFailed', 'Failed to load data'));
     }
     setModulesLoading(false);
   };
 
-  const handleModuleSortChange = (id: number, value: number) => {
+  const handleModuleFieldChange = (id: number, field: keyof ModuleEditState, value: string | number | boolean) => {
     setModules((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, sort_order: value } : m))
+      prev.map((m) => (m.id === id ? { ...m, [field]: value } : m))
     );
   };
 
-  const handleModuleVisibilityToggle = (id: number) => {
-    setModules((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, is_visible: !m.is_visible } : m))
-    );
+  const handleModuleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setModules((prev) => {
+      const oldIndex = prev.findIndex((m) => m.id === active.id);
+      const newIndex = prev.findIndex((m) => m.id === over.id);
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+      return reordered.map((m, i) => ({ ...m, sort_order: i + 1 }));
+    });
   };
 
   const handleSaveModules = async () => {
@@ -190,18 +346,19 @@ export const HomepageCMS: React.FC = () => {
         is_visible: m.is_visible,
       }));
       const updated = await homepageAdminService.updateModules(payload);
-      setModules(
-        (updated || []).map((m) => ({
-          id: m.id,
-          module_key: m.module_key,
-          title_zh: m.title_zh,
-          title_en: m.title_en,
-          sort_order: m.sort_order,
-          is_visible: m.is_visible,
-        }))
-      );
+      const mapped = (updated || []).map((m) => ({
+        id: m.id,
+        module_key: m.module_key,
+        title_zh: m.title_zh,
+        title_en: m.title_en,
+        sort_order: m.sort_order,
+        is_visible: m.is_visible,
+      }));
+      setModules(mapped);
+      modulesSnapshot.current = JSON.stringify(mapped);
+      addToast('success', t('admin.homepage.saveSuccess', 'Saved successfully'));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Save failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.saveFailed', 'Save failed'));
     }
     setModulesSaving(false);
   };
@@ -215,7 +372,7 @@ export const HomepageCMS: React.FC = () => {
       const result = await homepageAdminService.listFeatures();
       setFeatures(result || []);
     } catch {
-      /* ignore */
+      addToast('error', t('admin.homepage.loadFailed', 'Failed to load data'));
     }
     setFeaturesLoading(false);
   };
@@ -223,6 +380,7 @@ export const HomepageCMS: React.FC = () => {
   const handleAddFeature = () => {
     setEditingFeature(null);
     setFeatureForm(emptyFeatureForm);
+    setFeatureErrors({});
     setFeatureFormOpen(true);
   };
 
@@ -237,23 +395,31 @@ export const HomepageCMS: React.FC = () => {
       sort_order: item.sort_order,
       status: item.status,
     });
+    setFeatureErrors({});
     setFeatureFormOpen(true);
   };
 
   const handleFeatureSubmit = async () => {
+    const errors = validateFeatureForm(featureForm);
+    if (Object.keys(errors).length > 0) {
+      setFeatureErrors(errors);
+      return;
+    }
     setFeatureSaving(true);
     try {
       if (editingFeature) {
         const updated = await homepageAdminService.updateFeature(editingFeature.id, featureForm);
         setFeatures((prev) => prev.map((f) => (f.id === editingFeature.id ? updated : f)));
+        addToast('success', t('admin.homepage.updateSuccess', 'Updated successfully'));
       } else {
         const created = await homepageAdminService.createFeature(featureForm as Omit<HomepageFeature, 'id'>);
         setFeatures((prev) => [...prev, created]);
+        addToast('success', t('admin.homepage.createSuccess', 'Created successfully'));
       }
       setFeatureFormOpen(false);
       setEditingFeature(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Operation failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
     }
     setFeatureSaving(false);
   };
@@ -263,8 +429,9 @@ export const HomepageCMS: React.FC = () => {
     try {
       await homepageAdminService.deleteFeature(featureDeleteConfirm.id);
       setFeatures((prev) => prev.filter((f) => f.id !== featureDeleteConfirm.id));
+      addToast('success', t('admin.homepage.deleteSuccess', 'Deleted successfully'));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.deleteFailed', 'Delete failed'));
     }
     setFeatureDeleteConfirm(null);
   };
@@ -278,7 +445,7 @@ export const HomepageCMS: React.FC = () => {
       const result = await homepageAdminService.listTestimonials();
       setTestimonials(result || []);
     } catch {
-      /* ignore */
+      addToast('error', t('admin.homepage.loadFailed', 'Failed to load data'));
     }
     setTestimonialsLoading(false);
   };
@@ -287,10 +454,10 @@ export const HomepageCMS: React.FC = () => {
     setSyncing(true);
     try {
       const result = await homepageAdminService.syncTestimonials();
-      alert(t('admin.homepage.syncSuccess', `Synced ${result.synced} reviews`));
+      addToast('success', t('admin.homepage.syncSuccess', `Synced ${result.synced} reviews`));
       await loadTestimonials();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Sync failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.syncFailed', 'Sync failed'));
     }
     setSyncing(false);
   };
@@ -298,6 +465,7 @@ export const HomepageCMS: React.FC = () => {
   const handleAddTestimonial = () => {
     setEditingTestimonial(null);
     setTestimonialForm(emptyTestimonialForm);
+    setTestimonialErrors({});
     setTestimonialFormOpen(true);
   };
 
@@ -315,25 +483,33 @@ export const HomepageCMS: React.FC = () => {
       sort_order: item.sort_order,
       status: item.status,
     });
+    setTestimonialErrors({});
     setTestimonialFormOpen(true);
   };
 
   const handleTestimonialSubmit = async () => {
+    const errors = validateTestimonialForm(testimonialForm);
+    if (Object.keys(errors).length > 0) {
+      setTestimonialErrors(errors);
+      return;
+    }
     setTestimonialSaving(true);
     try {
       if (editingTestimonial) {
         const updated = await homepageAdminService.updateTestimonial(editingTestimonial.id, testimonialForm);
         setTestimonials((prev) => prev.map((t) => (t.id === editingTestimonial.id ? updated : t)));
+        addToast('success', t('admin.homepage.updateSuccess', 'Updated successfully'));
       } else {
         const created = await homepageAdminService.createTestimonial(
           testimonialForm as Omit<HomepageTestimonial, 'id'>
         );
         setTestimonials((prev) => [...prev, created]);
+        addToast('success', t('admin.homepage.createSuccess', 'Created successfully'));
       }
       setTestimonialFormOpen(false);
       setEditingTestimonial(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Operation failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
     }
     setTestimonialSaving(false);
   };
@@ -343,8 +519,9 @@ export const HomepageCMS: React.FC = () => {
     try {
       await homepageAdminService.deleteTestimonial(testimonialDeleteConfirm.id);
       setTestimonials((prev) => prev.filter((t) => t.id !== testimonialDeleteConfirm.id));
+      addToast('success', t('admin.homepage.deleteSuccess', 'Deleted successfully'));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.deleteFailed', 'Delete failed'));
     }
     setTestimonialDeleteConfirm(null);
   };
@@ -358,7 +535,7 @@ export const HomepageCMS: React.FC = () => {
       const result = await homepageAdminService.listPartners();
       setPartners(result || []);
     } catch {
-      /* ignore */
+      addToast('error', t('admin.homepage.loadFailed', 'Failed to load data'));
     }
     setPartnersLoading(false);
   };
@@ -366,6 +543,7 @@ export const HomepageCMS: React.FC = () => {
   const handleAddPartner = () => {
     setEditingPartner(null);
     setPartnerForm(emptyPartnerForm);
+    setPartnerErrors({});
     setPartnerFormOpen(true);
   };
 
@@ -378,23 +556,31 @@ export const HomepageCMS: React.FC = () => {
       sort_order: item.sort_order,
       status: item.status,
     });
+    setPartnerErrors({});
     setPartnerFormOpen(true);
   };
 
   const handlePartnerSubmit = async () => {
+    const errors = validatePartnerForm(partnerForm);
+    if (Object.keys(errors).length > 0) {
+      setPartnerErrors(errors);
+      return;
+    }
     setPartnerSaving(true);
     try {
       if (editingPartner) {
         const updated = await homepageAdminService.updatePartner(editingPartner.id, partnerForm);
         setPartners((prev) => prev.map((p) => (p.id === editingPartner.id ? updated : p)));
+        addToast('success', t('admin.homepage.updateSuccess', 'Updated successfully'));
       } else {
         const created = await homepageAdminService.createPartner(partnerForm as Omit<HomepagePartner, 'id'>);
         setPartners((prev) => [...prev, created]);
+        addToast('success', t('admin.homepage.createSuccess', 'Created successfully'));
       }
       setPartnerFormOpen(false);
       setEditingPartner(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Operation failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
     }
     setPartnerSaving(false);
   };
@@ -404,15 +590,202 @@ export const HomepageCMS: React.FC = () => {
     try {
       await homepageAdminService.deletePartner(partnerDeleteConfirm.id);
       setPartners((prev) => prev.filter((p) => p.id !== partnerDeleteConfirm.id));
+      addToast('success', t('admin.homepage.deleteSuccess', 'Deleted successfully'));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Delete failed');
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.deleteFailed', 'Delete failed'));
     }
     setPartnerDeleteConfirm(null);
   };
 
   // ════════════════════════════════════════
+  // Inline status toggle
+  // ════════════════════════════════════════
+  const handleToggleFeatureStatus = async (item: HomepageFeature) => {
+    const newStatus = item.status === 'active' ? 'inactive' : 'active';
+    try {
+      const updated = await homepageAdminService.updateFeature(item.id, { status: newStatus });
+      setFeatures((prev) => prev.map((f) => (f.id === item.id ? updated : f)));
+      addToast('success', t('admin.homepage.statusToggled', 'Status updated'));
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
+    }
+  };
+
+  const handleToggleTestimonialStatus = async (item: HomepageTestimonial) => {
+    const newStatus = item.status === 'active' ? 'inactive' : 'active';
+    try {
+      const updated = await homepageAdminService.updateTestimonial(item.id, { status: newStatus });
+      setTestimonials((prev) => prev.map((t) => (t.id === item.id ? updated : t)));
+      addToast('success', t('admin.homepage.statusToggled', 'Status updated'));
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
+    }
+  };
+
+  const handleTogglePartnerStatus = async (item: HomepagePartner) => {
+    const newStatus = item.status === 'active' ? 'inactive' : 'active';
+    try {
+      const updated = await homepageAdminService.updatePartner(item.id, { status: newStatus });
+      setPartners((prev) => prev.map((p) => (p.id === item.id ? updated : p)));
+      addToast('success', t('admin.homepage.statusToggled', 'Status updated'));
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
+    }
+  };
+
+  // ════════════════════════════════════════
+  // Filtered data
+  // ════════════════════════════════════════
+  const filterByStatus = <T extends { status: string }>(items: T[]): T[] => {
+    if (statusFilter === 'all') return items;
+    return items.filter((item) => item.status === statusFilter);
+  };
+
+  const filteredFeatures = filterByStatus(features);
+  const filteredTestimonials = filterByStatus(testimonials);
+  const filteredPartners = filterByStatus(partners);
+
+  // ════════════════════════════════════════
+  // Selection & Batch operations
+  // ════════════════════════════════════════
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (ids: number[]) => {
+    const allSelected = ids.every((id) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(ids));
+    }
+  };
+
+  const handleBatchToggleStatus = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      if (activeTab === 'features') {
+        for (const id of ids) {
+          const item = features.find((f) => f.id === id);
+          if (item) {
+            const newStatus = item.status === 'active' ? 'inactive' : 'active';
+            const updated = await homepageAdminService.updateFeature(id, { status: newStatus });
+            setFeatures((prev) => prev.map((f) => (f.id === id ? updated : f)));
+          }
+        }
+      } else if (activeTab === 'testimonials') {
+        for (const id of ids) {
+          const item = testimonials.find((t) => t.id === id);
+          if (item) {
+            const newStatus = item.status === 'active' ? 'inactive' : 'active';
+            const updated = await homepageAdminService.updateTestimonial(id, { status: newStatus });
+            setTestimonials((prev) => prev.map((t) => (t.id === id ? updated : t)));
+          }
+        }
+      } else if (activeTab === 'partners') {
+        for (const id of ids) {
+          const item = partners.find((p) => p.id === id);
+          if (item) {
+            const newStatus = item.status === 'active' ? 'inactive' : 'active';
+            const updated = await homepageAdminService.updatePartner(id, { status: newStatus });
+            setPartners((prev) => prev.map((p) => (p.id === id ? updated : p)));
+          }
+        }
+      }
+      addToast('success', t('admin.homepage.batchStatusSuccess', `Updated ${ids.length} items`));
+      setSelectedIds(new Set());
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.operationFailed', 'Operation failed'));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    try {
+      if (activeTab === 'features') {
+        for (const id of ids) await homepageAdminService.deleteFeature(id);
+        setFeatures((prev) => prev.filter((f) => !selectedIds.has(f.id)));
+      } else if (activeTab === 'testimonials') {
+        for (const id of ids) await homepageAdminService.deleteTestimonial(id);
+        setTestimonials((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+      } else if (activeTab === 'partners') {
+        for (const id of ids) await homepageAdminService.deletePartner(id);
+        setPartners((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+      }
+      addToast('success', t('admin.homepage.batchDeleteSuccess', `Deleted ${ids.length} items`));
+      setSelectedIds(new Set());
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : t('admin.homepage.deleteFailed', 'Delete failed'));
+    }
+    setBatchDeleteConfirmTab(null);
+  };
+
+  // ════════════════════════════════════════
   // Render helpers
   // ════════════════════════════════════════
+  const renderStatusFilter = () => (
+    <select
+      className={styles.statusFilter}
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+    >
+      <option value="all">{t('admin.homepage.filterAll', 'All Status')}</option>
+      <option value="active">{t('admin.homepage.active', 'Active')}</option>
+      <option value="inactive">{t('admin.homepage.inactive', 'Inactive')}</option>
+    </select>
+  );
+
+  const renderBatchBar = () => {
+    if (selectedIds.size === 0) return null;
+    return (
+      <div className={styles.batchBar}>
+        <span className={styles.batchCount}>
+          {t('admin.homepage.selectedCount', `${selectedIds.size} selected`, { count: selectedIds.size })}
+        </span>
+        <button className={styles.batchBtn} onClick={handleBatchToggleStatus}>
+          {t('admin.homepage.batchToggleStatus', 'Toggle Status')}
+        </button>
+        <button
+          className={`${styles.batchBtn} ${styles.batchBtnDanger}`}
+          onClick={() => setBatchDeleteConfirmTab(activeTab)}
+        >
+          {t('admin.homepage.batchDelete', 'Delete Selected')}
+        </button>
+        <button
+          className={styles.batchBtnClear}
+          onClick={() => setSelectedIds(new Set())}
+        >
+          {t('admin.homepage.clearSelection', 'Clear')}
+        </button>
+      </div>
+    );
+  };
+
+  const renderSelectCheckbox = (id: number) => (
+    <input
+      type="checkbox"
+      className={styles.checkbox}
+      checked={selectedIds.has(id)}
+      onChange={() => toggleSelect(id)}
+    />
+  );
+
+  const renderSelectAllCheckbox = (ids: number[]) => (
+    <input
+      type="checkbox"
+      className={styles.checkbox}
+      checked={ids.length > 0 && ids.every((id) => selectedIds.has(id))}
+      onChange={() => toggleSelectAll(ids)}
+    />
+  );
+
   const renderStars = (rating: number) => (
     <div className={styles.stars}>
       {[1, 2, 3, 4, 5].map((n) => (
@@ -441,17 +814,24 @@ export const HomepageCMS: React.FC = () => {
     </div>
   );
 
-  const renderStatusBadge = (status: string) => (
-    <span
-      className={`${styles.statusBadge} ${
-        status === 'active' ? styles.statusActive : styles.statusInactive
-      }`}
-    >
-      {status === 'active'
-        ? t('admin.homepage.active', 'Active')
-        : t('admin.homepage.inactive', 'Inactive')}
-    </span>
-  );
+  const renderFieldError = (errors: ValidationErrors, field: string) => {
+    if (!errors[field]) return null;
+    return <span className={styles.fieldError}>{errors[field]}</span>;
+  };
+
+  const renderImagePreview = (url: string, alt: string) => {
+    if (!url) return null;
+    return (
+      <div className={styles.imagePreviewWrapper}>
+        <img
+          src={url}
+          alt={alt}
+          className={styles.imagePreview}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      </div>
+    );
+  };
 
   // ════════════════════════════════════════
   // Tab: Modules
@@ -469,52 +849,39 @@ export const HomepageCMS: React.FC = () => {
         ) : modules.length === 0 ? (
           <div className={styles.emptyState}>{t('admin.homepage.noModules', 'No modules found')}</div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>{t('admin.homepage.moduleKey', 'Key')}</th>
-                <th>{t('admin.homepage.moduleName', 'Name')}</th>
-                <th>{t('admin.homepage.sortOrder', 'Sort')}</th>
-                <th>{t('admin.homepage.visible', 'Visible')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modules.map((mod) => (
-                <tr key={mod.id}>
-                  <td>
-                    <span className={styles.moduleKey}>{mod.module_key}</span>
-                  </td>
-                  <td>
-                    <div className={styles.moduleName}>{mod.title_zh}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{mod.title_en}</div>
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className={styles.sortInput}
-                      value={mod.sort_order}
-                      onChange={(e) => handleModuleSortChange(mod.id, Number(e.target.value))}
-                      min={0}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
+            <SortableContext items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}></th>
+                    <th>{t('admin.homepage.moduleKey', 'Key')}</th>
+                    <th>{t('admin.homepage.titleZh', 'Title (ZH)')}</th>
+                    <th>{t('admin.homepage.titleEn', 'Title (EN)')}</th>
+                    <th>{t('admin.homepage.visible', 'Visible')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modules.map((mod) => (
+                    <SortableModuleRow
+                      key={mod.id}
+                      mod={mod}
+                      onFieldChange={handleModuleFieldChange}
                     />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className={`${styles.switchTrack} ${mod.is_visible ? styles.switchChecked : ''}`}
-                      onClick={() => handleModuleVisibilityToggle(mod.id)}
-                      aria-label={mod.is_visible ? 'Disable' : 'Enable'}
-                    >
-                      <span className={styles.switchThumb} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ))}
+                </tbody>
+              </table>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
       {modules.length > 0 && (
         <div className={styles.saveBar}>
+          {JSON.stringify(modules) !== modulesSnapshot.current && (
+            <span className={styles.unsavedHint}>
+              {t('admin.homepage.unsavedChanges', 'Unsaved changes')}
+            </span>
+          )}
           <button
             className={styles.saveBtn}
             onClick={handleSaveModules}
@@ -536,6 +903,7 @@ export const HomepageCMS: React.FC = () => {
   const renderFeaturesTab = () => (
     <>
       <div className={styles.toolbar}>
+        {renderStatusFilter()}
         <button className={styles.iconBtn} onClick={loadFeatures} title={t('common.refresh', 'Refresh')}>
           <RefreshCw size={18} />
         </button>
@@ -544,15 +912,21 @@ export const HomepageCMS: React.FC = () => {
           {t('admin.homepage.addFeature', 'Add Feature')}
         </button>
       </div>
+      {renderBatchBar()}
       <div className={styles.tableWrapper}>
         {featuresLoading ? (
           <div className={styles.loading}>{t('common.loading', 'Loading...')}</div>
-        ) : features.length === 0 ? (
-          <div className={styles.emptyState}>{t('admin.homepage.noFeatures', 'No features yet')}</div>
+        ) : filteredFeatures.length === 0 ? (
+          <div className={styles.emptyState}>
+            {features.length === 0
+              ? t('admin.homepage.noFeatures', 'No features yet')
+              : t('admin.homepage.noFilterResults', 'No items match the filter')}
+          </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
+                <th style={{ width: 36 }}>{renderSelectAllCheckbox(filteredFeatures.map((f) => f.id))}</th>
                 <th>{t('admin.homepage.icon', 'Icon')}</th>
                 <th>{t('admin.homepage.titleZh', 'Title (ZH)')}</th>
                 <th>{t('admin.homepage.titleEn', 'Title (EN)')}</th>
@@ -564,8 +938,9 @@ export const HomepageCMS: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {features.map((item) => (
-                <tr key={item.id}>
+              {filteredFeatures.map((item) => (
+                <tr key={item.id} className={selectedIds.has(item.id) ? styles.rowSelected : ''}>
+                  <td>{renderSelectCheckbox(item.id)}</td>
                   <td>{item.icon}</td>
                   <td>{item.title_zh}</td>
                   <td>{item.title_en}</td>
@@ -580,7 +955,15 @@ export const HomepageCMS: React.FC = () => {
                     </span>
                   </td>
                   <td>{item.sort_order}</td>
-                  <td>{renderStatusBadge(item.status)}</td>
+                  <td>
+                    <span
+                      className={`${styles.statusBadge} ${item.status === 'active' ? styles.statusActive : styles.statusInactive}`}
+                      onClick={() => handleToggleFeatureStatus(item)}
+                      title={t('admin.homepage.clickToToggle', 'Click to toggle status')}
+                    >
+                      {item.status === 'active' ? t('admin.homepage.active', 'Active') : t('admin.homepage.inactive', 'Inactive')}
+                    </span>
+                  </td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => handleEditFeature(item)}>
@@ -616,29 +999,35 @@ export const HomepageCMS: React.FC = () => {
         <div className={styles.form}>
           <div className={styles.formGrid}>
             <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label>{t('admin.homepage.field.icon', 'Icon (emoji or class)')}</label>
+              <label>{t('admin.homepage.field.icon', 'Icon (emoji or class)')} <span className={styles.required}>*</span></label>
               <input
                 type="text"
                 value={featureForm.icon}
-                onChange={(e) => setFeatureForm((p) => ({ ...p, icon: e.target.value }))}
+                onChange={(e) => { setFeatureForm((p) => ({ ...p, icon: e.target.value })); setFeatureErrors((p) => ({ ...p, icon: '' })); }}
                 placeholder="e.g. shield-check"
+                className={featureErrors.icon ? styles.inputError : ''}
               />
+              {renderFieldError(featureErrors, 'icon')}
             </div>
             <div className={styles.formGroup}>
-              <label>{t('admin.homepage.field.titleZh', 'Title (ZH)')}</label>
+              <label>{t('admin.homepage.field.titleZh', 'Title (ZH)')} <span className={styles.required}>*</span></label>
               <input
                 type="text"
                 value={featureForm.title_zh}
-                onChange={(e) => setFeatureForm((p) => ({ ...p, title_zh: e.target.value }))}
+                onChange={(e) => { setFeatureForm((p) => ({ ...p, title_zh: e.target.value })); setFeatureErrors((p) => ({ ...p, title_zh: '' })); }}
+                className={featureErrors.title_zh ? styles.inputError : ''}
               />
+              {renderFieldError(featureErrors, 'title_zh')}
             </div>
             <div className={styles.formGroup}>
-              <label>{t('admin.homepage.field.titleEn', 'Title (EN)')}</label>
+              <label>{t('admin.homepage.field.titleEn', 'Title (EN)')} <span className={styles.required}>*</span></label>
               <input
                 type="text"
                 value={featureForm.title_en}
-                onChange={(e) => setFeatureForm((p) => ({ ...p, title_en: e.target.value }))}
+                onChange={(e) => { setFeatureForm((p) => ({ ...p, title_en: e.target.value })); setFeatureErrors((p) => ({ ...p, title_en: '' })); }}
+                className={featureErrors.title_en ? styles.inputError : ''}
               />
+              {renderFieldError(featureErrors, 'title_en')}
             </div>
             <div className={styles.formGroup}>
               <label>{t('admin.homepage.field.descZh', 'Description (ZH)')}</label>
@@ -700,6 +1089,7 @@ export const HomepageCMS: React.FC = () => {
   const renderTestimonialsTab = () => (
     <>
       <div className={styles.toolbar}>
+        {renderStatusFilter()}
         <button
           className={styles.syncBtn}
           onClick={handleSyncTestimonials}
@@ -718,15 +1108,21 @@ export const HomepageCMS: React.FC = () => {
           {t('admin.homepage.addTestimonial', 'Add Testimonial')}
         </button>
       </div>
+      {renderBatchBar()}
       <div className={styles.tableWrapper}>
         {testimonialsLoading ? (
           <div className={styles.loading}>{t('common.loading', 'Loading...')}</div>
-        ) : testimonials.length === 0 ? (
-          <div className={styles.emptyState}>{t('admin.homepage.noTestimonials', 'No testimonials yet')}</div>
+        ) : filteredTestimonials.length === 0 ? (
+          <div className={styles.emptyState}>
+            {testimonials.length === 0
+              ? t('admin.homepage.noTestimonials', 'No testimonials yet')
+              : t('admin.homepage.noFilterResults', 'No items match the filter')}
+          </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
+                <th style={{ width: 36 }}>{renderSelectAllCheckbox(filteredTestimonials.map((t) => t.id))}</th>
                 <th>{t('admin.homepage.author', 'Author')}</th>
                 <th>{t('admin.homepage.content', 'Content')}</th>
                 <th>{t('admin.homepage.rating', 'Rating')}</th>
@@ -737,9 +1133,21 @@ export const HomepageCMS: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {testimonials.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.author_name}</td>
+              {filteredTestimonials.map((item) => (
+                <tr key={item.id} className={selectedIds.has(item.id) ? styles.rowSelected : ''}>
+                  <td>{renderSelectCheckbox(item.id)}</td>
+                  <td>
+                    <div className={styles.authorCell}>
+                      {item.author_avatar ? (
+                        <img src={item.author_avatar} alt={item.author_name} className={styles.avatarSmall} />
+                      ) : (
+                        <div className={styles.avatarPlaceholder}>
+                          {item.author_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span>{item.author_name}</span>
+                    </div>
+                  </td>
                   <td>
                     <span className={styles.truncated} title={item.content_zh || item.content_en}>
                       {(item.content_zh || item.content_en || '').slice(0, 60)}
@@ -749,7 +1157,15 @@ export const HomepageCMS: React.FC = () => {
                   <td>{renderStars(item.rating)}</td>
                   <td>{item.source}</td>
                   <td>{item.product_name_zh || item.product_name_en || '-'}</td>
-                  <td>{renderStatusBadge(item.status)}</td>
+                  <td>
+                    <span
+                      className={`${styles.statusBadge} ${item.status === 'active' ? styles.statusActive : styles.statusInactive}`}
+                      onClick={() => handleToggleTestimonialStatus(item)}
+                      title={t('admin.homepage.clickToToggle', 'Click to toggle status')}
+                    >
+                      {item.status === 'active' ? t('admin.homepage.active', 'Active') : t('admin.homepage.inactive', 'Inactive')}
+                    </span>
+                  </td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => handleEditTestimonial(item)}>
@@ -785,12 +1201,14 @@ export const HomepageCMS: React.FC = () => {
         <div className={styles.form}>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
-              <label>{t('admin.homepage.field.authorName', 'Author Name')}</label>
+              <label>{t('admin.homepage.field.authorName', 'Author Name')} <span className={styles.required}>*</span></label>
               <input
                 type="text"
                 value={testimonialForm.author_name}
-                onChange={(e) => setTestimonialForm((p) => ({ ...p, author_name: e.target.value }))}
+                onChange={(e) => { setTestimonialForm((p) => ({ ...p, author_name: e.target.value })); setTestimonialErrors((p) => ({ ...p, author_name: '' })); }}
+                className={testimonialErrors.author_name ? styles.inputError : ''}
               />
+              {renderFieldError(testimonialErrors, 'author_name')}
             </div>
             <div className={styles.formGroup}>
               <label>{t('admin.homepage.field.source', 'Source')}</label>
@@ -812,13 +1230,16 @@ export const HomepageCMS: React.FC = () => {
                 onChange={(e) => setTestimonialForm((p) => ({ ...p, author_avatar: e.target.value }))}
                 placeholder="https://..."
               />
+              {renderImagePreview(testimonialForm.author_avatar, 'Avatar preview')}
             </div>
             <div className={styles.formGroup}>
-              <label>{t('admin.homepage.field.contentZh', 'Content (ZH)')}</label>
+              <label>{t('admin.homepage.field.contentZh', 'Content (ZH)')} <span className={styles.required}>*</span></label>
               <textarea
                 value={testimonialForm.content_zh}
-                onChange={(e) => setTestimonialForm((p) => ({ ...p, content_zh: e.target.value }))}
+                onChange={(e) => { setTestimonialForm((p) => ({ ...p, content_zh: e.target.value })); setTestimonialErrors((p) => ({ ...p, content_zh: '' })); }}
+                className={testimonialErrors.content_zh ? styles.inputError : ''}
               />
+              {renderFieldError(testimonialErrors, 'content_zh')}
             </div>
             <div className={styles.formGroup}>
               <label>{t('admin.homepage.field.contentEn', 'Content (EN)')}</label>
@@ -895,6 +1316,7 @@ export const HomepageCMS: React.FC = () => {
   const renderPartnersTab = () => (
     <>
       <div className={styles.toolbar}>
+        {renderStatusFilter()}
         <button className={styles.iconBtn} onClick={loadPartners} title={t('common.refresh', 'Refresh')}>
           <RefreshCw size={18} />
         </button>
@@ -903,15 +1325,21 @@ export const HomepageCMS: React.FC = () => {
           {t('admin.homepage.addPartner', 'Add Partner')}
         </button>
       </div>
+      {renderBatchBar()}
       <div className={styles.tableWrapper}>
         {partnersLoading ? (
           <div className={styles.loading}>{t('common.loading', 'Loading...')}</div>
-        ) : partners.length === 0 ? (
-          <div className={styles.emptyState}>{t('admin.homepage.noPartners', 'No partners yet')}</div>
+        ) : filteredPartners.length === 0 ? (
+          <div className={styles.emptyState}>
+            {partners.length === 0
+              ? t('admin.homepage.noPartners', 'No partners yet')
+              : t('admin.homepage.noFilterResults', 'No items match the filter')}
+          </div>
         ) : (
           <table className={styles.table}>
             <thead>
               <tr>
+                <th style={{ width: 36 }}>{renderSelectAllCheckbox(filteredPartners.map((p) => p.id))}</th>
                 <th>{t('admin.homepage.logo', 'Logo')}</th>
                 <th>{t('admin.homepage.partnerName', 'Name')}</th>
                 <th>{t('admin.homepage.website', 'Website')}</th>
@@ -921,8 +1349,9 @@ export const HomepageCMS: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {partners.map((item) => (
-                <tr key={item.id}>
+              {filteredPartners.map((item) => (
+                <tr key={item.id} className={selectedIds.has(item.id) ? styles.rowSelected : ''}>
+                  <td>{renderSelectCheckbox(item.id)}</td>
                   <td>
                     {item.logo ? (
                       <img src={item.logo} alt={item.name} className={styles.logoPreview} />
@@ -947,7 +1376,15 @@ export const HomepageCMS: React.FC = () => {
                     )}
                   </td>
                   <td>{item.sort_order}</td>
-                  <td>{renderStatusBadge(item.status)}</td>
+                  <td>
+                    <span
+                      className={`${styles.statusBadge} ${item.status === 'active' ? styles.statusActive : styles.statusInactive}`}
+                      onClick={() => handleTogglePartnerStatus(item)}
+                      title={t('admin.homepage.clickToToggle', 'Click to toggle status')}
+                    >
+                      {item.status === 'active' ? t('admin.homepage.active', 'Active') : t('admin.homepage.inactive', 'Inactive')}
+                    </span>
+                  </td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.actionBtn} onClick={() => handleEditPartner(item)}>
@@ -983,12 +1420,14 @@ export const HomepageCMS: React.FC = () => {
         <div className={styles.form}>
           <div className={styles.formGrid}>
             <div className={styles.formGroup}>
-              <label>{t('admin.homepage.field.partnerName', 'Partner Name')}</label>
+              <label>{t('admin.homepage.field.partnerName', 'Partner Name')} <span className={styles.required}>*</span></label>
               <input
                 type="text"
                 value={partnerForm.name}
-                onChange={(e) => setPartnerForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) => { setPartnerForm((p) => ({ ...p, name: e.target.value })); setPartnerErrors((p) => ({ ...p, name: '' })); }}
+                className={partnerErrors.name ? styles.inputError : ''}
               />
+              {renderFieldError(partnerErrors, 'name')}
             </div>
             <div className={styles.formGroup}>
               <label>{t('admin.homepage.field.website', 'Website URL')}</label>
@@ -1007,6 +1446,7 @@ export const HomepageCMS: React.FC = () => {
                 onChange={(e) => setPartnerForm((p) => ({ ...p, logo: e.target.value }))}
                 placeholder="https://..."
               />
+              {renderImagePreview(partnerForm.logo, 'Logo preview')}
             </div>
             <div className={styles.formGroup}>
               <label>{t('admin.homepage.field.sortOrder', 'Sort Order')}</label>
@@ -1051,6 +1491,13 @@ export const HomepageCMS: React.FC = () => {
   // ════════════════════════════════════════
   // Main render
   // ════════════════════════════════════════
+  const tabCounts: Record<TabKey, number> = {
+    modules: modules.length,
+    features: features.length,
+    testimonials: testimonials.length,
+    partners: partners.length,
+  };
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'modules', label: t('admin.homepage.tabModules', 'Modules') },
     { key: 'features', label: t('admin.homepage.tabFeatures', 'Features') },
@@ -1058,8 +1505,37 @@ export const HomepageCMS: React.FC = () => {
     { key: 'partners', label: t('admin.homepage.tabPartners', 'Partners') },
   ];
 
+  const handleTabChange = (key: TabKey) => {
+    if (activeTab === 'modules' && JSON.stringify(modules) !== modulesSnapshot.current) {
+      if (!window.confirm(t('admin.homepage.unsavedWarning', 'You have unsaved changes in Modules. Discard changes?'))) {
+        return;
+      }
+      // Revert to snapshot
+      try {
+        setModules(JSON.parse(modulesSnapshot.current));
+      } catch { /* ignore */ }
+    }
+    setActiveTab(key);
+    setStatusFilter('all');
+    setSelectedIds(new Set());
+  };
+
+  // Warn on page leave with unsaved module changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (activeTab === 'modules' && JSON.stringify(modules) !== modulesSnapshot.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [activeTab, modules]);
+
   return (
     <div className={styles.page}>
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} position="top-right" onRemove={removeToast} />
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -1067,6 +1543,24 @@ export const HomepageCMS: React.FC = () => {
           <p className={styles.pageDescription}>
             {t('admin.homepage.description', 'Manage homepage modules, features, testimonials and partners')}
           </p>
+        </div>
+        <div className={styles.headerActions}>
+          <button
+            className={styles.previewBtn}
+            onClick={() => navigate('/admin/banners')}
+          >
+            <Image size={16} />
+            {t('admin.homepage.manageBanners', 'Banners')}
+          </button>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.previewBtn}
+          >
+            <Eye size={16} />
+            {t('admin.homepage.previewHomepage', 'Preview')}
+          </a>
         </div>
       </div>
 
@@ -1076,9 +1570,12 @@ export const HomepageCMS: React.FC = () => {
           <button
             key={tab.key}
             className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
           >
             {tab.label}
+            {tabCounts[tab.key] > 0 && (
+              <span className={styles.tabBadge}>{tabCounts[tab.key]}</span>
+            )}
           </button>
         ))}
       </div>
@@ -1088,6 +1585,21 @@ export const HomepageCMS: React.FC = () => {
       {activeTab === 'features' && renderFeaturesTab()}
       {activeTab === 'testimonials' && renderTestimonialsTab()}
       {activeTab === 'partners' && renderPartnersTab()}
+
+      {/* Batch Delete Confirm */}
+      <ConfirmModal
+        open={!!batchDeleteConfirmTab}
+        type="danger"
+        title={t('admin.homepage.batchDeleteTitle', '批量删除')}
+        titleEn="Batch Delete"
+        message={t(
+          'admin.homepage.batchDeleteConfirm',
+          `确定要删除选中的 ${selectedIds.size} 项吗？此操作不可撤销。`
+        )}
+        messageEn={`Are you sure you want to delete ${selectedIds.size} selected items? This action cannot be undone.`}
+        onConfirm={handleBatchDelete}
+        onCancel={() => setBatchDeleteConfirmTab(null)}
+      />
     </div>
   );
 };

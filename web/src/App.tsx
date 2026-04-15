@@ -453,6 +453,10 @@ function UserProfileEditPageWrapper() {
     return <Navigate to="/login" replace />;
   }
 
+  const handleGoogleBoundChange = (_bound: boolean) => {
+    // The component manages its own local state; context will refresh on next profile fetch
+  };
+
   return (
     <UserProfileEditPage
       userName={user?.name}
@@ -460,8 +464,10 @@ function UserProfileEditPageWrapper() {
       userPhone={user?.phone}
       userAvatar={user?.avatar}
       userLanguage={user?.language || 'zh-CN'}
+      googleBound={user?.google_bound ?? false}
       cartCount={getCartCount()}
       onSave={updateProfile}
+      onGoogleBoundChange={handleGoogleBoundChange}
       onBack={() => navigate('/profile')}
       onLogout={() => { logout(); navigate('/'); }}
       onLoginClick={() => navigate('/login')}

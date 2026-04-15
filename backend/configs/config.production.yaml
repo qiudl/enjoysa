@@ -1,7 +1,7 @@
 server:
   port: 6080
   mode: release
-  frontend_url: "http://13.239.210.53"
+  frontend_url: "https://enjoysau.com"
 
 database:
   host: postgres

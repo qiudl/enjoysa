@@ -3,7 +3,7 @@
  * C端用户、B端供应商、Admin 三端认证 API
  */
 
-import { post, get, put, setTokens, clearTokens, type UserType } from './api';
+import { post, get, put, del, setTokens, clearTokens, type UserType } from './api';
 
 // ==================== 共享类型 ====================
 
@@ -24,6 +24,7 @@ export interface UserInfo {
   status: string;
   email_verified: boolean;
   phone_verified: boolean;
+  google_bound: boolean;
   language: string;
   currency: string;
   timezone: string;
@@ -108,6 +109,14 @@ export const userAuth = {
     });
     setTokens('user', data.token.access_token, data.token.refresh_token);
     return data.user;
+  },
+
+  async bindGoogle(idToken: string) {
+    return post<UserInfo>('/auth/google/bind', { id_token: idToken }, 'user');
+  },
+
+  async unbindGoogle() {
+    return del<UserInfo>('/auth/google/bind', 'user');
   },
 };
 

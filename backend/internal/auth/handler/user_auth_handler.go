@@ -258,6 +258,27 @@ func (h *UserAuthHandler) GoogleLogin(c *gin.Context) {
 	})
 }
 
+// userProfileResponse wraps User with computed fields like google_bound.
+func userProfileResponse(u *models.User) gin.H {
+	return gin.H{
+		"id":             u.ID,
+		"email":          u.Email,
+		"name":           u.Name,
+		"phone":          u.Phone,
+		"avatar":         u.Avatar,
+		"status":         u.Status,
+		"email_verified": u.EmailVerified,
+		"phone_verified": u.PhoneVerified,
+		"language":       u.Language,
+		"currency":       u.Currency,
+		"timezone":       u.Timezone,
+		"google_bound":   u.GoogleID != "",
+		"created_at":     u.CreatedAt,
+		"updated_at":     u.UpdatedAt,
+		"last_login_at":  u.LastLoginAt,
+	}
+}
+
 func (h *UserAuthHandler) GetProfile(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -265,7 +286,7 @@ func (h *UserAuthHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, user)
+	response.Success(c, userProfileResponse(user.(*models.User)))
 }
 
 type UpdateProfileRequest struct {
@@ -307,7 +328,7 @@ func (h *UserAuthHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, u)
+	response.Success(c, userProfileResponse(u))
 }
 
 type ChangePasswordRequest struct {
@@ -466,4 +487,96 @@ func (h *UserAuthHandler) ResetPassword(c *gin.Context) {
 	_ = h.passwordResetStore.InvalidateUserTokens(user.ID)
 
 	response.SuccessMessage(c, "Password has been reset successfully.")
+}
+
+// BindGoogle binds a Google account to the current user.
+func (h *UserAuthHandler) BindGoogle(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		response.Unauthorized(c, "Not authenticated")
+		return
+	}
+	u := user.(*models.User)
+
+	if u.GoogleID != "" {
+		response.BadRequest(c, "Google account already bound")
+		return
+	}
+
+	var req GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request")
+		return
+	}
+
+	// Verify Google ID token
+	resp, err := http.Get(fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", req.IDToken))
+	if err != nil {
+		response.ServerError(c, "Failed to verify Google token")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		response.Unauthorized(c, "Invalid Google token")
+		return
+	}
+
+	var tokenInfo googleTokenInfo
+	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
+		response.ServerError(c, "Failed to process Google token")
+		return
+	}
+
+	if tokenInfo.Sub == "" {
+		response.Unauthorized(c, "Invalid Google token")
+		return
+	}
+
+	// Check if this Google account is already bound to another user
+	existing, _ := h.userStore.GetByGoogleID(tokenInfo.Sub)
+	if existing != nil && existing.ID != u.ID {
+		response.BadRequest(c, "This Google account is already linked to another user")
+		return
+	}
+
+	u.GoogleID = tokenInfo.Sub
+	if u.Avatar == "" && tokenInfo.Picture != "" {
+		u.Avatar = tokenInfo.Picture
+	}
+	if err := h.userStore.Update(u); err != nil {
+		response.ServerError(c, "Failed to bind Google account")
+		return
+	}
+
+	response.Success(c, userProfileResponse(u))
+}
+
+// UnbindGoogle removes the Google account binding from the current user.
+func (h *UserAuthHandler) UnbindGoogle(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		response.Unauthorized(c, "Not authenticated")
+		return
+	}
+	u := user.(*models.User)
+
+	if u.GoogleID == "" {
+		response.BadRequest(c, "No Google account bound")
+		return
+	}
+
+	// Ensure user has a password set (so they can still log in)
+	if u.Password == "" {
+		response.BadRequest(c, "Please set a password before unbinding Google account")
+		return
+	}
+
+	u.GoogleID = ""
+	if err := h.userStore.Update(u); err != nil {
+		response.ServerError(c, "Failed to unbind Google account")
+		return
+	}
+
+	response.Success(c, userProfileResponse(u))
 }
