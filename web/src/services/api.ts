@@ -41,7 +41,6 @@ export function getRefreshToken(userType: UserType): string | null {
 }
 
 export function setTokens(userType: UserType, accessToken: string, refreshToken: string): void {
-  console.log(`[API] setTokens(${userType}) | token=${accessToken.substring(0, 20)}...`);
   localStorage.setItem(TOKEN_KEYS[userType].access, accessToken);
   localStorage.setItem(TOKEN_KEYS[userType].refresh, refreshToken);
 }
@@ -79,7 +78,6 @@ export async function request<T>(
   // 添加 Authorization header
   if (userType) {
     const token = getAccessToken(userType);
-    console.log(`[API] ${endpoint} | userType=${userType} | token=${token ? token.substring(0, 20) + '...' : 'NULL'}`);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }

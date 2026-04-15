@@ -36,7 +36,8 @@
   },
   "brand": {
     "name": "EnjoySA",
-    "tagline": "Enjoy South Australia"
+    "tagline": "Enjoy South Australia",
+    "subtitle": "Enjoy South Australia"
   },
   "auth": {
     "login": "Login",
@@ -850,7 +851,9 @@
     "followUs": "Follow Us",
     "wechat": "WeChat",
     "weibo": "Weibo",
-    "copyright": "2026 EnjoySA. All rights reserved."
+    "copyright": "2026 EnjoySA. All rights reserved.",
+    "qrCodeLabel": "WeChat",
+    "qrCodeHint": "Scan for latest deals"
   },
   "home": {
     "heroTitle": "Explore South Australia",

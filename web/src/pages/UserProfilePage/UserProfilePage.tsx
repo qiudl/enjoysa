@@ -216,7 +216,13 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
             {recentOrders.length > 0 ? (
               <div className={styles.orderList}>
                 {recentOrders.map((order) => (
-                  <div key={order.id} className={styles.orderCard}>
+                  <div
+                    key={order.id}
+                    className={styles.orderCard}
+                    onClick={() => onNavClick?.(`/orders/${order.numericId}`)}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <div className={styles.orderHeader}>
                       <span className={styles.orderNumber}>{order.orderNumber}</span>
                       <span className={styles.orderStatus} data-status={order.status}>
@@ -225,11 +231,16 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
                     </div>
                     {order.items.map((item) => (
                       <div key={item.id} className={styles.orderItem}>
-                        <img
-                          src={item.productImage}
-                          alt={item.productTitle}
-                          className={styles.orderImage}
-                        />
+                        {item.productImage ? (
+                          <img
+                            src={item.productImage}
+                            alt={item.productTitle}
+                            className={styles.orderImage}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className={styles.orderImagePlaceholder}>📦</div>
+                        )}
                         <div className={styles.orderInfo}>
                           <h4 className={styles.orderTitle}>
                             {currentLang === 'en' && item.productTitleEn

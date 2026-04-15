@@ -86,12 +86,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* 图片区域 */}
       <div className={styles.imageWrapper}>
-        <img
-          src={product.images[0]}
-          alt={title}
-          className={styles.image}
-          loading="lazy"
-        />
+        {product.images[0] ? (
+          <img
+            src={product.images[0]}
+            alt={title}
+            className={styles.image}
+            loading="lazy"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <div className={styles.image} style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '2rem' }}>📷</div>
+        )}
 
         {/* 标签 */}
         {product.tags.length > 0 && (

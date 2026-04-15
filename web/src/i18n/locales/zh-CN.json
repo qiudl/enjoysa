@@ -36,7 +36,8 @@
   },
   "brand": {
     "name": "畅游南澳",
-    "tagline": "Enjoy South Australia"
+    "tagline": "Enjoy South Australia",
+    "subtitle": "畅游南澳"
   },
   "auth": {
     "login": "登录",
@@ -850,7 +851,9 @@
     "partnerPortal": "合作伙伴",
     "supplierPortal": "供应商入口",
     "adminPortal": "平台登录",
-    "copyright": "2026 畅游南澳 EnjoySA. 保留所有权利。"
+    "copyright": "2026 畅游南澳 EnjoySA. 保留所有权利。",
+    "qrCodeLabel": "微信公众号",
+    "qrCodeHint": "扫码关注获取最新优惠"
   },
   "home": {
     "heroTitle": "探索南澳大利亚",

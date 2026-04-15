@@ -199,9 +199,9 @@ export const Footer: React.FC<FooterProps> = ({
             {/* QR Code Placeholder */}
             <div className={styles.qrCode}>
               <div className={styles.qrCodePlaceholder}>
-                <span>微信公众号</span>
+                <span>{t('footer.qrCodeLabel', 'WeChat')}</span>
               </div>
-              <p className={styles.qrCodeText}>扫码关注获取最新优惠</p>
+              <p className={styles.qrCodeText}>{t('footer.qrCodeHint', 'Scan for latest deals')}</p>
             </div>
           </div>
         </div>
