@@ -50,49 +50,204 @@
   gap: 1.5rem;
 }
 
-/* Avatar */
-.avatarSection {
+/* ─── Profile Header: Avatar + Name + Google ─── */
+.profileHeader {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: flex-start;
+  gap: 1.25rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #e2e8f0;
-}
-
 .avatarPlaceholder {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: white;
-  border: 3px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
-.avatarNote {
-  font-size: 0.75rem;
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ─── Inline Name Edit ─── */
+.nameRow {
+  display: flex;
+  align-items: center;
+}
+
+.nameDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nameText {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+}
+
+.nameEditBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nameEditBtn:hover {
+  color: var(--color-primary, #0066ff);
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.nameEdit {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+}
+
+.nameInput {
+  flex: 1;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--color-primary, #0066ff);
+  border-radius: 6px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a2e);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.nameActionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nameActionBtn:first-of-type {
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.nameActionBtn:first-of-type:hover {
+  background: #dcfce7;
+}
+
+.nameActionBtn:last-of-type:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.nameActionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Email ─── */
+.emailText {
+  font-size: 0.875rem;
   color: var(--color-text-muted, #64748b);
   margin: 0;
 }
 
-/* Fields */
+/* ─── Google Binding Row ─── */
+.googleRow {
+  margin-top: 0.375rem;
+}
+
+.googleBound,
+.googleUnbound {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+}
+
+.googleSvg {
+  flex-shrink: 0;
+}
+
+.googleBoundText {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.googleUnboundText {
+  color: #94a3b8;
+}
+
+.googleUnbindLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.googleUnbindLink:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.googleUnbindLink:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.googleLoginInline {
+  display: inline-flex;
+  margin-left: 0.25rem;
+}
+
+.googleLoginDisabled {
+  display: inline-flex;
+  margin-left: 0.25rem;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ─── Form Fields ─── */
 .field {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .label {
@@ -102,10 +257,6 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text, #1a1a2e);
-}
-
-.lockIcon {
-  color: var(--color-text-muted, #64748b);
 }
 
 .input {
@@ -122,17 +273,6 @@
   outline: none;
   border-color: var(--color-primary, #0066ff);
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
-}
-
-.inputReadonly {
-  background: #f8fafc;
-  color: var(--color-text-muted, #64748b);
-  cursor: not-allowed;
-}
-
-.inputReadonly:focus {
-  border-color: #e2e8f0;
-  box-shadow: none;
 }
 
 .select {
@@ -152,97 +292,11 @@
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
 }
 
-.fieldNote {
-  font-size: 0.75rem;
-  color: var(--color-text-muted, #64748b);
-  margin: 0;
+.submitArea {
+  margin-top: 0.5rem;
 }
 
-/* Google Account Section */
-.googleSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.googleCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.875rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
-  gap: 1rem;
-}
-
-.googleInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.googleIcon {
-  flex-shrink: 0;
-}
-
-.googleLabel {
-  font-size: 0.938rem;
-  font-weight: 500;
-  color: var(--color-text, #1a1a2e);
-  margin-right: 0.5rem;
-}
-
-.googleStatus {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  background: #f1f5f9;
-}
-
-.googleStatusBound {
-  color: #16a34a;
-  background: #dcfce7;
-}
-
-.googleAction {
-  flex-shrink: 0;
-}
-
-.unbindBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  background: white;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  font-size: 0.813rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.unbindBtn:hover {
-  background: #fef2f2;
-  border-color: #f87171;
-}
-
-.unbindBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.googleLoginDisabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-/* Message */
+/* ─── Message ─── */
 .message {
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -259,9 +313,23 @@
   color: #991b1b;
 }
 
-/* Responsive */
+/* ─── Responsive ─── */
 @media (max-width: 640px) {
   .form {
     padding: 1.5rem;
+  }
+
+  .profileHeader {
+    gap: 1rem;
+  }
+
+  .avatarPlaceholder {
+    width: 52px;
+    height: 52px;
+    font-size: 1.25rem;
+  }
+
+  .nameText {
+    font-size: 1.125rem;
   }
 }

@@ -88,7 +88,7 @@ func (h *UserAuthHandler) Register(c *gin.Context) {
 	}
 
 	response.Created(c, gin.H{
-		"user":  user,
+		"user":  userProfileResponse(user),
 		"token": tokenPair,
 	})
 }
@@ -134,7 +134,7 @@ func (h *UserAuthHandler) Login(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"user":  user,
+		"user":  userProfileResponse(user),
 		"token": tokenPair,
 	})
 }
@@ -253,7 +253,7 @@ func (h *UserAuthHandler) GoogleLogin(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"user":  user,
+		"user":  userProfileResponse(user),
 		"token": tokenPair,
 	})
 }
