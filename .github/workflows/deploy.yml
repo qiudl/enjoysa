@@ -71,9 +71,12 @@ jobs:
         if: steps.scope.outputs.frontend == 'true'
         run: |
           ssh aws-prod "sudo mkdir -p ${{ env.FRONTEND_DEPLOY }}"
-          rsync -avz --delete \
+          # Merge new assets without deleting old ones (avoid crash for active users)
+          rsync -avz \
             -e "ssh -i ~/.ssh/deploy_key" \
             web/dist/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.FRONTEND_DEPLOY }}/
+          # Clean up assets older than 7 days (keep recent deploys working)
+          ssh aws-prod "find ${{ env.FRONTEND_DEPLOY }}/assets -type f -mtime +7 -delete 2>/dev/null || true"
 
       # --- Backend ---
       - name: Deploy backend
