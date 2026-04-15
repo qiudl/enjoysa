@@ -89,7 +89,7 @@ jobs:
             backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/backend/
           scp -i ~/.ssh/deploy_key \
             docker-compose.yml ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/docker-compose.yml
-          ssh aws-prod "cd ${{ env.BACKEND_DEPLOY }} && docker compose up -d --build backend"
+          ssh aws-prod "cd ${{ env.BACKEND_DEPLOY }} && docker compose down && docker compose up -d --build"
 
       # --- Verify ---
       - name: Verify deployment
