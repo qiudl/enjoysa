@@ -181,7 +181,17 @@
       "googleUnbindSuccess": "Google 账户已解绑",
       "googleUnbindFailed": "解绑 Google 账户失败",
       "unbindGoogleTitle": "解绑 Google 账户",
-      "unbindGoogleConfirm": "解绑后将无法使用 Google 快速登录，需要使用邮箱密码登录。确定解绑吗？"
+      "unbindGoogleConfirm": "解绑后将无法使用 Google 快速登录，需要使用邮箱密码登录。确定解绑吗？",
+      "changePassword": "修改密码",
+      "oldPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "pwMinLength": "至少 8 个字符",
+      "pwRequired": "请填写所有密码字段",
+      "pwTooShort": "新密码至少 8 个字符",
+      "pwMismatch": "两次输入的新密码不一致",
+      "pwSuccess": "密码修改成功",
+      "pwFailed": "密码修改失败"
     }
   },
   "product": {

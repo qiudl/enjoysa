@@ -181,7 +181,17 @@
       "googleUnbindSuccess": "Google account unbound successfully",
       "googleUnbindFailed": "Failed to unbind Google account",
       "unbindGoogleTitle": "Unbind Google Account",
-      "unbindGoogleConfirm": "After unbinding, you will no longer be able to sign in with Google. You'll need to use email and password instead. Are you sure?"
+      "unbindGoogleConfirm": "After unbinding, you will no longer be able to sign in with Google. You'll need to use email and password instead. Are you sure?",
+      "changePassword": "Change Password",
+      "oldPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "pwMinLength": "At least 8 characters",
+      "pwRequired": "Please fill in all password fields",
+      "pwTooShort": "New password must be at least 8 characters",
+      "pwMismatch": "New passwords do not match",
+      "pwSuccess": "Password changed successfully",
+      "pwFailed": "Failed to change password"
     }
   },
   "product": {

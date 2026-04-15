@@ -132,7 +132,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   const quickActions = [
     { key: 'editProfile', label: t('user.editProfile'), icon: '⚙️', onClick: () => onEditProfile?.() },
     { key: 'contacts', label: t('contacts.title'), icon: '👥', onClick: () => onNavClick?.('/profile/contacts') },
-    { key: 'help', label: t('user.helpCenter'), icon: '❓' },
+    { key: 'help', label: t('user.helpCenter'), icon: '❓', onClick: () => onNavClick?.('/faq') },
   ];
 
   const getStatusText = (status: string) => {

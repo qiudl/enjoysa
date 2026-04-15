@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Unlink, Check, X, Pencil } from 'lucide-react';
+import { ArrowLeft, Unlink, Check, X, Pencil, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import {
   Header,
@@ -169,6 +169,44 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
     }
   };
 
+  // Password change
+  const [pwOpen, setPwOpen] = useState(false);
+  const [oldPw, setOldPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [showOldPw, setShowOldPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (!oldPw || !newPw) {
+      setMessage({ type: 'error', text: t('user.editProfile_page.pwRequired', 'Please fill in all password fields') });
+      return;
+    }
+    if (newPw.length < 8) {
+      setMessage({ type: 'error', text: t('user.editProfile_page.pwTooShort', 'New password must be at least 8 characters') });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setMessage({ type: 'error', text: t('user.editProfile_page.pwMismatch', 'New passwords do not match') });
+      return;
+    }
+    setPwSaving(true);
+    setMessage(null);
+    try {
+      await userAuth.changePassword(oldPw, newPw);
+      setMessage({ type: 'success', text: t('user.editProfile_page.pwSuccess', 'Password changed successfully') });
+      setOldPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setPwOpen(false);
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('user.editProfile_page.pwFailed', 'Failed to change password') });
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
   const displayName = userName || nameValue || '?';
 
   return (
@@ -325,6 +363,70 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
                 </Button>
               </div>
             </form>
+
+            {/* Password Change Section */}
+            <div className={styles.pwSection}>
+              <button
+                type="button"
+                className={styles.pwToggle}
+                onClick={() => setPwOpen(!pwOpen)}
+              >
+                <KeyRound size={16} />
+                <span>{t('user.editProfile_page.changePassword', 'Change Password')}</span>
+                <span className={`${styles.pwArrow} ${pwOpen ? styles.pwArrowOpen : ''}`}>&#9662;</span>
+              </button>
+
+              {pwOpen && (
+                <div className={styles.pwForm}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t('user.editProfile_page.oldPassword', 'Current Password')}</label>
+                    <div className={styles.pwInputWrap}>
+                      <input
+                        type={showOldPw ? 'text' : 'password'}
+                        className={styles.input}
+                        value={oldPw}
+                        onChange={(e) => setOldPw(e.target.value)}
+                      />
+                      <button type="button" className={styles.pwEye} onClick={() => setShowOldPw(!showOldPw)}>
+                        {showOldPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t('user.editProfile_page.newPassword', 'New Password')}</label>
+                    <div className={styles.pwInputWrap}>
+                      <input
+                        type={showNewPw ? 'text' : 'password'}
+                        className={styles.input}
+                        value={newPw}
+                        onChange={(e) => setNewPw(e.target.value)}
+                        minLength={8}
+                        placeholder={t('user.editProfile_page.pwMinLength', 'At least 8 characters')}
+                      />
+                      <button type="button" className={styles.pwEye} onClick={() => setShowNewPw(!showNewPw)}>
+                        {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>{t('user.editProfile_page.confirmPassword', 'Confirm New Password')}</label>
+                    <input
+                      type="password"
+                      className={styles.input}
+                      value={confirmPw}
+                      onChange={(e) => setConfirmPw(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    fullWidth
+                    disabled={pwSaving || !oldPw || !newPw || !confirmPw}
+                    onClick={handlePasswordChange}
+                  >
+                    {pwSaving ? t('common.loading', 'Loading...') : t('user.editProfile_page.changePassword', 'Change Password')}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
