@@ -1,0 +1,113 @@
+name: Deploy to AWS Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: '部署范围'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - frontend
+          - backend
+
+env:
+  SERVER_IP: 13.239.210.53
+  SERVER_USER: ubuntu
+  FRONTEND_DEPLOY: /opt/enjoysa/frontend
+  BACKEND_DEPLOY: /opt/enjoysa-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine deploy scope
+        id: scope
+        run: |
+          SCOPE="${{ github.event.inputs.scope || 'full' }}"
+          if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "frontend" ]; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          fi
+          if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "backend" ]; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Host aws-prod
+            HostName ${{ env.SERVER_IP }}
+            User ${{ env.SERVER_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no" > ~/.ssh/config
+
+      # --- Frontend ---
+      - name: Setup Node.js
+        if: steps.scope.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install & Build frontend
+        if: steps.scope.outputs.frontend == 'true'
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy frontend
+        if: steps.scope.outputs.frontend == 'true'
+        run: |
+          ssh aws-prod "sudo mkdir -p ${{ env.FRONTEND_DEPLOY }}"
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            web/dist/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.FRONTEND_DEPLOY }}/
+
+      # --- Backend ---
+      - name: Deploy backend
+        if: steps.scope.outputs.backend == 'true'
+        run: |
+          ssh aws-prod "mkdir -p ${{ env.BACKEND_DEPLOY }}"
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'tmp' \
+            --exclude 'uploads/*' \
+            --exclude 'enjoysa-backend' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/backend/
+          scp -i ~/.ssh/deploy_key \
+            docker-compose.yml ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/docker-compose.yml
+          ssh aws-prod "cd ${{ env.BACKEND_DEPLOY }} && docker compose up -d --build backend"
+
+      # --- Verify ---
+      - name: Verify deployment
+        run: |
+          sleep 5
+          RESULT=""
+          if [ "${{ steps.scope.outputs.frontend }}" = "true" ]; then
+            STATUS=$(ssh aws-prod "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/")
+            echo "Frontend: HTTP $STATUS"
+            [ "$STATUS" = "200" ] || RESULT="Frontend failed (HTTP $STATUS)"
+          fi
+          if [ "${{ steps.scope.outputs.backend }}" = "true" ]; then
+            STATUS=$(ssh aws-prod "curl -s -o /dev/null -w '%{http_code}' http://localhost:6080/health")
+            echo "Backend: HTTP $STATUS"
+            [ "$STATUS" = "200" ] || RESULT="${RESULT} Backend failed (HTTP $STATUS)"
+          fi
+          if [ -n "$RESULT" ]; then
+            echo "::error::$RESULT"
+            exit 1
+          fi
+          echo "✅ Deployment verified successfully"

@@ -1,7 +1,7 @@
 server:
   port: 6080
   mode: release
-  frontend_url: "http://43.134.28.147:6066"
+  frontend_url: "http://13.239.210.53"
 
 database:
   host: postgres

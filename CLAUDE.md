@@ -5,9 +5,9 @@
 | 项目 | 值 |
 |------|-----|
 | 项目名称 | EnjoySA 畅游南澳 |
-| Git 仓库 | `https://gitea.pipexerp.com/qiudl/enjoysa.git` |
+| Git 仓库 | `https://github.com/qiudl/enjoysa.git` |
 | 技术栈 | Vite + React 18 + TypeScript + CSS Modules |
-| 部署地址 | http://43.134.28.147:6066 |
+| 部署地址 | http://13.239.210.53 |
 
 ---
 

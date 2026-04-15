@@ -4,8 +4,11 @@
 
 set -e
 
-SERVER="singapore"
-FRONTEND_DEPLOY="/opt/enjoysa"
+SERVER="aws-prod"
+SSH_KEY="$HOME/.ssh/enjoysa-aws.pem"
+SERVER_IP="13.239.210.53"
+SERVER_USER="ubuntu"
+FRONTEND_DEPLOY="/opt/enjoysa/frontend"
 BACKEND_DEPLOY="/opt/enjoysa-backend"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -16,10 +19,14 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# SSH 命令封装
+SSH_CMD="ssh -i ${SSH_KEY} ${SERVER_USER}@${SERVER_IP}"
+SCP_CMD="scp -i ${SSH_KEY}"
+
 echo ""
 echo -e "${BLUE}==========================================${NC}"
 echo -e "${BLUE}  EnjoySA 构建 & 部署${NC}"
-echo -e "${BLUE}  服务器: ${SERVER} (43.134.28.147)${NC}"
+echo -e "${BLUE}  服务器: AWS Production (${SERVER_IP})${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo ""
 
@@ -59,7 +66,7 @@ if [ "$DEPLOY_FRONTEND" = true ]; then
   STEP=$((STEP + 1))
   echo ""
   echo -e "${BLUE}[${STEP}/${TOTAL}] 上传前端到服务器...${NC}"
-  scp -r dist/* ${SERVER}:${FRONTEND_DEPLOY}/
+  rsync -avz --delete -e "ssh -i ${SSH_KEY}" dist/ ${SERVER_USER}@${SERVER_IP}:${FRONTEND_DEPLOY}/
   echo -e "${GREEN}✓${NC} 前端上传完成"
 fi
 
@@ -68,22 +75,23 @@ if [ "$DEPLOY_BACKEND" = true ]; then
   STEP=$((STEP + 1))
   echo ""
   echo -e "${BLUE}[${STEP}/${TOTAL}] 同步后端代码到服务器...${NC}"
-  ssh ${SERVER} "mkdir -p ${BACKEND_DEPLOY}"
+  ${SSH_CMD} "mkdir -p ${BACKEND_DEPLOY}"
 
   rsync -avz --delete \
     --exclude '.git' \
     --exclude 'tmp' \
     --exclude 'uploads/*' \
     --exclude 'enjoysa-backend' \
-    "$PROJECT_DIR/backend/" ${SERVER}:${BACKEND_DEPLOY}/backend/
+    -e "ssh -i ${SSH_KEY}" \
+    "$PROJECT_DIR/backend/" ${SERVER_USER}@${SERVER_IP}:${BACKEND_DEPLOY}/backend/
 
-  scp "$PROJECT_DIR/docker-compose.yml" ${SERVER}:${BACKEND_DEPLOY}/docker-compose.yml
+  ${SCP_CMD} "$PROJECT_DIR/docker-compose.yml" ${SERVER_USER}@${SERVER_IP}:${BACKEND_DEPLOY}/docker-compose.yml
   echo -e "${GREEN}✓${NC} 后端代码同步完成"
 
   STEP=$((STEP + 1))
   echo ""
   echo -e "${BLUE}[${STEP}/${TOTAL}] 构建并重启后端容器...${NC}"
-  ssh ${SERVER} "cd ${BACKEND_DEPLOY} && docker compose up -d --build backend"
+  ${SSH_CMD} "cd ${BACKEND_DEPLOY} && docker compose up -d --build backend"
   echo -e "${GREEN}✓${NC} 后端容器已重启"
 fi
 
@@ -97,10 +105,10 @@ FRONTEND_STATUS="skip"
 BACKEND_STATUS="skip"
 
 if [ "$DEPLOY_FRONTEND" = true ]; then
-  FRONTEND_STATUS=$(ssh ${SERVER} "curl -s -o /dev/null -w '%{http_code}' http://localhost:6066/")
+  FRONTEND_STATUS=$(${SSH_CMD} "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/")
 fi
 if [ "$DEPLOY_BACKEND" = true ]; then
-  BACKEND_STATUS=$(ssh ${SERVER} "curl -s -o /dev/null -w '%{http_code}' http://localhost:6080/health")
+  BACKEND_STATUS=$(${SSH_CMD} "curl -s -o /dev/null -w '%{http_code}' http://localhost:6080/health")
 fi
 
 echo ""
@@ -112,7 +120,7 @@ SUCCESS=true
 
 if [ "$DEPLOY_FRONTEND" = true ]; then
   if [ "$FRONTEND_STATUS" = "200" ]; then
-    echo -e "  前端: ${GREEN}✓ HTTP 200${NC}  http://43.134.28.147:6066"
+    echo -e "  前端: ${GREEN}✓ HTTP 200${NC}  http://13.239.210.53:6066"
   else
     echo -e "  前端: ${RED}✗ HTTP ${FRONTEND_STATUS}${NC}"
     SUCCESS=false
@@ -121,7 +129,7 @@ fi
 
 if [ "$DEPLOY_BACKEND" = true ]; then
   if [ "$BACKEND_STATUS" = "200" ]; then
-    echo -e "  后端: ${GREEN}✓ HTTP 200${NC}  http://43.134.28.147:6080/health"
+    echo -e "  后端: ${GREEN}✓ HTTP 200${NC}  http://13.239.210.53:6080/health"
   else
     echo -e "  后端: ${RED}✗ HTTP ${BACKEND_STATUS}${NC}"
     SUCCESS=false
@@ -133,6 +141,6 @@ if [ "$SUCCESS" = true ]; then
   echo -e "  ${GREEN}部署成功!${NC}"
 else
   echo -e "  ${RED}部分服务异常，请检查日志:${NC}"
-  echo -e "  ssh ${SERVER} 'cd ${BACKEND_DEPLOY} && docker compose logs -f backend'"
+  echo -e "  ${SSH_CMD} 'cd ${BACKEND_DEPLOY} && docker compose logs -f backend'"
 fi
 echo -e "${GREEN}==========================================${NC}"
