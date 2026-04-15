@@ -79,7 +79,7 @@ jobs:
       - name: Deploy backend
         if: steps.scope.outputs.backend == 'true'
         run: |
-          ssh aws-prod "mkdir -p ${{ env.BACKEND_DEPLOY }}"
+          ssh aws-prod "sudo mkdir -p ${{ env.BACKEND_DEPLOY }} && sudo chown -R ubuntu:ubuntu ${{ env.BACKEND_DEPLOY }}"
           rsync -avz --delete \
             --exclude '.git' \
             --exclude 'tmp' \
