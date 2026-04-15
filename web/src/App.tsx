@@ -433,6 +433,7 @@ function UserProfilePageWrapper() {
       userEmail={user?.email}
       userPhone={user?.phone}
       userAvatar={user?.avatar}
+      googleBound={user?.google_bound ?? false}
       cartCount={getCartCount()}
       onLogout={() => { logout(); navigate('/'); }}
       onEditProfile={() => navigate('/profile/edit')}
