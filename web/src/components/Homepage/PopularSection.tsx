@@ -83,6 +83,14 @@ export const PopularSection: React.FC<PopularSectionProps> = ({
                   alt={isZh ? product.name_zh : product.name_en}
                   className={styles.image}
                   loading="lazy"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
+                    target.style.objectFit = 'contain';
+                    target.style.padding = '2rem';
+                    target.style.background = '#f1f5f9';
+                    target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>');
+                  }}
                 />
                 <span
                   className={styles.rankBadge}

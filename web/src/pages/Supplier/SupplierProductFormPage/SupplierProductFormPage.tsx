@@ -316,13 +316,29 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
   };
 
   // ─── Image upload ───
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const [uploadError, setUploadError] = useState('');
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    setUploadError('');
     const remaining = 5 - images.length;
     const toUpload = Array.from(files).slice(0, remaining);
 
     for (const file of toUpload) {
+      // Validate file type
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setUploadError(t('supplier.productForm.uploadErrorFormat', 'Only JPG, PNG, WebP and GIF images are allowed'));
+        continue;
+      }
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setUploadError(t('supplier.productForm.uploadErrorSize', 'Image size must be under 10MB'));
+        continue;
+      }
+
       const tempId = uid();
       setImages((prev) => [...prev, {
         _id: tempId, url: '', sort_order: prev.length, is_cover: prev.length === 0, _uploading: true,
@@ -332,8 +348,9 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
         setImages((prev) => prev.map((img) =>
           img._id === tempId ? { ...img, url, _uploading: false } : img,
         ));
-      } catch {
+      } catch (err) {
         setImages((prev) => prev.filter((img) => img._id !== tempId));
+        setUploadError(err instanceof Error ? err.message : t('supplier.productForm.uploadErrorGeneral', 'Upload failed, please try again'));
       }
     }
     // Reset input
@@ -551,7 +568,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         multiple
         style={{ display: 'none' }}
         onChange={handleImageUpload}
@@ -590,8 +607,13 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
         </SortableContext>
       </DndContext>
 
+      {uploadError && (
+        <p style={{ marginTop: '0.75rem', color: '#dc2626', fontSize: '0.875rem' }}>
+          {uploadError}
+        </p>
+      )}
       <p className={styles.hint} style={{ marginTop: '0.75rem' }}>
-        {t('supplier.productForm.imageUploadHint')}
+        {t('supplier.productForm.imageUploadHint')} · JPG/PNG/WebP/GIF · Max 10MB
       </p>
     </div>
   );

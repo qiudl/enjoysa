@@ -140,7 +140,11 @@ export const SupplierSettingsPage: React.FC = () => {
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>{t('supplier.settings.type', 'Type')}</label>
-                    <input className={styles.formInput} value={supplierTypeLabels[form.type || ''] || form.type || ''} disabled />
+                    <select className={styles.formInput} value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                      {Object.entries(supplierTypeLabels).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>{t('supplier.settings.description', 'Description')}</label>
