@@ -131,6 +131,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
   const [regions, setRegions] = useState<ApiRegion[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
 
+  const [productStatus, setProductStatus] = useState<string>('draft');
   const [form, setForm] = useState<FormData>({
     name_zh: '', name_en: '',
     summary_zh: '', summary_en: '',
@@ -169,6 +170,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       setLoading(true);
       try {
         const p = await supplierProductService.getById(Number(productId));
+        setProductStatus(p.status || 'draft');
         setForm({
           name_zh: p.name_zh || '',
           name_en: p.name_en || '',
@@ -999,7 +1001,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                   {t('common.next')}
                   <ChevronRight size={16} />
                 </button>
-              ) : (
+              ) : (productStatus === 'draft' || productStatus === 'rejected') ? (
                 <button
                   type="button"
                   className={`${styles.btn} ${styles.btnSuccess}`}
@@ -1008,6 +1010,16 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                 >
                   <Send size={16} />
                   {saving ? t('supplier.productForm.submitting') : t('supplier.productForm.saveAndSubmit')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  onClick={handleSaveDraft}
+                  disabled={saving || !form.name_zh || !form.name_en}
+                >
+                  <Save size={16} />
+                  {saving ? t('supplier.productForm.saving') : t('supplier.productForm.saveDraft')}
                 </button>
               )}
             </div>

@@ -1,119 +1,74 @@
-# EnjoySA 项目指南
+# CLAUDE.md
 
-## 项目信息
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-| 项目 | 值 |
-|------|-----|
-| 项目名称 | EnjoySA 畅游南澳 |
-| Git 仓库 | `https://github.com/qiudl/enjoysa.git` |
-| 技术栈 | Vite + React 18 + TypeScript + CSS Modules |
-| 部署地址 | https://enjoysau.com |
+## Project Overview
 
----
+EnjoySA (畅游南澳) — a tourism platform for South Australia with three user roles: C-end consumers, B-end suppliers, and platform admins. Deployed at https://enjoysau.com.
 
-## 项目技能
+## Tech Stack
 
-### /deploy - 部署到新加坡服务器
+- **Frontend**: Vite 7 + React 19 + TypeScript + CSS Modules (in `web/`)
+- **Backend**: Go 1.24 + PostgreSQL 16 (in `backend/`)
+- **Infra**: Docker Compose, Nginx reverse proxy on Singapore server
 
-当用户提到 `部署`、`deploy`、`上线` 时，参考 `~/.claude/skills/enjoysa-deploy/SKILL.md` 执行部署流程。
-
-快速部署：
-```bash
-./scripts/deploy.sh
-```
-
-服务器信息：
-- IP: 43.134.28.147
-- 端口: 6066
-- 路径: /opt/enjoysa
-
----
-
-## 目录结构
-
-```
-enjoysa/
-├── web/
-│   ├── src/
-│   │   ├── components/       # 通用组件
-│   │   │   ├── Common/       # Header, Footer, LanguageSwitcher
-│   │   │   ├── Auth/         # LoginForm, RegisterForm
-│   │   │   └── Supplier/     # 供应商相关组件
-│   │   ├── pages/            # 页面组件
-│   │   ├── i18n/             # 国际化
-│   │   │   └── locales/      # zh-CN.json, en-US.json
-│   │   └── types/            # 类型定义
-│   ├── scripts/              # 部署脚本
-│   └── dist/                 # 构建产物
-├── backend/                  # Go 后端 (规划中)
-└── docs/                     # 文档
-```
-
----
-
-## 页面路由
-
-| 路由 | 页面 | 说明 |
-|------|------|------|
-| `/` | HomePage | 首页 |
-| `/login` | LoginPage | C端用户登录/注册 |
-| `/supplier/login` | SupplierLoginPage | B端供应商登录 |
-| `/supplier/register` | SupplierRegisterPage | 供应商入驻申请 |
-| `/supplier/*` | Supplier 后台 | 仪表盘/产品/订单/财务 |
-| `/admin/login` | AdminLoginPage | 管理员登录 |
-| `/terms` | TermsPage | 服务条款 |
-| `/privacy` | PrivacyPage | 隐私政策 |
-
----
-
-## i18n 国际化规范
-
-### 翻译文件
-
-```
-web/src/i18n/locales/
-├── zh-CN.json    # 简体中文
-└── en-US.json    # 英文
-```
-
-### 使用方式
-
-```tsx
-import { useTranslation } from 'react-i18next';
-
-const MyComponent = () => {
-  const { t } = useTranslation();
-  return <h1>{t('brand.name')}</h1>;
-};
-```
-
-### 重要规范
-
-1. **禁止硬编码**：所有用户可见文本必须使用 i18n
-2. **同步更新**：zh-CN.json 和 en-US.json 必须同时添加新 key
-3. **命名规范**：使用 `namespace.key` 格式，如 `auth.loginTitle`
-
-### 主要命名空间
-
-- `brand.*` - 品牌信息
-- `auth.*` - 登录注册
-- `terms.*` / `privacy.*` - 条款政策
-- `supplier.*` - 供应商模块
-- `admin.*` - 管理员模块
-- `common.*` - 通用文本
-- `footer.*` - 页脚
-
----
-
-## 本地开发
+## Commands
 
 ```bash
-# 启动开发服务器
-cd web && npm run dev
+# Frontend
+cd web && npm run dev          # Dev server (proxies /api & /uploads to localhost:6080)
+cd web && npm run build        # Type-check + production build
+cd web && npm run lint         # ESLint
+cd web && npm run test         # Unit tests (vitest, jsdom)
+cd web && npm run storybook    # Storybook on port 6006
 
-# 构建
-npm run build
+# Backend
+cd backend && go run ./cmd/server   # Start API server (port 6080)
+cd backend && go run ./cmd/seed     # Seed database
 
-# 部署
-./scripts/deploy.sh
+# Full stack (Docker)
+docker compose up -d           # Postgres (port 6054) + backend (port 6080)
+
+# Deploy
+./scripts/deploy.sh            # Build frontend + deploy to server 43.134.28.147:6066
 ```
+
+## Architecture
+
+### Frontend (`web/src/`)
+
+**Three-tier auth system** with separate contexts and token storage per role:
+- `UserAuthContext` — C-end consumers (token: `enjoysa_user_token`)
+- `SupplierAuthContext` — B-end suppliers (token: `enjoysa_supplier_token`)
+- `AdminAuthContext` — platform admins (token: `enjoysa_admin_token`)
+
+**Routing pattern**: `App.tsx` defines all routes. Each page has a `*Wrapper` component in App.tsx that bridges router hooks (useNavigate, useParams) into page props — pages themselves are router-agnostic and receive callbacks. All non-homepage pages are React.lazy loaded.
+
+**Auth guards**: `SupplierAuthGuard` and `AdminAuthGuard` protect B-end/admin routes. Admin routes use `requiredPermission` prop for RBAC (e.g., `"suppliers.view"`).
+
+**Layouts**: Supplier pages wrap in `SupplierLayout`, admin pages wrap in `AdminLayout`. C-end pages manage their own Header/Footer.
+
+**API layer**: `services/api.ts` provides a base HTTP client with JWT auto-refresh. Domain services (`productService.ts`, `orderService.ts`, etc.) build on it. API base: `/api/v1` (configurable via `VITE_API_BASE`).
+
+**State**: React Context for auth and cart (`CartContext`). No external state library.
+
+### Backend (`backend/internal/`)
+
+Domain-driven packages: `product`, `order`, `supplier`, `admin`, `auth`, `payment`, `settlement`, `rbac`, `chat`, `upload`, etc. Router in `internal/router/`. Database migrations in `migrations/`. Models in `internal/models/`.
+
+### Key integrations
+- Google OAuth (`@react-oauth/google`)
+- Stripe payments
+- Resend for email
+
+## i18n
+
+All user-visible text must use `react-i18next`. Two locale files must stay in sync:
+- `web/src/i18n/locales/zh-CN.json` (Chinese)
+- `web/src/i18n/locales/en-US.json` (English)
+
+Key format: `namespace.key` (e.g., `auth.loginTitle`, `supplier.dashboard`).
+
+## CSS Convention
+
+CSS Modules (`*.module.css`) per component. Global variables in `web/src/styles/variables.css`. Use `clsx` for conditional class merging.
