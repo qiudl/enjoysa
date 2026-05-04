@@ -14,7 +14,7 @@ export default function SmartSearchDropdown({ onProductClick, language = 'zh' }:
   const [result, setResult] = useState<SmartSearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click

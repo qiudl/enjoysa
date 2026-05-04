@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Header,
   Footer,
-  SearchBar,
   CardSkeleton,
   HeroBanner,
   RegionCard,
@@ -98,7 +97,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   const { t, i18n } = useTranslation();
   const currentLang = (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
   const isZh = currentLang === 'zh';
-  const [, setSearchKeyword] = useState('');
+  // searchKeyword state removed — SmartSearchDropdown handles its own state
   const [searchTab, setSearchTab] = useState<'activity' | 'hotel'>('activity');
   const [hotelKeyword, setHotelKeyword] = useState('');
   const [hotelRegionId, setHotelRegionId] = useState<number | undefined>();
@@ -164,11 +163,6 @@ export const HomePage: React.FC<HomePageProps> = ({
       setProductsLoading(false);
     });
   }, []);
-
-  const handleSearch = (keyword: string) => {
-    setSearchKeyword(keyword);
-    onSearch?.(keyword);
-  };
 
   return (
     <div className={styles.page}>
