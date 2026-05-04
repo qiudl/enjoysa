@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 03 - AI 行程规划页</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;padding:40px 20px}
+  .page{max-width:900px;margin:0 auto}
+  .annotation{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:100;white-space:nowrap}
+
+  .page-title{text-align:center;margin-bottom:32px}
+  .page-title h1{font-size:28px;font-weight:700;color:#333;margin-bottom:6px}
+  .page-title p{font-size:15px;color:#888}
+
+  /* 输入表单 */
+  .planner-form{background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:24px}
+  .form-row{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+  .form-group{flex:1;min-width:140px}
+  .form-group label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+  .form-group input,.form-group select{width:100%;border:1px solid #e5e5e5;border-radius:10px;padding:10px 14px;font-size:14px;outline:none}
+  .form-group input:focus,.form-group select:focus{border-color:#667eea}
+
+  .pref-tags{display:flex;flex-wrap:wrap;gap:8px}
+  .pref-tag{background:#f4f5f7;border:1.5px solid #e8e8e8;color:#555;font-size:13px;padding:8px 16px;border-radius:20px;cursor:pointer;transition:all .2s}
+  .pref-tag:hover{border-color:#667eea}
+  .pref-tag.active{background:#667eea;color:#fff;border-color:#667eea}
+
+  .gen-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px}
+  .gen-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+  /* 行程结果 */
+  .itinerary{background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .itin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
+  .itin-header h2{font-size:20px;font-weight:700;color:#333}
+  .itin-actions{display:flex;gap:8px}
+  .itin-actions button{background:#f4f5f7;border:1px solid #e8e8e8;color:#555;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer}
+  .itin-actions button:hover{border-color:#667eea;color:#667eea}
+  .itin-actions button.primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none}
+
+  /* 日程卡片 */
+  .day-card{margin-bottom:20px}
+  .day-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .day-num{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .day-title{font-size:16px;font-weight:600;color:#333}
+  .day-subtitle{font-size:13px;color:#999;margin-left:auto}
+
+  .activity{display:flex;gap:12px;padding:12px;background:#f8f9fb;border-radius:10px;margin-bottom:8px;position:relative;border:1px solid transparent;transition:all .2s}
+  .activity:hover{border-color:#667eea;background:#fafaff}
+  .activity-time{font-size:12px;color:#999;width:40px;flex-shrink:0;padding-top:2px}
+  .activity-dot{width:10px;height:10px;border-radius:5px;background:#667eea;flex-shrink:0;margin-top:5px}
+  .activity-info{flex:1}
+  .activity-name{font-size:14px;font-weight:600;color:#333;margin-bottom:3px}
+  .activity-desc{font-size:12px;color:#888;line-height:1.4}
+  .activity-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+  .activity-price{font-size:15px;font-weight:700;color:#e74c3c}
+  .activity-add{font-size:12px;color:#667eea;background:#f0f0ff;border:1px solid #667eea;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+  .activity-add:hover{background:#667eea;color:#fff}
+  .activity-free{font-size:13px;color:#10b981;font-weight:500}
+
+  .ai-suggestion{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff8e1;border-radius:8px;margin:4px 0 8px 62px;font-size:12px;color:#f57f17}
+
+  /* 底部汇总 */
+  .itin-summary{background:linear-gradient(135deg,#f0f0ff,#e8e0ff);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+  .summary-left{font-size:14px;color:#555}
+  .summary-left strong{font-size:20px;color:#333}
+  .summary-status{font-size:13px;color:#10b981;font-weight:600}
+  .summary-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="annotation">原型 03：AI 行程规划页 — 输入偏好 → AI 生成多日行程 → 关联平台产品 → 一键加购</div>
+
+<div class="page">
+  <div class="page-title">
+    <h1>🗓️ AI 行程规划</h1>
+    <p>告诉我们你的偏好，AI 为你量身定制南澳行程</p>
+  </div>
+
+  <div class="planner-form">
+    <div class="form-row">
+      <div class="form-group"><label>出行人数</label><input value="2 大人 + 2 小孩（6岁、3岁）" /></div>
+      <div class="form-group"><label>天数</label><select><option>2 天</option><option selected>3 天</option><option>5 天</option><option>7 天</option></select></div>
+      <div class="form-group"><label>总预算</label><input value="A$2,000" /></div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>偏好（可多选）</label>
+      <div class="pref-tags">
+        <span class="pref-tag active">👨‍👩‍👧‍👦 亲子</span>
+        <span class="pref-tag active">🍽️ 美食</span>
+        <span class="pref-tag active">🌿 自然</span>
+        <span class="pref-tag">🧗 冒险</span>
+        <span class="pref-tag">🏛️ 文化</span>
+        <span class="pref-tag">🍷 品酒</span>
+        <span class="pref-tag">📸 摄影</span>
+        <span class="pref-tag">🏖️ 海滩</span>
+      </div>
+    </div>
+    <button class="gen-btn">✨ 为我规划行程</button>
+  </div>
+
+  <!-- AI 生成的行程 -->
+  <div class="itinerary">
+    <div class="itin-header">
+      <h2>🤖 你的专属 3 日行程</h2>
+      <div class="itin-actions">
+        <button>🔄 重新生成</button>
+        <button>📤 分享行程</button>
+        <button class="primary">🛒 一键加入购物车</button>
+      </div>
+    </div>
+
+    <!-- Day 1 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-num">D1</div>
+        <div class="day-title">阿德莱德市区 · 美食与动物</div>
+        <div class="day-subtitle">预计 A$267</div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">上午</div>
+        <div class="activity-dot"></div>
+        <div class="activity-info">
+          <div class="activity-name">中央市场美食之旅</div>
+          <div class="activity-desc">品尝本地芝士、面包、海鲜，导游讲解食材故事</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-price">A$89/人</div>
+          <span class="activity-add">+ 加入</span>
+        </div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">下午</div>
+        <div class="activity-dot" style="background:#10b981"></div>
+        <div class="activity-info">
+          <div class="activity-name">克莱兰德野生动物园</div>
+          <div class="activity-desc">亲手喂袋鼠、抱考拉合影，小朋友最爱</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-price">A$45/人</div>
+          <span class="activity-add">+ 加入</span>
+        </div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">晚上</div>
+        <div class="activity-dot" style="background:#f59e0b"></div>
+        <div class="activity-info">
+          <div class="activity-name">格雷尔海滩散步 + 落日</div>
+          <div class="activity-desc">阿德莱德最美的落日海滩，适合带小朋友踩沙</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-free">免费</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 2 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-num">D2</div>
+        <div class="day-title">袋鼠岛 · 全天探险</div>
+        <div class="day-subtitle">预计 A$1,099</div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">全天</div>
+        <div class="activity-dot"></div>
+        <div class="activity-info">
+          <div class="activity-name">袋鼠岛野生动物一日游</div>
+          <div class="activity-desc">海豹湾、神奇岩石、考拉栖息地，含午餐和酒店接送</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-price">A$1,099</div>
+          <span class="activity-add">+ 加入</span>
+        </div>
+      </div>
+      <div class="ai-suggestion">💡 选择家庭套票（2大2小），比单买省 A$179！</div>
+    </div>
+
+    <!-- Day 3 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-num">D3</div>
+        <div class="day-title">巴罗萨谷 · 美食美酒</div>
+        <div class="day-subtitle">预计 A$398</div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">上午</div>
+        <div class="activity-dot"></div>
+        <div class="activity-info">
+          <div class="activity-name">巴罗萨谷酒庄品酒之旅</div>
+          <div class="activity-desc">参观 3 家精选酒庄，含品酒 + 芝士拼盘</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-price">A$199/人</div>
+          <span class="activity-add">+ 加入</span>
+        </div>
+      </div>
+      <div class="activity">
+        <div class="activity-time">下午</div>
+        <div class="activity-dot" style="background:#10b981"></div>
+        <div class="activity-info">
+          <div class="activity-name">薰衣草农场</div>
+          <div class="activity-desc">拍照打卡圣地，可购买薰衣草精油作伴手礼</div>
+        </div>
+        <div class="activity-right">
+          <div class="activity-free">免费参观</div>
+        </div>
+      </div>
+      <div class="ai-suggestion">💡 酒庄品酒大人享受，小朋友可以在酒庄花园玩耍</div>
+    </div>
+
+    <!-- 汇总 -->
+    <div class="itin-summary">
+      <div class="summary-left">
+        预估总费用：<strong>A$1,764</strong>（4人）
+        <br><span class="summary-status">✅ 预算内（剩余 A$236）</span>
+      </div>
+      <button class="summary-btn">🛒 一键加入购物车</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

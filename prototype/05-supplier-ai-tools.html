@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 05 - B 端供应商 AI 工具（写手 + 日报 + 评价回复 + 售后预判）</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;padding:40px 16px}
+  .annotation{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:100;white-space:nowrap}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px;margin:0 auto}
+
+  .card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .card-title{font-size:16px;font-weight:600;color:#333;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card-title .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;padding:2px 8px;border-radius:8px}
+  .card-label{font-size:11px;color:#999;margin-bottom:16px;display:block}
+
+  /* 场景 7: AI 写手 */
+  .gen-field{margin-bottom:12px}
+  .gen-field label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px}
+  .gen-field input{width:100%;border:1px solid #e5e5e5;border-radius:8px;padding:8px 12px;font-size:13px;outline:none}
+  .gen-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin:12px 0}
+  .gen-result{background:#f8f9fb;border-radius:8px;padding:12px;font-size:12px;color:#444;line-height:1.6;max-height:200px;overflow-y:auto}
+  .gen-result h4{font-size:13px;color:#667eea;margin-bottom:4px}
+  .gen-result .field-label{font-size:11px;color:#999;margin-top:8px;margin-bottom:2px}
+  .gen-tag{display:inline-block;background:#f0f0ff;color:#667eea;font-size:11px;padding:2px 8px;border-radius:8px;margin-right:4px;margin-top:4px}
+  .gen-actions{display:flex;gap:8px;margin-top:10px}
+  .gen-actions button{flex:1;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #e5e5e5;background:#fff;color:#555}
+  .gen-actions button.primary{background:#667eea;color:#fff;border-color:#667eea}
+
+  /* 场景 8: AI 日报 */
+  .briefing{font-size:13px;color:#444;line-height:1.8}
+  .briefing .stat{display:flex;align-items:center;gap:8px;padding:6px 0}
+  .briefing .stat-icon{font-size:16px}
+  .briefing .stat-trend{font-size:12px;padding:2px 8px;border-radius:8px}
+  .briefing .up{background:#ecfdf5;color:#059669}
+  .briefing .down{background:#fef2f2;color:#dc2626}
+  .briefing .warn{background:#fff8e1;color:#f57f17}
+  .briefing .tip{background:#f0f7ff;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:#667eea;line-height:1.5}
+
+  /* 场景 9: 评价回复 */
+  .review-item{border-bottom:1px solid #f0f0f0;padding-bottom:12px;margin-bottom:12px}
+  .review-item:last-child{border-bottom:none;margin-bottom:0}
+  .review-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .review-stars{color:#f59e0b;font-size:12px}
+  .review-author{font-size:12px;color:#999}
+  .review-text{font-size:13px;color:#444;line-height:1.5;margin-bottom:8px}
+  .ai-reply{background:#f8f9fb;border:1px dashed #c8ddf8;border-radius:8px;padding:10px;font-size:12px;color:#555;line-height:1.5}
+  .ai-reply .label{font-size:11px;color:#667eea;font-weight:600;margin-bottom:4px}
+  .reply-actions{display:flex;gap:6px;margin-top:6px}
+  .reply-actions button{padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid #e5e5e5;background:#fff;color:#555}
+  .reply-actions button.use{background:#667eea;color:#fff;border-color:#667eea}
+
+  /* 场景 10: 售后预判 */
+  .ticket-info{background:#f8f9fb;border-radius:8px;padding:12px;margin-bottom:12px}
+  .ticket-info .ticket-msg{font-size:13px;color:#444;line-height:1.5;padding:8px;background:#fff;border-radius:6px;border-left:3px solid #667eea}
+  .ticket-meta{display:flex;gap:12px;font-size:12px;color:#999;margin-top:8px}
+  .ai-analysis{border:1px solid #e0e8f5;border-radius:10px;padding:14px}
+  .ai-analysis .intent{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .ai-analysis .intent-tag{background:#f0f0ff;color:#667eea;font-size:12px;padding:4px 10px;border-radius:8px;font-weight:600}
+  .solution{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+  .solution:last-child{border-bottom:none}
+  .solution-num{width:22px;height:22px;border-radius:11px;background:#f0f0ff;color:#667eea;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .solution-text{color:#444;line-height:1.4}
+  .solution .recommended{font-size:11px;color:#10b981;background:#ecfdf5;padding:2px 6px;border-radius:4px;margin-left:4px}
+  .use-solution{display:block;width:100%;padding:8px;margin-top:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;text-align:center}
+</style>
+</head>
+<body>
+<div class="annotation">原型 05：B 端供应商 4 个 AI 工具 — ⑦产品AI写手 ⑧AI日报 ⑨评价AI回复 ⑩售后AI预判</div>
+
+<div class="grid">
+  <!-- 场景 7: 产品创建 AI 写手 -->
+  <div class="card">
+    <div class="card-title">✍️ 产品 AI 写手 <span class="badge">场景 ⑦</span></div>
+    <span class="card-label">新建产品 /supplier/products/new</span>
+    <div class="gen-field"><label>产品中文名</label><input value="袋鼠岛一日游" /></div>
+    <div class="gen-field"><label>简要关键词</label><input value="考拉 海豹 含午餐 酒店接送 10小时" /></div>
+    <button class="gen-btn">✨ AI 一键生成中英文内容</button>
+    <div class="gen-result">
+      <h4>✅ 已生成以下内容</h4>
+      <div class="field-label">英文名称</div>
+      Kangaroo Island Wildlife Day Tour
+      <div class="field-label">中文描述（节选）</div>
+      探索南澳最壮丽的自然天堂——袋鼠岛！与考拉近距离接触，在海豹湾观赏嬉戏的海豹群，途经壮丽的神奇岩石...
+      <div class="field-label">亮点 × 5</div>
+      ✦ 近距离观赏野生考拉和海豹<br>
+      ✦ 专业中文导游全程讲解<br>
+      ✦ 含午餐（澳式烤肉+素食选项）<br>
+      ✦ 阿德莱德酒店接送<br>
+      ✦ 适合全家出行（3岁+）
+      <div class="field-label">推荐标签</div>
+      <span class="gen-tag">亲子</span><span class="gen-tag">自然</span><span class="gen-tag">动物</span><span class="gen-tag">含午餐</span>
+    </div>
+    <div class="gen-actions">
+      <button>🔄 重新生成</button>
+      <button class="primary">✅ 采用并填充</button>
+    </div>
+  </div>
+
+  <!-- 场景 8: 仪表盘 AI 日报 -->
+  <div class="card">
+    <div class="card-title">📊 AI 日报 <span class="badge">场景 ⑧</span></div>
+    <span class="card-label">供应商仪表盘 /supplier/dashboard</span>
+    <div class="briefing">
+      <div class="stat">
+        <span class="stat-icon">📈</span>
+        昨日收入 <strong>A$2,340</strong>
+        <span class="stat-trend up">+18% ↑</span>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">🔥</span>
+        「袋鼠岛一日游」连续 3 天售罄
+        <span class="stat-trend warn">库存紧张</span>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">⚠️</span>
+        「酒庄之旅」本周 0 单
+        <span class="stat-trend down">-100% ↓</span>
+      </div>
+      <div class="stat">
+        <span class="stat-icon">⭐</span>
+        新增 3 条五星评价，1 条待回复
+      </div>
+      <div class="tip">
+        💡 <strong>AI 建议：</strong>下周是学校假期（5月12-16日），亲子产品搜索量预计上升 40%。建议袋鼠岛一日游增加周中班次，并提前开放下周库存。酒庄之旅可考虑推出限时 8 折。
+      </div>
+    </div>
+  </div>
+
+  <!-- 场景 9: 评价 AI 回复 -->
+  <div class="card">
+    <div class="card-title">💬 评价 AI 回复 <span class="badge">场景 ⑨</span></div>
+    <span class="card-label">评价管理 /supplier/reviews</span>
+
+    <div class="review-item">
+      <div class="review-header">
+        <span class="review-stars">⭐⭐⭐⭐⭐</span>
+        <span class="review-author">张先生 · 2 天前</span>
+      </div>
+      <div class="review-text">"导游很专业，小朋友玩得特别开心，就是车程有点长。"</div>
+      <div class="ai-reply">
+        <div class="label">🤖 AI 建议回复</div>
+        感谢您的好评！很高兴小朋友玩得开心 😊 关于车程，我们正在优化路线，并会在途中增加休息站。期待再次为您服务！
+        <div class="reply-actions">
+          <button class="use">采用</button>
+          <button>编辑</button>
+          <button>🔄</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-item">
+      <div class="review-header">
+        <span class="review-stars">⭐⭐⭐</span>
+        <span class="review-author">李女士 · 3 天前</span>
+      </div>
+      <div class="review-text">"下雨了没去成海豹湾，有点可惜。不过导游安排了替代行程。"</div>
+      <div class="ai-reply">
+        <div class="label">🤖 AI 建议回复</div>
+        非常抱歉天气影响了您的体验！海豹湾确实需要好天气才能充分欣赏。我们为您保留一次免费重游海豹湾的机会，有效期 6 个月，欢迎再来！
+        <div class="reply-actions">
+          <button class="use">采用</button>
+          <button>编辑</button>
+          <button>🔄</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 场景 10: 售后 AI 预判 -->
+  <div class="card">
+    <div class="card-title">🎫 售后 AI 预判 <span class="badge">场景 ⑩</span></div>
+    <span class="card-label">售后工单 /supplier/after-sales/42</span>
+
+    <div class="ticket-info">
+      <div class="ticket-msg">"下雨了没去成，能退款吗？已经过了出发时间了。"</div>
+      <div class="ticket-meta">
+        <span>👤 李女士</span>
+        <span>📦 #ORD-1234</span>
+        <span>📅 2026-05-02</span>
+      </div>
+    </div>
+
+    <div class="ai-analysis">
+      <div class="intent">
+        <span>🤖 AI 分析</span>
+        <span class="intent-tag">天气原因退款</span>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:10px">
+        ✓ 订单：袋鼠岛一日游 · A$1,099<br>
+        ✓ 出行日天气记录：当日确有中雨 🌧️<br>
+        ✓ 符合天气退款政策
+      </div>
+      <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:8px">建议处理方案：</div>
+      <div class="solution">
+        <div class="solution-num">1</div>
+        <div class="solution-text">全额退款 A$1,099（符合天气退款政策）</div>
+      </div>
+      <div class="solution">
+        <div class="solution-num">2</div>
+        <div class="solution-text">免费改期到下一个可用日期 <span class="recommended">💡 推荐</span></div>
+      </div>
+      <div class="solution">
+        <div class="solution-num">3</div>
+        <div class="solution-text">退款 50% + 赠送 A$50 优惠券</div>
+      </div>
+      <button class="use-solution">采用方案 ② 并回复客户</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

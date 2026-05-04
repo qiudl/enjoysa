@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 01 - AI Chat 入口 + 空状态</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+
+  /* 模拟页面背景 */
+  .page-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 280px;
+    padding: 60px 24px 24px;
+    color: #fff;
+  }
+  .page-bg h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .page-bg p { font-size: 15px; opacity: 0.85; }
+  .page-content { padding: 20px; }
+  .page-content .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .page-content .card h3 { font-size: 16px; color: #333; margin-bottom: 8px; }
+  .page-content .card p { font-size: 13px; color: #999; }
+
+  /* 浮动 AI 按钮 */
+  .ai-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    animation: fabPulse 2s ease-in-out infinite;
+  }
+  .ai-fab:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(102, 126, 234, 0.6); }
+  .ai-fab svg { width: 28px; height: 28px; fill: #fff; }
+  @keyframes fabPulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5); }
+    50% { box-shadow: 0 4px 24px rgba(102, 126, 234, 0.8); }
+  }
+  .ai-fab-label {
+    position: fixed;
+    bottom: 32px;
+    right: 88px;
+    background: #333;
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeIn 0.5s ease 1s both;
+  }
+  .ai-fab-label::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #333;
+    border-right: none;
+  }
+
+  /* 聊天面板 */
+  .chat-panel {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 380px;
+    height: 560px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 999;
+    animation: panelSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes panelSlideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* 面板头部 */
+  .chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chat-header .avatar {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .chat-header .info { flex: 1; }
+  .chat-header .info h4 { color: #fff; font-size: 15px; font-weight: 600; }
+  .chat-header .info span { color: rgba(255,255,255,0.75); font-size: 12px; }
+  .chat-header .close-btn {
+    width: 28px; height: 28px; border-radius: 14px;
+    background: rgba(255,255,255,0.15);
+    border: none; cursor: pointer;
+    color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* 空状态 */
+  .chat-body {
+    flex: 1;
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .empty-icon {
+    width: 72px; height: 72px; border-radius: 36px;
+    background: linear-gradient(135deg, #f0f0ff 0%, #e8e0ff 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+  .empty-title { font-size: 17px; font-weight: 600; color: #333; margin-bottom: 6px; }
+  .empty-desc { font-size: 13px; color: #999; text-align: center; margin-bottom: 24px; line-height: 1.5; }
+
+  /* 快捷问题 */
+  .quick-questions { width: 100%; }
+  .quick-questions h5 { font-size: 12px; color: #999; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .qq-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #f8f9fb;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+  .qq-item:hover { background: #f0f0ff; border-color: #667eea; }
+  .qq-item .icon { font-size: 18px; flex-shrink: 0; }
+  .qq-item .text { font-size: 14px; color: #444; }
+
+  /* 输入框 */
+  .chat-input {
+    padding: 12px 16px;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chat-input input {
+    flex: 1;
+    border: 1px solid #e5e5e5;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input input:focus { border-color: #667eea; }
+  .chat-input input::placeholder { color: #bbb; }
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 18px;
+    background: #667eea;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .send-btn:hover { background: #5568d4; }
+  .send-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* 标注 */
+  .annotation {
+    position: fixed;
+    background: #ff6b35;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    z-index: 1001;
+    pointer-events: none;
+  }
+  .annotation.a1 { bottom: 20px; right: 100px; }
+  .annotation.a2 { top: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; padding: 8px 16px; border-radius: 8px; }
+</style>
+</head>
+<body>
+  <div class="annotation a2">原型 01：AI Chat 入口浮动按钮 + 空状态（快捷问题）</div>
+
+  <!-- 模拟页面背景 -->
+  <div class="page-bg">
+    <h1>畅游南澳</h1>
+    <p>发现南澳大利亚最美的旅行体验</p>
+  </div>
+  <div class="page-content">
+    <div class="card"><h3>热门产品</h3><p>袋鼠岛一日游、巴罗萨谷酒庄之旅...</p></div>
+    <div class="card"><h3>精选景点</h3><p>阿德莱德、袋鼠岛、巴罗萨谷...</p></div>
+  </div>
+
+  <!-- AI 浮动按钮 -->
+  <div class="ai-fab-label">AI 旅行助手</div>
+  <div class="ai-fab">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><circle cx="12" cy="10" r="1.5"/><circle cx="8" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>
+  </div>
+
+  <!-- 聊天面板（空状态） -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="avatar">🤖</div>
+      <div class="info">
+        <h4>AI 旅行助手</h4>
+        <span>在线 · 随时为您服务</span>
+      </div>
+      <button class="close-btn">✕</button>
+    </div>
+    <div class="chat-body">
+      <div class="empty-icon">✨</div>
+      <div class="empty-title">你好！我是南澳旅行助手</div>
+      <div class="empty-desc">我可以帮你搜索产品、推荐景点、<br>规划行程。试试下面的问题吧：</div>
+      <div class="quick-questions">
+        <h5>热门问题</h5>
+        <div class="qq-item"><span class="icon">👨‍👩‍👧‍👦</span><span class="text">有什么适合带小朋友的一日游？</span></div>
+        <div class="qq-item"><span class="icon">🍷</span><span class="text">推荐巴罗萨谷的酒庄之旅</span></div>
+        <div class="qq-item"><span class="icon">🦘</span><span class="text">袋鼠岛有哪些必玩的项目？</span></div>
+        <div class="qq-item"><span class="icon">🗓️</span><span class="text">帮我规划 3 天的南澳行程</span></div>
+      </div>
+    </div>
+    <div class="chat-input">
+      <input type="text" placeholder="输入你的问题..." />
+      <button class="send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+  </div>
+</body>
+</html>

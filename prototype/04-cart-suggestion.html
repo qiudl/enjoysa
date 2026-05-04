@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 04 - 购物车 AI 搭配建议 + 出行提醒</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;padding:40px 20px}
+  .page{max-width:720px;margin:0 auto}
+  .annotation{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:100;white-space:nowrap}
+
+  h1{font-size:24px;font-weight:700;color:#333;margin-bottom:20px}
+
+  .cart-item{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px;display:flex;gap:14px}
+  .cart-img{width:80px;height:80px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px}
+  .cart-img.c1{background:linear-gradient(135deg,#a8edea,#fed6e3)}
+  .cart-img.c2{background:linear-gradient(135deg,#ffecd2,#fcb69f)}
+  .cart-info{flex:1}
+  .cart-name{font-size:15px;font-weight:600;color:#333;margin-bottom:4px}
+  .cart-meta{font-size:12px;color:#999;margin-bottom:4px}
+  .cart-qty{font-size:13px;color:#666}
+  .cart-price{font-size:18px;font-weight:700;color:#e74c3c;white-space:nowrap;align-self:center}
+
+  /* AI 搭配建议 */
+  .ai-suggestion-card{background:linear-gradient(135deg,#f0f7ff,#e8f0fe);border:1px solid #c8ddf8;border-radius:14px;padding:18px 20px;margin:20px 0}
+  .ai-suggestion-card .ai-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .ai-suggestion-card .ai-head h3{font-size:15px;font-weight:600;color:#333}
+  .ai-suggestion-card .ai-head .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;padding:2px 8px;border-radius:8px}
+
+  .schedule-tip{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #e0e8f5}
+  .schedule-tip .tip-title{font-size:14px;font-weight:600;color:#333;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .schedule-tip .tip-body{font-size:13px;color:#666;line-height:1.5}
+  .schedule-tip .timeline{display:flex;gap:4px;margin-top:8px}
+  .schedule-tip .tl-day{background:#e8e0ff;color:#764ba2;font-size:11px;padding:4px 10px;border-radius:6px;font-weight:600}
+  .schedule-tip .tl-arrow{color:#999;font-size:12px;align-self:center}
+
+  .recommend-item{background:#fff;border:1px solid #e0e8f5;border-radius:10px;padding:12px;display:flex;gap:12px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+  .recommend-item:hover{border-color:#667eea;box-shadow:0 2px 8px rgba(102,126,234,.15)}
+  .recommend-img{width:56px;height:56px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,#d4fc79,#96e6a1)}
+  .recommend-info{flex:1}
+  .recommend-name{font-size:13px;font-weight:600;color:#333;margin-bottom:2px}
+  .recommend-reason{font-size:12px;color:#667eea;line-height:1.4}
+  .recommend-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+  .recommend-price{font-size:14px;font-weight:700;color:#e74c3c}
+  .recommend-add{font-size:12px;color:#667eea;background:#f0f0ff;border:1px solid #667eea;padding:3px 10px;border-radius:6px;cursor:pointer}
+
+  /* 订单汇总 */
+  .cart-total{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:16px}
+  .total-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;color:#666}
+  .total-row.final{font-size:18px;font-weight:700;color:#333;border-top:1px solid #eee;padding-top:12px;margin-top:4px}
+  .checkout-btn{display:block;width:100%;padding:14px;margin-top:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;text-align:center}
+
+  /* 出行提醒（订单详情页预览） */
+  .travel-reminder{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-top:32px}
+  .travel-reminder h3{font-size:16px;font-weight:600;color:#333;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .reminder-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:14px}
+  .reminder-icon{font-size:18px;flex-shrink:0}
+  .reminder-text{color:#444;line-height:1.5}
+  .reminder-text strong{color:#333}
+  .reminder-divider{height:1px;background:#f0f0f0;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="annotation">原型 04：购物车 AI 搭配建议（行程安排 + 推荐加购）+ 出行前智能提醒预览</div>
+
+<div class="page">
+  <h1>🛒 购物车</h1>
+
+  <div class="cart-item">
+    <div class="cart-img c1">🦘</div>
+    <div class="cart-info">
+      <div class="cart-name">袋鼠岛野生动物一日游</div>
+      <div class="cart-meta">📅 5月10日 周六 · 家庭套票</div>
+      <div class="cart-qty">2 大人 + 2 小孩</div>
+    </div>
+    <div class="cart-price">A$1,099</div>
+  </div>
+
+  <div class="cart-item">
+    <div class="cart-img c2">🍷</div>
+    <div class="cart-info">
+      <div class="cart-name">巴罗萨谷酒庄品酒之旅</div>
+      <div class="cart-meta">📅 5月11日 周日 · 标准票</div>
+      <div class="cart-qty">2 大人</div>
+    </div>
+    <div class="cart-price">A$398</div>
+  </div>
+
+  <!-- AI 搭配建议 -->
+  <div class="ai-suggestion-card">
+    <div class="ai-head">
+      <span>💡</span>
+      <h3>AI 行程建议</h3>
+      <span class="badge">智能分析</span>
+    </div>
+
+    <div class="schedule-tip">
+      <div class="tip-title">🗓️ 行程安排很合理！</div>
+      <div class="tip-body">两个产品安排在连续两天，地理上合理（袋鼠岛在南 → 巴罗萨谷在北），无需折返。</div>
+      <div class="timeline">
+        <span class="tl-day">D1 周六 · 袋鼠岛</span>
+        <span class="tl-arrow">→</span>
+        <span class="tl-day">D2 周日 · 巴罗萨谷</span>
+      </div>
+    </div>
+
+    <div style="font-size:13px;color:#555;font-weight:600;margin-bottom:8px">🎁 加上这些，行程更丰富：</div>
+
+    <div class="recommend-item">
+      <div class="recommend-img">🥐</div>
+      <div class="recommend-info">
+        <div class="recommend-name">中央市场美食之旅</div>
+        <div class="recommend-reason">周五到达后的完美开场，距市区酒店步行可达</div>
+      </div>
+      <div class="recommend-right">
+        <div class="recommend-price">A$89/人</div>
+        <span class="recommend-add">+ 加入</span>
+      </div>
+    </div>
+
+    <div class="recommend-item">
+      <div class="recommend-img" style="background:linear-gradient(135deg,#a8edea,#fed6e3)">🐬</div>
+      <div class="recommend-info">
+        <div class="recommend-name">格雷尔海豚巡航</div>
+        <div class="recommend-reason">周日下午巴罗萨谷结束后，顺路去格雷尔看海豚（仅 40 分钟车程）</div>
+      </div>
+      <div class="recommend-right">
+        <div class="recommend-price">A$159/人</div>
+        <span class="recommend-add">+ 加入</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cart-total">
+    <div class="total-row"><span>小计</span><span>A$1,497</span></div>
+    <div class="total-row"><span>服务费</span><span>A$0</span></div>
+    <div class="total-row final"><span>合计</span><span>A$1,497</span></div>
+    <button class="checkout-btn">去结算 →</button>
+  </div>
+
+  <!-- 出行前智能提醒（场景 6 预览） -->
+  <div class="travel-reminder">
+    <h3>🌤️ 出行提醒 <span style="font-size:12px;color:#999;font-weight:400">— 后天 · 袋鼠岛一日游（场景 ⑥ 预览）</span></h3>
+    <div class="reminder-item"><span class="reminder-icon">🌡️</span><div class="reminder-text"><strong>天气：</strong>22°C 晴转多云，适合出行</div></div>
+    <div class="reminder-item"><span class="reminder-icon">👕</span><div class="reminder-text"><strong>建议穿着：</strong>防风外套 + 运动鞋（岛上风大）</div></div>
+    <div class="reminder-item"><span class="reminder-icon">📍</span><div class="reminder-text"><strong>集合点：</strong>阿德莱德中央汽车站 B3 口（建议提前 15 分钟到达）</div></div>
+    <div class="reminder-divider"></div>
+    <div class="reminder-item"><span class="reminder-icon">🎒</span><div class="reminder-text"><strong>建议携带：</strong>防晒霜、水壶、相机、小朋友零食</div></div>
+    <div class="reminder-item"><span class="reminder-icon">🦘</span><div class="reminder-text"><strong>今日亮点：</strong>海豹湾目前有幼崽可以近距离观看！</div></div>
+    <div class="reminder-item"><span class="reminder-icon">📱</span><div class="reminder-text"><strong>电子凭证：</strong>已发送到您的邮箱，请截图保存</div></div>
+  </div>
+</div>
+</body>
+</html>

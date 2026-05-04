@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 02 - 产品详情页 AI 增强（智能FAQ + 适合我吗 + 评价摘要）</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;padding:40px 20px}
+  .page{max-width:800px;margin:0 auto}
+  .annotation{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:100;white-space:nowrap}
+
+  /* 产品标题区 */
+  .product-header{background:#fff;border-radius:14px;padding:24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .product-header h1{font-size:22px;font-weight:700;color:#333;margin-bottom:8px}
+  .product-header .meta{display:flex;gap:16px;font-size:13px;color:#888}
+  .product-header .meta .rating{color:#f59e0b}
+
+  /* 三栏 AI 增强区 */
+  .ai-sections{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+
+  /* 智能 FAQ */
+  .smart-faq{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);grid-column:1/3}
+  .section-title{font-size:16px;font-weight:600;color:#333;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .section-title .badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;padding:2px 8px;border-radius:8px}
+
+  .faq-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .faq-tag{background:#f4f5f7;border:1px solid #e8e8e8;color:#555;font-size:13px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .2s}
+  .faq-tag:hover{background:#f0f0ff;border-color:#667eea;color:#667eea}
+  .faq-tag.active{background:#667eea;color:#fff;border-color:#667eea}
+
+  .faq-input-row{display:flex;gap:8px;margin-bottom:16px}
+  .faq-input{flex:1;border:1px solid #e5e5e5;border-radius:10px;padding:10px 14px;font-size:14px;outline:none}
+  .faq-input:focus{border-color:#667eea}
+  .faq-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;white-space:nowrap}
+
+  .faq-answer{background:#f8f9fb;border-radius:10px;padding:14px;margin-bottom:8px}
+  .faq-q{font-size:13px;font-weight:600;color:#667eea;margin-bottom:6px}
+  .faq-a{font-size:14px;color:#444;line-height:1.6}
+  .faq-feedback{display:flex;gap:12px;margin-top:8px;font-size:12px;color:#999}
+  .faq-feedback span{cursor:pointer;transition:color .2s}
+  .faq-feedback span:hover{color:#667eea}
+
+  /* 适合我吗 */
+  .fit-check{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .fit-profile{background:#f8f9fb;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#666;display:flex;align-items:center;gap:8px}
+  .fit-profile .edit{color:#667eea;margin-left:auto;cursor:pointer;font-size:12px}
+  .fit-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;font-size:14px;line-height:1.4}
+  .fit-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+  .fit-text{color:#444}
+  .fit-text strong{color:#333}
+  .fit-cta{display:block;width:100%;padding:10px;margin-top:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center}
+
+  /* 评价摘要 */
+  .review-summary{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .review-overall{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
+  .review-score{font-size:36px;font-weight:700;color:#333}
+  .review-stars{color:#f59e0b;font-size:14px;margin-bottom:2px}
+  .review-count{font-size:12px;color:#999}
+
+  .review-keywords{margin-bottom:14px}
+  .review-keywords h5{font-size:12px;color:#999;margin-bottom:8px}
+  .kw-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .kw-tag{font-size:12px;padding:4px 10px;border-radius:12px}
+  .kw-tag.pos{background:#ecfdf5;color:#059669}
+  .kw-tag.neg{background:#fef2f2;color:#dc2626}
+  .kw-tag.fit{background:#f0f0ff;color:#667eea}
+
+  .review-ai-note{background:#f8f9fb;border-radius:8px;padding:10px 12px;font-size:13px;color:#666;line-height:1.5}
+  .review-ai-note strong{color:#333}
+</style>
+</head>
+<body>
+<div class="annotation">原型 02：产品详情页 AI 增强 — 智能 FAQ + "适合我吗？" + 评价 AI 摘要</div>
+
+<div class="page">
+  <div class="product-header">
+    <h1>🦘 袋鼠岛野生动物一日游</h1>
+    <div class="meta">
+      <span class="rating">⭐ 4.9 (126 评价)</span>
+      <span>⏱ 10 小时</span>
+      <span>👥 最多 20 人</span>
+      <span>📍 阿德莱德出发</span>
+    </div>
+  </div>
+
+  <!-- 智能 FAQ -->
+  <div class="ai-sections">
+    <div class="smart-faq">
+      <div class="section-title">💬 关于这个产品 <span class="badge">AI 智能问答</span></div>
+      <div class="faq-quick">
+        <span class="faq-tag active">包含午餐吗？</span>
+        <span class="faq-tag">适合几岁小朋友？</span>
+        <span class="faq-tag">需要自驾吗？</span>
+        <span class="faq-tag">可以退款吗？</span>
+        <span class="faq-tag">会晕船吗？</span>
+      </div>
+      <div class="faq-input-row">
+        <input class="faq-input" type="text" placeholder="输入你想了解的任何问题..." value="带 3 岁小孩坐船会晕吗？" />
+        <button class="faq-btn">提问 ✨</button>
+      </div>
+      <div class="faq-answer">
+        <div class="faq-q">Q: 带 3 岁小孩坐船会晕吗？</div>
+        <div class="faq-a">这条线路的渡轮航程约 45 分钟，在海湾内航行，水面较为平稳。大多数 3 岁小朋友不会有问题，但建议：<br>• 提前 30 分钟避免进食过多<br>• 选择靠窗通风位置<br>• 可备一片儿童晕船贴以防万一<br><br>渡轮上有室内和室外座位，如果孩子不适可以到甲板上透气。</div>
+        <div class="faq-feedback"><span>👍 有帮助</span><span>👎 没帮助</span></div>
+      </div>
+    </div>
+
+    <!-- 适合我吗？ -->
+    <div class="fit-check">
+      <div class="section-title">🎯 适合我吗？</div>
+      <div class="fit-profile">
+        👨‍👩‍👧‍👦 家庭出游 · 2 大 2 小（6岁、3岁）
+        <span class="edit">✏️ 修改</span>
+      </div>
+      <div class="fit-item"><span class="fit-icon">✅</span><div class="fit-text"><strong>适合 3 岁以上</strong>，有专门的儿童安全座椅</div></div>
+      <div class="fit-item"><span class="fit-icon">✅</span><div class="fit-text"><strong>有家庭套票</strong>（2大2小 A$1,099），比单买省 A$179</div></div>
+      <div class="fit-item"><span class="fit-icon">✅</span><div class="fit-text">包含午餐，<strong>有儿童餐</strong>可选</div></div>
+      <div class="fit-item"><span class="fit-icon">⚠️</span><div class="fit-text">全程 10 小时较长，<strong>3 岁小朋友需有耐心</strong>。建议带零食和玩具</div></div>
+      <div class="fit-item"><span class="fit-icon">💡</span><div class="fit-text">推荐选<strong>含酒店接送</strong>的套餐，带小孩不用操心交通</div></div>
+      <button class="fit-cta">查看家庭套票 A$1,099 →</button>
+    </div>
+
+    <!-- 评价 AI 摘要 -->
+    <div class="review-summary">
+      <div class="section-title">📊 评价摘要 <span class="badge">AI 总结 126 条</span></div>
+      <div class="review-overall">
+        <div class="review-score">4.9</div>
+        <div>
+          <div class="review-stars">★★★★★</div>
+          <div class="review-count">126 条评价</div>
+        </div>
+      </div>
+      <div class="review-keywords">
+        <h5>👍 好评集中在</h5>
+        <div class="kw-row">
+          <span class="kw-tag pos">考拉很近可以合影</span>
+          <span class="kw-tag pos">导游专业有趣</span>
+          <span class="kw-tag pos">午餐好吃</span>
+          <span class="kw-tag pos">适合小朋友</span>
+        </div>
+        <h5 style="margin-top:10px">⚠️ 少数提到</h5>
+        <div class="kw-row">
+          <span class="kw-tag neg">车程较长（2小时）</span>
+          <span class="kw-tag neg">夏天较热</span>
+        </div>
+        <h5 style="margin-top:10px">💡 最适合</h5>
+        <div class="kw-row">
+          <span class="kw-tag fit">亲子家庭</span>
+          <span class="kw-tag fit">动物爱好者</span>
+          <span class="kw-tag fit">摄影爱好者</span>
+        </div>
+      </div>
+      <div class="review-ai-note">
+        <strong>AI 总结：</strong>这是平台评分最高的亲子产品。多数家庭反馈孩子对考拉和海豹非常兴奋，导游会用中文讲解。唯一不足是阿德莱德到袋鼠岛车程较长，建议为小朋友准备活动。
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

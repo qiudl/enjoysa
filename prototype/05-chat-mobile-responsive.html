@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 05 - 移动端全屏 Chat + 错误/中断状态</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; gap: 24px; flex-wrap: wrap; padding: 40px 20px; }
+
+  .phone-frame {
+    width: 375px; height: 812px;
+    background: #000; border-radius: 40px; padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: #fff; border-radius: 30px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .phone-notch {
+    height: 44px; background: #fff;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
+  }
+  .notch-bar { width: 120px; height: 5px; background: #333; border-radius: 3px; }
+
+  /* 手机版 header */
+  .m-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .m-back { color: #fff; font-size: 20px; cursor: pointer; background: none; border: none; }
+  .m-header .avatar { width: 32px; height: 32px; border-radius: 16px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .m-header .info { flex: 1; }
+  .m-header .info h4 { color: #fff; font-size: 14px; }
+  .m-header .info span { color: rgba(255,255,255,0.7); font-size: 11px; }
+
+  .m-body { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .msg { display: flex; gap: 8px; max-width: 88%; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .msg.ai .msg-avatar { background: linear-gradient(135deg, #f0f0ff, #e8e0ff); }
+  .msg.user .msg-avatar { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+  .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+  .msg.ai .msg-bubble { background: #f4f5f7; color: #333; border-bottom-left-radius: 4px; }
+  .msg.user .msg-bubble { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-bottom-right-radius: 4px; }
+
+  /* 横向滚动产品卡片（移动端优化） */
+  .m-cards-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 8px; margin: 4px 0; -webkit-overflow-scrolling: touch; }
+  .m-cards-scroll::-webkit-scrollbar { display: none; }
+  .m-card {
+    flex-shrink: 0; width: 160px;
+    background: #fff; border: 1px solid #eee; border-radius: 10px;
+    overflow: hidden; cursor: pointer; transition: all 0.2s;
+  }
+  .m-card:hover { border-color: #667eea; }
+  .m-card-img { height: 90px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+  .m-card-img.c1 { background: linear-gradient(135deg, #a8edea, #fed6e3); }
+  .m-card-img.c2 { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+  .m-card-img.c3 { background: linear-gradient(135deg, #d4fc79, #96e6a1); }
+  .m-card-body { padding: 8px 10px; }
+  .m-card-name { font-size: 12px; font-weight: 600; color: #333; margin-bottom: 4px; line-height: 1.3; }
+  .m-card-row { display: flex; justify-content: space-between; align-items: center; }
+  .m-card-rating { font-size: 11px; color: #f59e0b; }
+  .m-card-price { font-size: 14px; font-weight: 700; color: #e74c3c; }
+
+  /* 错误状态 */
+  .error-bubble {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca;
+    color: #dc2626 !important;
+  }
+  .retry-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #fff; border: 1px solid #ddd; color: #667eea;
+    padding: 6px 12px; border-radius: 14px; font-size: 12px;
+    cursor: pointer; margin-top: 6px;
+  }
+  .retry-btn:hover { background: #f0f0ff; border-color: #667eea; }
+
+  /* 中断状态 */
+  .interrupted {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #999; padding: 4px 0;
+  }
+
+  /* 输入框 */
+  .m-input {
+    padding: 8px 12px 24px; border-top: 1px solid #eee;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .m-input input { flex: 1; border: 1px solid #e5e5e5; border-radius: 18px; padding: 8px 14px; font-size: 13px; outline: none; }
+  .m-input input:focus { border-color: #667eea; }
+  .m-send { width: 32px; height: 32px; border-radius: 16px; background: #667eea; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .m-send svg { width: 16px; height: 16px; fill: #fff; }
+
+  .tool-done-compact { display: inline-flex; align-items: center; gap: 4px; background: #ecfdf5; color: #059669; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin-bottom: 6px; }
+
+  .annotation { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #ff6b35; color: #fff; font-size: 14px; padding: 8px 16px; border-radius: 8px; z-index: 100; white-space: nowrap; }
+
+  .label { text-align: center; font-size: 13px; color: #666; margin-bottom: 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="annotation">原型 05：移动端全屏 Chat（横滑卡片）+ 错误 &amp; 中断状态</div>
+
+  <!-- 手机 1: 正常对话 + 横滑卡片 -->
+  <div>
+    <div class="label">移动端 · 正常对话</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-notch"><div class="notch-bar"></div></div>
+        <div class="m-header">
+          <button class="m-back">←</button>
+          <div class="avatar">🤖</div>
+          <div class="info"><h4>AI 旅行助手</h4><span>在线</span></div>
+        </div>
+        <div class="m-body">
+          <div class="msg user">
+            <div class="msg-avatar">J</div>
+            <div class="msg-bubble">推荐袋鼠岛的产品</div>
+          </div>
+          <div class="msg ai">
+            <div class="msg-avatar">🤖</div>
+            <div>
+              <div class="tool-done-compact">✅ recommend_attractions · 186ms</div>
+              <div class="msg-bubble" style="margin-bottom: 8px;">为您精选了袋鼠岛热门产品，左右滑动查看：</div>
+              <div class="m-cards-scroll">
+                <div class="m-card">
+                  <div class="m-card-img c1">🦘</div>
+                  <div class="m-card-body">
+                    <div class="m-card-name">袋鼠岛野生动物一日游</div>
+                    <div class="m-card-row">
+                      <span class="m-card-rating">⭐ 4.9</span>
+                      <span class="m-card-price">A$389</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="m-card">
+                  <div class="m-card-img c2">🌊</div>
+                  <div class="m-card-body">
+                    <div class="m-card-name">海豹湾 + 神奇岩石</div>
+                    <div class="m-card-row">
+                      <span class="m-card-rating">⭐ 4.8</span>
+                      <span class="m-card-price">A$299</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="m-card">
+                  <div class="m-card-img c3">🐨</div>
+                  <div class="m-card-body">
+                    <div class="m-card-name">袋鼠岛两日深度游</div>
+                    <div class="m-card-row">
+                      <span class="m-card-rating">⭐ 4.9</span>
+                      <span class="m-card-price">A$899</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="msg-bubble">推荐一日游，性价比最高。需要了解详情吗？</div>
+            </div>
+          </div>
+        </div>
+        <div class="m-input">
+          <input type="text" placeholder="输入你的问题..." />
+          <button class="m-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手机 2: 错误 + 中断 -->
+  <div>
+    <div class="label">移动端 · 错误 &amp; 中断状态</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-notch"><div class="notch-bar"></div></div>
+        <div class="m-header">
+          <button class="m-back">←</button>
+          <div class="avatar">🤖</div>
+          <div class="info"><h4>AI 旅行助手</h4><span>在线</span></div>
+        </div>
+        <div class="m-body">
+          <!-- 正常对话 -->
+          <div class="msg user">
+            <div class="msg-avatar">J</div>
+            <div class="msg-bubble">帮我规划 5 天的南澳行程</div>
+          </div>
+          <div class="msg ai">
+            <div class="msg-avatar">🤖</div>
+            <div>
+              <div class="msg-bubble">好的！为您规划 5 天南澳行程：
+
+**Day 1: 阿德莱德市区**
+- 中央市场品尝本地美食
+- 阿德莱德植物园...</div>
+              <div class="interrupted">⏸ 回复已停止</div>
+            </div>
+          </div>
+
+          <!-- 用户再次提问 -->
+          <div class="msg user">
+            <div class="msg-avatar">J</div>
+            <div class="msg-bubble">继续规划后面几天</div>
+          </div>
+
+          <!-- 错误状态 -->
+          <div class="msg ai">
+            <div class="msg-avatar">🤖</div>
+            <div>
+              <div class="msg-bubble error-bubble">
+                ⚠️ 抱歉，服务暂时繁忙，请稍后重试。
+                <br>
+                <button class="retry-btn">🔄 重试</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 正常恢复 -->
+          <div class="msg user">
+            <div class="msg-avatar">J</div>
+            <div class="msg-bubble">搜索亲子游产品</div>
+          </div>
+          <div class="msg ai">
+            <div class="msg-avatar">🤖</div>
+            <div>
+              <div class="tool-done-compact">✅ search_products · 120ms</div>
+              <div class="msg-bubble">为您找到 3 个亲子游产品！</div>
+              <div class="m-cards-scroll">
+                <div class="m-card">
+                  <div class="m-card-img c1">🐨</div>
+                  <div class="m-card-body">
+                    <div class="m-card-name">克莱兰德野生动物园</div>
+                    <div class="m-card-row">
+                      <span class="m-card-rating">⭐ 4.7</span>
+                      <span class="m-card-price">A$89</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="m-card">
+                  <div class="m-card-img c2">🐬</div>
+                  <div class="m-card-body">
+                    <div class="m-card-name">海豚巡航体验</div>
+                    <div class="m-card-row">
+                      <span class="m-card-rating">⭐ 4.8</span>
+                      <span class="m-card-price">A$159</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="m-input">
+          <input type="text" placeholder="输入你的问题..." />
+          <button class="m-send"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

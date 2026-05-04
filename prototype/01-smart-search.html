@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 01 - 首页智能意图搜索</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;min-height:100vh}
+  .hero{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:60px 24px 80px;text-align:center;color:#fff;position:relative}
+  .hero h1{font-size:32px;font-weight:700;margin-bottom:8px}
+  .hero p{font-size:16px;opacity:.85;margin-bottom:32px}
+
+  /* 智能搜索栏 */
+  .search-box{max-width:640px;margin:0 auto;position:relative}
+  .search-input{width:100%;padding:16px 56px 16px 20px;border:none;border-radius:14px;font-size:16px;outline:none;box-shadow:0 8px 32px rgba(0,0,0,.15);transition:all .3s}
+  .search-input:focus{box-shadow:0 8px 40px rgba(0,0,0,.25)}
+  .search-input::placeholder{color:#aaa}
+  .search-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .search-icon svg{width:18px;height:18px;fill:#fff}
+  .ai-badge{position:absolute;left:20px;top:-10px;background:linear-gradient(135deg,#ff6b35,#ee5a24);color:#fff;font-size:11px;padding:2px 8px;border-radius:8px;font-weight:600}
+
+  /* AI 理解结果下拉 */
+  .ai-dropdown{max-width:640px;margin:12px auto 0;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);overflow:hidden;animation:slideDown .3s ease}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+  .ai-intent{padding:14px 20px;background:#f8f9fb;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px}
+  .ai-intent .brain{font-size:18px}
+  .ai-intent .parsed{font-size:13px;color:#667eea;font-weight:500}
+  .ai-intent .tags{display:flex;gap:6px;margin-left:auto}
+  .ai-intent .tag{background:#e8e0ff;color:#764ba2;font-size:11px;padding:2px 8px;border-radius:10px}
+
+  .result-item{display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s}
+  .result-item:hover{background:#fafafe}
+  .result-item:last-child{border-bottom:none}
+  .result-img{width:64px;height:64px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .result-img.c1{background:linear-gradient(135deg,#a8edea,#fed6e3)}
+  .result-img.c2{background:linear-gradient(135deg,#ffecd2,#fcb69f)}
+  .result-img.c3{background:linear-gradient(135deg,#d4fc79,#96e6a1)}
+  .result-info{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .result-name{font-size:15px;font-weight:600;color:#333;margin-bottom:3px}
+  .result-meta{font-size:12px;color:#999;display:flex;gap:10px;align-items:center}
+  .result-meta .rating{color:#f59e0b}
+  .result-match{font-size:11px;color:#10b981;background:#ecfdf5;padding:2px 8px;border-radius:8px;margin-left:auto}
+  .result-price{font-size:17px;font-weight:700;color:#e74c3c;white-space:nowrap}
+  .result-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px}
+
+  .ai-tip{padding:12px 20px;background:#f0f7ff;display:flex;align-items:center;gap:8px;font-size:13px;color:#667eea}
+
+  /* 热门搜索 */
+  .hot-searches{max-width:640px;margin:16px auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .hot-tag{background:rgba(255,255,255,.15);color:#fff;font-size:13px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .2s;backdrop-filter:blur(4px)}
+  .hot-tag:hover{background:rgba(255,255,255,.3)}
+
+  .annotation{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;z-index:100}
+</style>
+</head>
+<body>
+<div class="annotation">原型 01：首页智能意图搜索 — 自然语言输入 → AI 解析意图 → 直接出产品结果</div>
+
+<div class="hero">
+  <h1>畅游南澳</h1>
+  <p>发现南澳大利亚最美的旅行体验</p>
+
+  <div class="search-box">
+    <div class="ai-badge">✨ AI 智能搜索</div>
+    <input class="search-input" type="text" value="下周末带两个小孩玩一天" />
+    <div class="search-icon"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+  </div>
+
+  <div class="hot-searches">
+    <span class="hot-tag">🦘 袋鼠岛</span>
+    <span class="hot-tag">🍷 酒庄品酒</span>
+    <span class="hot-tag">👨‍👩‍👧‍👦 亲子游</span>
+    <span class="hot-tag">🐬 海豚巡航</span>
+    <span class="hot-tag">📸 网红打卡</span>
+  </div>
+</div>
+
+<!-- AI 理解结果 -->
+<div class="ai-dropdown">
+  <div class="ai-intent">
+    <span class="brain">🧠</span>
+    <span class="parsed">AI 理解：亲子一日游 · 周末有空位</span>
+    <div class="tags">
+      <span class="tag">亲子</span>
+      <span class="tag">一日游</span>
+      <span class="tag">周末</span>
+    </div>
+  </div>
+
+  <div class="result-item">
+    <div class="result-img c1">🦘</div>
+    <div class="result-info">
+      <div class="result-name">袋鼠岛野生动物一日游</div>
+      <div class="result-meta">
+        <span class="rating">⭐ 4.9 (126)</span>
+        <span>10 小时</span>
+        <span class="result-match">✓ 周六有位</span>
+      </div>
+    </div>
+    <div class="result-right">
+      <div class="result-price">A$389</div>
+      <span style="font-size:11px;color:#999">/人起</span>
+    </div>
+  </div>
+
+  <div class="result-item">
+    <div class="result-img c3">🐨</div>
+    <div class="result-info">
+      <div class="result-name">克莱兰德野生动物园半日游</div>
+      <div class="result-meta">
+        <span class="rating">⭐ 4.7 (89)</span>
+        <span>4 小时</span>
+        <span class="result-match">✓ 周末均有位</span>
+      </div>
+    </div>
+    <div class="result-right">
+      <div class="result-price">A$89</div>
+      <span style="font-size:11px;color:#999">/人起</span>
+    </div>
+  </div>
+
+  <div class="result-item">
+    <div class="result-img c2">🐬</div>
+    <div class="result-info">
+      <div class="result-name">格雷尔海豚巡航家庭体验</div>
+      <div class="result-meta">
+        <span class="rating">⭐ 4.8 (234)</span>
+        <span>2.5 小时</span>
+        <span class="result-match">✓ 周六有位</span>
+      </div>
+    </div>
+    <div class="result-right">
+      <div class="result-price">A$159</div>
+      <span style="font-size:11px;color:#999">/人起</span>
+    </div>
+  </div>
+
+  <div class="ai-tip">
+    💡 这些产品都适合 4 岁以上儿童，且下周末有空位。点击查看详情或继续描述需求。
+  </div>
+</div>
+</body>
+</html>
