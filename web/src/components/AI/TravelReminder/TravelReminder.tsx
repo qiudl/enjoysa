@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { travelReminder, type TravelReminderResponse } from '../../../services/aiService';
+import styles from './TravelReminder.module.css';
 
 interface TravelReminderProps {
   orderId: number;
@@ -29,15 +30,15 @@ export default function TravelReminder({ orderId, productId, bookingDate, langua
   ].filter(i => i.value);
 
   return (
-    <div style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#333', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className={styles.wrapper}>
+      <h3 className={styles.title}>
         🌤️ {t('aiReminder.title', '出行提醒')}
-        <span style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 8 }}>AI</span>
+        <span className={styles.badge}>AI</span>
       </h3>
       {items.map((item, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', fontSize: 14 }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
-          <div style={{ color: '#444', lineHeight: 1.5 }}><strong>{item.label}：</strong>{item.value}</div>
+        <div key={i} className={styles.item}>
+          <span className={styles.itemIcon}>{item.icon}</span>
+          <div className={styles.itemText}><strong>{item.label}：</strong>{item.value}</div>
         </div>
       ))}
     </div>

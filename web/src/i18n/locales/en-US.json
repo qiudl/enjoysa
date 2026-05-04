@@ -2477,5 +2477,109 @@
     "popularSubtitle": "Most popular experiences",
     "orderCount": "{{count}} booked",
     "ranking": "#{{rank}}"
+  },
+  "aiSearch": {
+    "badge": "AI Smart Search",
+    "placeholder": "Try \"family day trip with kids\"",
+    "thinking": "AI is understanding your request...",
+    "noResults": "No matching products found. Try a different description."
+  },
+  "aiFilter": {
+    "placeholder": "Tell me what you want, e.g. \"romantic for two, under $500\"",
+    "search": "Search",
+    "parsing": "Parsing",
+    "clear": "Clear"
+  },
+  "aiFaq": {
+    "title": "About this product",
+    "badge": "AI Q&A",
+    "placeholder": "Ask anything about this product...",
+    "ask": "Ask",
+    "thinking": "AI is thinking...",
+    "helpful": "Helpful",
+    "notHelpful": "Not helpful",
+    "noAnswer": "Sorry, we can't answer this question right now. Please contact customer service.",
+    "q1": "Is lunch included?",
+    "q2": "What age is suitable?",
+    "q3": "Do I need to drive?",
+    "q4": "Can I get a refund?"
+  },
+  "aiFit": {
+    "title": "Is this right for me?",
+    "adults": "Adults",
+    "childrenAges": "Children ages",
+    "yearsOld": "y/o",
+    "edit": "Edit",
+    "analyze": "Analyze",
+    "analyzing": "AI analyzing..."
+  },
+  "aiReview": {
+    "title": "Review Summary",
+    "badge": "AI summary of {{count}}",
+    "reviews": "reviews",
+    "positive": "Praised for",
+    "negative": "Some mentioned",
+    "bestFor": "Best for",
+    "summary": "Summary",
+    "loading": "AI is analyzing reviews..."
+  },
+  "plan": {
+    "title": "AI Trip Planner",
+    "subtitle": "Tell us your preferences, AI will create a custom South Australia itinerary",
+    "adults": "Adults",
+    "childrenAges": "Children ages (comma separated)",
+    "days": "Days",
+    "day": "days",
+    "budget": "Budget (A$)",
+    "preferences": "Preferences (multi-select)",
+    "generate": "Plan my trip",
+    "generating": "Planning...",
+    "yourItinerary": "Your custom itinerary",
+    "regenerate": "Regenerate",
+    "stop": "Stop",
+    "thinking": "AI is planning your trip..."
+  },
+  "aiCart": {
+    "title": "AI Trip Suggestions",
+    "loading": "AI is analyzing recommendations...",
+    "add": "Add"
+  },
+  "aiReminder": {
+    "title": "Travel Reminder",
+    "weather": "Weather",
+    "clothing": "Suggested clothing",
+    "meetingPoint": "Meeting point",
+    "items": "Suggested items",
+    "highlight": "Today's highlight"
+  },
+  "aiWriter": {
+    "title": "AI Writer",
+    "keywordsPlaceholder": "Enter keywords, e.g. \"koala seal lunch included 10hrs\"",
+    "generate": "AI Generate",
+    "generated": "Generated",
+    "descZh": "Chinese description",
+    "highlights": "Highlights",
+    "apply": "Apply & fill",
+    "regenerate": "Regenerate"
+  },
+  "aiBriefing": {
+    "title": "Today's AI Briefing"
+  },
+  "aiReply": {
+    "suggest": "AI suggested reply",
+    "label": "AI suggested reply",
+    "generating": "Generating...",
+    "failed": "Generation failed, please retry",
+    "use": "Use"
+  },
+  "aiTicket": {
+    "title": "AI Analysis",
+    "analyzing": "AI analyzing...",
+    "solutions": "Suggested solutions",
+    "recommended": "Recommended",
+    "useSolution": "Use recommended solution"
+  },
+  "aiInsights": {
+    "title": "{{period}} Platform Insights"
   }
 }

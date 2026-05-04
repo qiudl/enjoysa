@@ -1,0 +1,19 @@
+.loading { padding: 12px; color: #999; font-size: 13px; }
+
+.wrapper { border: 1px solid #e0e8f5; border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+
+.header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.headerTitle { font-size: 14px; font-weight: 600; color: #333; }
+.intentBadge { background: #f0f0ff; color: #667eea; font-size: 12px; padding: 4px 10px; border-radius: 8px; font-weight: 600; }
+
+.contextInfo { font-size: 12px; color: #888; margin-bottom: 10px; }
+
+.solutionsTitle { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; }
+
+.solutionRow { display: flex; gap: 10px; padding: 8px 0; font-size: 13px; }
+.solutionRowBorder { composes: solutionRow; border-bottom: 1px solid #f0f0f0; }
+.solutionNum { width: 22px; height: 22px; border-radius: 11px; background: #f0f0ff; color: #667eea; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.solutionBody { color: #444; line-height: 1.4; flex: 1; }
+.recommendedTag { font-size: 11px; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+
+.useBtn { display: block; width: 100%; padding: 8px; margin-top: 10px; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; text-align: center; }

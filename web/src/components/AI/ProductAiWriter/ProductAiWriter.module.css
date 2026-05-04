@@ -1,0 +1,17 @@
+.wrapper { background: #f8f9fb; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #e8e8f0; }
+
+.header { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.badge { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 8px; }
+
+.inputRow { display: flex; gap: 8px; margin-bottom: 10px; }
+.input { flex: 1; border: 1px solid #e5e5e5; border-radius: 8px; padding: 8px 12px; font-size: 13px; outline: none; }
+.generateBtn { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.generateBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.resultBox { background: #fff; border-radius: 8px; padding: 12px; font-size: 12px; color: #444; line-height: 1.6; max-height: 200px; overflow-y: auto; }
+.resultLabel { color: #667eea; font-weight: 600; margin-bottom: 4px; }
+.resultLine { margin-top: 4px; }
+
+.actions { display: flex; gap: 8px; margin-top: 10px; }
+.applyBtn { background: #667eea; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; }
+.regenBtn { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; }

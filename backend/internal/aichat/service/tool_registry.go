@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"log"
+
 	"enjoysa-backend/internal/aichat/model"
-	"enjoysa-backend/internal/core/logger"
 )
 
 // ToolRegistry manages AI tool registration and execution.
@@ -28,7 +29,7 @@ func (r *ToolRegistry) Register(tool model.ToolDef) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.tools[tool.Name] = tool
-	logger.Info("AI tool registered: %s (%s)", tool.Name, tool.Category)
+	log.Printf("AI tool registered: %s (%s)", tool.Name, tool.Category)
 }
 
 // Execute runs a tool by name with the given arguments.
@@ -57,11 +58,11 @@ func (r *ToolRegistry) Execute(name string, argsJSON string, tctx model.ToolCont
 	durationMs := time.Since(start).Milliseconds()
 
 	if err != nil {
-		logger.Error("Tool %s failed (%.0fms): %v", name, float64(durationMs), err)
+		log.Printf("Tool %s failed (%.0fms): %v", name, float64(durationMs), err)
 		return nil, durationMs, err
 	}
 
-	logger.Info("Tool %s completed (%.0fms)", name, float64(durationMs))
+	log.Printf("Tool %s completed (%.0fms)", name, float64(durationMs))
 	return result, durationMs, nil
 }
 

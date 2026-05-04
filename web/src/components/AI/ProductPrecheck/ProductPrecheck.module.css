@@ -1,0 +1,7 @@
+.placeholder { color: #999; font-size: 12px; }
+
+.wrapper { display: inline-flex; align-items: center; gap: 4px; }
+
+.scoreBadge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+
+.riskIcon { cursor: help; font-size: 12px; }

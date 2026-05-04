@@ -1,0 +1,16 @@
+.loading { padding: 16px; color: #999; font-size: 14px; }
+
+.wrapper { background: linear-gradient(135deg, #f0f7ff, #e8f0fe); border: 1px solid #c8ddf8; border-radius: 14px; padding: 16px 20px; margin: 16px 0; }
+
+.header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.title { font-size: 15px; }
+.badge { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 8px; }
+
+.scheduleBox { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 10px; font-size: 13px; color: #444; line-height: 1.5; }
+
+.recCard { display: flex; gap: 12px; background: #fff; border: 1px solid #e0e8f5; border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; align-items: center; }
+.recInfo { flex: 1; }
+.recName { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px; }
+.recReason { font-size: 12px; color: #667eea; }
+.recPrice { font-size: 15px; font-weight: 700; color: #e74c3c; white-space: nowrap; }
+.addBtn { font-size: 12px; color: #667eea; background: #f0f0ff; border: 1px solid #667eea; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
