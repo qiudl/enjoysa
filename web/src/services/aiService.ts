@@ -40,6 +40,32 @@ export async function smartSearch(query: string, language = 'zh'): Promise<Smart
   }
 }
 
+// === Scene ② Parse Filters ===
+
+export interface ParsedFilters {
+  keyword?: string;
+  region_id?: number;
+  category_id?: number;
+  tags?: string[];
+  min_price?: number;
+  max_price?: number;
+  min_group_size?: number;
+}
+
+export interface ParseFiltersResponse {
+  filters: ParsedFilters;
+  display: string;
+}
+
+export async function parseFilters(query: string, language = 'zh'): Promise<ParseFiltersResponse | null> {
+  try {
+    const resp = await post<{ data: ParseFiltersResponse }>('/ai/parse-filters', { query, language });
+    return resp.data;
+  } catch {
+    return null;
+  }
+}
+
 // === Scene ③-A Product Q&A ===
 
 export interface ProductQAResponse {

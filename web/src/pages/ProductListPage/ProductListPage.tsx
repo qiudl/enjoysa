@@ -11,6 +11,8 @@ import { ProductCard, ProductFilter } from '../../components/Product';
 import type { Product, Destination, ProductCategory, ProductFilter as FilterType } from '../../types';
 import { productService, transformApiProduct } from '../../services/productService';
 import { regionService } from '../../services/regionService';
+import AiFilterBar from '../../components/AI/AiFilterBar/AiFilterBar';
+import type { ParsedFilters } from '../../services/aiService';
 import styles from './ProductListPage.module.css';
 
 export interface ProductListPageProps {
@@ -48,7 +50,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   onNavClick,
   onProductClick,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [keyword, setKeyword] = useState(initialKeyword);
   const [sortBy, setSortBy] = useState('recommend');
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,7 +130,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
         onNavClick={onNavClick}
       />
 
-      {/* Search Bar */}
+      {/* Search Bar + AI Filter */}
       <div className={styles.searchSection}>
         <div className={styles.searchContainer}>
           <SearchBar
@@ -136,6 +138,18 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
             value={keyword}
             size="md"
             onSearch={handleSearch}
+          />
+          <AiFilterBar
+            language={i18n.language?.startsWith('zh') ? 'zh' : 'en'}
+            onFiltersApplied={(aiFilters: ParsedFilters) => {
+              const newFilters: Partial<FilterType> = { ...filters };
+              if (aiFilters.keyword) setKeyword(aiFilters.keyword);
+              if (aiFilters.tags?.length) (newFilters as Record<string, unknown>).tags = aiFilters.tags;
+              if (aiFilters.max_price) (newFilters as Record<string, unknown>).maxPrice = aiFilters.max_price;
+              setFilters(newFilters);
+              setCurrentPage(1);
+            }}
+            onClear={() => { setFilters({}); setKeyword(''); setCurrentPage(1); }}
           />
         </div>
       </div>

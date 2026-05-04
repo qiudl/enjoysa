@@ -310,6 +310,10 @@ func Setup(cfg Config) *gin.Engine {
 		itineraryHandler := aichathandler.NewItineraryHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
 		aiGroup.POST("/plan-itinerary", itineraryHandler.Plan)
 		aiGroup.POST("/plan-itinerary-json", itineraryHandler.PlanJSON)
+
+		// Scene ②: Parse Filters (public)
+		parseFiltersHandler := aichathandler.NewParseFiltersHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.POST("/parse-filters", parseFiltersHandler.Parse)
 	}
 
 	// ========================================
