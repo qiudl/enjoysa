@@ -156,9 +156,9 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
       <main className={styles.main}>
         <div className={styles.container}>
           {/* AI Travel Reminder */}
-          {order && (
+          {rawOrder && (
             <Suspense fallback={null}>
-              <TravelReminder orderId={Number(order.id)} productId={order.productId ? Number(order.productId) : undefined} bookingDate={order.bookingDate} />
+              <TravelReminder orderId={rawOrder.id} productId={rawOrder.product_id} bookingDate={rawOrder.booking_date} />
             </Suspense>
           )}
 

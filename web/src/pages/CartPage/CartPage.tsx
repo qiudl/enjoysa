@@ -139,7 +139,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
               {/* AI 搭配建议 */}
               <Suspense fallback={null}>
-                <CartSuggestions items={items.map(i => ({ product_id: Number(i.id) }))} />
+                <CartSuggestions items={items.map(i => ({ product_id: Number(i.product.id) }))} />
               </Suspense>
 
               {/* 结算区域 */}

@@ -212,7 +212,7 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                   {getStatusLabel(product.status)}
                 </span>
               </td>
-              <td><Suspense fallback={<span style={{color:'#999',fontSize:12}}>...</span>}><ProductPrecheck productId={product.id} /></Suspense></td>
+              <td><Suspense fallback={<span style={{color:'#999',fontSize:12}}>...</span>}><ProductPrecheck productId={Number(product.id)} /></Suspense></td>
               <td>{formatDate(product.submittedAt)}</td>
               <td>
                 <div className={styles.actions}>

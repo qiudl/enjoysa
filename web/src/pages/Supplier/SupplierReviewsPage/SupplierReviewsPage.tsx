@@ -181,7 +181,7 @@ export const SupplierReviewsPage: React.FC<SupplierReviewsPageProps> = () => {
                       rating={review.rating}
                       productName={review.product?.name_zh || ''}
                       reviewId={review.id}
-                      onUseReply={(reply) => handleSubmitReply(review.id, reply)}
+                      onUseReply={(reply) => { setReplyText(reply); setReplyingId(Number(review.id)); }}
                     />
                   </Suspense>
                 )}

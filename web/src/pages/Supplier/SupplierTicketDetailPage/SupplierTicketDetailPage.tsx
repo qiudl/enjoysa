@@ -361,7 +361,7 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
             <Suspense fallback={null}>
               <TicketAiAnalysis
                 message={ticket.messages[0]?.content || ''}
-                ticketId={ticket.id}
+                ticketId={Number(ticket.id)}
               />
             </Suspense>
           )}
