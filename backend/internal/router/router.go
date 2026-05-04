@@ -14,6 +14,7 @@ import (
 	chatservice "enjoysa-backend/internal/chat/service"
 	chatstore "enjoysa-backend/internal/chat/store"
 	"enjoysa-backend/internal/aichat"
+	aichathandler "enjoysa-backend/internal/aichat/handler"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -286,11 +287,12 @@ func Setup(cfg Config) *gin.Engine {
 	// ========================================
 	// AI routes (embedded AI features)
 	// ========================================
-	// AI module routes will be added by scene-specific branches.
-	// Base route group registered here for all scenes to use.
-	_ = v1.Group("/ai")
-	// Scenes ①②③④⑤⑥⑦⑧⑨⑩⑪⑫ add handlers in their own branches.
-	// AI module available via cfg.AIModule
+	aiGroup := v1.Group("/ai")
+	{
+		// Scene ①: Smart Search (public, optional auth for personalization)
+		smartSearchHandler := aichathandler.NewSmartSearchHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.POST("/smart-search", middleware.OptionalUserAuth(cfg.JWTService, cfg.DB), smartSearchHandler.Search)
+	}
 
 	// ========================================
 	// Supplier routes

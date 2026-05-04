@@ -17,6 +17,7 @@ import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import { Search } from 'lucide-react';
+import SmartSearchDropdown from '../../components/AI/SmartSearch/SmartSearchDropdown';
 import { TestimonialSection, PartnerSection, PopularSection } from '../../components/Homepage';
 import { homepagePublicService, type HomepageConfig } from '../../services/homepageService';
 import styles from './HomePage.module.css';
@@ -207,10 +208,9 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
           {searchTab === 'activity' ? (
             <div className={styles.searchBody}>
-              <SearchBar
-                placeholder={t('home.searchPlaceholder')}
-                size="lg"
-                onSearch={handleSearch}
+              <SmartSearchDropdown
+                language={currentLang}
+                onProductClick={(id) => onProductClick?.({ id: String(id) } as Product)}
               />
             </div>
           ) : (
