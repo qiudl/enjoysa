@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const ReviewReplyAi = lazy(() => import('../../../components/AI/ReviewReplyAi/ReviewReplyAi'));
 import { Star, Send, Loader2 } from 'lucide-react';
 import { supplierReviewService, type ApiReview, type ReviewStats } from '../../../services/supplierReviewService';
 import styles from './SupplierReviewsPage.module.css';
@@ -171,6 +172,19 @@ export const SupplierReviewsPage: React.FC<SupplierReviewsPageProps> = () => {
                 </div>
 
                 <p className={styles.reviewContent}>{review.content}</p>
+
+                {/* AI Reply Suggestion */}
+                {!review.reply && (
+                  <Suspense fallback={null}>
+                    <ReviewReplyAi
+                      reviewText={review.content}
+                      rating={review.rating}
+                      productName={review.product?.name_zh || ''}
+                      reviewId={review.id}
+                      onUseReply={(reply) => handleSubmitReply(review.id, reply)}
+                    />
+                  </Suspense>
+                )}
 
                 {/* Existing Reply */}
                 {review.reply && (

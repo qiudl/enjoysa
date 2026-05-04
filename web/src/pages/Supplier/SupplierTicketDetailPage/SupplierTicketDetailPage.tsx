@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const TicketAiAnalysis = lazy(() => import('../../../components/AI/TicketAiAnalysis/TicketAiAnalysis'));
 import {
   ArrowLeft,
   Send,
@@ -354,6 +355,16 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
         {/* Left: Timeline & Reply */}
         <div className={styles.timelineSection}>
           <h2 className={styles.sectionTitle}>{t('supplier.ticket.timeline')}</h2>
+
+          {/* AI Analysis */}
+          {ticket.messages.length > 0 && (
+            <Suspense fallback={null}>
+              <TicketAiAnalysis
+                message={ticket.messages[0]?.content || ''}
+                ticketId={ticket.id}
+              />
+            </Suspense>
+          )}
 
           <div className={styles.timelineList}>
             {ticket.messages.map(renderMessage)}

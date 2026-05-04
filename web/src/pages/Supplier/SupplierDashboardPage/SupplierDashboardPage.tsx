@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const SupplierBriefing = lazy(() => import('../../../components/AI/SupplierBriefing/SupplierBriefing'));
 import { Button } from '../../../components/Common';
 import { get } from '../../../services/api';
 import { listSupplierOrders, type Order } from '../../../services/orderService';
@@ -127,6 +128,9 @@ export const SupplierDashboardPage: React.FC<SupplierDashboardPageProps> = ({
               </p>
             </div>
           </section>
+
+          {/* AI Briefing */}
+          <Suspense fallback={null}><SupplierBriefing /></Suspense>
 
           {/* Stats Overview */}
           <section className={styles.statsSection}>

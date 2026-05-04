@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const TravelReminder = lazy(() => import('../../components/AI/TravelReminder/TravelReminder'));
 import { Header, Footer, Loading } from '../../components/Common';
 import { OrderDetail } from '../../components/Order';
 import { getOrder, cancelOrder, type Order as ApiOrder } from '../../services/orderService';
@@ -154,6 +155,13 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
 
       <main className={styles.main}>
         <div className={styles.container}>
+          {/* AI Travel Reminder */}
+          {order && (
+            <Suspense fallback={null}>
+              <TravelReminder orderId={Number(order.id)} productId={order.productId ? Number(order.productId) : undefined} bookingDate={order.bookingDate} />
+            </Suspense>
+          )}
+
           {/* Payment Status Banner */}
           {showBanner && paymentStatus === 'success' && (
             <div className={styles.successBanner}>

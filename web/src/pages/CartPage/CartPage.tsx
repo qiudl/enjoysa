@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const CartSuggestions = lazy(() => import('../../components/AI/CartSuggestions/CartSuggestions'));
 import {
   Header,
   Footer,
@@ -135,6 +136,11 @@ export const CartPage: React.FC<CartPageProps> = ({
                   );
                 })}
               </div>
+
+              {/* AI 搭配建议 */}
+              <Suspense fallback={null}>
+                <CartSuggestions items={items.map(i => ({ product_id: Number(i.id) }))} />
+              </Suspense>
 
               {/* 结算区域 */}
               <div className={styles.summary}>

@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GeneratedContent } from '../../../services/aiService';
+const ProductAiWriter = lazy(() => import('../../../components/AI/ProductAiWriter/ProductAiWriter'));
 import {
   Check, ChevronLeft, ChevronRight, Plus, X, Image as ImageIcon,
   Star, GripVertical, Upload, Save, Send,
@@ -444,6 +446,18 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
   const renderStepBasic = () => (
     <div className={styles.section}>
       <h3 className={styles.sectionTitle}>{t('supplier.productForm.basicInfo')}</h3>
+
+      {/* AI Writer */}
+      <Suspense fallback={null}>
+        <ProductAiWriter
+          nameZh={form.name_zh}
+          onApply={(content: GeneratedContent) => {
+            updateField('name_en', content.name_en);
+            updateField('description_zh', content.description_zh);
+            updateField('description_en', content.description_en);
+          }}
+        />
+      </Suspense>
 
       <div className={styles.formRow}>
         <div className={styles.formGroup}>

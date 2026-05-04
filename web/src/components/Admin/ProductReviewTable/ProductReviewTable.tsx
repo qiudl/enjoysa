@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+const ProductPrecheck = lazy(() => import('../../AI/ProductPrecheck/ProductPrecheck'));
 import { Eye, CheckCircle, XCircle, Image, Pencil, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './ProductReviewTable.module.css';
@@ -160,6 +161,7 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
             <th>{t('admin.products.table.supplier')}</th>
             <th>{t('admin.products.table.price')}</th>
             <th>{t('admin.products.table.status')}</th>
+            <th>AI</th>
             <th>{t('admin.products.table.submitDate')}</th>
             <th>{t('admin.products.table.actions')}</th>
           </tr>
@@ -210,6 +212,7 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                   {getStatusLabel(product.status)}
                 </span>
               </td>
+              <td><Suspense fallback={<span style={{color:'#999',fontSize:12}}>...</span>}><ProductPrecheck productId={product.id} /></Suspense></td>
               <td>{formatDate(product.submittedAt)}</td>
               <td>
                 <div className={styles.actions}>

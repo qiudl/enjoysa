@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+const AdminInsights = lazy(() => import('../../../components/AI/AdminInsights/AdminInsights'));
 import { Dashboard } from '../../../components/Admin/Dashboard';
 import type { DashboardStats, RecentOrder, TopProduct } from '../../../components/Admin/Dashboard';
 import { get } from '../../../services/api';
@@ -121,6 +122,8 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
+    <>
+    <Suspense fallback={null}><AdminInsights /></Suspense>
     <Dashboard
       stats={stats}
       recentOrders={recentOrders}
@@ -131,6 +134,7 @@ export const DashboardPage: React.FC = () => {
       onViewAllOrders={handleViewAllOrders}
       onViewAllProducts={handleViewAllProducts}
     />
+    </>
   );
 };
 
