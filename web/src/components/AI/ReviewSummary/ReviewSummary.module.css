@@ -1,0 +1,23 @@
+.wrapper { margin-bottom: 24px; }
+.title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.badge { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 8px; }
+
+.overall { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f0; }
+.score { font-size: 36px; font-weight: 700; color: #333; }
+.stars { color: #f59e0b; font-size: 14px; margin-bottom: 2px; }
+.count { font-size: 12px; color: #999; }
+
+.keywords { margin-bottom: 14px; }
+.kwLabel { font-size: 12px; color: #999; margin-bottom: 6px; margin-top: 10px; }
+.kwLabel:first-child { margin-top: 0; }
+.kwRow { display: flex; flex-wrap: wrap; gap: 6px; }
+.kwTag { font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+.kwPos { background: #ecfdf5; color: #059669; }
+.kwNeg { background: #fef2f2; color: #dc2626; }
+.kwFit { background: #f0f0ff; color: #667eea; }
+
+.aiNote { background: #f8f9fb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #666; line-height: 1.5; }
+
+.loading { color: #999; font-size: 14px; padding: 12px; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e8e8f0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }

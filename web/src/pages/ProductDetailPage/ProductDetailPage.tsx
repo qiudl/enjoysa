@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const SmartFAQ = lazy(() => import('../../components/AI/SmartFAQ/SmartFAQ'));
+const FitCheck = lazy(() => import('../../components/AI/FitCheck/FitCheck'));
+const ReviewSummary = lazy(() => import('../../components/AI/ReviewSummary/ReviewSummary'));
 import {
   Header,
   Footer,
@@ -333,6 +337,25 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   {product.exclusions.map((item, index) => <li key={index} className={styles.excluded}>✗ {item}</li>)}
                 </ul>
               </section>
+            </div>
+
+            {/* ========== AI Enhanced Sections ========== */}
+            <Suspense fallback={null}>
+              <SmartFAQ productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
+            </Suspense>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <Suspense fallback={null}>
+                <FitCheck productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
+              </Suspense>
+              <Suspense fallback={null}>
+                <ReviewSummary
+                  productId={Number(productId)}
+                  rating={product.rating}
+                  reviewCount={product.reviewCount || 0}
+                  language={isZh ? 'zh' : 'en'}
+                />
+              </Suspense>
             </div>
           </div>
 

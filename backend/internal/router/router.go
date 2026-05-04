@@ -292,6 +292,19 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ①: Smart Search (public, optional auth for personalization)
 		smartSearchHandler := aichathandler.NewSmartSearchHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
 		aiGroup.POST("/smart-search", middleware.OptionalUserAuth(cfg.JWTService, cfg.DB), smartSearchHandler.Search)
+
+		// Scene ③-A: Product Q&A (public)
+		productQAHandler := aichathandler.NewProductQAHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore, pStore)
+		aiGroup.POST("/product-qa", productQAHandler.Ask)
+		aiGroup.POST("/product-qa/feedback", productQAHandler.Feedback)
+
+		// Scene ③-B: Product Fit Check (public)
+		productFitHandler := aichathandler.NewProductFitHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.POST("/product-fit", productFitHandler.Check)
+
+		// Scene ③-C: Review Summary (public, cached)
+		reviewSummaryHandler := aichathandler.NewReviewSummaryHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore, pStore)
+		aiGroup.GET("/review-summary", reviewSummaryHandler.Get)
 	}
 
 	// ========================================
