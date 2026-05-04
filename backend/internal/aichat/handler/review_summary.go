@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"enjoysa-backend/internal/aichat/model"
@@ -35,11 +36,17 @@ type ReviewSummaryResponse struct {
 
 // Get handles GET /api/v1/ai/review-summary?product_id=X
 func (h *ReviewSummaryHandler) Get(c *gin.Context) {
-	productID := c.Query("product_id")
-	if productID == "" {
+	productIDStr := c.Query("product_id")
+	if productIDStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "product_id is required"})
 		return
 	}
+	pid, err := strconv.ParseUint(productIDStr, 10, 64)
+	if err != nil || pid == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product_id"})
+		return
+	}
+	productID := fmt.Sprintf("%d", pid)
 
 	language := c.DefaultQuery("language", "zh")
 	cacheKey := fmt.Sprintf("review_summary:%s:%s", productID, language)

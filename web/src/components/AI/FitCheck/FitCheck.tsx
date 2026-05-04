@@ -116,7 +116,11 @@ export default function FitCheck({ productId, language = 'zh' }: FitCheckProps) 
       {!loading && result && result.fit_items.map((item, i) => (
         <div key={i} className={styles.fitItem}>
           <span className={styles.fitIcon}>{item.icon}</span>
-          <div className={styles.fitText} dangerouslySetInnerHTML={{ __html: item.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <div className={styles.fitText}>
+            {item.text.split(/\*\*(.*?)\*\*/g).map((part, j) =>
+              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+            )}
+          </div>
         </div>
       ))}
 
