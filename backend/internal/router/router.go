@@ -326,6 +326,10 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ⑨: Review Reply (supplier)
 		reviewReplyHandler := aichathandler.NewReviewReplyHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
 		aiGroup.POST("/review-reply", reviewReplyHandler.Suggest)
+
+		// Scene ⑥: Travel Reminder (public)
+		travelReminderHandler := aichathandler.NewTravelReminderHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.GET("/travel-reminder", travelReminderHandler.Get)
 	}
 
 	// ========================================
