@@ -314,6 +314,18 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ②: Parse Filters (public)
 		parseFiltersHandler := aichathandler.NewParseFiltersHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
 		aiGroup.POST("/parse-filters", parseFiltersHandler.Parse)
+
+		// Scene ⑤: Cart Suggestions (public, optional auth)
+		cartSuggestionsHandler := aichathandler.NewCartSuggestionsHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.POST("/cart-suggestions", cartSuggestionsHandler.Suggest)
+
+		// Scene ⑦: Generate Product Content (supplier)
+		generateContentHandler := aichathandler.NewGenerateContentHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.POST("/generate-product-content", generateContentHandler.Generate)
+
+		// Scene ⑨: Review Reply (supplier)
+		reviewReplyHandler := aichathandler.NewReviewReplyHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.POST("/review-reply", reviewReplyHandler.Suggest)
 	}
 
 	// ========================================
