@@ -324,11 +324,11 @@ func Setup(cfg Config) *gin.Engine {
 
 		// Scene ⑦: Generate Product Content (supplier)
 		generateContentHandler := aichathandler.NewGenerateContentHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
-		aiGroup.POST("/generate-product-content", generateContentHandler.Generate)
+		aiGroup.POST("/generate-product-content", supplierAuth, generateContentHandler.Generate)
 
 		// Scene ⑨: Review Reply (supplier)
 		reviewReplyHandler := aichathandler.NewReviewReplyHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
-		aiGroup.POST("/review-reply", reviewReplyHandler.Suggest)
+		aiGroup.POST("/review-reply", supplierAuth, reviewReplyHandler.Suggest)
 
 		// Scene ⑥: Travel Reminder (public)
 		travelReminderHandler := aichathandler.NewTravelReminderHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
@@ -336,19 +336,19 @@ func Setup(cfg Config) *gin.Engine {
 
 		// Scene ⑧: Supplier Briefing (supplier auth)
 		supplierBriefingHandler := aichathandler.NewSupplierBriefingHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
-		aiGroup.GET("/supplier-briefing", supplierBriefingHandler.Get)
+		aiGroup.GET("/supplier-briefing", supplierAuth, supplierBriefingHandler.Get)
 
 		// Scene ⑩: Ticket Analysis (supplier auth)
 		ticketAnalysisHandler := aichathandler.NewTicketAnalysisHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
-		aiGroup.POST("/ticket-analysis", ticketAnalysisHandler.Analyze)
+		aiGroup.POST("/ticket-analysis", supplierAuth, ticketAnalysisHandler.Analyze)
 
 		// Scene ⑪: Product Precheck (admin)
 		productPrecheckHandler := aichathandler.NewProductPrecheckHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
-		aiGroup.GET("/product-precheck", productPrecheckHandler.Check)
+		aiGroup.GET("/product-precheck", adminAuth, productPrecheckHandler.Check)
 
 		// Scene ⑫: Admin Insights (admin)
 		adminInsightsHandler := aichathandler.NewAdminInsightsHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
-		aiGroup.GET("/admin-insights", adminInsightsHandler.Get)
+		aiGroup.GET("/admin-insights", adminAuth, adminInsightsHandler.Get)
 	}
 
 	// ========================================

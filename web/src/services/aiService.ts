@@ -249,7 +249,7 @@ export interface GeneratedContent {
 
 export async function generateProductContent(nameZh: string, keywords: string): Promise<GeneratedContent | null> {
   try {
-    const resp = await post<{ data: GeneratedContent }>('/ai/generate-product-content', { name_zh: nameZh, keywords });
+    const resp = await post<{ data: GeneratedContent }>('/ai/generate-product-content', { name_zh: nameZh, keywords }, 'supplier');
     return resp.data;
   } catch { return null; }
 }
@@ -263,7 +263,7 @@ export interface SupplierBriefingResponse {
 
 export async function supplierBriefing(): Promise<SupplierBriefingResponse | null> {
   try {
-    const resp = await get<{ data: SupplierBriefingResponse }>('/ai/supplier-briefing');
+    const resp = await get<{ data: SupplierBriefingResponse }>('/ai/supplier-briefing', 'supplier');
     return resp.data;
   } catch { return null; }
 }
@@ -272,7 +272,7 @@ export async function supplierBriefing(): Promise<SupplierBriefingResponse | nul
 
 export async function reviewReply(reviewText: string, rating: number, productName: string, reviewId?: number): Promise<string | null> {
   try {
-    const resp = await post<{ data: { reply: string } }>('/ai/review-reply', { review_text: reviewText, rating, product_name: productName, review_id: reviewId });
+    const resp = await post<{ data: { reply: string } }>('/ai/review-reply', { review_text: reviewText, rating, product_name: productName, review_id: reviewId }, 'supplier');
     return resp.data.reply;
   } catch { return null; }
 }
@@ -287,7 +287,7 @@ export interface TicketAnalysisResponse {
 
 export async function ticketAnalysis(message: string, orderInfo?: string, ticketId?: number): Promise<TicketAnalysisResponse | null> {
   try {
-    const resp = await post<{ data: TicketAnalysisResponse }>('/ai/ticket-analysis', { message, order_info: orderInfo, ticket_id: ticketId });
+    const resp = await post<{ data: TicketAnalysisResponse }>('/ai/ticket-analysis', { message, order_info: orderInfo, ticket_id: ticketId }, 'supplier');
     return resp.data;
   } catch { return null; }
 }
@@ -300,7 +300,7 @@ export interface ProductPrecheckResponse {
 
 export async function productPrecheck(productId: number): Promise<ProductPrecheckResponse | null> {
   try {
-    const resp = await get<{ data: ProductPrecheckResponse }>(`/ai/product-precheck?product_id=${productId}`);
+    const resp = await get<{ data: ProductPrecheckResponse }>(`/ai/product-precheck?product_id=${productId}`, 'admin');
     return resp.data;
   } catch { return null; }
 }
@@ -313,7 +313,7 @@ export interface AdminInsightsResponse {
 
 export async function adminInsights(): Promise<AdminInsightsResponse | null> {
   try {
-    const resp = await get<{ data: AdminInsightsResponse }>('/ai/admin-insights');
+    const resp = await get<{ data: AdminInsightsResponse }>('/ai/admin-insights', 'admin');
     return resp.data;
   } catch { return null; }
 }
