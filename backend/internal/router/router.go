@@ -326,6 +326,10 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ⑨: Review Reply (supplier)
 		reviewReplyHandler := aichathandler.NewReviewReplyHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
 		aiGroup.POST("/review-reply", reviewReplyHandler.Suggest)
+
+		// Scene ⑧: Supplier Briefing (supplier auth)
+		supplierBriefingHandler := aichathandler.NewSupplierBriefingHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.GET("/supplier-briefing", supplierBriefingHandler.Get)
 	}
 
 	// ========================================
