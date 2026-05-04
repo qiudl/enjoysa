@@ -43,7 +43,7 @@ const supplierBriefingPrompt = `你是供应商运营助手。根据以下数据
 
 // Get handles GET /api/v1/ai/supplier-briefing
 func (h *SupplierBriefingHandler) Get(c *gin.Context) {
-	supplierID, exists := c.Get("supplierID")
+	supplierID, exists := c.Get("supplier_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "supplier auth required"})
 		return
