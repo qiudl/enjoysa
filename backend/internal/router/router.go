@@ -305,6 +305,11 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ③-C: Review Summary (public, cached)
 		reviewSummaryHandler := aichathandler.NewReviewSummaryHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore, pStore)
 		aiGroup.GET("/review-summary", reviewSummaryHandler.Get)
+
+		// Scene ④: Itinerary Planning (public, SSE streaming + JSON fallback)
+		itineraryHandler := aichathandler.NewItineraryHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.POST("/plan-itinerary", itineraryHandler.Plan)
+		aiGroup.POST("/plan-itinerary-json", itineraryHandler.PlanJSON)
 	}
 
 	// ========================================
