@@ -13,6 +13,7 @@ import (
 	chathandler "enjoysa-backend/internal/chat/handler"
 	chatservice "enjoysa-backend/internal/chat/service"
 	chatstore "enjoysa-backend/internal/chat/store"
+	"enjoysa-backend/internal/aichat"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -65,6 +66,7 @@ type Config struct {
 	AIConfig         config.AIConfig
 	AfterSalesConfig config.AfterSalesConfig
 	CasbinEnforcer   *casbin.SyncedEnforcer
+	AIModule         *aichat.Module
 }
 
 func Setup(cfg Config) *gin.Engine {
@@ -280,6 +282,15 @@ func Setup(cfg Config) *gin.Engine {
 		chatGroup.GET("/sessions", chatHandler.ListSessions)
 		chatGroup.GET("/sessions/:id/messages", chatHandler.GetMessages)
 	}
+
+	// ========================================
+	// AI routes (embedded AI features)
+	// ========================================
+	// AI module routes will be added by scene-specific branches.
+	// Base route group registered here for all scenes to use.
+	_ = v1.Group("/ai")
+	// Scenes ①②③④⑤⑥⑦⑧⑨⑩⑪⑫ add handlers in their own branches.
+	// AI module available via cfg.AIModule
 
 	// ========================================
 	// Supplier routes

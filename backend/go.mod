@@ -1,6 +1,6 @@
 module enjoysa-backend
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/casbin/casbin/v2 v2.135.0
@@ -78,6 +78,7 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

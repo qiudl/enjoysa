@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"enjoysa-backend/internal/aichat"
+	aimodel "enjoysa-backend/internal/aichat/model"
 	adminhandler "enjoysa-backend/internal/admin/handler"
 	auditmodel "enjoysa-backend/internal/audit/model"
 	"enjoysa-backend/internal/auth"
@@ -32,6 +34,8 @@ import (
 	usercontactmodel "enjoysa-backend/internal/usercontact/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	productmodel "enjoysa-backend/internal/product/model"
+	productstore "enjoysa-backend/internal/product/store"
+	reviewstore "enjoysa-backend/internal/review/store"
 	"enjoysa-backend/internal/rbac"
 	rbacmodel "enjoysa-backend/internal/rbac/model"
 	"enjoysa-backend/internal/router"
@@ -100,17 +104,27 @@ func main() {
 	// Init JWT service
 	jwtService := auth.NewJWTService(cfg.JWT)
 
+	// Init AI module
+	aiModule := aichat.Setup(
+		db, cfg.AI,
+		productstore.NewProductStore(db),
+		productstore.NewRegionStore(db),
+		productstore.NewScheduleStore(db),
+		reviewstore.NewReviewStore(db),
+	)
+
 	// Setup router
 	r := router.Setup(router.Config{
-		FrontendURL:    cfg.Server.FrontendURL,
-		DB:             db,
-		JWTService:     jwtService,
-		UploadConfig:   cfg.Upload,
-		StripeConfig:   cfg.Stripe,
-		ResendConfig:   cfg.Resend,
+		FrontendURL:      cfg.Server.FrontendURL,
+		DB:               db,
+		JWTService:       jwtService,
+		UploadConfig:     cfg.Upload,
+		StripeConfig:     cfg.Stripe,
+		ResendConfig:     cfg.Resend,
 		AIConfig:         cfg.AI,
 		AfterSalesConfig: cfg.AfterSales,
 		CasbinEnforcer:   enforcer,
+		AIModule:         aiModule,
 	})
 
 	// Start expired order cleanup
@@ -212,6 +226,10 @@ func autoMigrate(db *gorm.DB) error {
 		&aftersalesmodel.Ticket{},
 		&aftersalesmodel.TicketNote{},
 		&aftersalesmodel.FAQ{},
+		// AI
+		&aimodel.AICache{},
+		&aimodel.AIFaqFeedback{},
+		&aimodel.AIMetric{},
 		// Homepage CMS
 		&homepage.HomepageFeature{},
 		&homepage.HomepageTestimonial{},
