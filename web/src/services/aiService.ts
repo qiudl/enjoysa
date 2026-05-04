@@ -206,3 +206,114 @@ export function planItineraryStream(
 
   return controller;
 }
+
+// === Scene ⑤ Cart Suggestions ===
+
+export interface CartSuggestionsResponse {
+  schedule_analysis: string;
+  recommendations: { product_id: number; name: string; reason: string; price: number }[];
+}
+
+export async function cartSuggestions(items: { product_id: number; date?: string }[], language = 'zh'): Promise<CartSuggestionsResponse | null> {
+  try {
+    const resp = await post<{ data: CartSuggestionsResponse }>('/ai/cart-suggestions', { items, language });
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑥ Travel Reminder ===
+
+export interface TravelReminderResponse {
+  weather: string; clothing: string; meeting_point: string;
+  items: string[]; highlight: string; voucher_tip: string;
+}
+
+export async function travelReminder(orderId: number, productId?: number, bookingDate?: string, language = 'zh'): Promise<TravelReminderResponse | null> {
+  try {
+    let url = `/ai/travel-reminder?order_id=${orderId}&language=${language}`;
+    if (productId) url += `&product_id=${productId}`;
+    if (bookingDate) url += `&booking_date=${bookingDate}`;
+    const resp = await get<{ data: TravelReminderResponse }>(url);
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑦ Generate Product Content ===
+
+export interface GeneratedContent {
+  name_en: string; description_zh: string; description_en: string;
+  highlights: { zh: string; en: string }[];
+  faqs: { q_zh: string; a_zh: string; q_en: string; a_en: string }[];
+  tags: string[];
+}
+
+export async function generateProductContent(nameZh: string, keywords: string): Promise<GeneratedContent | null> {
+  try {
+    const resp = await post<{ data: GeneratedContent }>('/ai/generate-product-content', { name_zh: nameZh, keywords });
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑧ Supplier Briefing ===
+
+export interface SupplierBriefingResponse {
+  stats: { icon: string; text: string; trend: string; change: string }[];
+  suggestion: string;
+}
+
+export async function supplierBriefing(): Promise<SupplierBriefingResponse | null> {
+  try {
+    const resp = await get<{ data: SupplierBriefingResponse }>('/ai/supplier-briefing');
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑨ Review Reply ===
+
+export async function reviewReply(reviewText: string, rating: number, productName: string, reviewId?: number): Promise<string | null> {
+  try {
+    const resp = await post<{ data: { reply: string } }>('/ai/review-reply', { review_text: reviewText, rating, product_name: productName, review_id: reviewId });
+    return resp.data.reply;
+  } catch { return null; }
+}
+
+// === Scene ⑩ Ticket Analysis ===
+
+export interface TicketAnalysisResponse {
+  intent: string;
+  context: Record<string, string>;
+  solutions: { label: string; detail: string; recommended?: boolean }[];
+}
+
+export async function ticketAnalysis(message: string, orderInfo?: string, ticketId?: number): Promise<TicketAnalysisResponse | null> {
+  try {
+    const resp = await post<{ data: TicketAnalysisResponse }>('/ai/ticket-analysis', { message, order_info: orderInfo, ticket_id: ticketId });
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑪ Product Precheck ===
+
+export interface ProductPrecheckResponse {
+  score: number; risks: string[]; recommendation: string; ai_comment?: string;
+}
+
+export async function productPrecheck(productId: number): Promise<ProductPrecheckResponse | null> {
+  try {
+    const resp = await get<{ data: ProductPrecheckResponse }>(`/ai/product-precheck?product_id=${productId}`);
+    return resp.data;
+  } catch { return null; }
+}
+
+// === Scene ⑫ Admin Insights ===
+
+export interface AdminInsightsResponse {
+  period: string; insights: string[]; alerts: string[];
+}
+
+export async function adminInsights(): Promise<AdminInsightsResponse | null> {
+  try {
+    const resp = await get<{ data: AdminInsightsResponse }>('/ai/admin-insights');
+    return resp.data;
+  } catch { return null; }
+}
