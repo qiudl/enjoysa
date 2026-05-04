@@ -10,6 +10,7 @@ const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage/F
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage/ResetPasswordPage'));
 const ProductListPage = React.lazy(() => import('./pages/ProductListPage/ProductListPage'));
 const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage/ProductDetailPage'));
+const PlanPage = React.lazy(() => import('./pages/PlanPage/PlanPage'));
 const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
 const MyOrdersPage = React.lazy(() => import('./pages/MyOrdersPage/MyOrdersPage'));
 const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage/OrderDetailPage'));
@@ -145,6 +146,18 @@ function HomePageWrapper() {
         if (params.regionId) qs.set('region', String(params.regionId));
         navigate(`/hotels?${qs.toString()}`);
       }}
+      onNavClick={(path) => navigate(path)}
+    />
+  );
+}
+
+// 包装组件：PlanPage (AI 行程规划)
+function PlanPageWrapper() {
+  const navigate = useNavigate();
+  return (
+    <PlanPage
+      onLoginClick={() => navigate('/login')}
+      onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
     />
   );
@@ -1214,6 +1227,7 @@ function App() {
       <Routes>
         {/* 首页 */}
         <Route path="/" element={<HomePageWrapper />} />
+        <Route path="/plan" element={<PlanPageWrapper />} />
 
         {/* 认证页面 */}
         <Route path="/login" element={<LoginPageWrapper />} />

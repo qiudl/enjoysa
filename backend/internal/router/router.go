@@ -292,6 +292,11 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ①: Smart Search (public, optional auth for personalization)
 		smartSearchHandler := aichathandler.NewSmartSearchHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
 		aiGroup.POST("/smart-search", middleware.OptionalUserAuth(cfg.JWTService, cfg.DB), smartSearchHandler.Search)
+
+		// Scene ④: Itinerary Planning (public, SSE streaming + JSON fallback)
+		itineraryHandler := aichathandler.NewItineraryHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.POST("/plan-itinerary", itineraryHandler.Plan)
+		aiGroup.POST("/plan-itinerary-json", itineraryHandler.PlanJSON)
 	}
 
 	// ========================================
