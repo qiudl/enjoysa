@@ -330,6 +330,22 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ⑥: Travel Reminder (public)
 		travelReminderHandler := aichathandler.NewTravelReminderHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
 		aiGroup.GET("/travel-reminder", travelReminderHandler.Get)
+
+		// Scene ⑧: Supplier Briefing (supplier auth)
+		supplierBriefingHandler := aichathandler.NewSupplierBriefingHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.GET("/supplier-briefing", supplierBriefingHandler.Get)
+
+		// Scene ⑩: Ticket Analysis (supplier auth)
+		ticketAnalysisHandler := aichathandler.NewTicketAnalysisHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.POST("/ticket-analysis", ticketAnalysisHandler.Analyze)
+
+		// Scene ⑪: Product Precheck (admin)
+		productPrecheckHandler := aichathandler.NewProductPrecheckHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)
+		aiGroup.GET("/product-precheck", productPrecheckHandler.Check)
+
+		// Scene ⑫: Admin Insights (admin)
+		adminInsightsHandler := aichathandler.NewAdminInsightsHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
+		aiGroup.GET("/admin-insights", adminInsightsHandler.Get)
 	}
 
 	// ========================================
