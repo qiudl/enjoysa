@@ -56,6 +56,18 @@ func (h *ProductFitHandler) Check(c *gin.Context) {
 		req.Language = "zh"
 	}
 
+	// Validate children ages (#7 fix)
+	if len(req.Profile.Children) > 10 {
+		req.Profile.Children = req.Profile.Children[:10]
+	}
+	for i, age := range req.Profile.Children {
+		if age < 0 {
+			req.Profile.Children[i] = 0
+		} else if age > 17 {
+			req.Profile.Children[i] = 17
+		}
+	}
+
 	start := time.Now()
 
 	// Check cache

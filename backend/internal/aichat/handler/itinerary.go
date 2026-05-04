@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -91,6 +92,11 @@ func (h *ItineraryHandler) Plan(c *gin.Context) {
 		{Role: "system", Content: systemPrompt},
 		{Role: "user", Content: fmt.Sprintf("请为我规划行程。\n\n需求：%s\n\n可用产品数据：\n%s", userDesc, string(productsJSON))},
 	}
+
+	// Set 120s total timeout for SSE (#9 fix)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
+	defer cancel()
+	c.Request = c.Request.WithContext(ctx)
 
 	// SSE streaming response
 	c.Header("Content-Type", "text/event-stream")

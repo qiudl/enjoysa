@@ -124,25 +124,29 @@ func (c *LLMClient) ChatStreamFunc(ctx context.Context, messages []ChatMessage, 
 	if err != nil {
 		return fmt.Errorf("LLM request failed: %w", err)
 	}
-	defer resp.Body.Close()
-
 	if resp.StatusCode == http.StatusTooManyRequests {
-		// Retry once with backoff
-		time.Sleep(1 * time.Second)
+		// Close first response explicitly before retry (#10 fix)
 		resp.Body.Close()
+		time.Sleep(1 * time.Second)
 		resp, err = c.client.Do(req)
 		if err != nil {
 			return fmt.Errorf("LLM retry failed: %w", err)
 		}
-		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusTooManyRequests {
+			resp.Body.Close()
 			return fmt.Errorf("LLM rate limited (429)")
 		}
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("LLM returned %d: %s", resp.StatusCode, string(body))
+		// Truncate error body to 200 chars to avoid leaking internals (#4 fix)
+		errMsg := string(body)
+		if len(errMsg) > 200 {
+			errMsg = errMsg[:200] + "...[truncated]"
+		}
+		return fmt.Errorf("LLM returned %d: %s", resp.StatusCode, errMsg)
 	}
 
 	// Parse SSE stream
@@ -290,7 +294,11 @@ func (c *LLMClient) ChatJSON(ctx context.Context, messages []ChatMessage, tools 
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", nil, fmt.Errorf("LLM %d: %s", resp.StatusCode, string(body))
+		errMsg := string(body)
+		if len(errMsg) > 200 {
+			errMsg = errMsg[:200] + "...[truncated]"
+		}
+		return "", nil, fmt.Errorf("LLM %d: %s", resp.StatusCode, errMsg)
 	}
 
 	var result struct {

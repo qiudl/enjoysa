@@ -28,7 +28,7 @@ func NewProductQAHandler(llm *service.LLMClient, registry *service.ToolRegistry,
 
 type ProductQARequest struct {
 	ProductID uint   `json:"product_id" binding:"required"`
-	Question  string `json:"question" binding:"required"`
+	Question  string `json:"question" binding:"required,max=500"`
 	Language  string `json:"language"`
 }
 
@@ -65,7 +65,7 @@ func (h *ProductQAHandler) Ask(c *gin.Context) {
 	systemPrompt := service.BuildPrompt("product_qa", productContext, service.CurrentTimeStr())
 	messages := []service.ChatMessage{
 		{Role: "system", Content: systemPrompt},
-		{Role: "user", Content: req.Question},
+		{Role: "user", Content: service.SanitizeUserInput(req.Question)},
 	}
 
 	// Call LLM (no tools needed, product data already in context)

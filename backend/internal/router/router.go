@@ -15,6 +15,7 @@ import (
 	chatstore "enjoysa-backend/internal/chat/store"
 	"enjoysa-backend/internal/aichat"
 	aichathandler "enjoysa-backend/internal/aichat/handler"
+	aichatmw "enjoysa-backend/internal/aichat/middleware"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -287,7 +288,9 @@ func Setup(cfg Config) *gin.Engine {
 	// ========================================
 	// AI routes (embedded AI features)
 	// ========================================
+	aiRateLimiter := aichatmw.NewIPRateLimiter(2, 5) // 2 req/s per IP, burst 5
 	aiGroup := v1.Group("/ai")
+	aiGroup.Use(aiRateLimiter.Middleware())
 	{
 		// Scene ①: Smart Search (public, optional auth for personalization)
 		smartSearchHandler := aichathandler.NewSmartSearchHandler(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.AIModule.CacheStore)

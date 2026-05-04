@@ -24,7 +24,7 @@ func NewSmartSearchHandler(llm *service.LLMClient, registry *service.ToolRegistr
 }
 
 type SmartSearchRequest struct {
-	Query    string `json:"query" binding:"required"`
+	Query    string `json:"query" binding:"required,max=500"`
 	Language string `json:"language"`
 }
 
@@ -54,7 +54,7 @@ func (h *SmartSearchHandler) Search(c *gin.Context) {
 
 	// Build messages with system prompt
 	systemPrompt := service.BuildPrompt("smart_search", service.CurrentTimeStr(), req.Language)
-	userMsg := req.Query
+	userMsg := service.SanitizeUserInput(req.Query)
 
 	messages := []service.ChatMessage{
 		{Role: "system", Content: systemPrompt},
