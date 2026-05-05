@@ -9,6 +9,7 @@ import {
 } from '../../components/Common';
 import { ConfirmModal } from '../../components/Common';
 import { userAuth } from '../../services/authService';
+import { useRegion } from '../../contexts/RegionContext';
 import styles from './UserProfileEditPage.module.css';
 
 export interface UserProfileEditPageProps {
@@ -57,6 +58,7 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
   onNavClick,
 }) => {
   const { t, i18n } = useTranslation();
+  const { google_disabled: googleDisabled } = useRegion();
 
   // Inline edit states
   const [editingName, setEditingName] = useState(false);
@@ -292,6 +294,10 @@ export const UserProfileEditPage: React.FC<UserProfileEditPageProps> = ({
                         {t('user.editProfile_page.unbindGoogle', 'Unbind')}
                       </button>
                     </div>
+                  ) : googleDisabled ? (
+                    // REQ-20260506-0006: in mainland CN, hide the bind action
+                    // entirely — GSI is unreachable so the button can't work.
+                    null
                   ) : (
                     <div className={styles.googleUnbound}>
                       <svg viewBox="0 0 24 24" width="14" height="14" className={styles.googleSvg} style={{ opacity: 0.4 }}>

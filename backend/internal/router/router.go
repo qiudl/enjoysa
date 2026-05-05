@@ -22,6 +22,8 @@ import (
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
+	"enjoysa-backend/internal/core/logger"
+	"enjoysa-backend/internal/geo"
 	"enjoysa-backend/internal/homepage"
 	"enjoysa-backend/internal/core/middleware"
 	"enjoysa-backend/internal/email"
@@ -174,6 +176,19 @@ func Setup(cfg Config) *gin.Engine {
 	hotelHandler := producthandler.NewHotelHandler(hotelStore)
 	homepageHandler := homepage.NewHandler(cfg.DB)
 
+	// === Geo (REQ-20260506-0006): GeoIP-based region detection so the
+	// frontend can hide Google login in mainland China where Google is
+	// unreachable. Failure to load the embedded xdb is non-fatal — the
+	// service degrades to "unknown country" and Google stays enabled. ===
+	geoSvc, err := geo.NewService()
+	if err != nil {
+		// Log and continue with a no-op service; refusing to start the
+		// whole server because of geo data corruption is too aggressive.
+		logger.Errorf("[geo] init failed, falling back to no-op: %v", err)
+		geoSvc = &geo.Service{}
+	}
+	geoHandler := geo.NewHandler(geoSvc)
+
 	// New module handlers
 	exportHandler := exporthandler.NewExportHandler(cfg.DB)
 	reviewHandler := reviewhandler.NewReviewHandler(rvStore, oStore, pStore, notifSvc)
@@ -193,6 +208,10 @@ func Setup(cfg Config) *gin.Engine {
 
 	// API v1
 	v1 := r.Group("/api/v1")
+
+	// Geo (anonymous): client uses this to decide whether to render
+	// Google login. Must be reachable before authentication.
+	v1.GET("/geo", geoHandler.Get)
 
 	// ========================================
 	// Auth routes (C端)

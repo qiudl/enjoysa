@@ -2,6 +2,7 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, useLocation, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { RegionProvider } from './contexts/RegionContext';
 // 首页同步加载（首屏性能）
 import { HomePage } from './pages/HomePage';
 // 所有其他页面懒加载
@@ -1247,6 +1248,7 @@ function CartFeedbackToast() {
 function App() {
   return (
     <AppErrorBoundary>
+    <RegionProvider>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <BrowserRouter>
       <CartProvider>
@@ -1375,6 +1377,7 @@ function App() {
       </CartProvider>
     </BrowserRouter>
     </GoogleOAuthProvider>
+    </RegionProvider>
     </AppErrorBoundary>
   );
 }
