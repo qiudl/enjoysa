@@ -261,3 +261,137 @@ describe('clearTokens noise reduction', () => {
     expect(args.length).toBe(1);
   });
 });
+
+// REQ-20260506-0011: GET should retry on transient 5xx / network errors so
+// users don't see flicker during a 1–2 minute rolling-deploy window. Write
+// methods MUST NOT retry — that would risk double-writes.
+describe('request() with GET 5xx backoff retry', () => {
+  it('retries a 502 GET and succeeds on the second attempt', async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        if (calls === 1) return new Response('error code: 502', { status: 502 });
+        return jsonResponse(200, { success: true, data: { ok: true } });
+      }),
+    );
+
+    const result = await request<{ ok: boolean }>('/products', { method: 'GET' });
+    expect(result).toEqual({ ok: true });
+    expect(calls).toBe(2);
+  });
+
+  it('gives up after the configured retries and throws the last 502', async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        return new Response('error code: 502', { status: 502 });
+      }),
+    );
+
+    await expect(
+      request('/products', { method: 'GET' }),
+    ).rejects.toMatchObject({ status: 502 });
+    // 1 initial + 3 retries = 4 attempts (matches GET_RETRY_BACKOFF_MS length).
+    expect(calls).toBe(4);
+  });
+
+  it('does NOT retry POST on 502 — write requests must fail fast to avoid double-writes', async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        return new Response('error code: 502', { status: 502 });
+      }),
+    );
+
+    await expect(
+      request('/orders', { method: 'POST', body: JSON.stringify({ item: 1 }) }),
+    ).rejects.toMatchObject({ status: 502 });
+    expect(calls).toBe(1);
+  });
+
+  it('does NOT retry on 500 — 500 is usually a real bug, retrying just amplifies log noise', async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        return new Response('boom', { status: 500 });
+      }),
+    );
+
+    await expect(
+      request('/products', { method: 'GET' }),
+    ).rejects.toMatchObject({ status: 500 });
+    expect(calls).toBe(1);
+  });
+
+  it('retries a network-layer error (fetch throws) and recovers', async () => {
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        if (calls === 1) throw new TypeError('fetch failed: ECONNRESET');
+        return jsonResponse(200, { success: true, data: { ok: true } });
+      }),
+    );
+
+    const result = await request<{ ok: boolean }>('/products', { method: 'GET' });
+    expect(result).toEqual({ ok: true });
+    expect(calls).toBe(2);
+  });
+
+  it('translates a network-layer failure into ApiError(status=0) when all retries exhaust', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed');
+      }),
+    );
+
+    await expect(
+      request('/products', { method: 'GET' }),
+    ).rejects.toMatchObject({ status: 0 });
+  });
+
+  it('does not consume the 401 refresh path on 502 (refresh logic stays orthogonal)', async () => {
+    setTokens('user', 'old-access', 'good-refresh');
+
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: RequestInfo | URL) => {
+        const u = String(url);
+        if (u.includes('/auth/refresh')) {
+          throw new Error('should never refresh on plain 502');
+        }
+        calls += 1;
+        if (calls < 3) return new Response('502', { status: 502 });
+        return jsonResponse(200, { success: true, data: { ok: true } });
+      }),
+    );
+
+    const result = await request<{ ok: boolean }>('/auth/me', { method: 'GET' }, 'user');
+    expect(result).toEqual({ ok: true });
+    expect(calls).toBe(3);
+  });
+
+  it('5xx with non-JSON body (ALB plaintext) does not throw SyntaxError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('error code: 502', { status: 502 })),
+    );
+
+    // The fact that this rejects with ApiError (not SyntaxError from
+    // JSON.parse) is the actual assertion.
+    await expect(
+      request('/products', { method: 'GET' }),
+    ).rejects.toBeInstanceOf(ApiError);
+  });
+});

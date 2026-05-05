@@ -116,13 +116,47 @@ export class ApiError extends Error {
   }
 }
 
+// REQ-20260506-0011: transient 5xx / network failures should be retried
+// for read-only requests so users don't see flicker during the 1–2 minute
+// rolling-deploy window. Write operations are NEVER retried — silently
+// re-running a POST/PUT/DELETE could double-write.
+const RETRYABLE_STATUS = new Set([502, 503, 504]);
+const GET_RETRY_BACKOFF_MS = [300, 600, 1200];
+
+function shouldRetryGateway(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return false;
+  // status 0 is our marker for a network-layer failure (fetch threw).
+  return err.status === 0 || RETRYABLE_STATUS.has(err.status);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 // 通用请求方法
 export async function request<T>(
   endpoint: string,
   options: RequestInit = {},
   userType?: UserType,
 ): Promise<T> {
-  return requestWithRetry<T>(endpoint, options, userType, false);
+  const method = (options.method ?? 'GET').toUpperCase();
+  if (method !== 'GET') {
+    return requestWithRetry<T>(endpoint, options, userType, false);
+  }
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= GET_RETRY_BACKOFF_MS.length; attempt++) {
+    try {
+      return await requestWithRetry<T>(endpoint, options, userType, false);
+    } catch (err) {
+      lastErr = err;
+      if (!shouldRetryGateway(err) || attempt === GET_RETRY_BACKOFF_MS.length) {
+        throw err;
+      }
+      await delay(GET_RETRY_BACKOFF_MS[attempt]);
+    }
+  }
+  throw lastErr;
 }
 
 async function requestWithRetry<T>(
@@ -144,10 +178,24 @@ async function requestWithRetry<T>(
     }
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (fetchErr) {
+    // Network-layer error (DNS, TLS, connection-reset, abort). Translate to
+    // an ApiError with status 0 so retry logic can pick it up consistently.
+    throw new ApiError(`network error: ${String(fetchErr)}`, 0);
+  }
+
+  // 5xx — fail fast with a status-bearing ApiError. Do NOT try to parse
+  // the body as JSON; ALB / nginx returns plain text "error code: 502"
+  // and the JSON parse would throw SyntaxError instead of a useful error.
+  if (response.status >= 500) {
+    throw new ApiError(`server error ${response.status}`, response.status);
+  }
 
   // 处理 401 未授权 — 尝试用 refresh_token 续期一次后重试原请求
   if (response.status === 401 && userType) {
