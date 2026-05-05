@@ -43,6 +43,18 @@ services:
       - "127.0.0.1:6080:6080"
     volumes:
       - uploads:/app/uploads
+    # REQ-20260506-0013: explicit healthcheck so `docker compose up --wait`
+    # blocks until the new backend really serves /health, eliminating the
+    # false-positive where deploy reports success while the container is
+    # still booting. The Dockerfile also has a HEALTHCHECK; keeping this
+    # one at the compose level too makes intent visible to operators
+    # reading docker-compose.yml standalone.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:6080/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
 
 volumes:
   pgdata:
