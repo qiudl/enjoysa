@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, type KeyboardEvent } f
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Send, Plus, PanelLeftClose, Sparkles, Search } from 'lucide-react';
-import { useChat, type ToolCallDisplay } from '../../../contexts/ChatContext';
+import { useChat } from '../../../contexts/ChatContext';
 import { ToolCallCard } from '../../../components/AI/AIPanel/ToolCallCard';
 import styles from './SupplierAIChatPage.module.css';
 
