@@ -22,6 +22,7 @@ const TOOL_NAME_MAP: Record<string, string> = {
   recommend_attractions: '推荐景点',
   check_availability: '查询可用日期',
   get_reviews: '查询评价',
+  search_knowledge: '搜索知识库',
 };
 
 interface ToolCallCardProps {

@@ -117,6 +117,7 @@ func SystemPrompt(lang, pageContext, userType string) string {
 - 协助处理订单相关问题（订单状态、退款、确认）
 - 提供运营建议（销售数据分析、评价管理、营销策略）
 - 解答平台使用问题（后台功能、结算规则、团队管理）
+- 当用户询问平台政策、规则、操作方法时，使用 search_knowledge 工具查询知识库获取准确信息
 - 使用中文回答，语气专业、高效
 `)
 		} else {
@@ -127,6 +128,7 @@ Responsibilities:
 - Assist with order issues (order status, refunds, confirmations)
 - Provide operational advice (sales analysis, review management, marketing strategies)
 - Answer platform usage questions (dashboard features, settlement rules, team management)
+- When users ask about platform policies, rules, or how-to guides, use the search_knowledge tool to get accurate information
 - Reply in English, with a professional and efficient tone
 `)
 		}
