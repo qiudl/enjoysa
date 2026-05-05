@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, Maximize2, PanelRightClose, Plus, Sparkles } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
@@ -29,6 +29,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     messages, isLoading, sendMessage, newSession, setUserRole, toolCalls, setDisabledTools,
   } = useChat();
@@ -38,6 +39,34 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     setUserRole(role);
     return () => setUserRole('user');
   }, [role, setUserRole]);
+
+  // Build page context from current route
+  const getPageContext = useCallback((): string => {
+    const path = location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    // e.g. /supplier/orders/123 → ["supplier", "orders", "123"]
+    const contextParts: string[] = [`当前页面: ${path}`];
+    if (role === 'supplier') {
+      if (parts[1] === 'orders' && parts[2]) contextParts.push(`正在查看订单 ID: ${parts[2]}`);
+      else if (parts[1] === 'products' && parts[2] === 'new') contextParts.push('正在创建新商品');
+      else if (parts[1] === 'products' && parts[2] && parts[3] === 'edit') contextParts.push(`正在编辑商品 ID: ${parts[2]}`);
+      else if (parts[1] === 'products') contextParts.push('正在查看商品列表');
+      else if (parts[1] === 'reviews') contextParts.push('正在查看评价管理');
+      else if (parts[1] === 'settlement') contextParts.push('正在查看结算中心');
+      else if (parts[1] === 'after-sales' && parts[2]) contextParts.push(`正在查看工单 ID: ${parts[2]}`);
+      else if (parts[1] === 'after-sales') contextParts.push('正在查看售后工单');
+      else if (!parts[1] || parts[1] === 'dashboard') contextParts.push('正在查看 Dashboard 总览');
+    } else if (role === 'admin') {
+      if (parts[1] === 'suppliers' && parts[2]) contextParts.push(`正在查看供应商 ID: ${parts[2]}`);
+      else if (parts[1] === 'suppliers') contextParts.push('正在查看供应商列表');
+      else if (parts[1] === 'products') contextParts.push('正在查看商品审核');
+      else if (parts[1] === 'orders') contextParts.push('正在查看订单管理');
+      else if (parts[1] === 'users') contextParts.push('正在查看用户管理');
+      else if (parts[1] === 'finance') contextParts.push('正在查看财务管理');
+      else if (!parts[1] || parts[1] === 'dashboard') contextParts.push('正在查看平台 Dashboard');
+    }
+    return contextParts.join('\n');
+  }, [location.pathname, role]);
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
@@ -74,8 +103,8 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
     setInput('');
-    sendMessage(trimmed);
-  }, [input, isLoading, sendMessage]);
+    sendMessage(trimmed, getPageContext());
+  }, [input, isLoading, sendMessage, getPageContext]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
