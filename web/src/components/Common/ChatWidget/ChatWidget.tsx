@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Trash2, Send, Sparkles, Globe, Loader2, Clock, ArrowLeft, Plus } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { useUserAuth } from '../../../contexts/UserAuthContext';
@@ -13,6 +14,7 @@ const LANGUAGES = [
 
 export const ChatWidget: React.FC = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const {
     messages, isOpen, isLoading, isHistoryLoading,
     chatLanguage, setChatLanguage,
@@ -22,6 +24,10 @@ export const ChatWidget: React.FC = () => {
     loadSessions, loadSession, newSession,
   } = useChat();
   const { isAuthenticated } = useUserAuth();
+
+  // Hide on supplier/admin pages — they use the AIPanel instead
+  const isBackendRoute = location.pathname.startsWith('/supplier') || location.pathname.startsWith('/admin');
+  if (isBackendRoute) return null;
   const [input, setInput] = useState('');
   const [showLangMenu, setShowLangMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>畅游南澳AI 面板原型 v2 — REQ-20260505-0016</title>
+<style>
+  :root {
+    --sidebar-w: 260px;
+    --panel-w: 380px;
+    --panel-collapsed-w: 48px;
+    --topbar-h: 64px;
+    --supplier-primary: #0f4c3a;
+    --supplier-grad: linear-gradient(180deg,#0f4c3a,#1a6b50);
+    --admin-primary: #1a1f36;
+    --admin-grad: linear-gradient(180deg,#1a1f36,#252b42);
+    --accent: #1677ff;
+    --bg: #f5f7fa;
+    --card: #fff;
+    --border: #e8e8e8;
+    --t1: #1a1a1a;
+    --t2: #666;
+    --t3: #999;
+    --green: #4ade80;
+    --red: #ef4444;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t1);overflow:hidden;height:100vh}
+
+  /* ===== Mode Switcher ===== */
+  .mode-bar{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;gap:6px;background:#fff;padding:5px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12)}
+  .mode-btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;color:var(--t2);transition:.2s;white-space:nowrap}
+  .mode-btn.active{background:var(--accent);color:#fff}
+  .mode-btn:hover:not(.active){background:#f0f0f0}
+
+  /* ===== Layout Shell ===== */
+  .layout{display:flex;height:100vh;width:100vw}
+
+  /* Sidebar */
+  .sidebar{width:var(--sidebar-w);height:100vh;position:fixed;left:0;top:0;z-index:999;display:flex;flex-direction:column;color:#fff;transition:width .3s}
+  .sidebar.supplier{background:var(--supplier-grad)}
+  .sidebar.admin{background:var(--admin-grad)}
+  .sb-hdr{padding:18px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sb-logo{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .sb-title{font-size:15px;font-weight:600}
+  .sb-badge{font-size:10px;padding:2px 7px;border-radius:10px;margin-left:4px}
+  .sb-badge.supplier{background:var(--green);color:#000}
+  .sb-badge.admin{background:#4f9eff;color:#fff}
+  .sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+  .nav-i{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.7);transition:.15s;margin-bottom:2px}
+  .nav-i:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-i.active{background:rgba(255,255,255,.15);color:#fff;font-weight:500}
+  .nav-i.active.supplier{background:linear-gradient(135deg,#4ade80,#22c55e);color:#000}
+  .nav-i.active.admin{background:linear-gradient(135deg,#4f9eff,#3b82f6);color:#fff}
+
+  /* Main */
+  .main{flex:1;margin-left:var(--sidebar-w);margin-right:var(--panel-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-right .3s}
+  .main.pc{margin-right:var(--panel-collapsed-w)}
+  .topbar{height:var(--topbar-h);padding:0 20px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .tb-title{font-size:17px;font-weight:600}
+  .tb-right{display:flex;align-items:center;gap:12px}
+  .tb-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative}
+  .tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .content{flex:1;padding:20px;overflow-y:auto}
+
+  /* Dashboard mock */
+  .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+  .stat{background:#fff;border-radius:12px;padding:16px;border:1px solid var(--border)}
+  .stat-l{font-size:12px;color:var(--t2);margin-bottom:6px}
+  .stat-v{font-size:24px;font-weight:700}
+  .stat-t{font-size:11px;color:#22c55e;margin-top:3px}
+  .cblock{background:#fff;border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:14px}
+  .cblock h3{font-size:14px;margin-bottom:10px}
+  .ph{height:10px;background:#f0f0f0;border-radius:6px;margin-bottom:6px}
+
+  /* ===== AI Panel (Right Side) ===== */
+  .ai-panel{width:var(--panel-w);height:100vh;position:fixed;right:0;top:0;background:#fff;border-left:1px solid var(--border);z-index:999;display:flex;flex-direction:column;transition:width .3s}
+  .ai-panel.collapsed{width:var(--panel-collapsed-w)}
+
+  /* Collapsed */
+  .col-bar{display:none;width:var(--panel-collapsed-w);height:100%;flex-direction:column;align-items:center;padding-top:14px;gap:14px}
+  .ai-panel.collapsed .col-bar{display:flex}
+  .ai-panel.collapsed .panel-exp{display:none}
+  .col-brand{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;transition:transform .15s}
+  .col-brand:hover{transform:scale(1.1)}
+  .col-brand.supplier{background:var(--supplier-primary)}
+  .col-brand.admin{background:var(--admin-primary)}
+  .col-icon{width:34px;height:34px;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t3);transition:.15s;position:relative}
+  .col-icon:hover{background:#f5f5f5;color:var(--t1)}
+  .col-icon.active{background:#e8f4ff;color:var(--accent)}
+  .mini-dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--red)}
+
+  .panel-exp{display:flex;flex-direction:column;height:100%}
+
+  /* Panel Header */
+  .p-hdr{height:var(--topbar-h);padding:0 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border)}
+  .p-brand{display:flex;align-items:center;gap:8px}
+  .p-brand-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+  .p-brand-icon.supplier{background:var(--supplier-primary)}
+  .p-brand-icon.admin{background:var(--admin-primary)}
+  .p-brand-name{font-size:14px;font-weight:600}
+  .p-actions{display:flex;gap:3px}
+  .p-act{width:26px;height:26px;border:none;background:transparent;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:13px;transition:.15s}
+  .p-act:hover{background:#f5f5f5;color:var(--t1)}
+
+  /* Tabs */
+  .tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+  .tab-b{flex:1;padding:11px 0;border:none;background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);position:relative;transition:.15s;display:flex;align-items:center;justify-content:center;gap:5px}
+  .tab-b:hover{color:var(--t1)}
+  .tab-b.active{color:var(--accent)}
+  .tab-b.active::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:var(--accent);border-radius:1px}
+  .tab-dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+
+  .tab-cont{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .tab-pane{flex:1;display:none;flex-direction:column;overflow:hidden}
+  .tab-pane.active{display:flex}
+
+  /* === Chat === */
+  .msgs{flex:1;overflow-y:auto;padding:14px}
+  .bubble{margin-bottom:14px;display:flex;flex-direction:column}
+  .bubble.u{align-items:flex-end}
+  .bubble.a{align-items:flex-start}
+  .b-c{max-width:88%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.6}
+  .bubble.u .b-c{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+  .bubble.a .b-c{background:#f5f5f5;color:var(--t1);border-bottom-left-radius:4px}
+  .b-l{font-size:10px;color:var(--t3);margin-bottom:3px;padding:0 4px}
+
+  /* Tool call card inline */
+  .tool-call{margin:8px 0;background:#fafafa;border:1px solid #e8e8e8;border-radius:10px;padding:10px 12px;font-size:12px}
+  .tool-call-hdr{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .tool-status{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+  .tool-status.ok{background:#f6ffed;color:#52c41a}
+  .tool-status.run{background:#e6f7ff;color:#1677ff}
+  .tool-call-name{font-weight:600;color:var(--t1)}
+  .tool-call-dur{color:var(--t3);margin-left:auto;font-size:11px}
+  .tool-call-result{color:var(--t2);font-size:12px;line-height:1.4;border-top:1px solid #eee;padding-top:6px;margin-top:4px}
+
+  .chat-input{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px;align-items:flex-end;flex-shrink:0}
+  .chat-ta{flex:1;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;resize:none;outline:none;font-family:inherit;min-height:38px;max-height:100px;line-height:1.4}
+  .chat-ta:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(22,119,255,.1)}
+  .chat-send{width:38px;height:38px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .chat-send:hover{opacity:.85}
+  .chat-expand{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:var(--t2)}
+  .chat-expand:hover{background:#f5f5f5;color:var(--t1)}
+
+  /* === Feed === */
+  .feed{flex:1;overflow-y:auto;padding:6px 0}
+  .fi{padding:12px 14px;display:flex;gap:10px;cursor:pointer;border-bottom:1px solid #f5f5f5;transition:.1s;position:relative}
+  .fi:hover{background:#fafafa}
+  .fi.unread::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+  .fi-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .fi-icon.order{background:#e8f4ff;color:#1677ff}
+  .fi-icon.review{background:#fff7e6;color:#fa8c16}
+  .fi-icon.settlement{background:#f6ffed;color:#52c41a}
+  .fi-icon.product{background:#f9f0ff;color:#722ed1}
+  .fi-icon.system{background:#f5f5f5;color:#666}
+  .fi-body{flex:1;min-width:0}
+  .fi-title{font-size:13px;font-weight:500;margin-bottom:1px}
+  .fi-desc{font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fi-time{font-size:10px;color:var(--t3);flex-shrink:0;margin-top:2px}
+  .feed-all{padding:10px;text-align:center;font-size:12px;color:var(--accent);cursor:pointer;border-top:1px solid var(--border);flex-shrink:0}
+  .feed-all:hover{background:#fafafa}
+
+  /* === Tools Tab === */
+  .tools-area{flex:1;overflow-y:auto;padding:14px}
+
+  /* Tool category header */
+  .tool-cat{margin-bottom:16px}
+  .tool-cat-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 2px}
+  .tool-cat-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .tool-cat-icon.ops{background:#e8f4ff;color:#1677ff}
+  .tool-cat-icon.content{background:#fff7e6;color:#fa8c16}
+  .tool-cat-icon.analytics{background:#f6ffed;color:#52c41a}
+  .tool-cat-icon.service{background:#f9f0ff;color:#722ed1}
+  .tool-cat-icon.review{background:#fff1f0;color:#f5222d}
+  .tool-cat-name{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px}
+  .tool-cat-count{font-size:11px;color:var(--t3)}
+
+  /* Tool cards */
+  .tool-cards{display:flex;flex-direction:column;gap:8px}
+  .tc{border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:.2s;display:flex;gap:12px;align-items:center;position:relative}
+  .tc:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(22,119,255,.06);transform:translateY(-1px)}
+  .tc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .tc-body{flex:1;min-width:0}
+  .tc-name{font-size:13px;font-weight:600;margin-bottom:2px}
+  .tc-desc{font-size:12px;color:var(--t2);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .tc-arrow{color:var(--t3);font-size:13px;flex-shrink:0}
+  .tc:hover .tc-arrow{color:var(--accent)}
+
+  /* Tool toggle switch */
+  .tc-toggle{position:absolute;top:10px;right:10px;width:32px;height:18px;border-radius:9px;border:none;cursor:pointer;transition:.2s;padding:0}
+  .tc-toggle.on{background:var(--accent)}
+  .tc-toggle.off{background:#d9d9d9}
+  .tc-toggle::after{content:'';position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .tc-toggle.on::after{left:16px}
+  .tc-toggle.off::after{left:2px}
+
+  /* Pin indicator */
+  .tc-pin{position:absolute;top:10px;right:48px;font-size:11px;color:var(--t3);cursor:grab}
+  .tc-pin:hover{color:var(--accent)}
+
+  /* Drag handle */
+  .tc-drag{position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:10px;color:#d9d9d9;cursor:grab;padding:4px 2px;opacity:0;transition:.15s}
+  .tc:hover .tc-drag{opacity:1;color:var(--t3)}
+
+  /* Tools toolbar */
+  .tools-toolbar{display:flex;align-items:center;justify-content:space-between;padding:0 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;margin-bottom:0}
+  .tools-search{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;width:160px;font-family:inherit}
+  .tools-search:focus{border-color:var(--accent)}
+  .tools-actions{display:flex;gap:6px}
+  .tools-act-btn{padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:#fff;font-size:11px;cursor:pointer;color:var(--t2);transition:.15s}
+  .tools-act-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .tools-act-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* ===== Full-Screen Chat Page ===== */
+  .fullscreen-overlay{display:none;position:fixed;inset:0;z-index:10000;background:var(--bg)}
+  .fullscreen-overlay.show{display:flex}
+  .fs-sidebar{width:280px;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+  .fs-sb-hdr{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .fs-sb-title{font-size:14px;font-weight:600}
+  .fs-sb-new{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--t2)}
+  .fs-sb-new:hover{border-color:var(--accent);color:var(--accent)}
+  .fs-sb-search{padding:8px 16px}
+  .fs-sb-search input{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;outline:none}
+  .fs-sessions{flex:1;overflow-y:auto;padding:4px 8px}
+  .fs-session{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;font-size:13px;color:var(--t2);transition:.1s;display:flex;flex-direction:column;gap:2px}
+  .fs-session:hover{background:#f5f5f5}
+  .fs-session.active{background:#e8f4ff;color:var(--accent);border-left:3px solid var(--accent)}
+  .fs-session-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fs-session-time{font-size:11px;color:var(--t3)}
+
+  .fs-main{flex:1;display:flex;flex-direction:column}
+  .fs-topbar{height:52px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
+  .fs-topbar-left{display:flex;align-items:center;gap:12px}
+  .fs-collapse-btn{padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px}
+  .fs-collapse-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .fs-chat-title{font-size:15px;font-weight:600}
+  .fs-topbar-right{display:flex;align-items:center;gap:10px}
+
+  .fs-chat-area{flex:1;display:flex;justify-content:center;overflow:hidden}
+  .fs-chat-inner{width:100%;max-width:800px;display:flex;flex-direction:column;height:100%}
+  .fs-msgs{flex:1;overflow-y:auto;padding:20px}
+  .fs-input{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+  .fs-ta{flex:1;border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;resize:none;outline:none;font-family:inherit;min-height:44px;max-height:160px;line-height:1.5}
+  .fs-ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22,119,255,.1)}
+  .fs-send{width:44px;height:44px;border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:18px;flex-shrink:0}
+
+  /* ===== Animations ===== */
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .fade{animation:fadeIn .25s ease}
+</style>
+</head>
+<body>
+
+<!-- Mode bar -->
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="switchMode('supplier','expanded',this)">供应商-展开</button>
+  <button class="mode-btn" onclick="switchMode('supplier','collapsed',this)">供应商-折叠</button>
+  <button class="mode-btn" onclick="switchMode('admin','expanded',this)">管理端-展开</button>
+  <button class="mode-btn" onclick="switchMode('admin','collapsed',this)">管理端-折叠</button>
+  <button class="mode-btn" onclick="openFullscreen(this)" style="border-left:2px solid var(--border);margin-left:4px">全屏对话页</button>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar supplier" id="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-logo">🌏</div>
+      <div><span class="sb-title">EnjoySA</span><span class="sb-badge supplier" id="sb-badge">Supplier</span></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main" id="main">
+    <header class="topbar">
+      <h1 class="tb-title">Dashboard</h1>
+      <div class="tb-right">
+        <button class="tb-btn">🔖</button>
+        <button class="tb-btn">🔔<span style="position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#ef4444"></span></button>
+        <button class="tb-btn">🌐</button>
+        <div class="tb-avatar">JQ</div>
+      </div>
+    </header>
+    <div class="content">
+      <div class="dash-grid">
+        <div class="stat"><div class="stat-l">今日订单</div><div class="stat-v">12</div><div class="stat-t">↑ 33%</div></div>
+        <div class="stat"><div class="stat-l">今日收入</div><div class="stat-v">$3,840</div><div class="stat-t">↑ 18%</div></div>
+        <div class="stat"><div class="stat-l">待处理评价</div><div class="stat-v">5</div><div class="stat-t" style="color:var(--red)">↓ 2</div></div>
+        <div class="stat"><div class="stat-l">商品浏览</div><div class="stat-v">1,247</div><div class="stat-t">↑ 8%</div></div>
+      </div>
+      <div class="cblock"><h3>📈 近 7 日订单趋势</h3><div style="width:100%;height:100px;background:linear-gradient(90deg,#e8f4ff,#f0f0f0);border-radius:8px"></div></div>
+      <div class="cblock"><h3>🛍️ 热门商品</h3><div class="ph"></div><div class="ph" style="width:80%"></div><div class="ph" style="width:60%"></div></div>
+    </div>
+  </div>
+
+  <!-- AI Panel -->
+  <div class="ai-panel" id="panel">
+    <!-- Collapsed -->
+    <div class="col-bar">
+      <div class="col-brand supplier" id="col-brand" onclick="togglePanel()">✦</div>
+      <button class="col-icon active" onclick="switchTab('chat');togglePanel()">💬</button>
+      <button class="col-icon" onclick="switchTab('feed');togglePanel()">⚡<span class="mini-dot"></span></button>
+      <button class="col-icon" onclick="switchTab('tools');togglePanel()">🔧</button>
+    </div>
+
+    <!-- Expanded -->
+    <div class="panel-exp">
+      <div class="p-hdr">
+        <div class="p-brand">
+          <div class="p-brand-icon supplier" id="p-brand-icon">✦</div>
+          <span class="p-brand-name">畅游南澳AI</span>
+        </div>
+        <div class="p-actions">
+          <button class="p-act" title="新对话">＋</button>
+          <button class="p-act" title="全屏" onclick="openFullscreen()">⛶</button>
+          <button class="p-act" title="折叠" onclick="togglePanel()">⏵</button>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-b active" data-tab="chat" onclick="switchTab('chat')">💬 对话</button>
+        <button class="tab-b" data-tab="feed" onclick="switchTab('feed')">⚡ 动态 <span class="tab-dot"></span></button>
+        <button class="tab-b" data-tab="tools" onclick="switchTab('tools')">🔧 工具</button>
+      </div>
+
+      <div class="tab-cont">
+        <!-- Chat -->
+        <div class="tab-pane active" id="pane-chat">
+          <div class="msgs">
+            <div class="bubble a fade"><div class="b-l">畅游南澳AI</div><div class="b-c">你好！我是畅游南澳AI助手 ✦<br>有什么可以帮您的吗？</div></div>
+            <div class="bubble u fade"><div class="b-l">您</div><div class="b-c">帮我查一下今天的订单情况</div></div>
+            <!-- Tool call inline -->
+            <div class="tool-call fade">
+              <div class="tool-call-hdr">
+                <span class="tool-status ok">✓</span>
+                <span class="tool-call-name">查询今日订单</span>
+                <span class="tool-call-dur">128ms</span>
+              </div>
+              <div class="tool-call-result">查询到 12 笔订单，总金额 $3,840</div>
+            </div>
+            <div class="bubble a fade"><div class="b-l">畅游南澳AI</div><div class="b-c">📊 今日截至目前：<br><br>• 新增订单 <b>12 笔</b>，较昨日 ↑33%<br>• 营收 <b>$3,840</b>，热销：「袋鼠岛一日游」<br>• <b>2 笔</b>待确认订单需尽快处理<br><br>💡 建议优先处理待确认订单，避免超时取消。</div></div>
+          </div>
+          <div class="chat-input">
+            <textarea class="chat-ta" placeholder="输入消息... (Enter 发送)" rows="1"></textarea>
+            <button class="chat-expand" title="全屏对话" onclick="openFullscreen()">⛶</button>
+            <button class="chat-send">➤</button>
+          </div>
+        </div>
+
+        <!-- Feed -->
+        <div class="tab-pane" id="pane-feed">
+          <div class="feed" id="feed-list"></div>
+          <div class="feed-all">查看全部通知 →</div>
+        </div>
+
+        <!-- Tools -->
+        <div class="tab-pane" id="pane-tools">
+          <div style="padding:10px 14px 0">
+            <div class="tools-toolbar" style="padding:0 0 10px;border-bottom:1px solid var(--border)">
+              <input class="tools-search" placeholder="🔍 搜索工具..." />
+              <div class="tools-actions">
+                <button class="tools-act-btn active">全部</button>
+                <button class="tools-act-btn" onclick="this.classList.toggle('active')">⚙ 编排</button>
+              </div>
+            </div>
+          </div>
+          <div class="tools-area" id="tools-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Full-Screen Chat Page ===== -->
+<div class="fullscreen-overlay" id="fs-overlay">
+  <div class="fs-sidebar">
+    <div class="fs-sb-hdr">
+      <span class="fs-sb-title">💬 会话列表</span>
+      <button class="fs-sb-new" title="新对话">＋</button>
+    </div>
+    <div class="fs-sb-search"><input placeholder="搜索会话..." /></div>
+    <div class="fs-sessions">
+      <div class="fs-session active">
+        <span class="fs-session-title">今日订单情况</span>
+        <span class="fs-session-time">刚刚</span>
+      </div>
+      <div class="fs-session">
+        <span class="fs-session-title">袋鼠岛一日游商品优化</span>
+        <span class="fs-session-time">2 小时前</span>
+      </div>
+      <div class="fs-session">
+        <span class="fs-session-title">4 月运营数据分析</span>
+        <span class="fs-session-time">昨天</span>
+      </div>
+      <div class="fs-session">
+        <span class="fs-session-title">差评回复建议</span>
+        <span class="fs-session-time">2 天前</span>
+      </div>
+      <div class="fs-session">
+        <span class="fs-session-title">巴罗莎酒庄商品 FAQ</span>
+        <span class="fs-session-time">3 天前</span>
+      </div>
+      <div class="fs-session">
+        <span class="fs-session-title">退款工单处理建议</span>
+        <span class="fs-session-time">5 天前</span>
+      </div>
+    </div>
+  </div>
+  <div class="fs-main">
+    <div class="fs-topbar">
+      <div class="fs-topbar-left">
+        <button class="fs-collapse-btn" onclick="closeFullscreen()">⏴ 收起</button>
+        <span class="fs-chat-title">今日订单情况</span>
+      </div>
+      <div class="fs-topbar-right">
+        <button class="p-act" title="新对话">＋</button>
+        <button class="p-act" title="更多">⋯</button>
+      </div>
+    </div>
+    <div class="fs-chat-area">
+      <div class="fs-chat-inner">
+        <div class="fs-msgs">
+          <div class="bubble a fade"><div class="b-l">畅游南澳AI</div><div class="b-c" style="font-size:14px">你好！我是畅游南澳AI助手 ✦<br>有什么可以帮您的吗？可以问我关于订单、商品、运营等任何问题。</div></div>
+          <div class="bubble u fade"><div class="b-l">您</div><div class="b-c" style="font-size:14px">帮我查一下今天的订单情况</div></div>
+          <div class="tool-call fade" style="max-width:600px">
+            <div class="tool-call-hdr">
+              <span class="tool-status ok">✓</span>
+              <span class="tool-call-name">查询今日订单</span>
+              <span class="tool-call-dur">128ms</span>
+            </div>
+            <div class="tool-call-result">查询到 12 笔订单，总金额 $3,840.00</div>
+          </div>
+          <div class="bubble a fade"><div class="b-l">畅游南澳AI</div><div class="b-c" style="font-size:14px">📊 <b>今日订单报告</b><br><br>• 新增订单 <b>12 笔</b>，较昨日同期 ↑33%<br>• 总营收 <b>$3,840.00</b><br>• 热销商品：「袋鼠岛一日游」（5 笔）<br>• 平均客单价 <b>$320.00</b><br><br>⚠️ 有 <b>2 笔</b>待确认订单需要尽快处理：<br>　1. #10234 — 袋鼠岛一日游 ×2（$480）<br>　2. #10231 — 阿德莱德城市观光 ×1（$89）<br><br>💡 建议优先处理待确认订单，超过 24 小时将自动取消。</div></div>
+          <div class="bubble u fade"><div class="b-l">您</div><div class="b-c" style="font-size:14px">帮我确认 #10234</div></div>
+          <div class="tool-call fade" style="max-width:600px">
+            <div class="tool-call-hdr">
+              <span class="tool-status run">🔄</span>
+              <span class="tool-call-name">确认订单</span>
+              <span class="tool-call-dur">运行中...</span>
+            </div>
+          </div>
+        </div>
+        <div class="fs-input">
+          <textarea class="fs-ta" placeholder="输入消息... (Enter 发送, Shift+Enter 换行)" rows="1"></textarea>
+          <button class="fs-send">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S_NAV=[
+  {i:'📊',l:'Dashboard',a:true},{i:'📦',l:'商品管理'},{i:'🛒',l:'订单管理'},
+  {i:'💬',l:'评价管理'},{i:'💰',l:'结算中心'},{i:'📥',l:'数据导出'},
+  {i:'👥',l:'团队管理'},{i:'🎧',l:'售后工单'},{i:'📈',l:'数据报表'},
+  {i:'📋',l:'审计日志'},{i:'⚙️',l:'设置'}
+];
+const A_NAV=[
+  {i:'📊',l:'Dashboard',a:true},{i:'🏪',l:'供应商管理'},{i:'📦',l:'商品审核'},
+  {i:'🛒',l:'订单管理'},{i:'👤',l:'用户管理'},{i:'💰',l:'财务管理'},
+  {i:'👮',l:'管理员'},{i:'🖼️',l:'Banner'},{i:'🗺️',l:'地区管理'},
+  {i:'📂',l:'分类管理'},{i:'🏠',l:'首页配置'},{i:'⚙️',l:'系统设置'}
+];
+
+const S_TOOLS=[
+  {cat:'运营分析',catIcon:'ops',tools:[
+    {i:'📊',cls:'ops',n:'AI 每日简报',d:'今日订单/评价/收入趋势，智能运营建议',on:true,pin:true},
+  ]},
+  {cat:'内容创作',catIcon:'content',tools:[
+    {i:'✨',cls:'content',n:'AI 商品写手',d:'一键生成商品英文名、描述、亮点、FAQ',on:true,pin:false},
+  ]},
+  {cat:'客户服务',catIcon:'service',tools:[
+    {i:'💬',cls:'service',n:'AI 评论回复',d:'根据评价内容和评分智能生成专业回复',on:true,pin:false},
+    {i:'🔍',cls:'service',n:'AI 工单分析',d:'分析售后工单意图，推荐最优处理方案',on:true,pin:false},
+  ]},
+];
+const A_TOOLS=[
+  {cat:'运营分析',catIcon:'ops',tools:[
+    {i:'📊',cls:'ops',n:'平台 AI 洞察',d:'全平台运营数据分析、异常预警、趋势预测',on:true,pin:true},
+  ]},
+  {cat:'质量管控',catIcon:'review',tools:[
+    {i:'🛡️',cls:'review',n:'商品 AI 预检',d:'商品质量评分（0-100）、合规风险检测',on:true,pin:false},
+  ]},
+];
+
+const S_FEED=[
+  {ic:'order',e:'📦',t:'新订单 #10234',d:'用户购买了「袋鼠岛一日游」×2',tm:'3分钟前',u:true},
+  {ic:'review',e:'⭐',t:'新评价',d:'「阿德莱德城市观光」收到 5 星好评',tm:'15分钟前',u:true},
+  {ic:'order',e:'📦',t:'订单完成 #10228',d:'「巴罗莎酒庄之旅」已确认完成',tm:'1小时前',u:false},
+  {ic:'settlement',e:'💰',t:'结算通知',d:'4 月结算已到账 $2,340.00',tm:'3小时前',u:false},
+  {ic:'product',e:'📋',t:'商品审核通过',d:'「维克多港鲸鱼观赏」已上架',tm:'5小时前',u:false},
+  {ic:'review',e:'⭐',t:'新评价',d:'「袋鼠岛一日游」收到 4 星评价',tm:'6小时前',u:false},
+  {ic:'system',e:'📢',t:'系统通知',d:'平台将于 5/10 进行系统维护',tm:'昨天',u:false},
+];
+const A_FEED=[
+  {ic:'product',e:'📋',t:'新商品待审核',d:'「格雷尔海滩日落巡游」等待审核',tm:'5分钟前',u:true},
+  {ic:'system',e:'⚠️',t:'异常预警',d:'供应商「ABC Tours」退款率达 12%',tm:'30分钟前',u:true},
+  {ic:'order',e:'📦',t:'大额订单',d:'订单 #10235 金额 $4,200 已支付',tm:'1小时前',u:false},
+  {ic:'product',e:'📋',t:'商品上架',d:'「芭萝莎葡萄酒品鉴」审核通过',tm:'2小时前',u:false},
+  {ic:'settlement',e:'💰',t:'结算处理',d:'5 月第 1 批结算 $18,420 已发起',tm:'4小时前',u:false},
+];
+
+function renderNav(items,role){
+  document.getElementById('sb-nav').innerHTML=items.map(x=>
+    `<div class="nav-i ${x.a?'active '+role:''}"><span>${x.i}</span><span>${x.l}</span></div>`
+  ).join('');
+}
+function renderFeed(items){
+  document.getElementById('feed-list').innerHTML=items.map(x=>
+    `<div class="fi ${x.u?'unread':''}"><div class="fi-icon ${x.ic}">${x.e}</div><div class="fi-body"><div class="fi-title">${x.t}</div><div class="fi-desc">${x.d}</div></div><div class="fi-time">${x.tm}</div></div>`
+  ).join('');
+}
+function renderTools(cats){
+  document.getElementById('tools-grid').innerHTML=cats.map(c=>`
+    <div class="tool-cat fade">
+      <div class="tool-cat-hdr">
+        <div class="tool-cat-icon ${c.catIcon}">${c.tools[0].i}</div>
+        <span class="tool-cat-name">${c.cat}</span>
+        <span class="tool-cat-count">${c.tools.length}</span>
+      </div>
+      <div class="tool-cards">
+        ${c.tools.map(t=>`
+          <div class="tc">
+            <div class="tc-drag">⠿</div>
+            <div class="tc-icon" style="background:${iconBg(t.cls)};color:${iconColor(t.cls)}">${t.i}</div>
+            <div class="tc-body"><div class="tc-name">${t.n}</div><div class="tc-desc">${t.d}</div></div>
+            <div class="tc-arrow">→</div>
+            ${t.pin?'<span class="tc-pin" title="已置顶">📌</span>':''}
+            <button class="tc-toggle ${t.on?'on':'off'}" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+function iconBg(c){return{ops:'#e8f4ff',content:'#fff7e6',service:'#f9f0ff',analytics:'#f6ffed',review:'#fff1f0'}[c]||'#f5f5f5'}
+function iconColor(c){return{ops:'#1677ff',content:'#fa8c16',service:'#722ed1',analytics:'#52c41a',review:'#f5222d'}[c]||'#666'}
+
+let curRole='supplier';
+function switchMode(role,state,btn){
+  curRole=role;
+  document.getElementById('sidebar').className='sidebar '+role;
+  document.getElementById('sb-badge').className='sb-badge '+role;
+  document.getElementById('sb-badge').textContent=role==='supplier'?'Supplier':'Admin';
+  document.getElementById('p-brand-icon').className='p-brand-icon '+role;
+  document.getElementById('col-brand').className='col-brand '+role;
+  const p=document.getElementById('panel'),m=document.getElementById('main');
+  if(state==='collapsed'){p.classList.add('collapsed');m.classList.add('pc')}else{p.classList.remove('collapsed');m.classList.remove('pc')}
+  renderNav(role==='supplier'?S_NAV:A_NAV,role);
+  renderFeed(role==='supplier'?S_FEED:A_FEED);
+  renderTools(role==='supplier'?S_TOOLS:A_TOOLS);
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+function togglePanel(){
+  document.getElementById('panel').classList.toggle('collapsed');
+  document.getElementById('main').classList.toggle('pc');
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab-b').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+tab));
+  document.querySelectorAll('.col-icon').forEach((ic,i)=>ic.classList.toggle('active',['chat','feed','tools'][i]===tab));
+}
+function openFullscreen(btn){
+  document.getElementById('fs-overlay').classList.add('show');
+  if(btn){document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+}
+function closeFullscreen(){
+  document.getElementById('fs-overlay').classList.remove('show');
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.mode-btn').classList.add('active');
+}
+
+// Init
+renderNav(S_NAV,'supplier');
+renderFeed(S_FEED);
+renderTools(S_TOOLS);
+</script>
+</body>
+</html>

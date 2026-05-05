@@ -826,6 +826,25 @@
     "hoursAgo": "{{n}}小时前",
     "daysAgo": "{{n}}天前"
   },
+  "aiPanel": {
+    "brand": "畅游南澳AI",
+    "tab": {
+      "chat": "对话",
+      "feed": "动态",
+      "tools": "工具"
+    },
+    "expand": "展开畅游南澳AI",
+    "collapse": "折叠",
+    "fullscreen": "全屏对话",
+    "newChat": "新对话",
+    "you": "您",
+    "welcomeDesc": "有什么可以帮您的吗？",
+    "inputPlaceholder": "输入消息...",
+    "noNotifications": "暂无动态",
+    "viewAllNotifications": "查看全部通知 →",
+    "searchTools": "🔍 搜索工具...",
+    "noToolsFound": "未找到工具"
+  },
   "shop": {
     "rating": "评分",
     "products": "产品",

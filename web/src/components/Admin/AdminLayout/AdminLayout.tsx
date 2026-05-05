@@ -19,9 +19,12 @@ import {
   MapPin,
   Tag,
   Home,
+  BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
+import { AIPanel, type ToolCategory } from '../../AI/AIPanel';
 import styles from './AdminLayout.module.css';
 
 interface AdminLayoutProps {
@@ -49,6 +52,29 @@ const menuItems: MenuItem[] = [
   { key: 'categories', path: '/admin/categories', icon: <Tag size={20} />, labelKey: 'admin.menu.categories' },
   { key: 'homepage', path: '/admin/homepage', icon: <Home size={20} />, labelKey: 'admin.menu.homepage' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
+];
+
+const adminToolCategories: ToolCategory[] = [
+  {
+    id: 'analytics',
+    name: '运营分析',
+    icon: <BarChart3 size={12} />,
+    iconBg: '#e8f4ff',
+    iconColor: '#1677ff',
+    tools: [
+      { id: 'insights', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: '平台 AI 洞察', description: '全平台运营数据分析、异常预警、趋势预测', enabled: true, pinned: true },
+    ],
+  },
+  {
+    id: 'quality',
+    name: '质量管控',
+    icon: <Shield size={12} />,
+    iconBg: '#fff1f0',
+    iconColor: '#f5222d',
+    tools: [
+      { id: 'precheck', icon: <Shield size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: '商品 AI 预检', description: '商品质量评分（0-100）、合规风险检测', path: '/admin/products', enabled: true },
+    ],
+  },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
@@ -237,6 +263,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           {children}
         </main>
       </div>
+
+      {/* AI Panel */}
+      <AIPanel
+        role="admin"
+        toolCategories={adminToolCategories}
+      />
     </div>
   );
 };

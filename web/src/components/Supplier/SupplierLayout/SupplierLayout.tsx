@@ -19,12 +19,14 @@ import {
   Users,
   Headphones,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
 import { BookmarkPanel } from '../BookmarkPanel/BookmarkPanel';
 import { NotificationPanel } from '../NotificationPanel/NotificationPanel';
 import { ShopPreviewModal } from '../ShopPreviewModal/ShopPreviewModal';
+import { AIPanel, type ToolCategory } from '../../AI/AIPanel';
 import styles from './SupplierLayout.module.css';
 
 interface SupplierLayoutProps {
@@ -52,6 +54,40 @@ const menuItems: MenuItem[] = [
   { key: 'reports', path: '/supplier/reports', icon: <BarChart3 size={20} />, labelKey: 'supplier.nav.reports', requireApproved: true },
   { key: 'auditLogs', path: '/supplier/audit-logs', icon: <FileText size={20} />, labelKey: 'supplier.nav.auditLogs' },
   { key: 'settings', path: '/supplier/settings', icon: <Settings size={20} />, labelKey: 'supplier.nav.settings' },
+];
+
+const supplierToolCategories: ToolCategory[] = [
+  {
+    id: 'analytics',
+    name: '运营分析',
+    icon: <BarChart3 size={12} />,
+    iconBg: '#e8f4ff',
+    iconColor: '#1677ff',
+    tools: [
+      { id: 'briefing', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: 'AI 每日简报', description: '今日订单/评价/收入趋势，智能运营建议', enabled: true, pinned: true },
+    ],
+  },
+  {
+    id: 'content',
+    name: '内容创作',
+    icon: <Sparkles size={12} />,
+    iconBg: '#fff7e6',
+    iconColor: '#fa8c16',
+    tools: [
+      { id: 'writer', icon: <Sparkles size={16} />, iconBg: '#fff7e6', iconColor: '#fa8c16', name: 'AI 商品写手', description: '一键生成商品英文名、描述、亮点、FAQ', path: '/supplier/products/new', enabled: true },
+    ],
+  },
+  {
+    id: 'service',
+    name: '客户服务',
+    icon: <MessageSquare size={12} />,
+    iconBg: '#f9f0ff',
+    iconColor: '#722ed1',
+    tools: [
+      { id: 'reply', icon: <MessageSquare size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 评论回复', description: '根据评价内容和评分智能生成专业回复', path: '/supplier/reviews', enabled: true },
+      { id: 'ticket', icon: <Headphones size={16} />, iconBg: '#f9f0ff', iconColor: '#722ed1', name: 'AI 工单分析', description: '分析售后工单意图，推荐最优处理方案', path: '/supplier/after-sales', enabled: true },
+    ],
+  },
 ];
 
 export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
@@ -249,6 +285,13 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
           {children}
         </main>
       </div>
+
+      {/* AI Panel */}
+      <AIPanel
+        role="supplier"
+        toolCategories={supplierToolCategories}
+        onViewAllNotifications={() => navigate('/supplier/notifications')}
+      />
     </div>
   );
 };
