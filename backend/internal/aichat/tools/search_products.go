@@ -31,6 +31,11 @@ func RegisterSearchProducts(ps *productstore.ProductStore) model.ToolDef {
 				PageSize: 5,
 			}
 
+			// Supplier users only see their own products
+			if ctx.User != nil && ctx.User.UserType == "supplier" && ctx.User.SupplierID != nil {
+				filter.SupplierID = *ctx.User.SupplierID
+			}
+
 			if kw, ok := args["keyword"].(string); ok {
 				filter.Keyword = kw
 			}
