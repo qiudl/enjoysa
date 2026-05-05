@@ -31,10 +31,6 @@ const meta: Meta<typeof Footer> = {
       control: 'text',
       description: '联系邮箱',
     },
-    wechat: {
-      control: 'text',
-      description: '微信公众号',
-    },
     address: {
       control: 'text',
       description: '地址',
@@ -71,8 +67,7 @@ export const CustomContact: Story = {
     ...Default.args,
     phone: '+86 21 1234 5678',
     email: 'service@enjoysa.cn',
-    wechat: 'EnjoySA_China',
-    address: '上海市浦东新区陆家嘴',
+    address: 'Adelaide, South Australia',
   },
 };
 

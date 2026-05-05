@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Mail, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Mail } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './Footer.module.css';
 
@@ -14,8 +14,6 @@ export interface FooterProps {
   phone?: string;
   /** 联系邮箱 */
   email?: string;
-  /** 微信公众号 */
-  wechat?: string;
   /** 地址 */
   address?: string;
   /** ICP 备案号 */
@@ -49,9 +47,8 @@ const partnerLinks = [
 export const Footer: React.FC<FooterProps> = ({
   logo,
   description,
-  phone = '+61 8 1234 5678',
-  email = 'contact@enjoysa.com.au',
-  wechat = 'EnjoySA_Official',
+  phone = '+61 0406830901',
+  email = 'tonylai@enjoysau.com.au',
   address = 'Adelaide, South Australia',
   icp,
   onNavClick,
@@ -91,10 +88,6 @@ export const Footer: React.FC<FooterProps> = ({
               <div className={styles.contactItem}>
                 <Mail size={16} />
                 <a href={`mailto:${email}`}>{email}</a>
-              </div>
-              <div className={styles.contactItem}>
-                <MessageCircle size={16} />
-                <span>{wechat}</span>
               </div>
               <div className={styles.contactItem}>
                 <MapPin size={16} />
