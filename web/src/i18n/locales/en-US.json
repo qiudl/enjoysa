@@ -2579,7 +2579,9 @@
     "descZh": "Chinese description",
     "highlights": "Highlights",
     "apply": "Apply & fill",
-    "regenerate": "Regenerate"
+    "regenerate": "Regenerate",
+    "needName": "Please enter product name first",
+    "needKeywords": "Please enter keywords"
   },
   "aiBriefing": {
     "title": "Today's AI Briefing"

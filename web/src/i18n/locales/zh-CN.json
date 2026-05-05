@@ -2574,7 +2574,9 @@
     "descZh": "中文描述",
     "highlights": "亮点",
     "apply": "采用并填充",
-    "regenerate": "重新生成"
+    "regenerate": "重新生成",
+    "needName": "请先填写产品中文名",
+    "needKeywords": "请输入关键词"
   },
   "aiBriefing": {
     "title": "今日 AI 简报"
