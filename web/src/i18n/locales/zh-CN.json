@@ -847,7 +847,13 @@
     "describeScreenshot": "描述截图内容...",
     "sessions": "会话列表",
     "searchSessions": "搜索会话...",
-    "backToPanel": "返回"
+    "backToPanel": "返回",
+    "identity": {
+      "activeAs": "当前对话身份",
+      "admin": "管理员",
+      "supplier": "供应商",
+      "guest": "访客"
+    }
   },
   "shop": {
     "rating": "评分",

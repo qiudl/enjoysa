@@ -847,7 +847,13 @@
     "describeScreenshot": "Describe the screenshot...",
     "sessions": "Sessions",
     "searchSessions": "Search sessions...",
-    "backToPanel": "Back"
+    "backToPanel": "Back",
+    "identity": {
+      "activeAs": "Current chat identity",
+      "admin": "Admin",
+      "supplier": "Supplier",
+      "guest": "Guest"
+    }
   },
   "shop": {
     "rating": "Rating",

@@ -7,6 +7,7 @@ import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
 import { ToolCallCard } from './ToolCallCard';
 import Markdown from 'react-markdown';
+import { IdentityBadge } from '../IdentityBadge';
 import styles from './AIPanel.module.css';
 import clsx from 'clsx';
 
@@ -350,6 +351,9 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                     <ToolCallCard key={tc.id} toolCall={tc} />
                   ))}
               <div ref={messagesEndRef} />
+            </div>
+            <div className={styles.chatIdentityRow}>
+              <IdentityBadge role={role} />
             </div>
             <div className={styles.chatInput}>
               {pastedImages.length > 0 && (

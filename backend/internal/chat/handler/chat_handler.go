@@ -8,6 +8,7 @@ import (
 
 	aichatmodel "enjoysa-backend/internal/aichat/model"
 	aichatservice "enjoysa-backend/internal/aichat/service"
+	authmodel "enjoysa-backend/internal/auth/model"
 	chatmodel "enjoysa-backend/internal/chat/model"
 	"enjoysa-backend/internal/chat/service"
 	"enjoysa-backend/internal/chat/store"
@@ -47,6 +48,55 @@ type SendMessageRequest struct {
 	DisabledTools []string `json:"disabled_tools"`
 }
 
+// buildChatUser resolves the ChatUser from the gin context populated by the
+// auth middleware. Order matters: supplier_user takes precedence over user
+// because the supplier middleware always sets a richer object.
+func buildChatUser(c *gin.Context) *aichatmodel.ChatUser {
+	if v, ok := c.Get("supplier_user"); ok {
+		if su, ok := v.(*models.SupplierUser); ok && su != nil {
+			supplierName := ""
+			if su.Supplier != nil {
+				supplierName = su.Supplier.Name
+			}
+			supplierID := su.SupplierID
+			return &aichatmodel.ChatUser{
+				UserType:     "supplier",
+				UserID:       su.ID,
+				Name:         su.Name,
+				Role:         su.Role,
+				SupplierID:   &supplierID,
+				SupplierName: supplierName,
+			}
+		}
+	}
+	if v, ok := c.Get("admin"); ok {
+		if a, ok := v.(*authmodel.Admin); ok && a != nil {
+			role := a.Role
+			if r, ok := c.Get("admin_role"); ok {
+				if rs, ok := r.(string); ok && rs != "" {
+					role = rs
+				}
+			}
+			return &aichatmodel.ChatUser{
+				UserType: "admin",
+				UserID:   a.ID,
+				Name:     a.Name,
+				Role:     role,
+			}
+		}
+	}
+	if v, ok := c.Get("user"); ok {
+		if u, ok := v.(*models.User); ok && u != nil {
+			return &aichatmodel.ChatUser{
+				UserType: "user",
+				UserID:   u.ID,
+				Name:     u.Name,
+			}
+		}
+	}
+	return &aichatmodel.ChatUser{UserType: "guest"}
+}
+
 // SendMessageStream handles POST /chat/send with SSE streaming response.
 func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 	var req SendMessageRequest
@@ -55,18 +105,10 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		return
 	}
 
-	// Determine user identity
-	userID := uint(0)
-	userType := "guest"
-	if u, exists := c.Get("user"); exists {
-		user := u.(*models.User)
-		userID = user.ID
-		userType = "user"
-	}
-	// Frontend can override role for supplier/admin (route uses OptionalUserAuth)
-	if req.UserType == "supplier" || req.UserType == "admin" {
-		userType = req.UserType
-	}
+	// Determine user identity from authenticated context (single source of truth).
+	chatUser := buildChatUser(c)
+	userID := chatUser.UserID
+	userType := chatUser.UserType
 
 	lang := req.Language
 	if lang == "" {
@@ -114,7 +156,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 	}
 
 	aiMessages := []service.Message{
-		{Role: "system", Content: service.SystemPrompt(lang, req.PageContext, userType)},
+		{Role: "system", Content: service.SystemPrompt(lang, req.PageContext, chatUser)},
 	}
 	for _, m := range recentMsgs {
 		aiMessages = append(aiMessages, service.Message{Role: m.Role, Content: m.Content})
@@ -132,7 +174,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 
 	// Use tool-calling flow for supplier/admin if LLM client is available
 	if (userType == "supplier" || userType == "admin") && h.llmClient != nil && h.toolRegistry != nil {
-		h.streamWithTools(c, session, aiMessages, lang, userType, req.Message, req.DisabledTools)
+		h.streamWithTools(c, session, aiMessages, lang, chatUser, req.Message, req.DisabledTools)
 		return
 	}
 
@@ -179,8 +221,9 @@ func (h *ChatHandler) finishStream(c *gin.Context, session *chatmodel.ChatSessio
 }
 
 // streamWithTools handles the tool-calling chat flow for supplier/admin.
-func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang, userType, userMessage string, disabledTools []string) {
+func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang string, chatUser *aichatmodel.ChatUser, userMessage string, disabledTools []string) {
 	ctx := c.Request.Context()
+	userType := chatUser.UserType
 
 	// Build LLM messages from service.Message
 	llmMessages := make([]aichatservice.ChatMessage, len(sysMessages))
@@ -202,13 +245,16 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 		}
 	}
 
-	// Tool context for execution
-	supplierID := uint(0)
-	if sid, exists := c.Get("supplier_id"); exists {
-		supplierID = sid.(uint)
+	// Tool context: identity comes from the resolved ChatUser. For suppliers
+	// the legacy UserID slot carries supplier_id (existing tools rely on this);
+	// the new User field exposes the full identity for new tools.
+	toolUserID := chatUser.UserID
+	if chatUser.UserType == "supplier" && chatUser.SupplierID != nil {
+		toolUserID = *chatUser.SupplierID
 	}
 	toolCtx := aichatmodel.ToolContext{
-		UserID:   &supplierID,
+		User:     chatUser,
+		UserID:   &toolUserID,
 		Language: lang,
 		DB:       h.db,
 	}

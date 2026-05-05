@@ -13,10 +13,61 @@ type ToolDef struct {
 	Audience     string                 `json:"audience"`      // "" or "all" = everyone, "supplier", "admin"
 }
 
+// ChatUser is the identity context resolved from the authenticated request.
+// It is the single source of truth for "who is talking to the AI right now".
+type ChatUser struct {
+	UserType     string // "user" | "supplier" | "admin" | "guest"
+	UserID       uint   // 0 for guest
+	Name         string // display name; never email/phone
+	Role         string // supplier sub-role (owner/staff) or admin role code
+	SupplierID   *uint  // set only when UserType == "supplier"
+	SupplierName string // set only when UserType == "supplier"
+}
+
+// IsGuest reports whether the chat user is unauthenticated.
+func (u *ChatUser) IsGuest() bool {
+	return u == nil || u.UserType == "" || u.UserType == "guest"
+}
+
+// RoleZh returns the Chinese display name of the role for prompt insertion.
+func (u *ChatUser) RoleZh() string {
+	if u == nil {
+		return "匿名访客"
+	}
+	switch u.UserType {
+	case "supplier":
+		return "供应商账户"
+	case "admin":
+		return "平台管理员"
+	case "user":
+		return "用户"
+	default:
+		return "匿名访客"
+	}
+}
+
+// RoleEn returns the English display name of the role.
+func (u *ChatUser) RoleEn() string {
+	if u == nil {
+		return "Anonymous guest"
+	}
+	switch u.UserType {
+	case "supplier":
+		return "Supplier"
+	case "admin":
+		return "Platform Admin"
+	case "user":
+		return "User"
+	default:
+		return "Anonymous guest"
+	}
+}
+
 // ToolContext provides context for tool execution.
 type ToolContext struct {
-	UserID   *uint  // nil = guest
-	Language string // "zh" | "en"
+	User     *ChatUser // full identity (preferred for new tools)
+	UserID   *uint     // nil = guest (kept for backward compatibility)
+	Language string    // "zh" | "en"
 	DB       interface{}
 }
 
