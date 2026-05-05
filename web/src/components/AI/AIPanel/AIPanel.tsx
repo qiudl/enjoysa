@@ -6,6 +6,7 @@ import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
 import { ToolCallCard } from './ToolCallCard';
+import Markdown from 'react-markdown';
 import styles from './AIPanel.module.css';
 import clsx from 'clsx';
 
@@ -211,8 +212,12 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                       <div className={styles.bubbleLabel}>
                         {msg.role === 'user' ? t('aiPanel.you', '您') : t('aiPanel.brand', '畅游南澳AI')}
                       </div>
-                      <div className={styles.bubbleContent}>
-                        {msg.content || (isLoading && i === messages.length - 1 ? (
+                      <div className={clsx(styles.bubbleContent, msg.role === 'assistant' && styles.markdown)}>
+                        {msg.content ? (
+                          msg.role === 'assistant'
+                            ? <Markdown>{msg.content}</Markdown>
+                            : msg.content
+                        ) : (isLoading && i === messages.length - 1 ? (
                           <div className={styles.typing}>
                             <span className={styles.typingDot} />
                             <span className={styles.typingDot} />

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Send, Plus, PanelLeftClose, Sparkles, Search } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { ToolCallCard } from '../../../components/AI/AIPanel/ToolCallCard';
+import Markdown from 'react-markdown';
 import styles from './SupplierAIChatPage.module.css';
 
 interface AIChatPageProps {
@@ -138,8 +139,12 @@ export const AIChatPage: React.FC<AIChatPageProps> = ({ role, backPath }) => {
                     <div className={styles.bubbleLabel}>
                       {msg.role === 'user' ? t('aiPanel.you', '您') : t('aiPanel.brand', '畅游南澳AI')}
                     </div>
-                    <div className={styles.bubbleContent}>
-                      {msg.content || (isLoading && i === messages.length - 1 ? (
+                    <div className={`${styles.bubbleContent} ${msg.role === 'assistant' ? styles.markdown : ''}`}>
+                      {msg.content ? (
+                        msg.role === 'assistant'
+                          ? <Markdown>{msg.content}</Markdown>
+                          : msg.content
+                      ) : (isLoading && i === messages.length - 1 ? (
                         <span className={styles.typing}>
                           <span className={styles.dot} /><span className={styles.dot} /><span className={styles.dot} />
                         </span>
