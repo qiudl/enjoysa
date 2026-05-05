@@ -314,9 +314,17 @@
   gap: 4px;
   padding: 10px 14px;
   align-self: flex-start;
+  align-items: center;
   background: var(--color-bg-secondary, #f5f5f5);
   border-radius: 12px;
   border-bottom-left-radius: 4px;
+}
+
+.typingStatus {
+  margin-left: 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #8c8c8c);
+  white-space: nowrap;
 }
 
 .typingDot {

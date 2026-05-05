@@ -22,6 +22,7 @@ export const ChatWidget: React.FC = () => {
     userMessageCount, signupDismissed, dismissSignup,
     showHistory, setShowHistory, sessions, isSessionsLoading,
     loadSessions, loadSession, newSession,
+    statusMessage,
   } = useChat();
   const { isAuthenticated } = useUserAuth();
 
@@ -273,6 +274,11 @@ export const ChatWidget: React.FC = () => {
                     <span className={styles.typingDot} />
                     <span className={styles.typingDot} />
                     <span className={styles.typingDot} />
+                    {statusMessage ? (
+                      <span className={styles.typingStatus}>{statusMessage}</span>
+                    ) : (
+                      <span className={styles.typingStatus}>{t('chat.thinking', 'AI is thinking...')}</span>
+                    )}
                   </div>
                 )}
                 <div ref={messagesEndRef} />
