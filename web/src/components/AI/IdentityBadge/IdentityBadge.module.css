@@ -1,0 +1,51 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 500;
+  background: var(--ai-identity-bg, rgba(99, 102, 241, 0.08));
+  color: var(--ai-identity-fg, #4f46e5);
+  border: 1px solid var(--ai-identity-border, rgba(99, 102, 241, 0.18));
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge.admin {
+  --ai-identity-bg: rgba(220, 38, 38, 0.08);
+  --ai-identity-fg: #b91c1c;
+  --ai-identity-border: rgba(220, 38, 38, 0.18);
+}
+
+.badge.supplier {
+  --ai-identity-bg: rgba(16, 185, 129, 0.08);
+  --ai-identity-fg: #047857;
+  --ai-identity-border: rgba(16, 185, 129, 0.18);
+}
+
+.badge.guest {
+  --ai-identity-bg: rgba(107, 114, 128, 0.08);
+  --ai-identity-fg: #4b5563;
+  --ai-identity-border: rgba(107, 114, 128, 0.18);
+}
+
+.icon {
+  flex: 0 0 auto;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.divider {
+  opacity: 0.45;
+  margin: 0 2px;
+}

@@ -256,6 +256,52 @@ func OptionalUserAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc 
 	}
 }
 
+// OptionalAnyAuth resolves any of user/supplier/admin tokens and injects the
+// corresponding context keys, but does NOT block unauthenticated requests.
+// Used by chat/send so guests, C-end users, suppliers and admins can all use
+// the same endpoint with the AI knowing exactly who is talking.
+func OptionalAnyAuth(jwtService *auth.JWTService, db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenStr, err := getTokenFromHeader(c)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		claims, err := jwtService.ParseToken(tokenStr)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		switch claims.UserType {
+		case "user":
+			var user models.User
+			if err := db.First(&user, claims.UserID).Error; err == nil && user.Status == "active" {
+				c.Set("user", &user)
+				c.Set("user_id", user.ID)
+			}
+		case "supplier":
+			var su models.SupplierUser
+			if err := db.Preload("Supplier").First(&su, claims.UserID).Error; err == nil && su.Status == "active" {
+				c.Set("supplier_user", &su)
+				c.Set("supplier_user_id", su.ID)
+				c.Set("supplier_id", su.SupplierID)
+				if su.Supplier != nil {
+					c.Set("supplier_status", su.Supplier.Status)
+				}
+			}
+		case "admin":
+			var admin authmodel.Admin
+			if err := db.First(&admin, claims.UserID).Error; err == nil && admin.Status == "active" {
+				c.Set("admin", &admin)
+				c.Set("admin_id", admin.ID)
+			}
+		}
+		c.Next()
+	}
+}
+
 // APIKeyAuth validates X-Service-Key header for service-to-service calls
 func APIKeyAuth(validKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
