@@ -115,6 +115,9 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("ai.base_url", "ENJOYSA_AI_BASE_URL")
 	_ = v.BindEnv("ai.api_key", "ENJOYSA_AI_API_KEY")
 	_ = v.BindEnv("ai.model", "ENJOYSA_AI_MODEL")
+	_ = v.BindEnv("ai.aiproj_base", "ENJOYSA_AI_AIPROJ_BASE")
+	_ = v.BindEnv("ai.aiproj_token", "ENJOYSA_AI_AIPROJ_TOKEN")
+	_ = v.BindEnv("ai.aiproj_proj_id", "ENJOYSA_AI_AIPROJ_PROJ_ID")
 	_ = v.BindEnv("aftersales.service_key", "ENJOYSA_AFTERSALES_KEY")
 
 	if err := v.ReadInConfig(); err != nil {
