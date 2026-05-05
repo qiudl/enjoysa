@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	aichatmodel "enjoysa-backend/internal/aichat/model"
 	"enjoysa-backend/internal/core/config"
 	"enjoysa-backend/internal/core/logger"
 )
@@ -102,10 +103,19 @@ func (s *AIService) ChatStream(ctx context.Context, messages []Message, cb Strea
 	return scanner.Err()
 }
 
-// SystemPrompt builds the system prompt based on user role.
-func SystemPrompt(lang, pageContext, userType string) string {
+// SystemPrompt builds the system prompt for the LLM. The user identity is
+// rendered into a dedicated "current identity" section so the model can
+// address the speaker correctly and bind "my X" tool calls implicitly.
+func SystemPrompt(lang, pageContext string, user *aichatmodel.ChatUser) string {
 	var sb strings.Builder
 	isZh := lang == "zh" || strings.HasPrefix(lang, "zh")
+
+	userType := "guest"
+	if user != nil && user.UserType != "" {
+		userType = user.UserType
+	}
+
+	sb.WriteString(buildIdentitySection(isZh, user))
 
 	switch userType {
 	case "supplier":
@@ -239,5 +249,53 @@ Rules:
 		sb.WriteString(pageContext)
 	}
 
+	return sb.String()
+}
+
+// buildIdentitySection renders the leading identity block of the system prompt.
+// Only display name, role and (for suppliers) supplier name are exposed —
+// email, phone and user_id are intentionally withheld for privacy.
+func buildIdentitySection(isZh bool, user *aichatmodel.ChatUser) string {
+	var sb strings.Builder
+	if user == nil || user.IsGuest() {
+		if isZh {
+			sb.WriteString("## 当前对话身份\n你正在与 **匿名访客** 对话。\n- 不要称呼用户姓名。\n- 涉及个人数据的请求请引导其登录后再使用。\n\n")
+		} else {
+			sb.WriteString("## Current chat identity\nYou are talking to an **anonymous guest**.\n- Do not address them by name.\n- For requests involving personal data, guide them to sign in first.\n\n")
+		}
+		return sb.String()
+	}
+
+	if isZh {
+		sb.WriteString("## 当前对话身份\n")
+		sb.WriteString("你正在与 ")
+		sb.WriteString(user.RoleZh())
+		sb.WriteString(" 「")
+		sb.WriteString(user.Name)
+		sb.WriteString("」")
+		if user.UserType == "supplier" && user.SupplierName != "" {
+			sb.WriteString("（所属供应商：")
+			sb.WriteString(user.SupplierName)
+			sb.WriteString("）")
+		}
+		sb.WriteString(" 对话。\n")
+		sb.WriteString("- 称呼规范：仅在打招呼、重要提醒、错误修复场景使用其姓名；正文回答中**不要重复称呼**，更自然。\n")
+		sb.WriteString("- 语义绑定：\"我\"、\"我的\"、\"我们\"指当前用户/所属供应商；调用工具时由系统自动注入身份，**不要要求用户提供 user_id 或 supplier_id**。\n\n")
+	} else {
+		sb.WriteString("## Current chat identity\n")
+		sb.WriteString("You are talking to ")
+		sb.WriteString(user.RoleEn())
+		sb.WriteString(" \"")
+		sb.WriteString(user.Name)
+		sb.WriteString("\"")
+		if user.UserType == "supplier" && user.SupplierName != "" {
+			sb.WriteString(" (Supplier: ")
+			sb.WriteString(user.SupplierName)
+			sb.WriteString(")")
+		}
+		sb.WriteString(".\n")
+		sb.WriteString("- Addressing: only use their name for greetings, critical reminders or error recovery; do NOT keep repeating it in regular replies.\n")
+		sb.WriteString("- Semantic binding: \"I\", \"my\", \"we\" refer to the current user / their supplier. The system injects identity automatically into tool calls — never ask the user for user_id or supplier_id.\n\n")
+	}
 	return sb.String()
 }

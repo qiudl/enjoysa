@@ -274,9 +274,10 @@ func Setup(cfg Config) *gin.Engine {
 	// ========================================
 	// Chat routes (public + optional auth)
 	// ========================================
-	// Chat send supports both guest and authenticated users.
-	// Guest users get userID=0; authenticated users get their real ID.
-	v1.POST("/chat/send", middleware.OptionalUserAuth(cfg.JWTService, cfg.DB), chatHandler.SendMessageStream)
+	// Chat send supports guests, C-end users, suppliers and admins.
+	// OptionalAnyAuth resolves whichever token is present so the AI knows
+	// exactly who is talking; missing/invalid tokens fall back to guest.
+	v1.POST("/chat/send", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), chatHandler.SendMessageStream)
 
 	// Authenticated chat routes
 	chatGroup := v1.Group("/chat")
