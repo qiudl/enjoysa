@@ -377,6 +377,12 @@ func Setup(cfg Config) *gin.Engine {
 	}
 
 	// ========================================
+	// After-sales handlers (shared between supplier portal + service-to-service)
+	// ========================================
+	asStore := aftersalesstore.NewTicketStore(cfg.DB)
+	asHandler := aftersaleshandler.NewAfterSalesHandler(asStore)
+
+	// ========================================
 	// Supplier routes
 	// ========================================
 	v1.POST("/supplier/register", supplierHandler.Register)
@@ -394,6 +400,8 @@ func Setup(cfg Config) *gin.Engine {
 		supplierGroup.GET("/schedules/alerts", supplierProductHandler.ScheduleAlerts)
 		supplierGroup.GET("/audit-logs", supplierAuditLogHandler.List)
 		supplierGroup.GET("/chat/shares", shareHandler.ListMine)
+		supplierGroup.POST("/aftersales/tickets", asHandler.SupplierCreateTicket)
+		supplierGroup.GET("/aftersales/tickets/:id", asHandler.SupplierGetTicket)
 	}
 
 	// Supplier product routes (requires approved supplier)
@@ -660,8 +668,6 @@ func Setup(cfg Config) *gin.Engine {
 	// ========================================
 	// After-sales API (service-to-service, API Key auth)
 	// ========================================
-	asStore := aftersalesstore.NewTicketStore(cfg.DB)
-	asHandler := aftersaleshandler.NewAfterSalesHandler(asStore)
 
 	aftersalesGroup := v1.Group("/aftersales")
 	if cfg.AfterSalesConfig.ServiceKey != "" {

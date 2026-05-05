@@ -6,6 +6,10 @@
 
 .pageHeader {
   margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .pageTitle {
@@ -13,6 +17,22 @@
   font-weight: 700;
   color: var(--color-text, #1a1a2e);
   margin: 0;
+}
+
+.newTicketBtn {
+  border: none;
+  background: #1677ff;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newTicketBtn:hover {
+  background: #0958d9;
 }
 
 /* Stats */
