@@ -222,13 +222,13 @@ export const AIPanel: React.FC<AIPanelProps> = ({
           img.preview === preview ? { ...img, url: json.data.url, uploading: false } : img
         ));
       } else {
-        // FIX #9: Toast on upload failure
         setPastedImages(prev => prev.filter(img => img.preview !== preview));
+        imageCountRef.current = Math.max(0, imageCountRef.current - 1); // FIX #12
         alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
       }
     } catch {
-      // FIX #9: Toast on upload failure
       setPastedImages(prev => prev.filter(img => img.preview !== preview));
+      imageCountRef.current = Math.max(0, imageCountRef.current - 1); // FIX #12
       alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
     }
   }, [t]);

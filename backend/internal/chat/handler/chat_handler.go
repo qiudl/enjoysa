@@ -181,15 +181,20 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 
 	// FIX #1 + #2: GLM vision recognition AFTER SSE is established
 	if len(req.ImageURLs) > 0 && h.glmClient != nil {
-		// Notify frontend that image recognition is in progress
-		fmt.Fprintf(c.Writer, "data: {\"type\":\"token\",\"content\":\"正在识别图片...\\n\\n\"}\n\n")
+		// FIX #13: Use "status" event type (not "token") to avoid polluting assistant message
+		fmt.Fprintf(c.Writer, "data: {\"type\":\"status\",\"content\":\"正在识别图片...\"}\n\n")
 		c.Writer.Flush()
 
-		// FIX #2: Ensure URLs are absolute for GLM to download
+		// FIX #2 + #14: Ensure URLs are absolute for GLM to download (derive from request Host)
+		scheme := "https"
+		host := c.Request.Host
+		if host == "" {
+			host = "enjoysau.com"
+		}
 		absoluteURLs := make([]string, 0, len(req.ImageURLs))
 		for _, u := range req.ImageURLs {
 			if strings.HasPrefix(u, "/") {
-				u = "https://enjoysau.com" + u
+				u = scheme + "://" + host + u
 			}
 			absoluteURLs = append(absoluteURLs, u)
 		}
