@@ -14,6 +14,7 @@ const PlanPage = React.lazy(() => import('./pages/PlanPage/PlanPage'));
 const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
 const MyOrdersPage = React.lazy(() => import('./pages/MyOrdersPage/MyOrdersPage'));
 const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage/OrderDetailPage'));
+const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage/OrderConfirmationPage'));
 const UserProfilePage = React.lazy(() => import('./pages/UserProfilePage/UserProfilePage'));
 const UserProfileEditPage = React.lazy(() => import('./pages/UserProfileEditPage/UserProfileEditPage'));
 const DestinationsPage = React.lazy(() => import('./pages/DestinationsPage/DestinationsPage'));
@@ -417,6 +418,12 @@ function OrderDetailPageWrapper() {
       onNavClick={(path) => navigate(path)}
     />
   );
+}
+
+// 包装组件：OrderConfirmationPage
+function OrderConfirmationPageWrapper() {
+  const { id } = useParams();
+  return <OrderConfirmationPage orderId={id} />;
 }
 
 // 包装组件：MyOrdersPage
@@ -1275,6 +1282,7 @@ function App() {
         <Route path="/checkout" element={<CheckoutPageWrapper />} />
         <Route path="/orders" element={<MyOrdersPageWrapper />} />
         <Route path="/orders/:id" element={<OrderDetailPageWrapper />} />
+        <Route path="/orders/:id/confirmation" element={<OrderConfirmationPageWrapper />} />
 
         {/* 用户中心 */}
         <Route path="/profile" element={<UserProfilePageWrapper />} />
