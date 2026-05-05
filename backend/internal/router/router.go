@@ -128,6 +128,7 @@ func Setup(cfg Config) *gin.Engine {
 	chStore := chatstore.NewChatStore(cfg.DB)
 	aiService := chatservice.NewAIService(cfg.AIConfig)
 	chatHandler := chathandler.NewChatHandler(chStore, aiService)
+	chatHandler.SetToolSupport(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.DB)
 
 	// === Supplier audit ===
 	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
