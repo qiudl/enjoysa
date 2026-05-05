@@ -1176,6 +1176,9 @@
         "editFields": {
           "name": "Name",
           "namePlaceholder": "Enter supplier name",
+          "type": "Supplier Type",
+          "email": "Email",
+          "emailPlaceholder": "Enter email address",
           "description": "Description",
           "descriptionPlaceholder": "Enter supplier description",
           "phone": "Phone",
@@ -1190,6 +1193,10 @@
           "statePlaceholder": "Enter state",
           "postalCode": "Postal Code",
           "postalCodePlaceholder": "Enter postal code",
+          "businessLicense": "Business License",
+          "businessLicensePlaceholder": "Enter business license number",
+          "taxNumber": "Tax Number",
+          "taxNumberPlaceholder": "Enter tax number (ABN/TFN)",
           "bankName": "Bank Name",
           "bankNamePlaceholder": "Enter bank name",
           "bankAccount": "Bank Account",
@@ -1199,6 +1206,7 @@
           "accountHolder": "Account Holder",
           "accountHolderPlaceholder": "Enter account holder name"
         },
+        "editCredentials": "Credentials",
         "contactInfo": "Contact Information",
         "email": "Email",
         "contactPerson": "Contact Person",
