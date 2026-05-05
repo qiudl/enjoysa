@@ -45,7 +45,7 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		}
 	}
 	if !allowed {
-		response.BadRequest(c, "File type not allowed")
+		response.BadRequest(c, fmt.Sprintf("File type not allowed: %s. Accepted: JPG, PNG, WebP, GIF, PDF", contentType))
 		return
 	}
 
