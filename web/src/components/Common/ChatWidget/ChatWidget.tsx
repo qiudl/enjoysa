@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, type KeyboardEvent } from 'react';
+import React, { useRef, useEffect, useState, useCallback, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MessageCircle, X, Trash2, Send, Sparkles, Globe, Loader2, Clock, ArrowLeft, Plus } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
@@ -59,8 +59,12 @@ export const ChatWidget: React.FC = () => {
     sendMessage(trimmed);
   };
 
+  const [isComposing, setIsComposing] = useState(false);
+  const handleCompositionStart = useCallback(() => setIsComposing(true), []);
+  const handleCompositionEnd = useCallback(() => setIsComposing(false), []);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault();
       handleSend();
     }
@@ -275,6 +279,8 @@ export const ChatWidget: React.FC = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
                   placeholder={t('chat.placeholder', 'Type your message...')}
                   rows={1}
                 />
