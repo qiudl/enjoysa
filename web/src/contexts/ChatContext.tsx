@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { sendMessageStream, getSessions, getMessages, type ChatMessage, type ChatSession } from '../services/chatService';
+import { sendMessageStream, getSessions, getMessages, type ChatMessage, type ChatSession, type ToolCallEvent, type ToolResultEvent } from '../services/chatService';
 import { useTranslation } from 'react-i18next';
 import { useUserAuth } from './UserAuthContext';
+
+export interface ToolCallDisplay {
+  id: string;
+  name: string;
+  arguments: string;
+  status: 'running' | 'completed' | 'error';
+  result?: string;
+  durationMs?: number;
+}
 
 const GUEST_STORAGE_KEY = 'enjoysa_chat_guest';
 const GUEST_LANG_KEY = 'enjoysa_chat_lang';
@@ -29,6 +38,8 @@ interface ChatContextType {
   clearChat: () => void;
   userRole: string;
   setUserRole: (role: string) => void;
+  toolCalls: ToolCallDisplay[];
+  clearToolCalls: () => void;
   userMessageCount: number;
   signupDismissed: boolean;
   dismissSignup: () => void;
@@ -54,6 +65,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [userRole, setUserRole] = useState('user');
+  const [toolCalls, setToolCalls] = useState<ToolCallDisplay[]>([]);
+  const clearToolCalls = useCallback(() => setToolCalls([]), []);
   const { i18n } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
@@ -222,8 +235,24 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return updated;
           });
         },
+        onToolCall: (tc) => {
+          setToolCalls(prev => [...prev, {
+            id: tc.id,
+            name: tc.name,
+            arguments: tc.arguments,
+            status: 'running',
+          }]);
+        },
+        onToolResult: (tr) => {
+          setToolCalls(prev => prev.map(tc =>
+            tc.id === tr.id
+              ? { ...tc, status: tr.success ? 'completed' : 'error', result: tr.result, durationMs: tr.duration_ms }
+              : tc
+          ));
+        },
         onDone: () => {
           setIsLoading(false);
+          setToolCalls([]);
         },
         onError: (error) => {
           console.error('[Chat] stream error:', error);
@@ -298,7 +327,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       messages, isOpen, isLoading, isHistoryLoading, sessionId,
       chatLanguage, setChatLanguage,
       openChat, closeChat, toggleChat, sendMessage, clearChat,
-      userRole, setUserRole,
+      userRole, setUserRole, toolCalls, clearToolCalls,
       userMessageCount, signupDismissed, dismissSignup,
       showHistory, setShowHistory, sessions, isSessionsLoading,
       loadSessions, loadSession, newSession,

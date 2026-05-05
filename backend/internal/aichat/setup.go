@@ -24,12 +24,23 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 	registry := service.NewToolRegistry()
 	cacheStore := store.NewAICacheStore(db)
 
-	// Register tools
+	// Register C-end tools
 	registry.Register(tools.RegisterSearchProducts(ps))
 	registry.Register(tools.RegisterProductDetail(ps))
 	registry.Register(tools.RegisterRecommendAttractions(ps, rs))
 	registry.Register(tools.RegisterCheckAvailability(ss))
 	registry.Register(tools.RegisterGetReviews(rvs))
+
+	// Register supplier tools
+	registry.Register(tools.RegisterGetOrderStats())
+	registry.Register(tools.RegisterListPendingOrders())
+	registry.Register(tools.RegisterGetReviewStats())
+	registry.Register(tools.RegisterGetRevenueTrend())
+
+	// Register admin tools
+	registry.Register(tools.RegisterGetPlatformStats())
+	registry.Register(tools.RegisterSearchSuppliers())
+	registry.Register(tools.RegisterListPendingProducts())
 
 	logger.Info("AI module initialized with %d tools: %v", len(registry.GetToolNames()), registry.GetToolNames())
 

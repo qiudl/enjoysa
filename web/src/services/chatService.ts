@@ -26,9 +26,25 @@ export interface ChatSession {
   updated_at: string;
 }
 
+export interface ToolCallEvent {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+export interface ToolResultEvent {
+  id: string;
+  name: string;
+  result: string;
+  duration_ms: number;
+  success: boolean;
+}
+
 export interface StreamCallbacks {
   onSessionId: (sessionId: number) => void;
   onToken: (token: string) => void;
+  onToolCall?: (toolCall: ToolCallEvent) => void;
+  onToolResult?: (toolResult: ToolResultEvent) => void;
   onDone: () => void;
   onError: (error: string) => void;
 }
@@ -174,6 +190,12 @@ export async function sendMessageStream(
             break;
           case 'done':
             callbacks.onDone();
+            break;
+          case 'tool_call':
+            callbacks.onToolCall?.(parsed as ToolCallEvent);
+            break;
+          case 'tool_result':
+            callbacks.onToolResult?.(parsed as ToolResultEvent);
             break;
           case 'error':
             callbacks.onError(parsed.error || parsed.content || 'Unknown error');

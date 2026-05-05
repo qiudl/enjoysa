@@ -5,6 +5,7 @@ import { Send, Maximize2, PanelRightClose, Plus, Sparkles } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
+import { ToolCallCard } from './ToolCallCard';
 import styles from './AIPanel.module.css';
 import clsx from 'clsx';
 
@@ -29,7 +30,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
-    messages, isLoading, sendMessage, newSession, setUserRole,
+    messages, isLoading, sendMessage, newSession, setUserRole, toolCalls,
   } = useChat();
 
   // Set user role for chat context
@@ -194,6 +195,9 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                   ))}
                 </>
               )}
+              {toolCalls.map(tc => (
+                    <ToolCallCard key={tc.id} toolCall={tc} />
+                  ))}
               <div ref={messagesEndRef} />
             </div>
             <div className={styles.chatInput}>
