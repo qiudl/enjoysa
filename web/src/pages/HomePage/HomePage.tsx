@@ -4,15 +4,12 @@ import {
   Header,
   Footer,
   CardSkeleton,
-  HeroBanner,
   RegionCard,
 } from '../../components/Common';
 import { ProductCard } from '../../components/Product';
 import { CategoryCard } from '../../components/Category';
 import type { Product, ProductCategory } from '../../types';
 import type { Region } from '../../data/types';
-import type { BannerSlide } from '../../components/Common/HeroBanner/HeroBanner';
-import { get } from '../../services/api';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import { Search } from 'lucide-react';
@@ -53,29 +50,6 @@ export interface HomePageProps {
 }
 
 
-interface ApiBanner {
-  id: number;
-  title_zh: string;
-  title_en: string;
-  subtitle_zh: string;
-  subtitle_en: string;
-  image: string;
-  link_url: string;
-  sort_order: number;
-  status: string;
-}
-
-function transformBanner(b: ApiBanner): BannerSlide {
-  return {
-    id: `banner-${b.id}`,
-    image: b.image,
-    title: b.title_zh,
-    titleEn: b.title_en,
-    tags: b.subtitle_zh ? b.subtitle_zh.split(',').map((s) => s.trim()) : [],
-    tagsEn: b.subtitle_en ? b.subtitle_en.split(',').map((s) => s.trim()) : [],
-    attractionId: b.link_url || '',
-  };
-}
 
 
 export const HomePage: React.FC<HomePageProps> = ({
@@ -88,7 +62,6 @@ export const HomePage: React.FC<HomePageProps> = ({
   onHotelSearch,
   onProductClick,
   onRegionClick,
-  onAttractionClick,
   onCategoryClick,
   onLoginClick,
   onRegisterClick,
@@ -103,7 +76,6 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [hotelRegionId, setHotelRegionId] = useState<number | undefined>();
   const [regions, setRegions] = useState<Region[]>([]);
   const [categories, setCategories] = useState<(ProductCategory & { productCount?: number })[]>([]);
-  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig | null>(null);
@@ -119,14 +91,6 @@ export const HomePage: React.FC<HomePageProps> = ({
     return mod ? mod.is_visible : true;
   };
 
-  // Fetch banners from API
-  useEffect(() => {
-    get<ApiBanner[]>('/banners').then((apiBanners) => {
-      setBannerSlides(apiBanners.map(transformBanner));
-    }).catch(() => {
-      // API error - banners stay empty
-    });
-  }, []);
 
   // Fetch regions from API
   useEffect(() => {
@@ -177,11 +141,16 @@ export const HomePage: React.FC<HomePageProps> = ({
         onSearch={onSearch}
       />
 
-      {/* Hero Banner */}
-      <HeroBanner
-        slides={bannerSlides}
-        onSlideClick={onAttractionClick}
-      />
+      {/* Popular Activities — 置顶，带 Tag 筛选 */}
+      {isModuleVisible('popular') && (
+        <PopularSection
+          defaultProducts={homepageConfig?.popular_products || []}
+          categories={categories}
+          regions={regions}
+          language={currentLang}
+          onProductClick={onProductClick ? (id) => onProductClick({ id: String(id) } as Product) : undefined}
+        />
+      )}
 
       {/* Search Tabs */}
       <section className={styles.searchSection}>
@@ -352,14 +321,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </section>
       )}
 
-      {/* Popular Activities — CMS driven */}
-      {isModuleVisible('popular') && homepageConfig && homepageConfig.popular_products.length > 0 && (
-        <PopularSection
-          products={homepageConfig.popular_products}
-          language={currentLang}
-          onProductClick={onProductClick ? (id) => onProductClick({ id: String(id) } as Product) : undefined}
-        />
-      )}
+      {/* Popular Activities moved to top */}
 
       {/* Testimonials — CMS driven */}
       {isModuleVisible('testimonials') && homepageConfig && homepageConfig.testimonials.length > 0 && (
