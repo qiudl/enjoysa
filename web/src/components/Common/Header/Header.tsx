@@ -38,6 +38,7 @@ const navItems = [
   { key: 'home', path: '/' },
   { key: 'destinations', path: '/destinations' },
   { key: 'categories', path: '/categories' },
+  { key: 'itinerary', path: '/plan' },
   { key: 'about', path: '/about' },
   { key: 'contact', path: '/contact' },
 ];
