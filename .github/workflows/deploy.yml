@@ -96,6 +96,8 @@ jobs:
             export AI_PROJ_BASE='${{ secrets.AI_PROJ_BASE }}' && \
             export AI_PROJ_TOKEN='${{ secrets.AI_PROJ_TOKEN }}' && \
             export AI_PROJ_PROJ_ID='${{ secrets.AI_PROJ_PROJ_ID }}' && \
+            export AI_GLM_BASE_URL='${{ secrets.AI_GLM_BASE_URL }}' && \
+            export AI_GLM_API_KEY='${{ secrets.AI_GLM_API_KEY }}' && \
             docker compose down && docker compose up -d --build"
 
       # --- Verify ---
