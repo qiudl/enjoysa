@@ -856,6 +856,24 @@
       "admin": "管理员",
       "supplier": "供应商",
       "guest": "访客"
+    },
+    "share": {
+      "button": "分享到飞书",
+      "shareSession": "分享整会话",
+      "modalTitle": "分享到飞书运营群",
+      "selectMessages": "选择消息",
+      "preview": "飞书卡片预览",
+      "question": "问题",
+      "answer": "AI 答复",
+      "note": "备注",
+      "notePlaceholder": "给同事的简短说明...",
+      "addToKB": "同步入平台知识库（admin 专属）",
+      "send": "发送到飞书",
+      "cancel": "取消",
+      "success": "已发送到飞书运营群",
+      "failure": "发送失败，请重试",
+      "retry": "重试",
+      "empty": "暂无可分享消息"
     }
   },
   "shop": {

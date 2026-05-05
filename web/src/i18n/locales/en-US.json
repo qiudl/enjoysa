@@ -856,6 +856,24 @@
       "admin": "Admin",
       "supplier": "Supplier",
       "guest": "Guest"
+    },
+    "share": {
+      "button": "Share to Feishu",
+      "shareSession": "Share whole conversation",
+      "modalTitle": "Share to Feishu group",
+      "selectMessages": "Select messages",
+      "preview": "Feishu card preview",
+      "question": "Question",
+      "answer": "AI answer",
+      "note": "Note",
+      "notePlaceholder": "Short context for your team...",
+      "addToKB": "Also add to platform knowledge base (admin only)",
+      "send": "Send to Feishu",
+      "cancel": "Cancel",
+      "success": "Sent to Feishu group",
+      "failure": "Send failed, please retry",
+      "retry": "Retry",
+      "empty": "No messages to share"
     }
   },
   "shop": {

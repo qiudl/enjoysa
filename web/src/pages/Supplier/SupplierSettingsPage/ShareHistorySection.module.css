@@ -1,0 +1,93 @@
+.section {
+  margin-top: 24px;
+}
+
+.empty {
+  font-size: 13px;
+  color: #999;
+  padding: 24px;
+  text-align: center;
+  background: #fafbfc;
+  border-radius: 8px;
+}
+
+.list {
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f3f3f3;
+  font-size: 13px;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.note {
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  color: #888;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.statusOk {
+  color: #047857;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.statusFail {
+  color: #b91c1c;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.openBtn {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #1677ff;
+  cursor: pointer;
+}
+
+.openBtn:hover {
+  border-color: #1677ff;
+  background: #e6f4ff;
+}
+
+.pager {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pageBtn {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
