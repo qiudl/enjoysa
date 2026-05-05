@@ -61,17 +61,20 @@ const adminToolCategories: ToolCategory[] = [
     iconBg: '#e8f4ff',
     iconColor: '#1677ff',
     tools: [
-      { id: 'insights', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: '平台 AI 洞察', description: '全平台运营数据分析、异常预警、趋势预测', enabled: true, pinned: true },
+      { id: 'get_platform_stats', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: '平台 AI 洞察', description: '总用户/供应商/商品/订单/收入概览', enabled: true, pinned: true },
+      { id: 'search_suppliers', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: '搜索供应商', description: '按名称/状态搜索供应商及统计', enabled: true },
     ],
   },
   {
     id: 'quality',
-    name: '质量管控',
+    name: '商品管控',
     icon: <Shield size={12} />,
     iconBg: '#fff1f0',
     iconColor: '#f5222d',
     tools: [
-      { id: 'precheck', icon: <Shield size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: '商品 AI 预检', description: '商品质量评分（0-100）、合规风险检测', path: '/admin/products', enabled: true },
+      { id: 'list_pending_products', icon: <Shield size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: '待审核商品', description: '查看等待审核的商品列表', enabled: true },
+      { id: 'approve_product', icon: <Shield size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: '审核通过', description: '审核通过指定商品（pending→approved）', enabled: true },
+      { id: 'offline_product', icon: <Shield size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: '下架商品', description: '下架指定商品（需填写原因）', enabled: true },
     ],
   },
 ];

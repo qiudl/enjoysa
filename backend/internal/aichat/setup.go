@@ -36,11 +36,17 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 	registry.Register(tools.RegisterListPendingOrders())
 	registry.Register(tools.RegisterGetReviewStats())
 	registry.Register(tools.RegisterGetRevenueTrend())
+	registry.Register(tools.RegisterGetInventoryAlerts())
+	registry.Register(tools.RegisterGetSettlementDetail())
+	registry.Register(tools.RegisterConfirmOrder())
+	registry.Register(tools.RegisterSearchOrders())
 
 	// Register admin tools
 	registry.Register(tools.RegisterGetPlatformStats())
 	registry.Register(tools.RegisterSearchSuppliers())
 	registry.Register(tools.RegisterListPendingProducts())
+	registry.Register(tools.RegisterApproveProduct())
+	registry.Register(tools.RegisterOfflineProduct())
 
 	logger.Info("AI module initialized with %d tools: %v", len(registry.GetToolNames()), registry.GetToolNames())
 
