@@ -8,8 +8,11 @@ vi.mock('../../../../services/orderService', () => ({
   refundOrder: vi.fn(),
 }));
 
+// listSupplierOrders returns the standard PaginatedData envelope
+// { items, total, page, page_size, total_pages }; older versions used
+// { orders: [...] } and the page would render an empty list.
 const mockCancelled = {
-  orders: [
+  items: [
     {
       id: 1, order_no: 'ORD-001', status: 'cancelled', product_name: 'Test Tour',
       contact_name: 'Alice', user_name: 'Alice Wang', total_price: 199,
@@ -18,10 +21,11 @@ const mockCancelled = {
       created_at: '2026-03-19T10:00:00Z', updated_at: '2026-03-20T10:00:00Z',
     },
   ],
+  total: 1, page: 1, page_size: 20, total_pages: 1,
 };
 
 const mockRefunded = {
-  orders: [
+  items: [
     {
       id: 2, order_no: 'ORD-002', status: 'refunded', product_name: 'Wine Tour',
       contact_name: 'Bob', user_name: 'Bob Zhang', total_price: 299,
@@ -30,6 +34,7 @@ const mockRefunded = {
       created_at: '2026-03-18T10:00:00Z', updated_at: '2026-03-21T10:00:00Z',
     },
   ],
+  total: 1, page: 1, page_size: 20, total_pages: 1,
 };
 
 /**
@@ -50,7 +55,7 @@ describe('SupplierAfterSalesPage', () => {
       .mockImplementation((filter: { status: string }) => {
         if (filter.status === 'cancelled') return Promise.resolve(mockCancelled);
         if (filter.status === 'refunded') return Promise.resolve(mockRefunded);
-        return Promise.resolve({ orders: [] });
+        return Promise.resolve({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 });
       });
     (refundOrder as ReturnType<typeof vi.fn>).mockResolvedValue({});
   });
