@@ -115,7 +115,7 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 	client := newAIProjClient(cfg)
 	return model.ToolDef{
 		Name:         "create_requirement",
-		Description:  "在 ai-proj 项目管理系统中创建一个新需求。用于记录功能建议、Bug 报告、改进意见等。可附带图片 URL。",
+		Description:  "在 ai-proj 项目管理系统中创建一个新需求（写操作）。⚠️ 调用前必须满足：(1) 用户用文字【显式同意】创建需求——如『帮我提需求』『记一下这个 bug』『提交反馈』；用户仅上传图片、描述问题、报告 bug 时【不是】创建信号，应先文字询问意图。(2) 同一会话内未创建过标题相似的需求（若不确定请先调用 list_requirements 确认）。(3) 同一轮回复内不要多次调用本工具——服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
 		Audience:     "supplier",
@@ -293,7 +293,7 @@ func RegisterUploadImageToRequirement(cfg config.AIConfig) model.ToolDef {
 	client := newAIProjClient(cfg)
 	return model.ToolDef{
 		Name:         "upload_screenshot_requirement",
-		Description:  "上传截图并创建需求。用户提供截图描述后，自动创建含截图的需求。截图 URL 由前端上传后传入。",
+		Description:  "上传截图并创建需求（写操作）。⚠️ 与 create_requirement 一样：调用前必须用户【显式同意】创建需求——仅上传截图本身不是创建信号；同一轮回复内禁止多次调用，服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
 		Audience:     "supplier",
