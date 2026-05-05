@@ -37,8 +37,9 @@ export default function ProductAiWriter({ nameZh, onApply }: ProductAiWriterProp
         />
         <button
           onClick={handleGenerate}
-          disabled={loading || !nameZh}
+          disabled={loading || !nameZh || !keywords.trim()}
           className={styles.generateBtn}
+          title={!nameZh ? t('aiWriter.needName', '请先填写产品中文名') : !keywords.trim() ? t('aiWriter.needKeywords', '请输入关键词') : ''}
         >
           {loading ? '生成中...' : '✨ ' + t('aiWriter.generate', 'AI 生成')}
         </button>
