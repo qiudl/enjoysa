@@ -262,6 +262,17 @@ func (h *ChatHandler) finishStream(c *gin.Context, session *chatmodel.ChatSessio
 	c.Writer.Flush()
 }
 
+// isAIChatWriteTool reports whether a tool name is a write/persistence tool
+// that should only run once per chat turn. Read-only tools (search, list,
+// detail lookups) can safely be called multiple times per turn.
+func isAIChatWriteTool(name string) bool {
+	switch name {
+	case "create_requirement", "upload_screenshot_requirement":
+		return true
+	}
+	return false
+}
+
 // streamWithTools handles the tool-calling chat flow for supplier/admin.
 func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang string, chatUser *aichatmodel.ChatUser, userMessage string, disabledTools []string) {
 	ctx := c.Request.Context()
@@ -303,6 +314,14 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 
 	var fullResponse strings.Builder
 	maxRounds := 3 // prevent infinite tool loops
+
+	// Track write-tool invocations across all rounds of this turn.
+	// The LLM occasionally emits the same write call twice when it
+	// misreads ambiguous signals (e.g. supplier just uploaded a screenshot)
+	// — we let the first one through and short-circuit the rest with
+	// an explicit "duplicate_call_blocked" tool result so the model has
+	// a concrete reason to apologize and ask the user.
+	writeToolCalled := map[string]bool{}
 
 	for round := 0; round <= maxRounds; round++ {
 		var pendingToolCalls []aichatmodel.OpenAIToolCall
@@ -352,8 +371,24 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 			fmt.Fprintf(c.Writer, "data: %s\n\n", string(tcJSON))
 			c.Writer.Flush()
 
-			// Execute
-			result, durationMs, execErr := h.toolRegistry.Execute(tc.Function.Name, tc.Function.Arguments, toolCtx)
+			// Execute (with single-turn dedupe for write tools)
+			var (
+				result     interface{}
+				durationMs int64
+				execErr    error
+			)
+			if isAIChatWriteTool(tc.Function.Name) && writeToolCalled[tc.Function.Name] {
+				result = map[string]interface{}{
+					"success": false,
+					"error":   "duplicate_call_blocked",
+					"message": fmt.Sprintf("本轮回复中已调用过 %s，服务端拒绝同轮重复执行写操作。如果你需要创建另一个明显不同的需求，请先用文字与用户确认意图后再调用；切勿仅因不确定就重复调用。", tc.Function.Name),
+				}
+			} else {
+				result, durationMs, execErr = h.toolRegistry.Execute(tc.Function.Name, tc.Function.Arguments, toolCtx)
+				if execErr == nil && isAIChatWriteTool(tc.Function.Name) {
+					writeToolCalled[tc.Function.Name] = true
+				}
+			}
 
 			var resultJSON string
 			if execErr != nil {
