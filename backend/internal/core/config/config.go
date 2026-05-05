@@ -29,9 +29,11 @@ type AIConfig struct {
 	BaseURL      string `mapstructure:"base_url"`
 	APIKey       string `mapstructure:"api_key"`
 	Model        string `mapstructure:"model"`
-	AIProjBase   string `mapstructure:"aiproj_base"`    // e.g. https://ai.pipexerp.com/api/v1
-	AIProjToken  string `mapstructure:"aiproj_token"`   // PAT token: aiproj_pk_...
-	AIProjProjID int    `mapstructure:"aiproj_proj_id"` // project ID in ai-proj
+	GLMBaseURL   string `mapstructure:"glm_base_url"`   // https://open.bigmodel.cn/api/paas/v4
+	GLMAPIKey    string `mapstructure:"glm_api_key"`
+	AIProjBase   string `mapstructure:"aiproj_base"`
+	AIProjToken  string `mapstructure:"aiproj_token"`
+	AIProjProjID int    `mapstructure:"aiproj_proj_id"`
 }
 
 type ResendConfig struct {
@@ -115,6 +117,8 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("ai.base_url", "ENJOYSA_AI_BASE_URL")
 	_ = v.BindEnv("ai.api_key", "ENJOYSA_AI_API_KEY")
 	_ = v.BindEnv("ai.model", "ENJOYSA_AI_MODEL")
+	_ = v.BindEnv("ai.glm_base_url", "ENJOYSA_AI_GLM_BASE_URL")
+	_ = v.BindEnv("ai.glm_api_key", "ENJOYSA_AI_GLM_API_KEY")
 	_ = v.BindEnv("ai.aiproj_base", "ENJOYSA_AI_AIPROJ_BASE")
 	_ = v.BindEnv("ai.aiproj_token", "ENJOYSA_AI_AIPROJ_TOKEN")
 	_ = v.BindEnv("ai.aiproj_proj_id", "ENJOYSA_AI_AIPROJ_PROJ_ID")

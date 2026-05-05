@@ -8,6 +8,7 @@ import { AIPanelTools, type ToolCategory } from './AIPanelTools';
 import { ToolCallCard } from './ToolCallCard';
 import Markdown from 'react-markdown';
 import { IdentityBadge } from '../IdentityBadge';
+import { compressImage, isAllowedImageType } from '../../../utils/imageCompress';
 import styles from './AIPanel.module.css';
 import clsx from 'clsx';
 
@@ -169,7 +170,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     const message = trimmed || '请查看我上传的截图';
     setInput('');
     setPastedImages([]);
-    sendMessage(message, context);
+    sendMessage(message, context, imageUrls.length > 0 ? imageUrls : undefined);
   }, [input, isLoading, sendMessage, getPageContext, pastedImages]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -184,13 +185,20 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
   // Image paste/upload
   const uploadImage = useCallback(async (file: File) => {
-    const preview = URL.createObjectURL(file);
-    const entry = { file, preview, uploading: true };
-    setPastedImages(prev => [...prev, entry]);
+    // Check 9 image limit
+    if (pastedImages.length >= 9) return;
+
+    // Validate type
+    if (!isAllowedImageType(file)) return;
+
+    // Compress if needed
+    const compressed = await compressImage(file);
+    const preview = URL.createObjectURL(compressed);
+    setPastedImages(prev => [...prev, { file: compressed, preview, uploading: true }]);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressed);
       const token = localStorage.getItem('enjoysa_supplier_token') || localStorage.getItem('enjoysa_admin_token') || '';
       const resp = await fetch('/api/v1/upload', {
         method: 'POST',
@@ -208,7 +216,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     } catch {
       setPastedImages(prev => prev.filter(img => img.preview !== preview));
     }
-  }, []);
+  }, [pastedImages.length]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;

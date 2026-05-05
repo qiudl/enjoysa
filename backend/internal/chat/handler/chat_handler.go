@@ -25,6 +25,7 @@ type ChatHandler struct {
 	aiService    *service.AIService
 	llmClient    *aichatservice.LLMClient
 	toolRegistry *aichatservice.ToolRegistry
+	glmClient    *aichatservice.GLMClient
 	db           *gorm.DB
 }
 
@@ -39,6 +40,11 @@ func (h *ChatHandler) SetToolSupport(llm *aichatservice.LLMClient, registry *aic
 	h.db = db
 }
 
+// SetGLMClient enables image recognition via GLM-4V.
+func (h *ChatHandler) SetGLMClient(glm *aichatservice.GLMClient) {
+	h.glmClient = glm
+}
+
 type SendMessageRequest struct {
 	SessionID     uint     `json:"session_id"`
 	Message       string   `json:"message" binding:"required,max=4000"`
@@ -46,6 +52,7 @@ type SendMessageRequest struct {
 	PageContext   string   `json:"page_context" binding:"max=2000"`
 	UserType      string   `json:"user_type"`
 	DisabledTools []string `json:"disabled_tools"`
+	ImageURLs     []string `json:"image_urls"`
 }
 
 // buildChatUser resolves the ChatUser from the gin context populated by the
@@ -137,11 +144,28 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		}
 	}
 
-	// Save user message
+	// If images present, do GLM vision recognition first
+	enrichedMessage := req.Message
+	if len(req.ImageURLs) > 0 && h.glmClient != nil {
+		description, err := h.glmClient.DescribeImages(c.Request.Context(), req.ImageURLs, req.Message)
+		if err != nil {
+			logger.Warn("[Chat] GLM image recognition failed: %v", err)
+			// Graceful degradation: mention images exist but couldn't be analyzed
+			enrichedMessage = req.Message + "\n\n[用户上传了图片但识别失败，请基于文字回复]"
+		} else {
+			enrichedMessage = req.Message + "\n\n[AI 图片识别结果: " + description + "]"
+		}
+		// Also append image URLs for reference
+		for _, url := range req.ImageURLs {
+			enrichedMessage += "\n![图片](" + url + ")"
+		}
+	}
+
+	// Save user message (with image URLs in content for history)
 	userMsg := &chatmodel.ChatMessage{
 		SessionID: session.ID,
 		Role:      "user",
-		Content:   req.Message,
+		Content:   enrichedMessage,
 	}
 	if err := h.store.CreateMessage(userMsg); err != nil {
 		response.ServerError(c, "Failed to save message")
