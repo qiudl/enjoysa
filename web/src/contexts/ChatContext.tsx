@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { sendMessageStream, getSessions, getMessages, type ChatMessage, type ChatSession, type ToolCallEvent, type ToolResultEvent } from '../services/chatService';
+import { sendMessageStream, getSessions, getMessages, type ChatMessage, type ChatSession } from '../services/chatService';
 import { useTranslation } from 'react-i18next';
 import { useUserAuth } from './UserAuthContext';
 
