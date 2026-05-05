@@ -12,6 +12,7 @@ import (
 
 	"enjoysa-backend/internal/aichat"
 	aimodel "enjoysa-backend/internal/aichat/model"
+	aichatstore "enjoysa-backend/internal/aichat/store"
 	adminhandler "enjoysa-backend/internal/admin/handler"
 	auditmodel "enjoysa-backend/internal/audit/model"
 	"enjoysa-backend/internal/auth"
@@ -215,6 +216,7 @@ func autoMigrate(db *gorm.DB) error {
 		// Chat
 		&chatmodel.ChatSession{},
 		&chatmodel.ChatMessage{},
+		&chatmodel.ChatMessageShare{},
 		// User contacts
 		&usercontactmodel.UserContact{},
 		// Reviews
@@ -231,6 +233,7 @@ func autoMigrate(db *gorm.DB) error {
 		&aimodel.AICache{},
 		&aimodel.AIFaqFeedback{},
 		&aimodel.AIMetric{},
+		&aichatstore.KnowledgeEntry{},
 		// Homepage CMS
 		&homepage.HomepageFeature{},
 		&homepage.HomepageTestimonial{},
