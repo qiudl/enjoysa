@@ -51,6 +51,15 @@ const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/Sup
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
 const AIChatPage = React.lazy(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
+
+// Wrapper that pulls the :id route param and forwards it to AIChatPage so
+// Feishu share-card links like /admin/ai-chat/sessions/9 auto-load that
+// session on mount instead of 404.
+function AIChatPageWithRouteSession({ role, backPath }: { role: 'supplier' | 'admin'; backPath: string }) {
+  const { id } = useParams();
+  const sessionId = id ? Number(id) : undefined;
+  return <AIChatPage role={role} backPath={backPath} sessionIdFromRoute={sessionId} />;
+}
 // 用户中心
 const ContactsPage = React.lazy(() => import('./pages/ContactsPage/ContactsPage'));
 // 平台管理端页面
@@ -1320,6 +1329,7 @@ function App() {
         <Route path="/supplier/orders/:id" element={<SupplierAuthGuard><SupplierOrderDetailPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/:id/preview" element={<SupplierAuthGuard><SupplierProductPreviewPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/ai-chat" element={<SupplierAuthGuard><AIChatPage role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
+        <Route path="/supplier/ai-chat/sessions/:id" element={<SupplierAuthGuard><AIChatPageWithRouteSession role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
@@ -1342,6 +1352,7 @@ function App() {
         <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />
         <Route path="/admin/homepage" element={<AdminAuthGuard><AdminHomepageCMSWrapper /></AdminAuthGuard>} />
         <Route path="/admin/ai-chat" element={<AdminAuthGuard><AIChatPage role="admin" backPath="/admin" /></AdminAuthGuard>} />
+        <Route path="/admin/ai-chat/sessions/:id" element={<AdminAuthGuard><AIChatPageWithRouteSession role="admin" backPath="/admin" /></AdminAuthGuard>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
