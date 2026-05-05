@@ -211,24 +211,37 @@ export const AIPanel: React.FC<AIPanelProps> = ({
       const formData = new FormData();
       formData.append('file', compressed);
       const token = localStorage.getItem('enjoysa_supplier_token') || localStorage.getItem('enjoysa_admin_token') || '';
-      const resp = await fetch('/api/v1/upload', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      const json = await resp.json();
-      if (json.success && json.data?.url) {
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Try ai-proj COS upload first, fallback to local
+      let uploadUrl = '';
+      const cosResp = await fetch('/api/v1/ai/upload-image', { method: 'POST', headers, body: formData });
+      const cosJson = await cosResp.json();
+      if (cosJson.success && cosJson.data?.url) {
+        uploadUrl = cosJson.data.url;
+      } else {
+        // Fallback to local upload
+        const localForm = new FormData();
+        localForm.append('file', compressed);
+        const localResp = await fetch('/api/v1/upload', { method: 'POST', headers, body: localForm });
+        const localJson = await localResp.json();
+        if (localJson.success && localJson.data?.url) {
+          uploadUrl = localJson.data.url;
+        }
+      }
+
+      if (uploadUrl) {
         setPastedImages(prev => prev.map(img =>
-          img.preview === preview ? { ...img, url: json.data.url, uploading: false } : img
+          img.preview === preview ? { ...img, url: uploadUrl, uploading: false } : img
         ));
       } else {
         setPastedImages(prev => prev.filter(img => img.preview !== preview));
-        imageCountRef.current = Math.max(0, imageCountRef.current - 1); // FIX #12
+        imageCountRef.current = Math.max(0, imageCountRef.current - 1);
         alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
       }
     } catch {
       setPastedImages(prev => prev.filter(img => img.preview !== preview));
-      imageCountRef.current = Math.max(0, imageCountRef.current - 1); // FIX #12
+      imageCountRef.current = Math.max(0, imageCountRef.current - 1);
       alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
     }
   }, [t]);
