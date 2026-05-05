@@ -10,11 +10,28 @@
   z-index: 999;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
 }
 
 .panel.collapsed {
   width: 48px;
+}
+
+/* Resize handle */
+.resizeHandle {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.resizeHandle:hover,
+.resizeHandle:active {
+  background: rgba(22, 119, 255, 0.3);
 }
 
 /* ===== Collapsed Bar ===== */
