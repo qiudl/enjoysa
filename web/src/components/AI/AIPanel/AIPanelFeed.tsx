@@ -51,7 +51,7 @@ export const AIPanelFeed: React.FC<FeedProps> = ({ role, onViewAll }) => {
     }
     try {
       const resp = await supplierNotificationService.list({ page: 1, page_size: 20 });
-      setNotifications(resp.data || []);
+      setNotifications(resp.items || []);
     } catch {
       // silently fail
     } finally {
