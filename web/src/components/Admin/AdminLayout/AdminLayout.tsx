@@ -20,7 +20,6 @@ import {
   Tag,
   Home,
   BarChart3,
-  Sparkles,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';

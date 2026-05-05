@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Send, Maximize2, PanelRightClose, PanelRightOpen, Plus, Sparkles } from 'lucide-react';
+import { Send, Maximize2, PanelRightClose, Plus, Sparkles } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
