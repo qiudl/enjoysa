@@ -293,9 +293,11 @@ func Setup(cfg Config) *gin.Engine {
 	// Share to Feishu — authenticated only (guests rejected by handler).
 	v1.POST("/chat/share", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), shareHandler.Send)
 
-	// Authenticated chat routes
+	// Authenticated chat routes — accept user/supplier/admin tokens so the
+	// ShareModal can pull message history from any logged-in role. Guests
+	// are rejected inside the handler via buildChatUser.
 	chatGroup := v1.Group("/chat")
-	chatGroup.Use(userAuth)
+	chatGroup.Use(middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB))
 	{
 		chatGroup.GET("/sessions", chatHandler.ListSessions)
 		chatGroup.GET("/sessions/:id/messages", chatHandler.GetMessages)

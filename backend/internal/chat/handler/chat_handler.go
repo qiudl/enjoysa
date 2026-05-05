@@ -388,17 +388,16 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 	h.finishStream(c, session, fullResponse.String(), userMessage)
 }
 
-// ListSessions returns user's chat sessions.
+// ListSessions returns the caller's chat sessions, scoped by user_id+user_type
+// so user/supplier/admin each only see their own history.
 func (h *ChatHandler) ListSessions(c *gin.Context) {
-	userID := uint(0)
-	userType := "guest"
-	if u, exists := c.Get("user"); exists {
-		user := u.(*models.User)
-		userID = user.ID
-		userType = "user"
+	chatUser := buildChatUser(c)
+	if chatUser.IsGuest() {
+		response.Unauthorized(c, "Sign in")
+		return
 	}
 
-	sessions, err := h.store.ListSessions(userID, userType, 20)
+	sessions, err := h.store.ListSessions(chatUser.UserID, chatUser.UserType, 50)
 	if err != nil {
 		response.ServerError(c, "Failed to list sessions")
 		return
@@ -407,8 +406,16 @@ func (h *ChatHandler) ListSessions(c *gin.Context) {
 	response.Success(c, sessions)
 }
 
-// GetMessages returns messages for a session.
+// GetMessages returns messages for a session. Ownership is enforced on both
+// user_id and user_type to prevent a supplier token from reading admin
+// sessions (or vice-versa) when their numeric IDs collide.
 func (h *ChatHandler) GetMessages(c *gin.Context) {
+	chatUser := buildChatUser(c)
+	if chatUser.IsGuest() {
+		response.Unauthorized(c, "Sign in")
+		return
+	}
+
 	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		response.BadRequest(c, "Invalid session ID")
@@ -416,18 +423,14 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	}
 
 	session, err := h.store.GetSession(uint(sessionID))
-	if err != nil {
+	if err != nil || session == nil {
 		response.NotFound(c, "Session not found")
 		return
 	}
 
-	// Verify ownership
-	if u, exists := c.Get("user"); exists {
-		user := u.(*models.User)
-		if session.UserID != user.ID {
-			response.NotFound(c, "Session not found")
-			return
-		}
+	if session.UserID != chatUser.UserID || session.UserType != chatUser.UserType {
+		response.NotFound(c, "Session not found")
+		return
 	}
 
 	messages, err := h.store.ListMessages(uint(sessionID))
