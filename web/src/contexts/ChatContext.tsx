@@ -42,6 +42,7 @@ interface ChatContextType {
   clearToolCalls: () => void;
   disabledTools: string[];
   setDisabledTools: (tools: string[]) => void;
+  statusMessage: string;
   userMessageCount: number;
   signupDismissed: boolean;
   dismissSignup: () => void;
@@ -70,6 +71,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [toolCalls, setToolCalls] = useState<ToolCallDisplay[]>([]);
   const clearToolCalls = useCallback(() => setToolCalls([]), []);
   const [disabledTools, setDisabledTools] = useState<string[]>([]);
+  const [statusMessage, setStatusMessage] = useState('');
   const { i18n } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
@@ -253,9 +255,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               : tc
           ));
         },
+        onStatus: (status) => {
+          setStatusMessage(status);
+        },
         onDone: () => {
           setIsLoading(false);
           setToolCalls([]);
+          setStatusMessage('');
         },
         onError: (error) => {
           console.error('[Chat] stream error:', error);
@@ -332,7 +338,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       messages, isOpen, isLoading, isHistoryLoading, sessionId,
       chatLanguage, setChatLanguage,
       openChat, closeChat, toggleChat, sendMessage, clearChat,
-      userRole, setUserRole, toolCalls, clearToolCalls, disabledTools, setDisabledTools,
+      userRole, setUserRole, toolCalls, clearToolCalls, disabledTools, setDisabledTools, statusMessage,
       userMessageCount, signupDismissed, dismissSignup,
       showHistory, setShowHistory, sessions, isSessionsLoading,
       loadSessions, loadSession, newSession,

@@ -42,7 +42,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    messages, isLoading, sendMessage, newSession, setUserRole, toolCalls, setDisabledTools,
+    messages, isLoading, sendMessage, newSession, setUserRole, toolCalls, setDisabledTools, statusMessage,
     sessionId,
   } = useChat();
 
@@ -428,9 +428,11 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                             : msg.content
                         ) : (isLoading && i === messages.length - 1 ? (
                           <div className={styles.typing}>
-                            <span className={styles.typingDot} />
-                            <span className={styles.typingDot} />
-                            <span className={styles.typingDot} />
+                            {statusMessage ? (
+                              <span>{statusMessage}</span>
+                            ) : (
+                              <><span className={styles.typingDot} /><span className={styles.typingDot} /><span className={styles.typingDot} /></>
+                            )}
                           </div>
                         ) : '...')}
                       </div>
