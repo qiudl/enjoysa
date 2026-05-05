@@ -45,6 +45,14 @@ func (h *ImageUploadHandler) Upload(c *gin.Context) {
 	}
 	defer file.Close()
 
+	// FIX #17: Validate file type (image only)
+	ct := header.Header.Get("Content-Type")
+	allowedTypes := map[string]bool{"image/jpeg": true, "image/png": true, "image/webp": true, "image/gif": true}
+	if !allowedTypes[ct] {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "only image files allowed (JPEG/PNG/WebP/GIF)"})
+		return
+	}
+
 	// Read file content
 	fileBytes, err := io.ReadAll(io.LimitReader(file, 3*1024*1024)) // 3MB max
 	if err != nil {

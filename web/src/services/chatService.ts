@@ -45,6 +45,7 @@ export interface StreamCallbacks {
   onToken: (token: string) => void;
   onToolCall?: (toolCall: ToolCallEvent) => void;
   onToolResult?: (toolResult: ToolResultEvent) => void;
+  onStatus?: (status: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
 }
@@ -200,6 +201,9 @@ export async function sendMessageStream(
             break;
           case 'tool_result':
             callbacks.onToolResult?.(parsed as ToolResultEvent);
+            break;
+          case 'status':
+            callbacks.onStatus?.(parsed.content || '');
             break;
           case 'error':
             callbacks.onError(parsed.error || parsed.content || 'Unknown error');

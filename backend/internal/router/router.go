@@ -369,7 +369,8 @@ func Setup(cfg Config) *gin.Engine {
 		// Image upload proxy to ai-proj COS (supplier/admin)
 		imageUploadHandler := aichathandler.NewImageUploadHandler(cfg.AIConfig)
 		if imageUploadHandler != nil {
-			aiGroup.POST("/upload-image", supplierAuth, imageUploadHandler.Upload)
+			// FIX #15: Use OptionalAnyAuth so both supplier and admin can upload
+		aiGroup.POST("/upload-image", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), imageUploadHandler.Upload)
 		}
 	}
 
