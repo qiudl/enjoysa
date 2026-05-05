@@ -92,7 +92,11 @@ jobs:
             backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/backend/
           scp -i ~/.ssh/deploy_key \
             docker-compose.yml ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/docker-compose.yml
-          ssh aws-prod "cd ${{ env.BACKEND_DEPLOY }} && docker compose down && docker compose up -d --build"
+          ssh aws-prod "cd ${{ env.BACKEND_DEPLOY }} && \
+            export AI_PROJ_BASE='${{ secrets.AI_PROJ_BASE }}' && \
+            export AI_PROJ_TOKEN='${{ secrets.AI_PROJ_TOKEN }}' && \
+            export AI_PROJ_PROJ_ID='${{ secrets.AI_PROJ_PROJ_ID }}' && \
+            docker compose down && docker compose up -d --build"
 
       # --- Verify ---
       - name: Verify deployment
