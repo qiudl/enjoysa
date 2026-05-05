@@ -524,6 +524,7 @@ func Setup(cfg Config) *gin.Engine {
 		// Supplier management
 		adminGroup.GET("/suppliers", adminHandler.ListSuppliers)
 		adminGroup.GET("/suppliers/:id", adminHandler.GetSupplier)
+		adminGroup.POST("/suppliers", adminHandler.CreateSupplier)
 		adminGroup.PUT("/suppliers/:id", adminHandler.UpdateSupplier)
 		adminGroup.POST("/suppliers/:id/approve", adminHandler.ApproveSupplier)
 		adminGroup.POST("/suppliers/:id/reject", adminHandler.RejectSupplier)

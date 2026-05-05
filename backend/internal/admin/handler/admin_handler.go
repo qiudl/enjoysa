@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -650,6 +652,101 @@ func (h *AdminHandler) RestoreProduct(c *gin.Context) {
 	}
 
 	response.SuccessMessage(c, "Product restored")
+}
+
+type CreateSupplierRequest struct {
+	Name            string `json:"name" binding:"required"`
+	Type            string `json:"type" binding:"required"`
+	Description     string `json:"description"`
+	ContactName     string `json:"contact_name" binding:"required"`
+	ContactPhone    string `json:"contact_phone" binding:"required"`
+	ContactEmail    string `json:"contact_email" binding:"required,email"`
+	Address         string `json:"address"`
+	BusinessLicense string `json:"business_license"`
+}
+
+func generatePassword(length int) string {
+	const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	result := make([]byte, length)
+	for i := range result {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		result[i] = chars[n.Int64()]
+	}
+	return string(result)
+}
+
+func (h *AdminHandler) CreateSupplier(c *gin.Context) {
+	var req CreateSupplierRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Check if supplier email already exists
+	var existCount int64
+	h.db.Model(&models.Supplier{}).Where("email = ?", req.ContactEmail).Count(&existCount)
+	if existCount > 0 {
+		response.BadRequest(c, "Supplier email already registered")
+		return
+	}
+
+	// Check if supplier user email already exists
+	h.db.Model(&models.SupplierUser{}).Where("email = ?", req.ContactEmail).Count(&existCount)
+	if existCount > 0 {
+		response.BadRequest(c, "Contact email already registered as supplier user")
+		return
+	}
+
+	initialPassword := generatePassword(10)
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(initialPassword), bcrypt.DefaultCost)
+	if err != nil {
+		response.ServerError(c, "Failed to generate password")
+		return
+	}
+
+	var supplier models.Supplier
+	var supplierUser models.SupplierUser
+
+	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		supplier = models.Supplier{
+			Name:            req.Name,
+			Type:            req.Type,
+			Status:          "pending",
+			Description:     req.Description,
+			Email:           req.ContactEmail,
+			Phone:           req.ContactPhone,
+			Address:         req.Address,
+			BusinessLicense: req.BusinessLicense,
+		}
+		if err := tx.Create(&supplier).Error; err != nil {
+			return err
+		}
+
+		supplierUser = models.SupplierUser{
+			SupplierID: supplier.ID,
+			Email:      req.ContactEmail,
+			Password:   string(hashedPwd),
+			Name:       req.ContactName,
+			Phone:      req.ContactPhone,
+			Role:       "admin",
+			Status:     "active",
+		}
+		if err := tx.Create(&supplierUser).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txErr != nil {
+		response.ServerError(c, "Failed to create supplier")
+		return
+	}
+
+	h.audit.Log(c, "create", "supplier", supplier.ID, supplier.Name)
+	response.Created(c, gin.H{
+		"supplier":         supplier,
+		"initial_password": initialPassword,
+	})
 }
 
 type UpdateSupplierRequest struct {

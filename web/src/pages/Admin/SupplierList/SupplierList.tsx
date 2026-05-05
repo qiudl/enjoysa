@@ -152,8 +152,34 @@ export const SupplierList: React.FC = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = async (_data: SupplierFormData) => {
-    // TODO: API call to create/update supplier when endpoint is available
+  const handleFormSubmit = async (data: SupplierFormData) => {
+    if (formMode === 'create') {
+      const result = await adminService.createSupplier({
+        name: data.name,
+        type: data.type,
+        description: data.description || '',
+        contact_name: data.contactName,
+        contact_phone: data.contactPhone,
+        contact_email: data.contactEmail,
+        address: data.address || '',
+        business_license: data.businessLicense || '',
+      });
+      if (result.initial_password) {
+        alert(
+          t('admin.suppliers.form.createSuccess', {
+            email: data.contactEmail,
+            password: result.initial_password,
+          }),
+        );
+      }
+    } else if (formMode === 'edit' && selectedSupplier) {
+      await adminService.updateSupplier(Number(selectedSupplier.id), {
+        name: data.name,
+        description: data.description || '',
+        phone: data.contactPhone,
+        address: data.address || '',
+      });
+    }
     setFormOpen(false);
     loadData();
   };
