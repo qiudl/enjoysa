@@ -109,6 +109,27 @@ func (s *TicketStore) AddNote(note *model.TicketNote) error {
 	return s.db.Create(note).Error
 }
 
+// CreateAttachments 批量插入工单凭证图。urls 为空时直接返回 nil。
+func (s *TicketStore) CreateAttachments(ticketID uint, urls []string) error {
+	if len(urls) == 0 {
+		return nil
+	}
+	atts := make([]model.TicketAttachment, 0, len(urls))
+	for _, u := range urls {
+		atts = append(atts, model.TicketAttachment{TicketID: ticketID, FileURL: u})
+	}
+	return s.db.Create(&atts).Error
+}
+
+// GetAttachments 取工单的凭证图片列表（按上传顺序）。
+func (s *TicketStore) GetAttachments(ticketID uint) ([]model.TicketAttachment, error) {
+	var atts []model.TicketAttachment
+	if err := s.db.Where("ticket_id = ?", ticketID).Order("id ASC").Find(&atts).Error; err != nil {
+		return nil, err
+	}
+	return atts, nil
+}
+
 // GetNotes 获取工单备注
 func (s *TicketStore) GetNotes(ticketID uint) ([]model.TicketNote, error) {
 	var notes []model.TicketNote
@@ -131,6 +152,19 @@ type OrderSummary struct {
 	TotalPrice  float64              `json:"total_price"`
 	Currency    string               `json:"currency"`
 	CreatedAt   string               `json:"created_at"`
+}
+
+// OrderBelongsToSupplier reports whether the given order is owned by the
+// supplier. Used to gate supplier-side ticket creation/read.
+func (s *TicketStore) OrderBelongsToSupplier(orderID, supplierID uint) (bool, error) {
+	var count int64
+	err := s.db.Model(&ordermodel.Order{}).
+		Where("id = ? AND supplier_id = ?", orderID, supplierID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 // GetOrderByID 查询订单摘要

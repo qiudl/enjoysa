@@ -129,6 +129,13 @@ export const SupplierAfterSalesPage: React.FC<SupplierAfterSalesPageProps> = ({ 
     <div className={styles.container}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{t('supplier.afterSales.title')}</h1>
+        <button
+          type="button"
+          className={styles.newTicketBtn}
+          onClick={() => onNavigate?.('/supplier/after-sales/new')}
+        >
+          {t('supplier.afterSales.createTicket', { defaultValue: '+ 新建售后单' })}
+        </button>
       </div>
 
       {/* Stats */}

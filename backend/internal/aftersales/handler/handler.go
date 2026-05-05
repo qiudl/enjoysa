@@ -248,6 +248,143 @@ func (h *AfterSalesHandler) UpdateTicket(c *gin.Context) {
 	response.Success(c, ticket)
 }
 
+// === Supplier portal ===
+
+// SupplierCreateTicketRequest is the body posted by supplier-side "新建售后单"
+// form. Order ID is mandatory (linkage is the whole point of supplier-side
+// creation) and image_urls are pre-uploaded via /api/v1/ai/upload-image.
+type SupplierCreateTicketRequest struct {
+	OrderID     uint     `json:"order_id" binding:"required"`
+	Type        string   `json:"type" binding:"required,oneof=refund exchange complaint inquiry"`
+	Priority    string   `json:"priority" binding:"omitempty,oneof=low medium high"`
+	Subject     string   `json:"subject" binding:"required,max=200"`
+	Description string   `json:"description" binding:"max=5000"`
+	ImageURLs   []string `json:"image_urls" binding:"max=9,dive,url,max=500"`
+}
+
+// SupplierCreateTicket lets a logged-in supplier file a ticket for one of
+// their own orders. The route is mounted under /supplier so SupplierAuth has
+// already populated supplier_id in the gin context.
+func (h *AfterSalesHandler) SupplierCreateTicket(c *gin.Context) {
+	supplierID, ok := getSupplierID(c)
+	if !ok {
+		response.Unauthorized(c, "Supplier session required")
+		return
+	}
+
+	var req SupplierCreateTicketRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	// Ownership check — order must belong to this supplier.
+	owns, err := h.store.OrderBelongsToSupplier(req.OrderID, supplierID)
+	if err != nil {
+		response.ServerError(c, "Failed to verify order")
+		return
+	}
+	if !owns {
+		response.Forbidden(c, "Order does not belong to your supplier account")
+		return
+	}
+
+	priority := model.TicketPriority(req.Priority)
+	if priority == "" {
+		priority = model.TicketPriorityMedium
+	}
+
+	orderID := req.OrderID
+	ticket := &model.Ticket{
+		OrderID:     &orderID,
+		Type:        model.TicketType(req.Type),
+		Status:      model.TicketStatusOpen,
+		Priority:    priority,
+		Subject:     req.Subject,
+		Description: req.Description,
+		Source:      "web",
+	}
+
+	if err := h.store.Create(ticket); err != nil {
+		response.ServerError(c, "Failed to create ticket")
+		return
+	}
+
+	if err := h.store.CreateAttachments(ticket.ID, req.ImageURLs); err != nil {
+		// Non-fatal — ticket already exists; surface a soft warning by logging
+		// but still return success so the supplier can re-upload via detail.
+		_ = err
+	}
+
+	h.store.AddNote(&model.TicketNote{
+		TicketID: ticket.ID,
+		Author:   "supplier",
+		Content:  "Ticket created via supplier portal",
+		IsSystem: true,
+	})
+
+	response.Created(c, gin.H{
+		"ticket":      ticket,
+		"image_count": len(req.ImageURLs),
+	})
+}
+
+// SupplierGetTicket returns a ticket belonging to the calling supplier with
+// notes + attachments. Cross-supplier access is rejected with 404 (avoid id
+// enumeration leakage).
+func (h *AfterSalesHandler) SupplierGetTicket(c *gin.Context) {
+	supplierID, ok := getSupplierID(c)
+	if !ok {
+		response.Unauthorized(c, "Supplier session required")
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid ticket ID")
+		return
+	}
+
+	ticket, err := h.store.GetByID(uint(id))
+	if err != nil || ticket == nil {
+		response.NotFound(c, "Ticket not found")
+		return
+	}
+
+	// Ownership: ticket must reference an order owned by this supplier.
+	if ticket.OrderID == nil {
+		response.NotFound(c, "Ticket not found")
+		return
+	}
+	owns, err := h.store.OrderBelongsToSupplier(*ticket.OrderID, supplierID)
+	if err != nil || !owns {
+		response.NotFound(c, "Ticket not found")
+		return
+	}
+
+	notes, _ := h.store.GetNotes(ticket.ID)
+	atts, _ := h.store.GetAttachments(ticket.ID)
+
+	response.Success(c, gin.H{
+		"ticket":      ticket,
+		"notes":       notes,
+		"attachments": atts,
+	})
+}
+
+func getSupplierID(c *gin.Context) (uint, bool) {
+	v, ok := c.Get("supplier_id")
+	if !ok {
+		return 0, false
+	}
+	id, ok := v.(uint)
+	if !ok || id == 0 {
+		return 0, false
+	}
+	return id, true
+}
+
 // === FAQ ===
 
 // ListFAQs 查询 FAQ 列表

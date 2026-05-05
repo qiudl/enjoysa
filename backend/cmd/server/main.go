@@ -228,6 +228,7 @@ func autoMigrate(db *gorm.DB) error {
 		// After-sales
 		&aftersalesmodel.Ticket{},
 		&aftersalesmodel.TicketNote{},
+		&aftersalesmodel.TicketAttachment{},
 		&aftersalesmodel.FAQ{},
 		// AI
 		&aimodel.AICache{},

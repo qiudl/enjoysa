@@ -41,6 +41,7 @@ const SupplierExportPage = React.lazy(() => import('./pages/Supplier/SupplierExp
 const SupplierTeamPage = React.lazy(() => import('./pages/Supplier/SupplierTeamPage/SupplierTeamPage'));
 const SupplierNotificationsPage = React.lazy(() => import('./pages/Supplier/SupplierNotificationsPage/SupplierNotificationsPage'));
 const SupplierAfterSalesPage = React.lazy(() => import('./pages/Supplier/SupplierAfterSalesPage/SupplierAfterSalesPage'));
+const SupplierCreateTicketPage = React.lazy(() => import('./pages/Supplier/SupplierCreateTicketPage/SupplierCreateTicketPage'));
 const SupplierReportsPage = React.lazy(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
 const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
 const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
@@ -892,6 +893,19 @@ function SupplierAfterSalesPageWrapper() {
   );
 }
 
+// 包装组件：SupplierCreateTicketPage
+function SupplierCreateTicketPageWrapper() {
+  const navigate = useNavigate();
+
+  return (
+    <SupplierLayout>
+      <SupplierCreateTicketPage
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
 // 包装组件：SupplierReportsPage
 function SupplierReportsPageWrapper() {
   return (
@@ -1298,6 +1312,7 @@ function App() {
         <Route path="/supplier/team" element={<SupplierAuthGuard><SupplierTeamPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/notifications" element={<SupplierAuthGuard><SupplierNotificationsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/after-sales" element={<SupplierAuthGuard><SupplierAfterSalesPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/after-sales/new" element={<SupplierAuthGuard><SupplierCreateTicketPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/reports" element={<SupplierAuthGuard><SupplierReportsPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/audit-logs" element={<SupplierAuthGuard><SupplierAuditLogPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/settings" element={<SupplierAuthGuard><SupplierSettingsPageWrapper /></SupplierAuthGuard>} />
