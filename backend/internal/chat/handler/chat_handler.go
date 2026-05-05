@@ -39,11 +39,12 @@ func (h *ChatHandler) SetToolSupport(llm *aichatservice.LLMClient, registry *aic
 }
 
 type SendMessageRequest struct {
-	SessionID   uint   `json:"session_id"`
-	Message     string `json:"message" binding:"required,max=4000"`
-	Language    string `json:"language"`
-	PageContext string `json:"page_context" binding:"max=2000"`
-	UserType    string `json:"user_type"`
+	SessionID     uint     `json:"session_id"`
+	Message       string   `json:"message" binding:"required,max=4000"`
+	Language      string   `json:"language"`
+	PageContext   string   `json:"page_context" binding:"max=2000"`
+	UserType      string   `json:"user_type"`
+	DisabledTools []string `json:"disabled_tools"`
 }
 
 // SendMessageStream handles POST /chat/send with SSE streaming response.
@@ -131,7 +132,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 
 	// Use tool-calling flow for supplier/admin if LLM client is available
 	if (userType == "supplier" || userType == "admin") && h.llmClient != nil && h.toolRegistry != nil {
-		h.streamWithTools(c, session, aiMessages, lang, userType, req.Message)
+		h.streamWithTools(c, session, aiMessages, lang, userType, req.Message, req.DisabledTools)
 		return
 	}
 
@@ -178,7 +179,7 @@ func (h *ChatHandler) finishStream(c *gin.Context, session *chatmodel.ChatSessio
 }
 
 // streamWithTools handles the tool-calling chat flow for supplier/admin.
-func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang, userType, userMessage string) {
+func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang, userType, userMessage string, disabledTools []string) {
 	ctx := c.Request.Context()
 
 	// Build LLM messages from service.Message
@@ -188,7 +189,18 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 	}
 
 	// Get tools
-	tools := h.toolRegistry.GetOpenAITools(true)
+	allTools := h.toolRegistry.GetOpenAITools(true)
+	// Filter out disabled tools
+	disabledSet := make(map[string]bool, len(disabledTools))
+	for _, name := range disabledTools {
+		disabledSet[name] = true
+	}
+	var tools []aichatmodel.OpenAITool
+	for _, t := range allTools {
+		if !disabledSet[t.Function.Name] {
+			tools = append(tools, t)
+		}
+	}
 
 	// Tool context for execution
 	supplierID := uint(0)

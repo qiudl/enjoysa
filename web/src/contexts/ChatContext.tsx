@@ -40,6 +40,8 @@ interface ChatContextType {
   setUserRole: (role: string) => void;
   toolCalls: ToolCallDisplay[];
   clearToolCalls: () => void;
+  disabledTools: string[];
+  setDisabledTools: (tools: string[]) => void;
   userMessageCount: number;
   signupDismissed: boolean;
   dismissSignup: () => void;
@@ -67,6 +69,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [userRole, setUserRole] = useState('user');
   const [toolCalls, setToolCalls] = useState<ToolCallDisplay[]>([]);
   const clearToolCalls = useCallback(() => setToolCalls([]), []);
+  const [disabledTools, setDisabledTools] = useState<string[]>([]);
   const { i18n } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
@@ -271,11 +274,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         language: chatLanguage,
         pageContext,
         userType: userRole as 'user' | 'supplier' | 'admin',
+        disabledTools: disabledTools.length > 0 ? disabledTools : undefined,
       });
     } catch {
       setIsLoading(false);
     }
-  }, [chatLanguage, userRole]);
+  }, [chatLanguage, userRole, disabledTools]);
 
   const loadSessions = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -327,7 +331,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       messages, isOpen, isLoading, isHistoryLoading, sessionId,
       chatLanguage, setChatLanguage,
       openChat, closeChat, toggleChat, sendMessage, clearChat,
-      userRole, setUserRole, toolCalls, clearToolCalls,
+      userRole, setUserRole, toolCalls, clearToolCalls, disabledTools, setDisabledTools,
       userMessageCount, signupDismissed, dismissSignup,
       showHistory, setShowHistory, sessions, isSessionsLoading,
       loadSessions, loadSession, newSession,

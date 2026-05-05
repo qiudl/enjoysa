@@ -843,7 +843,10 @@
     "noNotifications": "No updates yet",
     "viewAllNotifications": "View all notifications →",
     "searchTools": "🔍 Search tools...",
-    "noToolsFound": "No tools found"
+    "noToolsFound": "No tools found",
+    "sessions": "Sessions",
+    "searchSessions": "Search sessions...",
+    "backToPanel": "Back"
   },
   "shop": {
     "rating": "Rating",
