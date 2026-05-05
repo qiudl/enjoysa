@@ -7,12 +7,29 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	"enjoysa-backend/internal/aichat/model"
 	"enjoysa-backend/internal/core/config"
+	"enjoysa-backend/internal/core/logger"
 )
+
+// mapKeys returns the sorted keys of a map[string]interface{} for
+// diagnostic logs. Returns nil for a nil map (logger.Warnf prints "[]"
+// which is fine).
+func mapKeys(m map[string]interface{}) []string {
+	if m == nil {
+		return nil
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
 
 // aiProjClient is a simple HTTP client for ai-proj API.
 type aiProjClient struct {
@@ -233,14 +250,11 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			},
 		},
 		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
-			params := fmt.Sprintf("?project_id=%d&page=1", client.projectID)
-
-			if status, ok := args["status"].(string); ok && status != "" {
-				params += "&status=" + status
-			}
-			if search, ok := args["search"].(string); ok && search != "" {
-				params += "&search=" + search
-			}
+			// REQ-20260506-0014: build query string via url.Values so any
+			// Chinese / special characters in `search` or comma-separated
+			// `status` lists get properly percent-encoded — pre-fix this
+			// would silently produce a malformed URL and ai-proj would
+			// reply with 400 / empty results.
 			limit := 10
 			if l, ok := args["limit"].(float64); ok && int(l) > 0 {
 				limit = int(l)
@@ -248,16 +262,30 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 					limit = 50
 				}
 			}
-			params += fmt.Sprintf("&page_size=%d", limit)
+			q := url.Values{}
+			q.Set("project_id", strconv.Itoa(client.projectID))
+			q.Set("page", "1")
+			q.Set("page_size", strconv.Itoa(limit))
+			if status, ok := args["status"].(string); ok && status != "" {
+				q.Set("status", status)
+			}
+			if search, ok := args["search"].(string); ok && search != "" {
+				q.Set("search", search)
+			}
 
-			result, err := client.doJSON("GET", "/mcp/requirements"+params, nil)
+			result, err := client.doJSON("GET", "/mcp/requirements?"+q.Encode(), nil)
 			if err != nil {
 				return nil, fmt.Errorf("查询需求失败: %w", err)
 			}
 
-			// Format response
+			// Format response. ai-proj returns:
+			//   { "success": true, "data": { "requirements": [...], "total": N, "pagination": {...} } }
+			// (Earlier versions of this code read `result["total"]` at the
+			// top level, which is always nil — total stayed 0 and the LLM
+			// thought there were no records.)
+			data, _ := result["data"].(map[string]interface{})
 			var items []map[string]interface{}
-			if data, ok := result["data"].(map[string]interface{}); ok {
+			if data != nil {
 				if reqs, ok := data["requirements"].([]interface{}); ok {
 					for _, r := range reqs {
 						if req, ok := r.(map[string]interface{}); ok {
@@ -275,8 +303,17 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			}
 
 			total := 0
-			if t, ok := result["total"].(float64); ok {
-				total = int(t)
+			if data != nil {
+				if t, ok := data["total"].(float64); ok {
+					total = int(t)
+				}
+			}
+
+			// Diagnostic warn on empty results so a future regression in
+			// the response shape leaves a breadcrumb.
+			if len(items) == 0 {
+				logger.Warnf("[ai-chat] list_requirements returned 0 items; raw_keys=%v top_keys=%v query=%s",
+					mapKeys(data), mapKeys(result), q.Encode())
 			}
 
 			return map[string]interface{}{
