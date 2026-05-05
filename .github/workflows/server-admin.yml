@@ -1,0 +1,35 @@
+name: Server Admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command to run on server'
+        required: true
+        default: 'df -h && free -h && uptime && docker stats --no-stream'
+        type: string
+
+env:
+  SERVER_IP: 13.239.210.53
+  SERVER_USER: ubuntu
+
+jobs:
+  run-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Host aws-prod
+            HostName ${{ env.SERVER_IP }}
+            User ${{ env.SERVER_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no" > ~/.ssh/config
+
+      - name: Run command
+        run: |
+          echo "Running: ${{ github.event.inputs.command }}"
+          ssh aws-prod "${{ github.event.inputs.command }}"
