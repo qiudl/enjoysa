@@ -526,7 +526,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
               <button
                 className={styles.chatSendBtn}
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={(!input.trim() && pastedImages.length === 0) || isLoading}
               >
                 <Send size={15} />
               </button>

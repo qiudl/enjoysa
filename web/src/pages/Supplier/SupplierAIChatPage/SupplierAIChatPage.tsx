@@ -10,9 +10,11 @@ import styles from './SupplierAIChatPage.module.css';
 interface AIChatPageProps {
   role: 'supplier' | 'admin';
   backPath: string;
+  /** Optional pre-selected session id (e.g. coming from a Feishu share card link). */
+  sessionIdFromRoute?: number;
 }
 
-export const AIChatPage: React.FC<AIChatPageProps> = ({ role, backPath }) => {
+export const AIChatPage: React.FC<AIChatPageProps> = ({ role, backPath, sessionIdFromRoute }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
@@ -32,6 +34,14 @@ export const AIChatPage: React.FC<AIChatPageProps> = ({ role, backPath }) => {
     loadSessions();
     return () => setUserRole('user');
   }, [role, setUserRole, loadSessions]);
+
+  // Auto-load the session referenced in the URL (e.g. from Feishu share card).
+  // Runs once when the prop arrives and is different from the current session.
+  useEffect(() => {
+    if (sessionIdFromRoute && sessionIdFromRoute !== sessionId) {
+      loadSession(sessionIdFromRoute);
+    }
+  }, [sessionIdFromRoute, sessionId, loadSession]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
