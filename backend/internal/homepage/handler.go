@@ -75,8 +75,8 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	var popular []PopularProduct
 	h.db.Raw(`
 		SELECT p.id, p.name_zh, p.name_en, p.price_from, p.currency, p.rating,
-			COALESCE((SELECT url FROM product_images WHERE product_id = p.id AND is_cover = true LIMIT 1),
-					 (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1), '') as image,
+			COALESCE((SELECT url FROM product_images WHERE product_id = p.id AND is_cover = true AND deleted_at IS NULL LIMIT 1),
+					 (SELECT url FROM product_images WHERE product_id = p.id AND deleted_at IS NULL ORDER BY sort_order LIMIT 1), '') as image,
 			COUNT(o.id) as order_count
 		FROM products p
 		LEFT JOIN orders o ON o.product_id = p.id AND o.status NOT IN ('cancelled', 'refunded')
