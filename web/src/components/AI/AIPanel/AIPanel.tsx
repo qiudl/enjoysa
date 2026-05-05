@@ -14,6 +14,10 @@ export type AIRole = 'supplier' | 'admin';
 type TabKey = 'chat' | 'feed' | 'tools';
 
 const STORAGE_KEY = 'enjoysa_ai_panel_collapsed';
+const WIDTH_STORAGE_KEY = 'enjoysa_ai_panel_width';
+const MIN_WIDTH = 300;
+const MAX_WIDTH = 700;
+const DEFAULT_WIDTH = 380;
 
 interface AIPanelProps {
   role: AIRole;
@@ -72,12 +76,58 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
   });
+  const [panelWidth, setPanelWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem(WIDTH_STORAGE_KEY);
+      return saved ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Number(saved))) : DEFAULT_WIDTH;
+    } catch { return DEFAULT_WIDTH; }
+  });
   const [activeTab, setActiveTab] = useState<TabKey>('chat');
   const [input, setInput] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Resize handler
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX;
+      const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
+      setPanelWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Save final width
+      try { localStorage.setItem(WIDTH_STORAGE_KEY, String(panelWidth)); } catch { /* */ }
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [panelWidth]);
+
+  // Sync panel width to CSS custom property for layout margin-right
+  useEffect(() => {
+    const width = collapsed ? 48 : panelWidth;
+    document.documentElement.style.setProperty('--ai-panel-width', `${width}px`);
+    if (!isResizing) {
+      try { localStorage.setItem(WIDTH_STORAGE_KEY, String(panelWidth)); } catch { /* */ }
+    }
+    return () => { document.documentElement.style.removeProperty('--ai-panel-width'); };
+  }, [panelWidth, collapsed, isResizing]);
 
   const togglePanel = useCallback(() => {
     setCollapsed(prev => {
@@ -128,7 +178,14 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   ];
 
   return (
-    <div className={clsx(styles.panel, collapsed && styles.collapsed)}>
+    <div
+      className={clsx(styles.panel, collapsed && styles.collapsed)}
+      style={collapsed ? undefined : { width: panelWidth }}
+    >
+      {/* Resize handle */}
+      {!collapsed && (
+        <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
+      )}
       {/* Collapsed bar */}
       <div className={styles.collapsedBar}>
         <button
