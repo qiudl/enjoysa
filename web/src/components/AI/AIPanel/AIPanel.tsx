@@ -160,15 +160,14 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     const hasImages = pastedImages.some(img => img.url);
     if ((!trimmed && !hasImages) || isLoading) return;
 
-    // Build context with image URLs
-    let context = getPageContext();
+    // FIX #7: Don't duplicate image URLs in pageContext — only pass via imageUrls param
+    const context = getPageContext();
     const imageUrls = pastedImages.filter(img => img.url).map(img => img.url!);
-    if (imageUrls.length > 0) {
-      context += '\n\n用户附带了截图：\n' + imageUrls.map(url => `![截图](${url})`).join('\n');
-    }
 
     const message = trimmed || '请查看我上传的截图';
     setInput('');
+    // FIX #6: Release ObjectURLs before clearing
+    pastedImages.forEach(img => URL.revokeObjectURL(img.preview));
     setPastedImages([]);
     sendMessage(message, context, imageUrls.length > 0 ? imageUrls : undefined);
   }, [input, isLoading, sendMessage, getPageContext, pastedImages]);

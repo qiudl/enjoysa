@@ -144,28 +144,11 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		}
 	}
 
-	// If images present, do GLM vision recognition first
-	enrichedMessage := req.Message
-	if len(req.ImageURLs) > 0 && h.glmClient != nil {
-		description, err := h.glmClient.DescribeImages(c.Request.Context(), req.ImageURLs, req.Message)
-		if err != nil {
-			logger.Warn("[Chat] GLM image recognition failed: %v", err)
-			// Graceful degradation: mention images exist but couldn't be analyzed
-			enrichedMessage = req.Message + "\n\n[用户上传了图片但识别失败，请基于文字回复]"
-		} else {
-			enrichedMessage = req.Message + "\n\n[AI 图片识别结果: " + description + "]"
-		}
-		// Also append image URLs for reference
-		for _, url := range req.ImageURLs {
-			enrichedMessage += "\n![图片](" + url + ")"
-		}
-	}
-
-	// Save user message (with image URLs in content for history)
+	// FIX #3: Save original user message (without GLM enrichment) to history
 	userMsg := &chatmodel.ChatMessage{
 		SessionID: session.ID,
 		Role:      "user",
-		Content:   enrichedMessage,
+		Content:   req.Message,
 	}
 	if err := h.store.CreateMessage(userMsg); err != nil {
 		response.ServerError(c, "Failed to save message")
@@ -186,7 +169,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		aiMessages = append(aiMessages, service.Message{Role: m.Role, Content: m.Content})
 	}
 
-	// Set SSE headers
+	// FIX #1: Set SSE headers BEFORE GLM recognition so frontend gets immediate response
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -195,6 +178,36 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 	// Send session_id as first event
 	fmt.Fprintf(c.Writer, "data: {\"type\":\"session\",\"session_id\":%d}\n\n", session.ID)
 	c.Writer.Flush()
+
+	// FIX #1 + #2: GLM vision recognition AFTER SSE is established
+	if len(req.ImageURLs) > 0 && h.glmClient != nil {
+		// Notify frontend that image recognition is in progress
+		fmt.Fprintf(c.Writer, "data: {\"type\":\"token\",\"content\":\"正在识别图片...\\n\\n\"}\n\n")
+		c.Writer.Flush()
+
+		// FIX #2: Ensure URLs are absolute for GLM to download
+		absoluteURLs := make([]string, 0, len(req.ImageURLs))
+		for _, u := range req.ImageURLs {
+			if strings.HasPrefix(u, "/") {
+				u = "https://enjoysau.com" + u
+			}
+			absoluteURLs = append(absoluteURLs, u)
+		}
+
+		description, glmErr := h.glmClient.DescribeImages(c.Request.Context(), absoluteURLs, req.Message)
+		if glmErr != nil {
+			logger.Warn("[Chat] GLM image recognition failed: %v", glmErr)
+			// Inject degradation notice into the last user message for AI
+			aiMessages[len(aiMessages)-1].Content += "\n\n[用户上传了图片但识别失败，请基于文字回复]"
+		} else {
+			// Inject GLM description into the last user message for AI (not stored in DB)
+			aiMessages[len(aiMessages)-1].Content += "\n\n[AI 图片识别结果: " + description + "]"
+		}
+		// Append image URLs for AI reference
+		for _, url := range req.ImageURLs {
+			aiMessages[len(aiMessages)-1].Content += "\n![图片](" + url + ")"
+		}
+	}
 
 	// Use tool-calling flow for supplier/admin if LLM client is available
 	if (userType == "supplier" || userType == "admin") && h.llmClient != nil && h.toolRegistry != nil {

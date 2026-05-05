@@ -30,7 +30,6 @@ export async function compressImage(file: File): Promise<File> {
   canvas.height = height;
   const ctx = canvas.getContext('2d')!;
   ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
 
   // Try decreasing quality until under 2MB
   const outputType = file.type === 'image/png' ? 'image/jpeg' : file.type;
@@ -39,15 +38,18 @@ export async function compressImage(file: File): Promise<File> {
       canvas.toBlob((b) => resolve(b!), outputType, quality)
     );
     if (blob.size <= MAX_SIZE) {
+      bitmap.close();
       const ext = outputType === 'image/webp' ? '.webp' : '.jpg';
       return new File([blob], file.name.replace(/\.[^.]+$/, ext), { type: outputType });
     }
   }
 
-  // Last resort: further scale down
-  canvas.width = Math.round(width * 0.6);
-  canvas.height = Math.round(height * 0.6);
+  // Last resort: further scale down (bitmap still open here)
+  canvas.width = Math.round(width * 0.5);
+  canvas.height = Math.round(height * 0.5);
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close(); // Close after final use
+
   const blob = await new Promise<Blob>((resolve) =>
     canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.5)
   );
