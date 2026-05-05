@@ -43,14 +43,59 @@ func Sync() {
 	}
 }
 
-func Debug(args ...interface{}) { log.Debug(args...) }
-func Info(args ...interface{})  { log.Info(args...) }
-func Warn(args ...interface{})  { log.Warn(args...) }
-func Error(args ...interface{}) { log.Error(args...) }
-func Fatal(args ...interface{}) { log.Fatal(args...) }
+// All wrappers below silently no-op when Init() hasn't been called (e.g.
+// in unit tests that exercise modules using logger without spinning up the
+// full server). Production paths always call Init() in main, so this only
+// affects test contexts.
 
-func Debugf(template string, args ...interface{}) { log.Debugf(template, args...) }
-func Infof(template string, args ...interface{})  { log.Infof(template, args...) }
-func Warnf(template string, args ...interface{})  { log.Warnf(template, args...) }
-func Errorf(template string, args ...interface{}) { log.Errorf(template, args...) }
-func Fatalf(template string, args ...interface{}) { log.Fatalf(template, args...) }
+func Debug(args ...interface{}) {
+	if log != nil {
+		log.Debug(args...)
+	}
+}
+func Info(args ...interface{}) {
+	if log != nil {
+		log.Info(args...)
+	}
+}
+func Warn(args ...interface{}) {
+	if log != nil {
+		log.Warn(args...)
+	}
+}
+func Error(args ...interface{}) {
+	if log != nil {
+		log.Error(args...)
+	}
+}
+func Fatal(args ...interface{}) {
+	if log != nil {
+		log.Fatal(args...)
+	}
+}
+
+func Debugf(template string, args ...interface{}) {
+	if log != nil {
+		log.Debugf(template, args...)
+	}
+}
+func Infof(template string, args ...interface{}) {
+	if log != nil {
+		log.Infof(template, args...)
+	}
+}
+func Warnf(template string, args ...interface{}) {
+	if log != nil {
+		log.Warnf(template, args...)
+	}
+}
+func Errorf(template string, args ...interface{}) {
+	if log != nil {
+		log.Errorf(template, args...)
+	}
+}
+func Fatalf(template string, args ...interface{}) {
+	if log != nil {
+		log.Fatalf(template, args...)
+	}
+}
