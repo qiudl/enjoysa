@@ -113,6 +113,7 @@ export async function sendMessageStream(
     pageContext?: string;
     userType?: UserType;
     disabledTools?: string[];
+    imageUrls?: string[];
   },
 ): Promise<void> {
   const userType = options?.userType || 'user';
@@ -132,6 +133,7 @@ export async function sendMessageStream(
     page_context: options?.pageContext || '',
     user_type: userType,
     disabled_tools: options?.disabledTools || [],
+    image_urls: options?.imageUrls || [],
   };
 
   const response = await fetch(`${AI_API_BASE}/chat/send`, {

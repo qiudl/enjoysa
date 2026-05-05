@@ -34,7 +34,7 @@ interface ChatContextType {
   openChat: () => void;
   closeChat: () => void;
   toggleChat: () => void;
-  sendMessage: (content: string, pageContext?: string) => Promise<void>;
+  sendMessage: (content: string, pageContext?: string, imageUrls?: string[]) => Promise<void>;
   clearChat: () => void;
   userRole: string;
   setUserRole: (role: string) => void;
@@ -213,7 +213,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const dismissSignup = useCallback(() => setSignupDismissed(true), []);
 
-  const sendMessage = useCallback(async (content: string, pageContext?: string) => {
+  const sendMessage = useCallback(async (content: string, pageContext?: string, imageUrls?: string[]) => {
     const userMsg: ChatMessage = { role: 'user', content };
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
@@ -275,6 +275,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         pageContext,
         userType: userRole as 'user' | 'supplier' | 'admin',
         disabledTools: disabledTools.length > 0 ? disabledTools : undefined,
+        imageUrls,
       });
     } catch {
       setIsLoading(false);

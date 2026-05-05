@@ -16,6 +16,7 @@ import (
 	"enjoysa-backend/internal/aichat"
 	aichathandler "enjoysa-backend/internal/aichat/handler"
 	aichatmw "enjoysa-backend/internal/aichat/middleware"
+	aichatservice "enjoysa-backend/internal/aichat/service"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -129,6 +130,7 @@ func Setup(cfg Config) *gin.Engine {
 	aiService := chatservice.NewAIService(cfg.AIConfig)
 	chatHandler := chathandler.NewChatHandler(chStore, aiService)
 	chatHandler.SetToolSupport(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.DB)
+	chatHandler.SetGLMClient(aichatservice.NewGLMClient(cfg.AIConfig))
 
 	// === Supplier audit ===
 	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
