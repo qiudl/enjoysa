@@ -67,13 +67,23 @@ func (r *ToolRegistry) Execute(name string, argsJSON string, tctx model.ToolCont
 }
 
 // GetOpenAITools returns tools in OpenAI function calling format.
-func (r *ToolRegistry) GetOpenAITools(authenticated bool) []model.OpenAITool {
+// role: "" = all tools, "supplier" = supplier + shared, "admin" = admin + shared, "user" = shared only
+func (r *ToolRegistry) GetOpenAITools(authenticated bool, roles ...string) []model.OpenAITool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
+	role := ""
+	if len(roles) > 0 {
+		role = roles[0]
+	}
 
 	var tools []model.OpenAITool
 	for _, t := range r.tools {
 		if t.RequiresAuth && !authenticated {
+			continue
+		}
+		// Filter by audience
+		if role != "" && t.Audience != "" && t.Audience != "all" && t.Audience != role {
 			continue
 		}
 		tools = append(tools, model.OpenAITool{

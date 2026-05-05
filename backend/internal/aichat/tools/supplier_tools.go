@@ -18,6 +18,7 @@ func RegisterGetOrderStats() model.ToolDef {
 		Description: "获取供应商订单统计：今日/本周/本月的订单数、收入、取消率",
 		Category:    "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -88,6 +89,7 @@ func RegisterListPendingOrders() model.ToolDef {
 		Description:  "列出待确认的订单（状态为 paid，等待供应商确认）",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -153,6 +155,7 @@ func RegisterGetReviewStats() model.ToolDef {
 		Description:  "获取供应商评价统计：总评价数、平均评分、各星级分布、回复率",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -242,6 +245,7 @@ func RegisterGetRevenueTrend() model.ToolDef {
 		Description: "获取最近N天的每日收入趋势",
 		Category:    "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -320,6 +324,7 @@ func RegisterGetInventoryAlerts() model.ToolDef {
 		Description:  "获取库存预警：低库存和已售罄的排期",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -385,6 +390,7 @@ func RegisterGetSettlementDetail() model.ToolDef {
 		Description: "获取结算详情：待结算和已结算金额",
 		Category:    "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -458,6 +464,7 @@ func RegisterConfirmOrder() model.ToolDef {
 		Description: "确认订单（将 paid 状态改为 accepted）。这是一个操作类工具，会实际修改数据。",
 		Category:    "action",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -532,6 +539,7 @@ func RegisterSearchOrders() model.ToolDef {
 		Description: "搜索订单，支持按订单号、商品名、日期范围筛选",
 		Category:    "query",
 		RequiresAuth: true,
+		Audience:     "supplier",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
