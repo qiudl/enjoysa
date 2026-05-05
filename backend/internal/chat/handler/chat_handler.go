@@ -189,7 +189,7 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 	}
 
 	// Get tools
-	allTools := h.toolRegistry.GetOpenAITools(true)
+	allTools := h.toolRegistry.GetOpenAITools(true, userType)
 	// Filter out disabled tools
 	disabledSet := make(map[string]bool, len(disabledTools))
 	for _, name := range disabledTools {

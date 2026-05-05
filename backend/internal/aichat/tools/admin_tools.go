@@ -15,6 +15,7 @@ func RegisterGetPlatformStats() model.ToolDef {
 		Description:  "获取平台概览统计：总用户数、供应商数、商品数、订单数、总收入",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "admin",
 		Parameters: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -80,6 +81,7 @@ func RegisterSearchSuppliers() model.ToolDef {
 		Description:  "搜索供应商列表，含订单数、收入、评分等统计",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "admin",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -186,6 +188,7 @@ func RegisterListPendingProducts() model.ToolDef {
 		Description:  "列出待审核的商品",
 		Category:     "query",
 		RequiresAuth: true,
+		Audience:     "admin",
 		Parameters: map[string]interface{}{
 			"type":       "object",
 			"properties": map[string]interface{}{},
@@ -248,6 +251,7 @@ func RegisterApproveProduct() model.ToolDef {
 		Description:  "审核通过商品（将 pending 状态改为 approved）。这是一个操作类工具。",
 		Category:     "action",
 		RequiresAuth: true,
+		Audience:     "admin",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -312,6 +316,7 @@ func RegisterOfflineProduct() model.ToolDef {
 		Description:  "下架商品（将 approved 状态改为 offline）。这是一个操作类工具。",
 		Category:     "action",
 		RequiresAuth: true,
+		Audience:     "admin",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

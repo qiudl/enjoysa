@@ -8,8 +8,9 @@ type ToolDef struct {
 	Description  string                 `json:"description"`
 	Parameters   map[string]interface{} `json:"parameters"` // JSON Schema
 	Handler      ToolHandler            `json:"-"`
-	Category     string                 `json:"category"` // query | action | analysis
+	Category     string                 `json:"category"`      // query | action | analysis
 	RequiresAuth bool                   `json:"requires_auth"`
+	Audience     string                 `json:"audience"`      // "" or "all" = everyone, "supplier", "admin"
 }
 
 // ToolContext provides context for tool execution.
