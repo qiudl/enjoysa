@@ -5,6 +5,7 @@ import { Button } from '../../../components/Common';
 import { get, put } from '../../../services/api';
 import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierSettingsPage.module.css';
+import { ShareHistorySection } from './ShareHistorySection';
 
 interface SupplierProfile {
   id: number;
@@ -349,6 +350,8 @@ export const SupplierSettingsPage: React.FC = () => {
               </div>
             </div>
           </section>
+
+      <ShareHistorySection />
 
       {toast && <div className={styles.toast}>{toast}</div>}
     </div>

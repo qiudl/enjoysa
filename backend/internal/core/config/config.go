@@ -19,6 +19,13 @@ type Config struct {
 	Resend   ResendConfig   `mapstructure:"resend"`
 	AI         AIConfig         `mapstructure:"ai"`
 	AfterSales AfterSalesConfig `mapstructure:"aftersales"`
+	Feishu     FeishuConfig     `mapstructure:"feishu"`
+}
+
+// FeishuConfig holds the platform-wide Feishu group bot webhook used by
+// `chat/share`. When WebhookURL is empty the share endpoint returns 503.
+type FeishuConfig struct {
+	WebhookURL string `mapstructure:"webhook_url"`
 }
 
 type AfterSalesConfig struct {
@@ -123,6 +130,7 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("ai.aiproj_token", "ENJOYSA_AI_AIPROJ_TOKEN")
 	_ = v.BindEnv("ai.aiproj_proj_id", "ENJOYSA_AI_AIPROJ_PROJ_ID")
 	_ = v.BindEnv("aftersales.service_key", "ENJOYSA_AFTERSALES_KEY")
+	_ = v.BindEnv("feishu.webhook_url", "ENJOYSA_FEISHU_WEBHOOK_URL")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)

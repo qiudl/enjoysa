@@ -17,6 +17,8 @@ import (
 	aichathandler "enjoysa-backend/internal/aichat/handler"
 	aichatmw "enjoysa-backend/internal/aichat/middleware"
 	aichatservice "enjoysa-backend/internal/aichat/service"
+	aichatstore "enjoysa-backend/internal/aichat/store"
+	"enjoysa-backend/internal/integration/feishu"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -68,6 +70,7 @@ type Config struct {
 	ResendConfig     config.ResendConfig
 	AIConfig         config.AIConfig
 	AfterSalesConfig config.AfterSalesConfig
+	FeishuConfig     config.FeishuConfig
 	CasbinEnforcer   *casbin.SyncedEnforcer
 	AIModule         *aichat.Module
 }
@@ -131,6 +134,12 @@ func Setup(cfg Config) *gin.Engine {
 	chatHandler := chathandler.NewChatHandler(chStore, aiService)
 	chatHandler.SetToolSupport(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.DB)
 	chatHandler.SetGLMClient(aichatservice.NewGLMClient(cfg.AIConfig))
+
+	// === Chat share (Feishu) ===
+	shareStore := chatstore.NewShareStore(cfg.DB)
+	kbStore := aichatstore.NewKnowledgeStore(cfg.DB)
+	feishuClient := feishu.NewClient(cfg.FeishuConfig.WebhookURL)
+	shareHandler := chathandler.NewShareHandler(chStore, shareStore, kbStore, feishuClient, cfg.FrontendURL)
 
 	// === Supplier audit ===
 	supplierAuditStore := supplierstore.NewAuditLogStore(cfg.DB)
@@ -281,6 +290,9 @@ func Setup(cfg Config) *gin.Engine {
 	// exactly who is talking; missing/invalid tokens fall back to guest.
 	v1.POST("/chat/send", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), chatHandler.SendMessageStream)
 
+	// Share to Feishu — authenticated only (guests rejected by handler).
+	v1.POST("/chat/share", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), shareHandler.Send)
+
 	// Authenticated chat routes
 	chatGroup := v1.Group("/chat")
 	chatGroup.Use(userAuth)
@@ -372,6 +384,7 @@ func Setup(cfg Config) *gin.Engine {
 		supplierGroup.PUT("/profile", supplierHandler.UpdateProfile)
 		supplierGroup.GET("/schedules/alerts", supplierProductHandler.ScheduleAlerts)
 		supplierGroup.GET("/audit-logs", supplierAuditLogHandler.List)
+		supplierGroup.GET("/chat/shares", shareHandler.ListMine)
 	}
 
 	// Supplier product routes (requires approved supplier)

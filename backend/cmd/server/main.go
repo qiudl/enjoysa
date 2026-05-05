@@ -123,6 +123,7 @@ func main() {
 		ResendConfig:     cfg.Resend,
 		AIConfig:         cfg.AI,
 		AfterSalesConfig: cfg.AfterSales,
+		FeishuConfig:     cfg.Feishu,
 		CasbinEnforcer:   enforcer,
 		AIModule:         aiModule,
 	})

@@ -9,6 +9,10 @@ import { ToolCallCard } from './ToolCallCard';
 import Markdown from 'react-markdown';
 import { IdentityBadge } from '../IdentityBadge';
 import { compressImage, isAllowedImageType } from '../../../utils/imageCompress';
+import { ShareToFeishuButton } from '../ShareToFeishuButton';
+import { ShareModal, type ShareModalMessage } from '../ShareModal';
+import { getMessages } from '../../../services/chatService';
+import type { UserType } from '../../../services/api';
 import styles from './AIPanel.module.css';
 import clsx from 'clsx';
 
@@ -39,7 +43,44 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const location = useLocation();
   const {
     messages, isLoading, sendMessage, newSession, setUserRole, toolCalls, setDisabledTools,
+    sessionId,
   } = useChat();
+
+  // Share-to-Feishu state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareSessionId, setShareSessionId] = useState<number>(0);
+  const [shareItems, setShareItems] = useState<ShareModalMessage[]>([]);
+  const [shareInitiallySelected, setShareInitiallySelected] = useState<number[]>([]);
+  const [hoveredMessageIdx, setHoveredMessageIdx] = useState<number>(-1);
+  const shareUserType: UserType = role === 'admin' ? 'admin' : 'supplier';
+
+  // Open ShareModal with the latest server-side message ids loaded from API.
+  // SSE-streamed bubbles do not carry ids, so we always re-fetch.
+  const openShareModal = useCallback(async (mode: 'single' | 'all', anchorContent?: string) => {
+    if (!sessionId) {
+      return;
+    }
+    setShareSessionId(sessionId);
+    const fetched = await getMessages(sessionId, shareUserType);
+    const items: ShareModalMessage[] = fetched
+      .filter(m => m.id != null)
+      .map(m => ({ id: m.id as number, role: m.role, content: m.content }));
+    setShareItems(items);
+    if (mode === 'all') {
+      setShareInitiallySelected(items.map(m => m.id));
+    } else {
+      // Try to anchor on the assistant message the user clicked, fallback to last assistant.
+      let anchor: ShareModalMessage | undefined;
+      if (anchorContent) {
+        anchor = [...items].reverse().find(m => m.role === 'assistant' && m.content === anchorContent);
+      }
+      if (!anchor) {
+        anchor = [...items].reverse().find(m => m.role === 'assistant');
+      }
+      setShareInitiallySelected(anchor ? [anchor.id] : []);
+    }
+    setShareOpen(true);
+  }, [sessionId, shareUserType]);
 
   // Set user role for chat context
   useEffect(() => {
@@ -350,9 +391,22 @@ export const AIPanel: React.FC<AIPanelProps> = ({
               ) : (
                 <>
                   {messages.map((msg, i) => (
-                    <div key={i} className={clsx(styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant)}>
+                    <div
+                      key={i}
+                      className={clsx(styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant)}
+                      onMouseEnter={() => setHoveredMessageIdx(i)}
+                      onMouseLeave={() => setHoveredMessageIdx(idx => (idx === i ? -1 : idx))}
+                    >
                       <div className={styles.bubbleLabel}>
                         {msg.role === 'user' ? t('aiPanel.you', '您') : t('aiPanel.brand', '畅游南澳AI')}
+                        {msg.role === 'assistant' && msg.content && sessionId && (
+                          <span className={styles.bubbleActions}>
+                            <ShareToFeishuButton
+                              visible={hoveredMessageIdx === i}
+                              onClick={() => openShareModal('single', msg.content)}
+                            />
+                          </span>
+                        )}
                       </div>
                       <div className={clsx(styles.bubbleContent, msg.role === 'assistant' && styles.markdown)}>
                         {msg.content ? (
@@ -378,6 +432,16 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             </div>
             <div className={styles.chatIdentityRow}>
               <IdentityBadge role={role} />
+              {messages.length > 0 && sessionId && (
+                <button
+                  type="button"
+                  className={styles.shareSessionBtn}
+                  onClick={() => openShareModal('all')}
+                  title={t('aiPanel.share.shareSession', { defaultValue: '分享整个会话到飞书' }) as string}
+                >
+                  📤 {t('aiPanel.share.shareSession', { defaultValue: '分享整会话' })}
+                </button>
+              )}
             </div>
             <div className={styles.chatInput}>
               {pastedImages.length > 0 && (
@@ -438,6 +502,15 @@ export const AIPanel: React.FC<AIPanelProps> = ({
           </div>
         </div>
       </div>
+      <ShareModal
+        open={shareOpen}
+        sessionId={shareSessionId}
+        messages={shareItems}
+        initiallySelectedIds={shareInitiallySelected}
+        userType={shareUserType}
+        onClose={() => setShareOpen(false)}
+        onSuccess={() => setShareOpen(false)}
+      />
     </div>
   );
 };

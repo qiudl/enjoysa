@@ -279,6 +279,93 @@ export async function getTicket(ticketId: number): Promise<Ticket | null> {
 }
 
 /**
+ * Share one or more chat messages to the platform Feishu group bot.
+ * Server enforces session ownership and rate limits to 10 shares/min/user.
+ */
+export interface ShareMessagesPayload {
+  session_id: number;
+  message_ids: number[];
+  add_to_knowledge_base?: boolean;
+  note?: string;
+}
+
+export interface ShareMessagesResult {
+  share_id: number;
+  success: boolean;
+  feishu_message_id?: string;
+  error_message?: string;
+  added_to_kb?: boolean;
+}
+
+export async function shareMessages(
+  payload: ShareMessagesPayload,
+  userType: UserType,
+): Promise<ShareMessagesResult> {
+  const token = getAccessToken(userType);
+  if (!token) {
+    throw new Error('Sign in required');
+  }
+
+  const response = await fetch(`${AI_API_BASE}/chat/share`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const msg = data?.error || `Share failed (${response.status})`;
+    throw new Error(msg);
+  }
+  return data?.data as ShareMessagesResult;
+}
+
+export interface ShareHistoryItem {
+  id: number;
+  session_id: number;
+  message_ids: string;
+  note?: string;
+  channel: string;
+  added_to_kb: boolean;
+  success: boolean;
+  error_message?: string;
+  created_at: string;
+}
+
+export interface ShareHistoryPage {
+  items: ShareHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * List the supplier-wide share history (or admin's own history).
+ */
+export async function listShares(
+  page: number,
+  pageSize: number,
+  userType: UserType,
+): Promise<ShareHistoryPage> {
+  const token = getAccessToken(userType);
+  if (!token) {
+    return { items: [], total: 0, page, page_size: pageSize };
+  }
+  const path = userType === 'supplier' ? '/supplier/chat/shares' : '/chat/shares';
+  const response = await fetch(`${AI_API_BASE}${path}?page=${page}&page_size=${pageSize}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    return { items: [], total: 0, page, page_size: pageSize };
+  }
+  const data = await response.json();
+  return data?.data as ShareHistoryPage;
+}
+
+/**
  * Search orders by email
  */
 export async function searchMyOrders(): Promise<unknown[]> {
