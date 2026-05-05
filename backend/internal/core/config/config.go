@@ -26,9 +26,12 @@ type AfterSalesConfig struct {
 }
 
 type AIConfig struct {
-	BaseURL string `mapstructure:"base_url"`
-	APIKey  string `mapstructure:"api_key"`
-	Model   string `mapstructure:"model"`
+	BaseURL      string `mapstructure:"base_url"`
+	APIKey       string `mapstructure:"api_key"`
+	Model        string `mapstructure:"model"`
+	AIProjBase   string `mapstructure:"aiproj_base"`    // e.g. https://ai.pipexerp.com/api/v1
+	AIProjToken  string `mapstructure:"aiproj_token"`   // PAT token: aiproj_pk_...
+	AIProjProjID int    `mapstructure:"aiproj_proj_id"` // project ID in ai-proj
 }
 
 type ResendConfig struct {

@@ -20,6 +20,7 @@ import {
   Headphones,
   BarChart3,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useSupplierAuth } from '../../../contexts/SupplierAuthContext';
@@ -111,6 +112,18 @@ const supplierToolCategories: ToolCategory[] = [
     tools: [
       { id: 'reply', icon: <MessageSquare size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 评论回复', description: '根据评价内容和评分智能生成专业回复', path: '/supplier/reviews', enabled: true },
       { id: 'ticket', icon: <Headphones size={16} />, iconBg: '#f9f0ff', iconColor: '#722ed1', name: 'AI 工单分析', description: '分析售后工单意图，推荐最优处理方案', path: '/supplier/after-sales', enabled: true },
+    ],
+  },
+  {
+    id: 'feedback',
+    name: '需求反馈',
+    icon: <ClipboardList size={12} />,
+    iconBg: '#e6f7ff',
+    iconColor: '#1890ff',
+    tools: [
+      { id: 'create_requirement', icon: <ClipboardList size={16} />, iconBg: '#e6f7ff', iconColor: '#1890ff', name: '提交需求/反馈', description: '向平台提交功能建议、Bug 报告或改进意见', enabled: true },
+      { id: 'list_requirements', icon: <ClipboardList size={16} />, iconBg: '#e6f7ff', iconColor: '#1890ff', name: '查看我的需求', description: '查看已提交的需求列表和进展状态', enabled: true },
+      { id: 'upload_screenshot_requirement', icon: <ClipboardList size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: '截图反馈问题', description: '上传截图并自动创建 Bug 需求', enabled: true },
     ],
   },
 ];

@@ -51,6 +51,14 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 	// Register knowledge base tool (shared)
 	registry.Register(tools.RegisterSearchKnowledge())
 
+	// Register ai-proj integration tools
+	if cfg.AIProjBase != "" && cfg.AIProjToken != "" {
+		registry.Register(tools.RegisterCreateRequirement(cfg))
+		registry.Register(tools.RegisterListRequirements(cfg))
+		registry.Register(tools.RegisterUploadImageToRequirement(cfg))
+		logger.Info("AI-Proj integration enabled: %s (project %d)", cfg.AIProjBase, cfg.AIProjProjID)
+	}
+
 	logger.Info("AI module initialized with %d tools: %v", len(registry.GetToolNames()), registry.GetToolNames())
 
 	return &Module{

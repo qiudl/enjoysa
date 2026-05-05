@@ -23,6 +23,10 @@ const TOOL_NAME_MAP: Record<string, string> = {
   check_availability: '查询可用日期',
   get_reviews: '查询评价',
   search_knowledge: '搜索知识库',
+  create_requirement: '创建需求',
+  list_requirements: '查看需求列表',
+  upload_screenshot_requirement: '截图创建需求',
+  upload_image: '上传图片',
 };
 
 interface ToolCallCardProps {
