@@ -64,7 +64,32 @@ const supplierToolCategories: ToolCategory[] = [
     iconBg: '#e8f4ff',
     iconColor: '#1677ff',
     tools: [
-      { id: 'briefing', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: 'AI 每日简报', description: '今日订单/评价/收入趋势，智能运营建议', enabled: true, pinned: true },
+      { id: 'get_order_stats', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: 'AI 订单统计', description: '今日/本周/本月订单数、收入、取消率', enabled: true, pinned: true },
+      { id: 'get_revenue_trend', icon: <BarChart3 size={16} />, iconBg: '#e8f4ff', iconColor: '#1677ff', name: 'AI 收入趋势', description: '最近N天每日收入和订单量趋势', enabled: true },
+      { id: 'get_review_stats', icon: <MessageSquare size={16} />, iconBg: '#fff7e6', iconColor: '#fa8c16', name: 'AI 评价统计', description: '评分分布、回复率、平均评分', enabled: true },
+    ],
+  },
+  {
+    id: 'orders',
+    name: '订单管理',
+    icon: <ShoppingCart size={12} />,
+    iconBg: '#f6ffed',
+    iconColor: '#52c41a',
+    tools: [
+      { id: 'list_pending_orders', icon: <ShoppingCart size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 待确认订单', description: '查看等待确认的订单列表', enabled: true },
+      { id: 'confirm_order', icon: <ShoppingCart size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 确认订单', description: '确认指定订单（paid→accepted）', enabled: true },
+      { id: 'search_orders', icon: <ShoppingCart size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 搜索订单', description: '按订单号/商品名/日期搜索订单', enabled: true },
+    ],
+  },
+  {
+    id: 'inventory',
+    name: '库存与结算',
+    icon: <Package size={12} />,
+    iconBg: '#fff1f0',
+    iconColor: '#f5222d',
+    tools: [
+      { id: 'get_inventory_alerts', icon: <Package size={16} />, iconBg: '#fff1f0', iconColor: '#f5222d', name: 'AI 库存预警', description: '低库存和已售罄排期预警', enabled: true },
+      { id: 'get_settlement_detail', icon: <DollarSign size={16} />, iconBg: '#f6ffed', iconColor: '#52c41a', name: 'AI 结算详情', description: '待结算/已结算金额统计', enabled: true },
     ],
   },
   {
@@ -80,7 +105,7 @@ const supplierToolCategories: ToolCategory[] = [
   {
     id: 'service',
     name: '客户服务',
-    icon: <MessageSquare size={12} />,
+    icon: <Headphones size={12} />,
     iconBg: '#f9f0ff',
     iconColor: '#722ed1',
     tools: [

@@ -311,6 +311,338 @@ func RegisterGetRevenueTrend() model.ToolDef {
 	}
 }
 
+// ---------- Tool 5: get_inventory_alerts ----------
+
+// RegisterGetInventoryAlerts returns low-stock and sold-out schedule alerts.
+func RegisterGetInventoryAlerts() model.ToolDef {
+	return model.ToolDef{
+		Name:         "get_inventory_alerts",
+		Description:  "获取库存预警：低库存和已售罄的排期",
+		Category:     "query",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type":       "object",
+			"properties": map[string]interface{}{},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			if ctx.UserID == nil {
+				return nil, fmt.Errorf("supplier not authenticated")
+			}
+			db := ctx.DB.(*gorm.DB)
+			supplierID := *ctx.UserID
+
+			type alertRow struct {
+				ID          uint    `json:"id"`
+				ProductName string  `json:"product_name"`
+				Date        time.Time `json:"date"`
+				TimeSlot    string  `json:"time_slot"`
+				TotalSlots  int     `json:"total_slots"`
+				BookedSlots int     `json:"booked_slots"`
+				Remaining   int     `json:"remaining"`
+			}
+
+			var rows []alertRow
+			err := db.Raw(`
+				SELECT ps.id, p.name_zh as product_name, ps.date, ps.time_slot,
+					ps.total_slots, ps.booked_slots, (ps.total_slots - ps.booked_slots) as remaining
+				FROM product_schedules ps
+				JOIN products p ON p.id = ps.product_id
+				WHERE p.supplier_id = ? AND ps.deleted_at IS NULL AND p.deleted_at IS NULL
+				AND ps.date >= CURRENT_DATE AND ps.status = 'available'
+				AND (ps.total_slots - ps.booked_slots) < 3
+				ORDER BY remaining ASC, ps.date ASC LIMIT 20
+			`, supplierID).Scan(&rows).Error
+			if err != nil {
+				return nil, fmt.Errorf("query inventory alerts: %w", err)
+			}
+
+			items := make([]map[string]interface{}, 0, len(rows))
+			for _, r := range rows {
+				items = append(items, map[string]interface{}{
+					"product_name": r.ProductName,
+					"date":         r.Date.Format("2006-01-02"),
+					"time_slot":    r.TimeSlot,
+					"total_slots":  r.TotalSlots,
+					"booked_slots": r.BookedSlots,
+					"remaining":    r.Remaining,
+				})
+			}
+
+			return map[string]interface{}{
+				"alerts": items,
+				"count":  len(items),
+			}, nil
+		},
+	}
+}
+
+// ---------- Tool 6: get_settlement_detail ----------
+
+// RegisterGetSettlementDetail returns settlement summary for a supplier.
+func RegisterGetSettlementDetail() model.ToolDef {
+	return model.ToolDef{
+		Name:        "get_settlement_detail",
+		Description: "获取结算详情：待结算和已结算金额",
+		Category:    "query",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"status": map[string]interface{}{
+					"type":        "string",
+					"enum":        []string{"pending", "completed"},
+					"description": "筛选结算状态：pending=待结算, completed=已结算，默认返回全部",
+				},
+			},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			if ctx.UserID == nil {
+				return nil, fmt.Errorf("supplier not authenticated")
+			}
+			db := ctx.DB.(*gorm.DB)
+			supplierID := *ctx.UserID
+
+			type settlementRow struct {
+				Status      string  `json:"status"`
+				Count       int64   `json:"count"`
+				TotalAmount float64 `json:"total_amount"`
+			}
+
+			query := `
+				SELECT status, COUNT(*) as count, COALESCE(SUM(net_amount), 0) as total_amount
+				FROM settlements WHERE supplier_id = ? AND deleted_at IS NULL
+			`
+			queryArgs := []interface{}{supplierID}
+
+			if status, ok := args["status"].(string); ok && (status == "pending" || status == "completed") {
+				query += " AND status = ?"
+				queryArgs = append(queryArgs, status)
+			}
+
+			query += " GROUP BY status"
+
+			var rows []settlementRow
+			err := db.Raw(query, queryArgs...).Scan(&rows).Error
+			if err != nil {
+				return nil, fmt.Errorf("query settlement detail: %w", err)
+			}
+
+			result := map[string]interface{}{
+				"pending_count":    int64(0),
+				"pending_amount":   float64(0),
+				"completed_count":  int64(0),
+				"completed_amount": float64(0),
+			}
+			for _, r := range rows {
+				switch r.Status {
+				case "pending":
+					result["pending_count"] = r.Count
+					result["pending_amount"] = r.TotalAmount
+				case "completed":
+					result["completed_count"] = r.Count
+					result["completed_amount"] = r.TotalAmount
+				}
+			}
+
+			return result, nil
+		},
+	}
+}
+
+// ---------- Tool 7: confirm_order ----------
+
+// RegisterConfirmOrder confirms a paid order (changes status to accepted).
+func RegisterConfirmOrder() model.ToolDef {
+	return model.ToolDef{
+		Name:        "confirm_order",
+		Description: "确认订单（将 paid 状态改为 accepted）。这是一个操作类工具，会实际修改数据。",
+		Category:    "action",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"order_id": map[string]interface{}{
+					"type":        "integer",
+					"description": "要确认的订单ID",
+				},
+			},
+			"required": []string{"order_id"},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			if ctx.UserID == nil {
+				return nil, fmt.Errorf("supplier not authenticated")
+			}
+			db := ctx.DB.(*gorm.DB)
+			supplierID := *ctx.UserID
+
+			orderIDFloat, ok := args["order_id"].(float64)
+			if !ok {
+				return nil, fmt.Errorf("order_id is required")
+			}
+			orderID := int64(orderIDFloat)
+
+			// Check order exists, belongs to supplier, and is in 'paid' status
+			type orderCheck struct {
+				ID      int64  `json:"id"`
+				OrderNo string `json:"order_no"`
+				Status  string `json:"status"`
+			}
+			var order orderCheck
+			err := db.Raw(`
+				SELECT id, order_no, status FROM orders
+				WHERE id = ? AND supplier_id = ? AND deleted_at IS NULL
+			`, orderID, supplierID).Scan(&order).Error
+			if err != nil {
+				return nil, fmt.Errorf("query order: %w", err)
+			}
+			if order.ID == 0 {
+				return nil, fmt.Errorf("订单不存在或不属于当前供应商")
+			}
+			if order.Status != "paid" {
+				return nil, fmt.Errorf("订单状态为 %s，只有 paid 状态的订单才能确认", order.Status)
+			}
+
+			// Update order status
+			result := db.Exec(`
+				UPDATE orders SET status = 'accepted', updated_at = NOW()
+				WHERE id = ? AND supplier_id = ? AND status = 'paid'
+			`, orderID, supplierID)
+			if result.Error != nil {
+				return nil, fmt.Errorf("update order: %w", result.Error)
+			}
+			if result.RowsAffected == 0 {
+				return nil, fmt.Errorf("订单确认失败，可能状态已变更")
+			}
+
+			return map[string]interface{}{
+				"success":  true,
+				"order_no": order.OrderNo,
+				"message":  "订单已确认",
+			}, nil
+		},
+	}
+}
+
+// ---------- Tool 8: search_orders ----------
+
+// RegisterSearchOrders searches orders with keyword, status, and date filters.
+func RegisterSearchOrders() model.ToolDef {
+	return model.ToolDef{
+		Name:        "search_orders",
+		Description: "搜索订单，支持按订单号、商品名、日期范围筛选",
+		Category:    "query",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"keyword": map[string]interface{}{
+					"type":        "string",
+					"description": "搜索关键词，匹配订单号或商品名",
+				},
+				"status": map[string]interface{}{
+					"type":        "string",
+					"description": "订单状态筛选，如 paid, accepted, completed, cancelled 等",
+				},
+				"start_date": map[string]interface{}{
+					"type":        "string",
+					"description": "开始日期，格式 YYYY-MM-DD",
+				},
+				"end_date": map[string]interface{}{
+					"type":        "string",
+					"description": "结束日期，格式 YYYY-MM-DD",
+				},
+				"limit": map[string]interface{}{
+					"type":        "integer",
+					"description": "返回条数，默认10，最大50",
+				},
+			},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			if ctx.UserID == nil {
+				return nil, fmt.Errorf("supplier not authenticated")
+			}
+			db := ctx.DB.(*gorm.DB)
+			supplierID := *ctx.UserID
+
+			limit := 10
+			if l, ok := args["limit"].(float64); ok {
+				limit = int(l)
+				if limit < 1 {
+					limit = 10
+				}
+				if limit > 50 {
+					limit = 50
+				}
+			}
+
+			query := `
+				SELECT order_no, product_name, status, quantity, total_price, booking_date, created_at
+				FROM orders
+				WHERE supplier_id = ? AND deleted_at IS NULL
+			`
+			queryArgs := []interface{}{supplierID}
+
+			if keyword, ok := args["keyword"].(string); ok && keyword != "" {
+				query += " AND (order_no ILIKE ? OR product_name ILIKE ?)"
+				kw := "%" + keyword + "%"
+				queryArgs = append(queryArgs, kw, kw)
+			}
+
+			if status, ok := args["status"].(string); ok && status != "" {
+				query += " AND status = ?"
+				queryArgs = append(queryArgs, status)
+			}
+
+			if startDate, ok := args["start_date"].(string); ok && startDate != "" {
+				query += " AND created_at >= ?"
+				queryArgs = append(queryArgs, startDate)
+			}
+
+			if endDate, ok := args["end_date"].(string); ok && endDate != "" {
+				query += " AND created_at < ? + INTERVAL '1 day'"
+				queryArgs = append(queryArgs, endDate)
+			}
+
+			query += " ORDER BY created_at DESC LIMIT ?"
+			queryArgs = append(queryArgs, limit)
+
+			type orderRow struct {
+				OrderNo     string    `json:"order_no"`
+				ProductName string    `json:"product_name"`
+				Status      string    `json:"status"`
+				Quantity    int       `json:"quantity"`
+				TotalPrice  float64   `json:"total_price"`
+				BookingDate time.Time `json:"booking_date"`
+				CreatedAt   time.Time `json:"created_at"`
+			}
+
+			var rows []orderRow
+			err := db.Raw(query, queryArgs...).Scan(&rows).Error
+			if err != nil {
+				return nil, fmt.Errorf("search orders: %w", err)
+			}
+
+			items := make([]map[string]interface{}, 0, len(rows))
+			for _, r := range rows {
+				items = append(items, map[string]interface{}{
+					"order_no":     r.OrderNo,
+					"product_name": r.ProductName,
+					"status":       r.Status,
+					"quantity":     r.Quantity,
+					"total_price":  r.TotalPrice,
+					"booking_date": r.BookingDate.Format("2006-01-02"),
+					"created_at":   r.CreatedAt.Format("2006-01-02 15:04"),
+				})
+			}
+
+			return map[string]interface{}{
+				"orders": items,
+				"count":  len(items),
+			}, nil
+		},
+	}
+}
+
 // ---------- Helpers ----------
 
 // periodStartTime returns the start time for the given period string.

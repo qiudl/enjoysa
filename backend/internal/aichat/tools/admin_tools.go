@@ -240,3 +240,138 @@ func RegisterListPendingProducts() model.ToolDef {
 		},
 	}
 }
+
+// RegisterApproveProduct registers the approve_product tool.
+func RegisterApproveProduct() model.ToolDef {
+	return model.ToolDef{
+		Name:         "approve_product",
+		Description:  "审核通过商品（将 pending 状态改为 approved）。这是一个操作类工具。",
+		Category:     "action",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"product_id": map[string]interface{}{"type": "integer", "description": "商品ID"},
+			},
+			"required": []string{"product_id"},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			db, ok := ctx.DB.(*gorm.DB)
+			if !ok {
+				return nil, fmt.Errorf("invalid database connection")
+			}
+
+			productID, ok := args["product_id"].(float64)
+			if !ok {
+				return nil, fmt.Errorf("product_id is required")
+			}
+
+			// Check product exists and status is pending
+			var productName string
+			err := db.Raw("SELECT name_zh FROM products WHERE id = ? AND deleted_at IS NULL", int(productID)).Scan(&productName).Error
+			if err != nil {
+				return nil, fmt.Errorf("query product failed: %w", err)
+			}
+			if productName == "" {
+				return map[string]interface{}{
+					"success": false,
+					"message": fmt.Sprintf("商品 ID=%d 不存在", int(productID)),
+				}, nil
+			}
+
+			var status string
+			if err := db.Raw("SELECT status FROM products WHERE id = ? AND deleted_at IS NULL", int(productID)).Scan(&status).Error; err != nil {
+				return nil, fmt.Errorf("query product status failed: %w", err)
+			}
+			if status != "pending" {
+				return map[string]interface{}{
+					"success": false,
+					"message": fmt.Sprintf("商品「%s」当前状态为 %s，只有 pending 状态才能审核通过", productName, status),
+				}, nil
+			}
+
+			// Update status to approved
+			result := db.Raw("UPDATE products SET status = 'approved', updated_at = NOW() WHERE id = ? AND status = 'pending'", int(productID))
+			if result.Error != nil {
+				return nil, fmt.Errorf("approve product failed: %w", result.Error)
+			}
+
+			return map[string]interface{}{
+				"success":      true,
+				"product_name": productName,
+				"message":      "商品已审核通过",
+			}, nil
+		},
+	}
+}
+
+// RegisterOfflineProduct registers the offline_product tool.
+func RegisterOfflineProduct() model.ToolDef {
+	return model.ToolDef{
+		Name:         "offline_product",
+		Description:  "下架商品（将 approved 状态改为 offline）。这是一个操作类工具。",
+		Category:     "action",
+		RequiresAuth: true,
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"product_id": map[string]interface{}{"type": "integer", "description": "商品ID"},
+				"reason":     map[string]interface{}{"type": "string", "description": "下架原因"},
+			},
+			"required": []string{"product_id", "reason"},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			db, ok := ctx.DB.(*gorm.DB)
+			if !ok {
+				return nil, fmt.Errorf("invalid database connection")
+			}
+
+			productID, ok := args["product_id"].(float64)
+			if !ok {
+				return nil, fmt.Errorf("product_id is required")
+			}
+
+			reason, _ := args["reason"].(string)
+			if reason == "" {
+				return nil, fmt.Errorf("reason is required")
+			}
+
+			// Check product exists and status is approved
+			var productName string
+			err := db.Raw("SELECT name_zh FROM products WHERE id = ? AND deleted_at IS NULL", int(productID)).Scan(&productName).Error
+			if err != nil {
+				return nil, fmt.Errorf("query product failed: %w", err)
+			}
+			if productName == "" {
+				return map[string]interface{}{
+					"success": false,
+					"message": fmt.Sprintf("商品 ID=%d 不存在", int(productID)),
+				}, nil
+			}
+
+			var status string
+			if err := db.Raw("SELECT status FROM products WHERE id = ? AND deleted_at IS NULL", int(productID)).Scan(&status).Error; err != nil {
+				return nil, fmt.Errorf("query product status failed: %w", err)
+			}
+			if status != "approved" {
+				return map[string]interface{}{
+					"success": false,
+					"message": fmt.Sprintf("商品「%s」当前状态为 %s，只有 approved 状态才能下架", productName, status),
+				}, nil
+			}
+
+			// Update status to offline
+			result := db.Raw("UPDATE products SET status = 'offline', updated_at = NOW() WHERE id = ? AND status = 'approved'", int(productID))
+			if result.Error != nil {
+				return nil, fmt.Errorf("offline product failed: %w", result.Error)
+			}
+
+			return map[string]interface{}{
+				"success":      true,
+				"product_name": productName,
+				"reason":       reason,
+				"message":      "商品已下架",
+			}, nil
+		},
+	}
+}
