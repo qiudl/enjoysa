@@ -750,19 +750,23 @@ func (h *AdminHandler) CreateSupplier(c *gin.Context) {
 }
 
 type UpdateSupplierRequest struct {
-	Name          *string `json:"name"`
-	Description   *string `json:"description"`
-	Logo          *string `json:"logo"`
-	Phone         *string `json:"phone"`
-	Website       *string `json:"website"`
-	Address       *string `json:"address"`
-	City          *string `json:"city"`
-	State         *string `json:"state"`
-	PostalCode    *string `json:"postal_code"`
-	BankName      *string `json:"bank_name"`
-	BankAccount   *string `json:"bank_account"`
-	BankBSB       *string `json:"bank_bsb"`
-	AccountHolder *string `json:"account_holder"`
+	Name            *string `json:"name"`
+	Type            *string `json:"type"`
+	Description     *string `json:"description"`
+	Logo            *string `json:"logo"`
+	Email           *string `json:"email"`
+	Phone           *string `json:"phone"`
+	Website         *string `json:"website"`
+	Address         *string `json:"address"`
+	City            *string `json:"city"`
+	State           *string `json:"state"`
+	PostalCode      *string `json:"postal_code"`
+	BusinessLicense *string `json:"business_license"`
+	TaxNumber       *string `json:"tax_number"`
+	BankName        *string `json:"bank_name"`
+	BankAccount     *string `json:"bank_account"`
+	BankBSB         *string `json:"bank_bsb"`
+	AccountHolder   *string `json:"account_holder"`
 }
 
 func (h *AdminHandler) UpdateSupplier(c *gin.Context) {
@@ -784,14 +788,33 @@ func (h *AdminHandler) UpdateSupplier(c *gin.Context) {
 		return
 	}
 
+	// Email uniqueness check + SupplierUser sync
+	oldEmail := supplier.Email
+	emailChanged := false
+	if req.Email != nil && *req.Email != oldEmail {
+		var count int64
+		h.db.Model(&models.Supplier{}).Where("email = ? AND id != ?", *req.Email, supplier.ID).Count(&count)
+		if count > 0 {
+			response.BadRequest(c, "Email already in use by another supplier")
+			return
+		}
+		emailChanged = true
+	}
+
 	if req.Name != nil {
 		supplier.Name = *req.Name
+	}
+	if req.Type != nil {
+		supplier.Type = *req.Type
 	}
 	if req.Description != nil {
 		supplier.Description = *req.Description
 	}
 	if req.Logo != nil {
 		supplier.Logo = *req.Logo
+	}
+	if req.Email != nil {
+		supplier.Email = *req.Email
 	}
 	if req.Phone != nil {
 		supplier.Phone = *req.Phone
@@ -811,6 +834,12 @@ func (h *AdminHandler) UpdateSupplier(c *gin.Context) {
 	if req.PostalCode != nil {
 		supplier.PostalCode = *req.PostalCode
 	}
+	if req.BusinessLicense != nil {
+		supplier.BusinessLicense = *req.BusinessLicense
+	}
+	if req.TaxNumber != nil {
+		supplier.TaxNumber = *req.TaxNumber
+	}
 	if req.BankName != nil {
 		supplier.BankName = *req.BankName
 	}
@@ -824,7 +853,21 @@ func (h *AdminHandler) UpdateSupplier(c *gin.Context) {
 		supplier.AccountHolder = *req.AccountHolder
 	}
 
-	if err := h.db.Save(&supplier).Error; err != nil {
+	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&supplier).Error; err != nil {
+			return err
+		}
+		// Sync email to SupplierUser (admin role) when changed
+		if emailChanged {
+			if err := tx.Model(&models.SupplierUser{}).
+				Where("supplier_id = ? AND email = ? AND role = ?", supplier.ID, oldEmail, "admin").
+				Update("email", *req.Email).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if txErr != nil {
 		response.ServerError(c, "Failed to update supplier")
 		return
 	}

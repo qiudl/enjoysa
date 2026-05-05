@@ -44,6 +44,8 @@ export interface ApiSupplierDetail {
     city?: string;
     state?: string;
     postal_code?: string;
+    business_license?: string;
+    tax_number?: string;
     bank_name?: string;
     bank_account?: string;
     bank_bsb?: string;

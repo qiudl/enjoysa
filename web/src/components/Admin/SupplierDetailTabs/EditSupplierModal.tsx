@@ -11,6 +11,8 @@ interface EditSupplierModalProps {
   onSaved: () => void;
 }
 
+const SUPPLIER_TYPES = ['travel_agency', 'hotel', 'attraction', 'restaurant', 'car_rental'] as const;
+
 export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
   supplierId,
   supplier,
@@ -20,16 +22,25 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  // Basic Info
+  // Core Info
   const [name, setName] = useState('');
+  const [type, setType] = useState('');
+  const [email, setEmail] = useState('');
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
   const [website, setWebsite] = useState('');
+
+  // Address
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
+
+  // Credentials
+  const [businessLicense, setBusinessLicense] = useState('');
+  const [taxNumber, setTaxNumber] = useState('');
 
   // Bank Info
   const [bankName, setBankName] = useState('');
@@ -40,6 +51,8 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
   useEffect(() => {
     if (open && supplier) {
       setName(supplier.name || '');
+      setType(supplier.type || '');
+      setEmail(supplier.email || '');
       setDescription(supplier.description || '');
       setPhone(supplier.phone || '');
       setWebsite(supplier.website || '');
@@ -47,18 +60,24 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
       setCity(supplier.city || '');
       setState(supplier.state || '');
       setPostalCode(supplier.postal_code || '');
+      setBusinessLicense(supplier.business_license || '');
+      setTaxNumber(supplier.tax_number || '');
       setBankName(supplier.bank_name || '');
       setBankAccount(supplier.bank_account || '');
       setBankBsb(supplier.bank_bsb || '');
       setAccountHolder(supplier.account_holder || '');
+      setError('');
     }
   }, [open, supplier]);
 
   const handleSave = async () => {
     setSaving(true);
+    setError('');
     try {
       await adminService.updateSupplier(supplierId, {
         name,
+        type,
+        email,
         description,
         phone,
         website,
@@ -66,14 +85,17 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
         city,
         state,
         postal_code: postalCode,
+        business_license: businessLicense,
+        tax_number: taxNumber,
         bank_name: bankName,
         bank_account: bankAccount,
         bank_bsb: bankBsb,
         account_holder: accountHolder,
       });
       onSaved();
-    } catch {
-      // silent
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -86,6 +108,8 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <h2>{t('admin.suppliers.detail.editTitle')}</h2>
 
+        {error && <div className={styles.errorMsg}>{error}</div>}
+
         {/* Basic Info Section */}
         <h3 className={styles.sectionTitle}>{t('admin.suppliers.detail.editBasicInfo')}</h3>
 
@@ -96,6 +120,25 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t('admin.suppliers.detail.editFields.namePlaceholder')}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>{t('admin.suppliers.detail.editFields.type')}</label>
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            {SUPPLIER_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>{t('admin.suppliers.detail.editFields.email')}</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t('admin.suppliers.detail.editFields.emailPlaceholder')}
           />
         </div>
 
@@ -128,6 +171,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
           />
         </div>
 
+        {/* Address Section */}
         <div className={styles.formGroup}>
           <label>{t('admin.suppliers.detail.editFields.address')}</label>
           <input
@@ -165,6 +209,29 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
             value={postalCode}
             onChange={(e) => setPostalCode(e.target.value)}
             placeholder={t('admin.suppliers.detail.editFields.postalCodePlaceholder')}
+          />
+        </div>
+
+        {/* Credentials Section */}
+        <h3 className={styles.sectionTitle}>{t('admin.suppliers.detail.editCredentials')}</h3>
+
+        <div className={styles.formGroup}>
+          <label>{t('admin.suppliers.detail.editFields.businessLicense')}</label>
+          <input
+            type="text"
+            value={businessLicense}
+            onChange={(e) => setBusinessLicense(e.target.value)}
+            placeholder={t('admin.suppliers.detail.editFields.businessLicensePlaceholder')}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>{t('admin.suppliers.detail.editFields.taxNumber')}</label>
+          <input
+            type="text"
+            value={taxNumber}
+            onChange={(e) => setTaxNumber(e.target.value)}
+            placeholder={t('admin.suppliers.detail.editFields.taxNumberPlaceholder')}
           />
         </div>
 
