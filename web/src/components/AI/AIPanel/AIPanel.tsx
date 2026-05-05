@@ -30,7 +30,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
-    messages, isLoading, sendMessage, newSession, setUserRole, toolCalls,
+    messages, isLoading, sendMessage, newSession, setUserRole, toolCalls, setDisabledTools,
   } = useChat();
 
   // Set user role for chat context
@@ -242,6 +242,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             <AIPanelTools
               categories={toolCategories}
               onToolClick={handleToolClick}
+              onDisabledToolsChange={setDisabledTools}
             />
           </div>
         </div>

@@ -49,6 +49,7 @@ const SupplierOrderDetailPage = React.lazy(() => import('./pages/Supplier/Suppli
 const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewPage/SupplierProductPreviewPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
+const AIChatPage = React.lazy(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
 // 用户中心
 const ContactsPage = React.lazy(() => import('./pages/ContactsPage/ContactsPage'));
 // 平台管理端页面
@@ -1303,6 +1304,7 @@ function App() {
         <Route path="/supplier/after-sales/:id" element={<SupplierAuthGuard><SupplierTicketDetailPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/orders/:id" element={<SupplierAuthGuard><SupplierOrderDetailPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/:id/preview" element={<SupplierAuthGuard><SupplierProductPreviewPageWrapper /></SupplierAuthGuard>} />
+        <Route path="/supplier/ai-chat" element={<SupplierAuthGuard><AIChatPage role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />
@@ -1324,6 +1326,7 @@ function App() {
         <Route path="/admin/regions" element={<AdminAuthGuard><AdminRegionsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />
         <Route path="/admin/homepage" element={<AdminAuthGuard><AdminHomepageCMSWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/ai-chat" element={<AdminAuthGuard><AIChatPage role="admin" backPath="/admin" /></AdminAuthGuard>} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

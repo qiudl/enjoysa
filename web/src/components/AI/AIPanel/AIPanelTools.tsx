@@ -29,9 +29,10 @@ export interface ToolCategory {
 interface AIPanelToolsProps {
   categories: ToolCategory[];
   onToolClick?: (path?: string) => void;
+  onDisabledToolsChange?: (disabledTools: string[]) => void;
 }
 
-export const AIPanelTools: React.FC<AIPanelToolsProps> = ({ categories, onToolClick }) => {
+export const AIPanelTools: React.FC<AIPanelToolsProps> = ({ categories, onToolClick, onDisabledToolsChange }) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [toolStates, setToolStates] = useState<Record<string, boolean>>(() => {
@@ -42,8 +43,13 @@ export const AIPanelTools: React.FC<AIPanelToolsProps> = ({ categories, onToolCl
 
   const handleToggle = useCallback((toolId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setToolStates(prev => ({ ...prev, [toolId]: !prev[toolId] }));
-  }, []);
+    setToolStates(prev => {
+      const next = { ...prev, [toolId]: !prev[toolId] };
+      const disabled = Object.entries(next).filter(([, v]) => !v).map(([k]) => k);
+      onDisabledToolsChange?.(disabled);
+      return next;
+    });
+  }, [onDisabledToolsChange]);
 
   const filteredCategories = categories
     .map(cat => ({
