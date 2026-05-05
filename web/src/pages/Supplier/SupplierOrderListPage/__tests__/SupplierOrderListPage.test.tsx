@@ -1,10 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SupplierOrderListPage } from '../SupplierOrderListPage';
 
-// Mock order service
+// Mock order service. listSupplierOrders returns the standard PaginatedData
+// envelope { items, total, page, page_size, total_pages } — see ListResult
+// in services/orderService.ts. (Older versions used { orders: [...] }.)
 vi.mock('../../../../services/orderService', () => ({
   listSupplierOrders: vi.fn().mockResolvedValue({
-    orders: [
+    items: [
       {
         id: 1,
         order_no: 'ORD-001',
@@ -48,6 +50,10 @@ vi.mock('../../../../services/orderService', () => ({
         created_at: '2026-03-18T09:00:00Z',
       },
     ],
+    total: 3,
+    page: 1,
+    page_size: 20,
+    total_pages: 1,
   }),
   acceptOrder: vi.fn().mockResolvedValue({}),
   completeOrder: vi.fn().mockResolvedValue({}),
