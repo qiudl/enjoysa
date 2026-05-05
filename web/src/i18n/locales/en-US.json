@@ -825,7 +825,8 @@
     "justNow": "Just now",
     "minutesAgo": "{{n}} min ago",
     "hoursAgo": "{{n}}h ago",
-    "daysAgo": "{{n}}d ago"
+    "daysAgo": "{{n}}d ago",
+    "thinking": "AI is thinking..."
   },
   "aiPanel": {
     "brand": "EnjoySA AI",
