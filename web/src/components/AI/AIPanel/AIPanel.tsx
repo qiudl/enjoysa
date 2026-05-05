@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2 } from 'lucide-react';
+import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2, Paperclip } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
@@ -132,6 +132,17 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith('image/')) uploadImage(file);
+    }
+    // Reset so picking the same file again still triggers onChange.
+    e.target.value = '';
+  }, []);
 
   // Resize handler
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -476,6 +487,23 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                   ))}
                 </div>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleFilePick}
+              />
+              <button
+                type="button"
+                className={styles.chatAttachBtn}
+                onClick={() => fileInputRef.current?.click()}
+                title={t('aiPanel.attachImage', { defaultValue: '上传图片' }) as string}
+                aria-label={t('aiPanel.attachImage', { defaultValue: '上传图片' }) as string}
+              >
+                <Paperclip size={14} />
+              </button>
               <textarea
                 ref={textareaRef}
                 className={styles.chatTextarea}
