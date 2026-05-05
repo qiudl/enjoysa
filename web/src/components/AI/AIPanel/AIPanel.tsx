@@ -29,8 +29,14 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const {
-    messages, isLoading, sendMessage, newSession,
+    messages, isLoading, sendMessage, newSession, setUserRole,
   } = useChat();
+
+  // Set user role for chat context
+  useEffect(() => {
+    setUserRole(role);
+    return () => setUserRole('user');
+  }, [role, setUserRole]);
 
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }

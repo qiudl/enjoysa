@@ -113,6 +113,7 @@ export async function sendMessageStream(
     session_id: options?.sessionId || 0,
     language: options?.language || 'en',
     page_context: options?.pageContext || '',
+    user_type: userType,
   };
 
   const response = await fetch(`${AI_API_BASE}/chat/send`, {

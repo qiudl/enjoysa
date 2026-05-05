@@ -32,6 +32,7 @@ type SendMessageRequest struct {
 	Message     string `json:"message" binding:"required,max=4000"`
 	Language    string `json:"language"`
 	PageContext string `json:"page_context" binding:"max=2000"`
+	UserType    string `json:"user_type"`
 }
 
 // SendMessageStream handles POST /chat/send with SSE streaming response.
@@ -49,6 +50,10 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		user := u.(*models.User)
 		userID = user.ID
 		userType = "user"
+	}
+	// Frontend can override role for supplier/admin (route uses OptionalUserAuth)
+	if req.UserType == "supplier" || req.UserType == "admin" {
+		userType = req.UserType
 	}
 
 	lang := req.Language
@@ -97,7 +102,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 	}
 
 	aiMessages := []service.Message{
-		{Role: "system", Content: service.SystemPrompt(lang, req.PageContext)},
+		{Role: "system", Content: service.SystemPrompt(lang, req.PageContext, userType)},
 	}
 	for _, m := range recentMsgs {
 		aiMessages = append(aiMessages, service.Message{Role: m.Role, Content: m.Content})
