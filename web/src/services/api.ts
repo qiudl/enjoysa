@@ -46,9 +46,61 @@ export function setTokens(userType: UserType, accessToken: string, refreshToken:
 }
 
 export function clearTokens(userType: UserType): void {
-  console.warn(`[API] clearTokens(${userType}) called`, new Error().stack);
+  console.warn(`[API] clearTokens(${userType}) called`);
   localStorage.removeItem(TOKEN_KEYS[userType].access);
   localStorage.removeItem(TOKEN_KEYS[userType].refresh);
+}
+
+// Refresh endpoints by user type. Kept here (not in authService) to avoid
+// a circular import — authService already imports from this module.
+const REFRESH_ENDPOINTS: Record<UserType, string> = {
+  user: '/auth/refresh',
+  supplier: '/supplier/auth/refresh',
+  admin: '/admin/auth/refresh',
+};
+
+// Single-flight refresh: if N requests hit 401 concurrently, only one
+// /refresh call is sent; the rest await the same promise and reuse the
+// resulting access token. The map is exported for test-only reset.
+export const _refreshInFlight = new Map<UserType, Promise<string>>();
+
+async function performRefresh(userType: UserType): Promise<string> {
+  const refreshToken = getRefreshToken(userType);
+  if (!refreshToken) {
+    throw new ApiError('no refresh token', 401);
+  }
+
+  // Direct fetch (not request()) so a 401 from the refresh endpoint itself
+  // can never trigger a refresh-on-refresh recursion.
+  const resp = await fetch(`${API_BASE}${REFRESH_ENDPOINTS[userType]}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!resp.ok) {
+    throw new ApiError(`refresh status ${resp.status}`, resp.status);
+  }
+
+  const json: ApiResponse<{ token?: { access_token?: string; refresh_token?: string } }> =
+    await resp.json();
+  const tok = json.data?.token;
+  if (!json.success || !tok?.access_token || !tok.refresh_token) {
+    throw new ApiError('refresh response invalid', 502);
+  }
+
+  setTokens(userType, tok.access_token, tok.refresh_token);
+  return tok.access_token;
+}
+
+function tryRefresh(userType: UserType): Promise<string> {
+  const existing = _refreshInFlight.get(userType);
+  if (existing) return existing;
+
+  const promise = performRefresh(userType).finally(() => {
+    _refreshInFlight.delete(userType);
+  });
+  _refreshInFlight.set(userType, promise);
+  return promise;
 }
 
 // 请求错误类
@@ -70,6 +122,15 @@ export async function request<T>(
   options: RequestInit = {},
   userType?: UserType,
 ): Promise<T> {
+  return requestWithRetry<T>(endpoint, options, userType, false);
+}
+
+async function requestWithRetry<T>(
+  endpoint: string,
+  options: RequestInit,
+  userType: UserType | undefined,
+  isRetry: boolean,
+): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) || {}),
@@ -88,8 +149,17 @@ export async function request<T>(
     headers,
   });
 
-  // 处理 401 未授权
+  // 处理 401 未授权 — 尝试用 refresh_token 续期一次后重试原请求
   if (response.status === 401 && userType) {
+    if (!isRetry && getRefreshToken(userType)) {
+      try {
+        await tryRefresh(userType);
+        return await requestWithRetry<T>(endpoint, options, userType, true);
+      } catch (refreshErr) {
+        console.warn(`[API] refresh failed for ${userType}:`, refreshErr);
+        // fall through to normal 401 handling
+      }
+    }
     const body = await response.clone().text();
     console.warn(`[API] 401 on ${endpoint} | body=${body}`);
     clearTokens(userType);
