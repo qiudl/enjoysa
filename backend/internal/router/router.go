@@ -365,6 +365,12 @@ func Setup(cfg Config) *gin.Engine {
 		// Scene ⑫: Admin Insights (admin)
 		adminInsightsHandler := aichathandler.NewAdminInsightsHandler(cfg.AIModule.LLMClient, cfg.AIModule.CacheStore)
 		aiGroup.GET("/admin-insights", adminAuth, adminInsightsHandler.Get)
+
+		// Image upload proxy to ai-proj COS (supplier/admin)
+		imageUploadHandler := aichathandler.NewImageUploadHandler(cfg.AIConfig)
+		if imageUploadHandler != nil {
+			aiGroup.POST("/upload-image", supplierAuth, imageUploadHandler.Upload)
+		}
 	}
 
 	// ========================================
