@@ -205,7 +205,15 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     const context = getPageContext();
     const imageUrls = pastedImages.filter(img => img.url).map(img => img.url!);
 
-    const message = trimmed || '请查看我上传的截图';
+    // REQ-20260505-0036: embed image URLs as markdown into the persisted
+    // message body so the user bubble can render them and they survive a
+    // page reload from history. imageUrls is still passed separately to
+    // keep the GLM vision pipeline working.
+    const imageMd = imageUrls.map(u => `![image](${u})`).join('\n');
+    const message = trimmed
+      ? (imageMd ? `${trimmed}\n\n${imageMd}` : trimmed)
+      : imageMd;
+    if (!message) return;
     setInput('');
     // FIX #6: Release ObjectURLs before clearing
     pastedImages.forEach(img => URL.revokeObjectURL(img.preview));
@@ -421,11 +429,9 @@ export const AIPanel: React.FC<AIPanelProps> = ({
                           </span>
                         )}
                       </div>
-                      <div className={clsx(styles.bubbleContent, msg.role === 'assistant' && styles.markdown)}>
+                      <div className={clsx(styles.bubbleContent, styles.markdown)}>
                         {msg.content ? (
-                          msg.role === 'assistant'
-                            ? <Markdown>{msg.content}</Markdown>
-                            : msg.content
+                          <Markdown>{msg.content}</Markdown>
                         ) : (isLoading && i === messages.length - 1 ? (
                           <div className={styles.typing}>
                             {statusMessage ? (
