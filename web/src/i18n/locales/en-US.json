@@ -826,6 +826,25 @@
     "hoursAgo": "{{n}}h ago",
     "daysAgo": "{{n}}d ago"
   },
+  "aiPanel": {
+    "brand": "EnjoySA AI",
+    "tab": {
+      "chat": "Chat",
+      "feed": "Feed",
+      "tools": "Tools"
+    },
+    "expand": "Expand EnjoySA AI",
+    "collapse": "Collapse",
+    "fullscreen": "Full Screen",
+    "newChat": "New Chat",
+    "you": "You",
+    "welcomeDesc": "How can I help you?",
+    "inputPlaceholder": "Type a message...",
+    "noNotifications": "No updates yet",
+    "viewAllNotifications": "View all notifications →",
+    "searchTools": "🔍 Search tools...",
+    "noToolsFound": "No tools found"
+  },
   "shop": {
     "rating": "Rating",
     "products": "Products",
