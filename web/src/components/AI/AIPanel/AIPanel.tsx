@@ -182,13 +182,25 @@ export const AIPanel: React.FC<AIPanelProps> = ({
   const handleCompositionStart = useCallback(() => setIsComposing(true), []);
   const handleCompositionEnd = useCallback(() => setIsComposing(false), []);
 
+  // FIX #5: Use ref to track image count for concurrent paste safety
+  const imageCountRef = useRef(0);
+  useEffect(() => { imageCountRef.current = pastedImages.length; }, [pastedImages.length]);
+
   // Image paste/upload
   const uploadImage = useCallback(async (file: File) => {
-    // Check 9 image limit
-    if (pastedImages.length >= 9) return;
+    // FIX #5: Check limit via ref (not stale closure)
+    if (imageCountRef.current >= 9) {
+      alert(t('aiPanel.maxImages', '最多上传 9 张图片'));
+      return;
+    }
+    imageCountRef.current++;
 
     // Validate type
-    if (!isAllowedImageType(file)) return;
+    if (!isAllowedImageType(file)) {
+      alert(t('aiPanel.invalidImageType', '仅支持 JPG/PNG/WebP 格式'));
+      imageCountRef.current--;
+      return;
+    }
 
     // Compress if needed
     const compressed = await compressImage(file);
@@ -210,22 +222,27 @@ export const AIPanel: React.FC<AIPanelProps> = ({
           img.preview === preview ? { ...img, url: json.data.url, uploading: false } : img
         ));
       } else {
+        // FIX #9: Toast on upload failure
         setPastedImages(prev => prev.filter(img => img.preview !== preview));
+        alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
       }
     } catch {
+      // FIX #9: Toast on upload failure
       setPastedImages(prev => prev.filter(img => img.preview !== preview));
+      alert(t('aiPanel.uploadFailed', '图片上传失败，请重试'));
     }
-  }, [pastedImages.length]);
+  }, [t]);
 
+  // FIX #8: Handle ALL image items in clipboard, not just the first
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
+    let hasImage = false;
     for (const item of items) {
       if (item.type.startsWith('image/')) {
-        e.preventDefault();
+        if (!hasImage) { e.preventDefault(); hasImage = true; }
         const file = item.getAsFile();
         if (file) uploadImage(file);
-        return;
       }
     }
   }, [uploadImage]);

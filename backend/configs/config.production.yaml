@@ -41,4 +41,4 @@ upload:
 ai:
   base_url: "https://api.deepseek.com/v1"
   api_key: "sk-b6c8b9260bdb4cd4bb7252e010540277"
-  model: "deepseek-chat"
+  model: "deepseek-v4-flash"
