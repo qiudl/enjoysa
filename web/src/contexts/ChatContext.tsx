@@ -27,6 +27,8 @@ interface ChatContextType {
   toggleChat: () => void;
   sendMessage: (content: string, pageContext?: string) => Promise<void>;
   clearChat: () => void;
+  userRole: string;
+  setUserRole: (role: string) => void;
   userMessageCount: number;
   signupDismissed: boolean;
   dismissSignup: () => void;
@@ -51,6 +53,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [showHistory, setShowHistory] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
+  const [userRole, setUserRole] = useState('user');
   const { i18n } = useTranslation();
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
 
@@ -238,11 +241,12 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sessionId: sessionIdRef.current ?? undefined,
         language: chatLanguage,
         pageContext,
+        userType: userRole as 'user' | 'supplier' | 'admin',
       });
     } catch {
       setIsLoading(false);
     }
-  }, [chatLanguage]);
+  }, [chatLanguage, userRole]);
 
   const loadSessions = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -294,6 +298,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       messages, isOpen, isLoading, isHistoryLoading, sessionId,
       chatLanguage, setChatLanguage,
       openChat, closeChat, toggleChat, sendMessage, clearChat,
+      userRole, setUserRole,
       userMessageCount, signupDismissed, dismissSignup,
       showHistory, setShowHistory, sessions, isSessionsLoading,
       loadSessions, loadSession, newSession,
