@@ -4,6 +4,7 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../Common/Button';
 import { Input } from '../../Common/Input';
+import { useRegion } from '../../../contexts/RegionContext';
 import styles from './RegisterForm.module.css';
 
 export interface RegisterFormProps {
@@ -34,6 +35,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   onViewPrivacy,
 }) => {
   const { t } = useTranslation();
+  const { google_disabled: googleDisabled } = useRegion();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -227,23 +229,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         </Button>
       </form>
 
-      {/* 第三方登录 */}
-      <div className={styles.divider}>
-        <span>{t('auth.thirdPartyLogin')}</span>
-      </div>
+      {/* 第三方登录 — REQ-20260506-0006: hidden in mainland CN where GSI is unreachable */}
+      {!googleDisabled && (
+        <>
+          <div className={styles.divider}>
+            <span>{t('auth.thirdPartyLogin')}</span>
+          </div>
 
-      <div className={styles.socialLogin}>
-        <div className={styles.googleLoginWrapper}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setErrors({ general: t('auth.googleLoginFailed', 'Google login failed, please try again') })}
-            width="100%"
-            text="signup_with"
-            shape="rectangular"
-            size="large"
-          />
-        </div>
-      </div>
+          <div className={styles.socialLogin}>
+            <div className={styles.googleLoginWrapper}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setErrors({ general: t('auth.googleLoginFailed', 'Google login failed, please try again') })}
+                width="100%"
+                text="signup_with"
+                shape="rectangular"
+                size="large"
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 登录入口 */}
       <div className={styles.loginPrompt}>
