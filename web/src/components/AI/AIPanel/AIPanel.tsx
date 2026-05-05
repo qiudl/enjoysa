@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Send, Maximize2, PanelRightClose, Plus, Sparkles } from 'lucide-react';
+import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2 } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
@@ -145,6 +145,9 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     }
   }, [collapsed]);
 
+  // Image paste/upload state (must be before handleSend)
+  const [pastedImages, setPastedImages] = useState<{ file: File; preview: string; url?: string; uploading: boolean }[]>([]);
+
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -152,10 +155,21 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    const hasImages = pastedImages.some(img => img.url);
+    if ((!trimmed && !hasImages) || isLoading) return;
+
+    // Build context with image URLs
+    let context = getPageContext();
+    const imageUrls = pastedImages.filter(img => img.url).map(img => img.url!);
+    if (imageUrls.length > 0) {
+      context += '\n\n用户附带了截图：\n' + imageUrls.map(url => `![截图](${url})`).join('\n');
+    }
+
+    const message = trimmed || '请查看我上传的截图';
     setInput('');
-    sendMessage(trimmed, getPageContext());
-  }, [input, isLoading, sendMessage, getPageContext]);
+    setPastedImages([]);
+    sendMessage(message, context);
+  }, [input, isLoading, sendMessage, getPageContext, pastedImages]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
@@ -166,6 +180,52 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
   const handleCompositionStart = useCallback(() => setIsComposing(true), []);
   const handleCompositionEnd = useCallback(() => setIsComposing(false), []);
+
+  // Image paste/upload
+  const uploadImage = useCallback(async (file: File) => {
+    const preview = URL.createObjectURL(file);
+    const entry = { file, preview, uploading: true };
+    setPastedImages(prev => [...prev, entry]);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('enjoysa_supplier_token') || localStorage.getItem('enjoysa_admin_token') || '';
+      const resp = await fetch('/api/v1/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      const json = await resp.json();
+      if (json.success && json.data?.url) {
+        setPastedImages(prev => prev.map(img =>
+          img.preview === preview ? { ...img, url: json.data.url, uploading: false } : img
+        ));
+      } else {
+        setPastedImages(prev => prev.filter(img => img.preview !== preview));
+      }
+    } catch {
+      setPastedImages(prev => prev.filter(img => img.preview !== preview));
+    }
+  }, []);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) uploadImage(file);
+        return;
+      }
+    }
+  }, [uploadImage]);
+
+  const removeImage = useCallback((preview: string) => {
+    setPastedImages(prev => prev.filter(img => img.preview !== preview));
+    URL.revokeObjectURL(preview);
+  }, []);
 
   const handleToolClick = useCallback((path?: string) => {
     if (path) navigate(path);
@@ -292,15 +352,27 @@ export const AIPanel: React.FC<AIPanelProps> = ({
               <div ref={messagesEndRef} />
             </div>
             <div className={styles.chatInput}>
+              {pastedImages.length > 0 && (
+                <div className={styles.imagePreviewRow}>
+                  {pastedImages.map(img => (
+                    <div key={img.preview} className={styles.imagePreview}>
+                      <img src={img.preview} alt="preview" />
+                      {img.uploading && <div className={styles.imageUploading}><Loader2 size={14} className={styles.spin} /></div>}
+                      <button className={styles.imageRemove} onClick={() => removeImage(img.preview)}><X size={10} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 className={styles.chatTextarea}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
-                placeholder={t('aiPanel.inputPlaceholder', '输入消息...')}
+                placeholder={pastedImages.length > 0 ? t('aiPanel.describeScreenshot', '描述截图内容...') : t('aiPanel.inputPlaceholder', '输入消息...')}
                 rows={1}
               />
               <button
