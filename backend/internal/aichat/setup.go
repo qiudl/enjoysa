@@ -48,6 +48,9 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 	registry.Register(tools.RegisterApproveProduct())
 	registry.Register(tools.RegisterOfflineProduct())
 
+	// Register knowledge base tool (shared)
+	registry.Register(tools.RegisterSearchKnowledge())
+
 	logger.Info("AI module initialized with %d tools: %v", len(registry.GetToolNames()), registry.GetToolNames())
 
 	return &Module{
