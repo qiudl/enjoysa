@@ -194,6 +194,10 @@ export const adminService = {
     return get<ApiSupplierDetail>(`/admin/suppliers/${id}/detail`, 'admin');
   },
 
+  async createSupplier(data: Record<string, unknown>) {
+    return post<{ supplier: ApiSupplier; initial_password: string }>('/admin/suppliers', data, 'admin');
+  },
+
   async updateSupplier(id: number, data: Record<string, unknown>) {
     return put<ApiSupplier>(`/admin/suppliers/${id}`, data, 'admin');
   },

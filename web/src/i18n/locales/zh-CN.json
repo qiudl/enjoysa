@@ -1240,6 +1240,7 @@
         "descriptionEn": "英文简介",
         "descriptionPlaceholder": "请输入供应商简介...",
         "descriptionEnPlaceholder": "Please enter supplier description...",
+        "createSuccess": "供应商创建成功！\n登录邮箱：{{email}}\n初始密码：{{password}}\n请妥善保存此密码。",
         "errors": {
           "nameRequired": "请输入企业名称",
           "contactNameRequired": "请输入联系人姓名",

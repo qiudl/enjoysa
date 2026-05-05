@@ -1245,6 +1245,7 @@
         "descriptionEn": "English Description",
         "descriptionPlaceholder": "Enter supplier description...",
         "descriptionEnPlaceholder": "Enter supplier description in English...",
+        "createSuccess": "Supplier created!\nLogin email: {{email}}\nInitial password: {{password}}\nPlease save this password.",
         "errors": {
           "nameRequired": "Company name is required",
           "contactNameRequired": "Contact person is required",
