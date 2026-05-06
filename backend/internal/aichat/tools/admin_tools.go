@@ -248,7 +248,7 @@ func RegisterListPendingProducts() model.ToolDef {
 func RegisterApproveProduct() model.ToolDef {
 	return model.ToolDef{
 		Name:         "approve_product",
-		Description:  "审核通过商品（将 pending 状态改为 approved）。这是一个操作类工具。",
+		Description:  "审核通过商品（写操作，将 pending 状态改为 approved）。⚠️ 调用前必须：(1) 管理员【显式同意】通过该商品——仅查看商品详情或讨论审核流程不是审核信号，应先文字询问\"是否确认通过？\"；(2) 同一轮回复内禁止多次调用本工具，服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
 		Audience:     "admin",
@@ -313,7 +313,7 @@ func RegisterApproveProduct() model.ToolDef {
 func RegisterOfflineProduct() model.ToolDef {
 	return model.ToolDef{
 		Name:         "offline_product",
-		Description:  "下架商品（将 approved 状态改为 offline）。这是一个操作类工具。",
+		Description:  "下架商品（写操作，将 approved 状态改为 offline）。⚠️ 调用前必须：(1) 管理员【显式同意】下架该商品并提供具体下架原因——仅讨论商品问题不是下架信号；(2) 同一轮回复内禁止多次调用本工具，服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
 		Audience:     "admin",

@@ -265,9 +265,19 @@ func (h *ChatHandler) finishStream(c *gin.Context, session *chatmodel.ChatSessio
 // isAIChatWriteTool reports whether a tool name is a write/persistence tool
 // that should only run once per chat turn. Read-only tools (search, list,
 // detail lookups) can safely be called multiple times per turn.
+//
+// Keep in sync with the three-layer guard standard (REQ-20260506-0003,
+// REQ-20260506-0017): every tool whose Category is "action" (real DB side
+// effect) must be listed here, must declare explicit-consent / single-turn
+// rules in its Description, and must be covered by description-text guard
+// tests.
 func isAIChatWriteTool(name string) bool {
 	switch name {
-	case "create_requirement", "upload_screenshot_requirement":
+	case "create_requirement",
+		"upload_screenshot_requirement",
+		"approve_product",
+		"offline_product",
+		"confirm_order":
 		return true
 	}
 	return false
