@@ -362,11 +362,27 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 					mapKeys(data), mapKeys(result), q.Encode())
 			}
 
-			return map[string]interface{}{
+			// REQ-20260507-0002 diag: when total > 0 but items == 0 (the
+			// upstream returned a count without a list, suggesting a shape
+			// shift), surface the data-map keys + a raw sample so we can
+			// debug from the chat surface instead of needing prod log access.
+			out := map[string]interface{}{
 				"requirements": items,
 				"total":        total,
 				"showing":      len(items),
-			}, nil
+			}
+			if total > 0 && len(items) == 0 {
+				out["_diag_data_keys"] = mapKeys(data)
+				out["_diag_top_keys"] = mapKeys(result)
+				if data != nil {
+					if rawList, ok := data["requirements"]; ok {
+						out["_diag_requirements_type"] = fmt.Sprintf("%T", rawList)
+					} else {
+						out["_diag_requirements_type"] = "missing"
+					}
+				}
+			}
+			return out, nil
 		},
 	}
 }
