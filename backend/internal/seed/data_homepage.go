@@ -40,18 +40,45 @@ func (s *Seeder) seedHomepage() error {
 	}
 	s.record("homepage_testimonials", len(testimonials))
 
-	// === Partners ===
+	// === Partners (repurposed as "Destinations across South Australia" — council badges link to region pages) ===
+	// Remove the legacy Unsplash-placeholder partners replaced by this rework so the homepage
+	// doesn't show 15 logos (5 stale + 10 new) on already-seeded environments.
+	legacyPartnerNames := []string{
+		"South Australian Tourism Commission",
+		"Tourism Australia",
+		"Adelaide Airport",
+		"Kangaroo Island Tours",
+		"Barossa Wine Region",
+	}
+	if err := s.db.Where("name IN ?", legacyPartnerNames).Delete(&homepage.HomepagePartner{}).Error; err != nil {
+		return fmt.Errorf("delete legacy homepage partners: %w", err)
+	}
+
 	partners := []homepage.HomepagePartner{
-		{Name: "South Australian Tourism Commission", Logo: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=80&fit=crop", Website: "https://southaustralia.com", SortOrder: 1, Status: "active"},
-		{Name: "Tourism Australia", Logo: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=200&h=80&fit=crop", Website: "https://tourism.australia.com", SortOrder: 2, Status: "active"},
-		{Name: "Adelaide Airport", Logo: "https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=200&h=80&fit=crop", Website: "https://adelaideairport.com.au", SortOrder: 3, Status: "active"},
-		{Name: "Kangaroo Island Tours", Logo: "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=200&h=80&fit=crop", Website: "https://kangarooisland.sa.gov.au", SortOrder: 4, Status: "active"},
-		{Name: "Barossa Wine Region", Logo: "https://images.unsplash.com/photo-1474722883778-792e7990302f?w=200&h=80&fit=crop", Website: "https://barossa.com", SortOrder: 5, Status: "active"},
+		{Name: "City of Adelaide", Logo: "/images/councils/adelaide.svg", Website: "/regions/adelaide", SortOrder: 1, Status: "active"},
+		{Name: "Adelaide Hills Council", Logo: "/images/councils/adelaide-hills.png", Website: "/regions/adelaide-hills", SortOrder: 2, Status: "active"},
+		{Name: "The Barossa Council", Logo: "/images/councils/barossa.png", Website: "/regions/barossa", SortOrder: 3, Status: "active"},
+		{Name: "City of Onkaparinga", Logo: "/images/councils/onkaparinga.png", Website: "/regions/fleurieu", SortOrder: 4, Status: "active"},
+		{Name: "Alexandrina Council", Logo: "/images/councils/alexandrina.png", Website: "/regions/fleurieu", SortOrder: 5, Status: "active"},
+		{Name: "City of Victor Harbor", Logo: "/images/councils/victor-harbor.png", Website: "/regions/fleurieu", SortOrder: 6, Status: "active"},
+		{Name: "Yorke Peninsula Council", Logo: "/images/councils/yorke-peninsula.png", Website: "/regions/yorke-peninsula", SortOrder: 7, Status: "active"},
+		{Name: "Kangaroo Island Council", Logo: "/images/councils/kangaroo-island.png", Website: "/regions/kangaroo-island", SortOrder: 8, Status: "active"},
+		{Name: "Flinders Ranges Council", Logo: "/images/councils/flinders-ranges.jpg", Website: "/regions/flinders", SortOrder: 9, Status: "active"},
+		{Name: "City of Mount Gambier", Logo: "/images/councils/mount-gambier.jpg", Website: "/regions/limestone-coast", SortOrder: 10, Status: "active"},
 	}
 	for i := range partners {
 		result := s.db.Where("name = ?", partners[i].Name).FirstOrCreate(&partners[i])
 		if result.Error != nil {
 			return fmt.Errorf("upsert homepage partner: %w", result.Error)
+		}
+		// Force-update logo + website + sort_order to current source-of-truth (allows changing Unsplash → /uploads → /images/councils)
+		if err := s.db.Model(&homepage.HomepagePartner{}).Where("name = ?", partners[i].Name).Updates(map[string]interface{}{
+			"logo":       partners[i].Logo,
+			"website":    partners[i].Website,
+			"sort_order": partners[i].SortOrder,
+			"status":     partners[i].Status,
+		}).Error; err != nil {
+			return fmt.Errorf("update homepage partner: %w", err)
 		}
 	}
 	s.record("homepage_partners", len(partners))
@@ -66,7 +93,7 @@ func (s *Seeder) seedHomepage() error {
 		{ModuleKey: "categories", TitleZh: "体验分类", TitleEn: "Categories", SortOrder: 5, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
 		{ModuleKey: "features", TitleZh: "为什么选择我们", TitleEn: "Why Choose Us", SortOrder: 6, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
 		{ModuleKey: "testimonials", TitleZh: "用户评价", TitleEn: "Testimonials", SortOrder: 7, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
-		{ModuleKey: "partners", TitleZh: "合作伙伴", TitleEn: "Our Partners", SortOrder: 8, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
+		{ModuleKey: "partners", TitleZh: "南澳各地", TitleEn: "Destinations", SortOrder: 8, IsVisible: true, Config: datatypes.JSON([]byte("{}"))},
 		{ModuleKey: "popular", TitleZh: "热门活动", TitleEn: "Popular Activities", SortOrder: 9, IsVisible: true, Config: datatypes.JSON(popularCfg)},
 	}
 	for i := range modules {
