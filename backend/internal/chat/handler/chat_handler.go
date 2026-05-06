@@ -273,6 +273,22 @@ func isAIChatWriteTool(name string) bool {
 	return false
 }
 
+// duplicateWriteToolBlockResult returns the canned tool result to feed back to
+// the LLM when a write tool is invoked a second time in the same turn. Returns
+// nil when execution should proceed normally (read-only tools, or first call
+// of a write tool). Kept as a pure function so the single-turn dedupe contract
+// from REQ-20260506-0003 has a regression test in chat_handler_test.go.
+func duplicateWriteToolBlockResult(name string, called map[string]bool) map[string]interface{} {
+	if !isAIChatWriteTool(name) || !called[name] {
+		return nil
+	}
+	return map[string]interface{}{
+		"success": false,
+		"error":   "duplicate_call_blocked",
+		"message": fmt.Sprintf("本轮回复中已调用过 %s，服务端拒绝同轮重复执行写操作。如果你需要创建另一个明显不同的需求，请先用文字与用户确认意图后再调用；切勿仅因不确定就重复调用。", name),
+	}
+}
+
 // streamWithTools handles the tool-calling chat flow for supplier/admin.
 func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSession, sysMessages []service.Message, lang string, chatUser *aichatmodel.ChatUser, userMessage string, disabledTools []string) {
 	ctx := c.Request.Context()
@@ -377,12 +393,8 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 				durationMs int64
 				execErr    error
 			)
-			if isAIChatWriteTool(tc.Function.Name) && writeToolCalled[tc.Function.Name] {
-				result = map[string]interface{}{
-					"success": false,
-					"error":   "duplicate_call_blocked",
-					"message": fmt.Sprintf("本轮回复中已调用过 %s，服务端拒绝同轮重复执行写操作。如果你需要创建另一个明显不同的需求，请先用文字与用户确认意图后再调用；切勿仅因不确定就重复调用。", tc.Function.Name),
-				}
+			if blocked := duplicateWriteToolBlockResult(tc.Function.Name, writeToolCalled); blocked != nil {
+				result = blocked
 			} else {
 				result, durationMs, execErr = h.toolRegistry.Execute(tc.Function.Name, tc.Function.Arguments, toolCtx)
 				if execErr == nil && isAIChatWriteTool(tc.Function.Name) {

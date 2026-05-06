@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"enjoysa-backend/internal/aichat/model"
@@ -193,6 +194,76 @@ func TestListRequirements_HandlesMissingDataGracefully(t *testing.T) {
 	m := res.(map[string]interface{})
 	if showing := m["showing"]; showing != 0 {
 		t.Errorf("expected empty showing on missing data, got %v", showing)
+	}
+}
+
+// REQ-20260506-0015 (hardening REQ-20260506-0003): the description text on
+// write tools is the second of three guard layers (prompt + tool desc +
+// handler dedupe). It is the only signal the LLM sees per-tool, so silently
+// dropping the explicit-consent / single-turn warnings would re-open the
+// 0003 bug class. Lock the wording with a CI-level keyword check.
+func TestCreateRequirementDescription_HasIntentAndDedupGuards(t *testing.T) {
+	tool := RegisterCreateRequirement(config.AIConfig{
+		AIProjBase:   "http://example",
+		AIProjToken:  "test-token",
+		AIProjProjID: 167,
+	})
+
+	mustContain := []string{
+		"显式",                  // explicit consent rule
+		"同意",                  // user consent
+		"不是",                  // "uploading isn't a creation signal"
+		"list_requirements", // suggested fallback for similarity check
+	}
+	for _, kw := range mustContain {
+		if !strings.Contains(tool.Description, kw) {
+			t.Errorf("create_requirement description missing guard keyword %q\ndescription: %s", kw, tool.Description)
+		}
+	}
+
+	// Single-turn dedupe must be advertised in at least one form so the LLM
+	// is told upfront the server will reject duplicates.
+	dedupKeywords := []string{"同一轮", "单轮", "重复"}
+	hit := false
+	for _, kw := range dedupKeywords {
+		if strings.Contains(tool.Description, kw) {
+			hit = true
+			break
+		}
+	}
+	if !hit {
+		t.Errorf("create_requirement description must mention single-turn dedupe (one of %v)\ndescription: %s", dedupKeywords, tool.Description)
+	}
+}
+
+func TestUploadScreenshotRequirementDescription_HasIntentAndDedupGuards(t *testing.T) {
+	tool := RegisterUploadImageToRequirement(config.AIConfig{
+		AIProjBase:   "http://example",
+		AIProjToken:  "test-token",
+		AIProjProjID: 167,
+	})
+
+	mustContain := []string{
+		"显式",
+		"同意",
+		"截图", // image-upload-specific anti-misfire wording
+	}
+	for _, kw := range mustContain {
+		if !strings.Contains(tool.Description, kw) {
+			t.Errorf("upload_screenshot_requirement description missing guard keyword %q\ndescription: %s", kw, tool.Description)
+		}
+	}
+
+	dedupKeywords := []string{"同一轮", "单轮", "重复"}
+	hit := false
+	for _, kw := range dedupKeywords {
+		if strings.Contains(tool.Description, kw) {
+			hit = true
+			break
+		}
+	}
+	if !hit {
+		t.Errorf("upload_screenshot_requirement description must mention single-turn dedupe (one of %v)\ndescription: %s", dedupKeywords, tool.Description)
 	}
 }
 
