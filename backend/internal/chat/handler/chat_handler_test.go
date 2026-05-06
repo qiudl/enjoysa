@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	chatmodel "enjoysa-backend/internal/chat/model"
+
+	"gorm.io/gorm"
 )
 
 // REQ-20260506-0050 [SECURITY]: regression coverage for the SendMessageStream
@@ -80,6 +83,76 @@ func TestSessionAccessibleBy_REQ0050(t *testing.T) {
 		// must be granted access.
 		if sessionAccessibleBy(nil, 1, "user") {
 			t.Fatal("nil session must never be accessible")
+		}
+	})
+}
+
+// REQ-20260506-0064: stale session_id (record gone after DB reset / cleanup /
+// cross-env localStorage reuse) used to surface as 404 "Session not found",
+// stranding the user until they manually cleared localStorage. The fix is to
+// distinguish "record not found" (graceful recovery: create a new session)
+// from "record exists but owned by someone else" (must stay 404 to preserve
+// the REQ-20260506-0050 ownership boundary). This test pins the policy in
+// the pure resolveSendMessageSession() helper so the handler refactor can't
+// accidentally collapse the two cases again.
+func TestResolveSendMessageSession_REQ0064(t *testing.T) {
+	t.Run("RecordNotFound_FallsBackToNewSession", func(t *testing.T) {
+		got := resolveSendMessageSession(nil, gorm.ErrRecordNotFound, 1, "user")
+		if got != sessionResolutionCreateNew {
+			t.Fatalf("stale session_id must trigger CreateNew, got %v", got)
+		}
+	})
+
+	t.Run("OtherDBError_SurfacesAsServerError", func(t *testing.T) {
+		got := resolveSendMessageSession(nil, errors.New("connection refused"), 1, "user")
+		if got != sessionResolutionDBError {
+			t.Fatalf("non-not-found DB error must surface as DBError, got %v", got)
+		}
+	})
+
+	t.Run("ForeignSessionDifferentUser_DeniedForREQ0050", func(t *testing.T) {
+		// Session belongs to user A (id=1). Caller is user B (id=2).
+		// REQ-0050: must NOT silently fall back to a new session — that
+		// would defeat the ownership check by always succeeding.
+		s := &chatmodel.ChatSession{UserID: 1, UserType: "user"}
+		got := resolveSendMessageSession(s, nil, 2, "user")
+		if got != sessionResolutionDenyForeign {
+			t.Fatalf("foreign session must be denied, got %v", got)
+		}
+	})
+
+	t.Run("ForeignSessionCrossUserType_Denied", func(t *testing.T) {
+		// supplier_user.id=7 row vs. user.id=7 row — collision the
+		// REQ-0050 fix added (user_id + user_type) double-check for.
+		s := &chatmodel.ChatSession{UserID: 7, UserType: "supplier"}
+		if got := resolveSendMessageSession(s, nil, 7, "user"); got != sessionResolutionDenyForeign {
+			t.Fatalf("cross user_type must be denied, got %v", got)
+		}
+		if got := resolveSendMessageSession(s, nil, 7, "admin"); got != sessionResolutionDenyForeign {
+			t.Fatalf("cross user_type must be denied, got %v", got)
+		}
+	})
+
+	t.Run("OwnedSession_UseExisting", func(t *testing.T) {
+		s := &chatmodel.ChatSession{UserID: 1, UserType: "user"}
+		if got := resolveSendMessageSession(s, nil, 1, "user"); got != sessionResolutionUseExisting {
+			t.Fatalf("owner must reuse existing session, got %v", got)
+		}
+	})
+
+	t.Run("OwnedSupplierSession_UseExisting", func(t *testing.T) {
+		s := &chatmodel.ChatSession{UserID: 10, UserType: "supplier"}
+		if got := resolveSendMessageSession(s, nil, 10, "supplier"); got != sessionResolutionUseExisting {
+			t.Fatalf("supplier owner must reuse existing session, got %v", got)
+		}
+	})
+
+	t.Run("WrappedRecordNotFound_StillFallsBack", func(t *testing.T) {
+		// errors.Is must match wrapped sentinels — guards against future
+		// store layer wrapping the gorm error in fmt.Errorf("...: %w", err).
+		wrapped := errors.Join(errors.New("preface"), gorm.ErrRecordNotFound)
+		if got := resolveSendMessageSession(nil, wrapped, 1, "user"); got != sessionResolutionCreateNew {
+			t.Fatalf("wrapped ErrRecordNotFound must still trigger CreateNew, got %v", got)
 		}
 	})
 }
