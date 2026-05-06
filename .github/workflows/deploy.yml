@@ -108,6 +108,37 @@ jobs:
             export FEISHU_WEBHOOK_URL='${{ secrets.FEISHU_WEBHOOK_URL }}' && \
             docker compose up -d --build --wait --remove-orphans"
 
+      # --- Nginx Config ---
+      - name: Deploy nginx config
+        if: steps.scope.outputs.frontend == 'true' || steps.scope.outputs.backend == 'true'
+        run: |
+          set -e
+          # Push new config to /tmp
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key" deploy/nginx/sites-available/enjoysa aws-prod:/tmp/enjoysa.new
+
+          ssh aws-prod 'set -e
+            # Backup current config with timestamp
+            sudo cp /etc/nginx/sites-available/enjoysa /etc/nginx/sites-available/enjoysa.bak.$(date +%Y%m%d-%H%M%S)
+            # Show diff for visibility (does not block)
+            echo "=== nginx config diff (server vs new) ==="
+            diff /etc/nginx/sites-available/enjoysa /tmp/enjoysa.new || true
+            echo "=== end diff ==="
+            # Replace
+            sudo cp /tmp/enjoysa.new /etc/nginx/sites-available/enjoysa
+            # Validate
+            if ! sudo nginx -t; then
+              echo "[ROLLBACK] nginx -t failed, restoring backup"
+              LATEST_BAK=$(ls -t /etc/nginx/sites-available/enjoysa.bak.* | head -1)
+              sudo cp "$LATEST_BAK" /etc/nginx/sites-available/enjoysa
+              exit 1
+            fi
+            # Reload
+            sudo systemctl reload nginx
+            # Cleanup
+            rm /tmp/enjoysa.new
+            echo "nginx config synced and reloaded"
+          '
+
       # --- Verify ---
       - name: Verify deployment
         run: |
