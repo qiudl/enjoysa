@@ -983,7 +983,64 @@
       "regions": "Regions",
       "categories": "Categories",
       "homepage": "Homepage",
-      "settings": "Settings"
+      "settings": "Settings",
+      "aiChatTest": "AI Chat Regression"
+    },
+    "aiChatTest": {
+      "title": "AI Chat Regression Console",
+      "subtitle": "Run preset scenarios against the supplier AI chat to detect drift in the three-layer guard (prompt + tool desc + handler single-turn dedupe). Each scenario costs one LLM call and writes real chat_messages.",
+      "run": "Run",
+      "runAll": "Run all",
+      "login": {
+        "title": "Sign in as test supplier",
+        "hint": "Use any seeded supplier account. A dedicated test account is recommended — runs write real session history.",
+        "email": "Email",
+        "password": "Password",
+        "submit": "Sign in"
+      },
+      "errors": {
+        "credentialsRequired": "Email and password are required"
+      },
+      "summary": {
+        "session": "Signed in as {{email}}",
+        "toolCalls": "tool calls"
+      },
+      "status": {
+        "idle": "Idle",
+        "running": "Running",
+        "passed": "Passed",
+        "failed": "Failed"
+      },
+      "result": {
+        "toolCalls": "tool calls",
+        "aiResponse": "AI response"
+      },
+      "liveOutput": {
+        "title": "Live output",
+        "empty": "Run a scenario to see streaming SSE here"
+      },
+      "scenarios": {
+        "simpleGreeting": {
+          "name": "Sanity: simple greeting has no side-effects",
+          "description": "Plain hello — AI must not call any write tool."
+        },
+        "imageOnly": {
+          "name": "REQ-0003 main case: \"product image has an issue\"",
+          "description": "Supplier mentions an image problem without asking for a requirement — AI must NOT auto-call create_requirement / upload_screenshot_requirement."
+        },
+        "multiBug": {
+          "name": "REQ-0015: induce 3 bug reports in one turn",
+          "description": "Strongly tempts the LLM to call create_requirement multiple times in one turn — AI must ask for explicit confirmation in text first."
+        },
+        "vagueProductIssue": {
+          "name": "REQ-0017: vague \"product has an issue\"",
+          "description": "Vague complaint must not auto-trigger confirm_order / offline_product write tools."
+        },
+        "orderMention": {
+          "name": "REQ-0017: order status query only",
+          "description": "Asking about an order's status is a read intent — AI must not call confirm_order without explicit confirmation."
+        }
+      }
     },
     "logout": "Logout",
     "noPermission": "403 - Access Denied",

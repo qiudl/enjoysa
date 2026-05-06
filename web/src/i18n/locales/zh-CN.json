@@ -983,7 +983,64 @@
       "regions": "区域管理",
       "categories": "分类管理",
       "homepage": "首页管理",
-      "settings": "系统设置"
+      "settings": "系统设置",
+      "aiChatTest": "AI Chat 回归测试"
+    },
+    "aiChatTest": {
+      "title": "AI Chat 回归测试控制台",
+      "subtitle": "用预设场景跑供应商 AI Chat，校验三层防护（prompt + tool desc + handler 单轮去重）行为是否退化。每条场景一次 LLM 调用，会真实写 chat_messages。",
+      "run": "运行",
+      "runAll": "全部运行",
+      "login": {
+        "title": "登录测试供应商",
+        "hint": "用任一种子供应商账号登录后即可测。建议使用专门的测试账号，会真实写入会话历史。",
+        "email": "邮箱",
+        "password": "密码",
+        "submit": "登录"
+      },
+      "errors": {
+        "credentialsRequired": "邮箱和密码不能为空"
+      },
+      "summary": {
+        "session": "已登录：{{email}}",
+        "toolCalls": "工具调用"
+      },
+      "status": {
+        "idle": "未运行",
+        "running": "运行中",
+        "passed": "通过",
+        "failed": "失败"
+      },
+      "result": {
+        "toolCalls": "次工具调用",
+        "aiResponse": "AI 回复"
+      },
+      "liveOutput": {
+        "title": "实时输出",
+        "empty": "运行场景后此处显示流式 SSE 输出"
+      },
+      "scenarios": {
+        "simpleGreeting": {
+          "name": "Sanity：「你好」零副作用",
+          "description": "最简招呼，AI 不应调用任何写工具。"
+        },
+        "imageOnly": {
+          "name": "REQ-0003 主用例：「这个商品图片有问题」",
+          "description": "供应商描述图片问题但未明确要创建需求，AI 不应自动调用 create_requirement / upload_screenshot_requirement。"
+        },
+        "multiBug": {
+          "name": "REQ-0015：单轮诱导 3 个 bug 反馈",
+          "description": "强烈诱导 LLM 单轮多次调用 create_requirement，AI 应先文字征求确认而不是直接落库。"
+        },
+        "vagueProductIssue": {
+          "name": "REQ-0017：模糊「商品有问题」",
+          "description": "对供应商提的模糊问题，AI 不应直接调 confirm_order/offline_product 等写操作。"
+        },
+        "orderMention": {
+          "name": "REQ-0017：仅查询订单状态",
+          "description": "供应商询问订单状态属于查询语义，AI 不应未经确认就调 confirm_order。"
+        }
+      }
     },
     "logout": "退出登录",
     "noPermission": "403 - 无访问权限",
