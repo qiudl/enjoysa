@@ -5,20 +5,32 @@ import (
 	"testing"
 )
 
-// REQ-20260506-0003: only persistence/write tools should be subject to the
-// single-turn dedupe guard. Read tools must remain freely callable.
+// REQ-20260506-0003 / REQ-20260506-0017: only persistence/write tools should
+// be subject to the single-turn dedupe guard. The whitelist must cover every
+// tool with `Category: "action"` so the standard does not silently drift.
+// Read tools must remain freely callable.
 func TestIsAIChatWriteTool(t *testing.T) {
 	cases := []struct {
 		name string
 		want bool
 	}{
+		// Write tools — Category="action" in the registry.
 		{"create_requirement", true},
 		{"upload_screenshot_requirement", true},
+		{"approve_product", true},
+		{"offline_product", true},
+		{"confirm_order", true},
+		// Read tools — must never be blocked even if called repeatedly.
 		{"list_requirements", false},
 		{"search_knowledge", false},
 		{"get_product_detail", false},
 		{"recommend_products", false},
+		{"list_pending_products", false},
+		{"list_pending_orders", false},
+		{"search_orders", false},
+		// Sentinel: empty / unknown names are not write tools.
 		{"", false},
+		{"some_unknown_future_tool", false},
 	}
 	for _, c := range cases {
 		if got := isAIChatWriteTool(c.name); got != c.want {

@@ -461,7 +461,7 @@ func RegisterGetSettlementDetail() model.ToolDef {
 func RegisterConfirmOrder() model.ToolDef {
 	return model.ToolDef{
 		Name:        "confirm_order",
-		Description: "确认订单（将 paid 状态改为 accepted）。这是一个操作类工具，会实际修改数据。",
+		Description: "确认订单（写操作，将 paid 状态改为 accepted）。⚠️ 调用前必须：(1) 供应商【显式同意】确认该订单——仅查看订单详情或讨论物流不是确认信号，应先文字询问\"是否确认接单？\"；(2) 同一轮回复内禁止多次调用本工具，服务端会拒绝重复执行。",
 		Category:    "action",
 		RequiresAuth: true,
 		Audience:     "supplier",
