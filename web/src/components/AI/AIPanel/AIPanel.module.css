@@ -288,8 +288,8 @@
 }
 
 .bubbleUser .bubbleContent {
-  background: #0958d9;
-  color: #fff;
+  background: transparent;
+  color: #1a1a1a;
   border-bottom-right-radius: 4px;
 }
 
