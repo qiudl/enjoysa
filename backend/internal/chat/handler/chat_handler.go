@@ -401,11 +401,17 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 	if chatUser.UserType == "supplier" && chatUser.SupplierID != nil {
 		toolUserID = *chatUser.SupplierID
 	}
+	// REQ-20260507-0002: thread the chat session id through to ToolContext
+	// so create_requirement can run cross-turn dedup against ai-proj. Pointer
+	// + "nil = skip" keeps non-chat callers (future batch / cron tools)
+	// silently bypassing the check without per-tool guards.
+	sessionID := session.ID
 	toolCtx := aichatmodel.ToolContext{
-		User:     chatUser,
-		UserID:   &toolUserID,
-		Language: lang,
-		DB:       h.db,
+		User:      chatUser,
+		UserID:    &toolUserID,
+		Language:  lang,
+		DB:        h.db,
+		SessionID: &sessionID,
 	}
 
 	var fullResponse strings.Builder

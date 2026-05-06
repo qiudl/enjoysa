@@ -65,10 +65,11 @@ func (u *ChatUser) RoleEn() string {
 
 // ToolContext provides context for tool execution.
 type ToolContext struct {
-	User     *ChatUser // full identity (preferred for new tools)
-	UserID   *uint     // nil = guest (kept for backward compatibility)
-	Language string    // "zh" | "en"
-	DB       interface{}
+	User      *ChatUser // full identity (preferred for new tools)
+	UserID    *uint     // nil = guest (kept for backward compatibility)
+	Language  string    // "zh" | "en"
+	DB        interface{}
+	SessionID *uint // REQ-20260507-0002: chat session id for cross-turn dedup; nil = non-chat caller, dedup is skipped
 }
 
 // ToolHandler executes a tool and returns a result.
