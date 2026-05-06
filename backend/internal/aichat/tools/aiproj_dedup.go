@@ -104,7 +104,11 @@ func (c *aiProjClient) findRecentDraftsForActor(
 	q.Set("page", "1")
 	q.Set("page_size", strconv.Itoa(maxCandidates*5)) // overfetch; we filter client-side
 	q.Set("status", "draft")
-	q.Set("response_mode", "compact") // need tags + created_at + title
+	// Do NOT set response_mode=compact — that mode strips the tags field
+	// from list items (verified empirically against the live ai-proj
+	// instance during REQ-20260507-0002 e2e smoke), which would defeat
+	// the chat-actor:<X> client-side filter and silently miss every
+	// dedup hit. Default mode returns the full record including tags.
 
 	reqCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
