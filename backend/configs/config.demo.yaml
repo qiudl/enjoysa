@@ -1,0 +1,47 @@
+server:
+  port: 6080
+  mode: release
+  frontend_url: "https://demo.enjoysau.com"
+
+database:
+  host: postgres
+  port: 5432
+  user: postgres
+  password: enjoysa2026
+  dbname: enjoysa
+  sslmode: disable
+  max_idle_conns: 10
+  max_open_conns: 50
+
+log:
+  level: info
+  format: json
+
+jwt:
+  secret: enjoysa-demo-jwt-secret-2026
+  access_expire: 24
+  refresh_expire: 168
+
+google:
+  client_id: ""
+
+# REQ-20260506-0056: demo environment must NOT carry prod Stripe credentials.
+# Empty keys make the payment service fall back to mock mode (no real charges).
+stripe:
+  secret_key: ""
+  webhook_secret: ""
+
+upload:
+  dir: "./uploads"
+  max_size: 10
+  allowed_types:
+    - image/jpeg
+    - image/png
+    - image/webp
+    - image/gif
+    - application/pdf
+
+ai:
+  base_url: "https://api.deepseek.com/v1"
+  api_key: "sk-b6c8b9260bdb4cd4bb7252e010540277"
+  model: "deepseek-v4-flash"
