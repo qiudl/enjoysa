@@ -337,6 +337,11 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 								"priority":   req["priority"],
 								"category":   req["category"],
 								"created_at": req["created_at"],
+								// REQ-20260507-0002: include tags so the LLM
+								// can see chat-actor:<X> markers and so
+								// dedup-related diagnostics remain visible
+								// when the upstream returns them.
+								"tags": req["tags"],
 							})
 						}
 					}
