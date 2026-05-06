@@ -20,12 +20,15 @@ func TestSystemPrompt_SupplierZh_GuardsWriteTools(t *testing.T) {
 		Name:     "测试供应商",
 	})
 
-	// Layer 1: explicit-intent gating preserved from REQ-0003.
+	// Layer 1: explicit-intent gating preserved from REQ-0003 / REQ-0052.
+	// REQ-20260506-0052 (round 2): rule 4 reworded — "明确表示创建意图" replaces
+	// "显式同意"; "虚假创建" replaces "不是创建信号"; the server-rejects clause
+	// moved to rule 6 so we still verify it but via different keywords.
 	intentGuards := []string{
-		"显式",
+		"明确表示创建意图",
 		"create_requirement",
-		"不是创建信号",
-		"服务端会拒绝",
+		"虚假创建",
+		"服务端会拒绝", // still present in rule 6
 	}
 	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
@@ -43,7 +46,8 @@ func TestSystemPrompt_SupplierZh_GuardsWriteTools(t *testing.T) {
 		}
 	}
 
-	antiPreSearch := []string{"预查重", "list_requirements"}
+	// rule 5/6 still bans pre-search defence (kept "预查重" via 反向用例 + rule 6).
+	antiPreSearch := []string{"反向用例", "list_requirements"}
 	for _, kw := range antiPreSearch {
 		if !strings.Contains(prompt, kw) {
 			t.Errorf("supplier zh prompt must explicitly ban LLM-side pre-search; missing %q", kw)
@@ -72,12 +76,15 @@ func TestSystemPrompt_SupplierEn_GuardsWriteTools(t *testing.T) {
 		Name:     "Test Supplier",
 	})
 
+	// REQ-20260506-0052 (round 2): rule 4 reworded — "Write tools" replaces
+	// "WRITE tool"; "fake creation" replaces "NOT by itself a creation signal";
+	// the server-rejects clause and pre-search ban moved to rule 5/6.
 	intentGuards := []string{
-		"WRITE tool",
+		"Write tools",
 		"create_requirement",
 		"explicitly",
-		"NOT by itself a creation signal",
-		"server rejects",
+		"fake creation",
+		"server rejects", // still present in rule 6
 	}
 	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
@@ -92,7 +99,8 @@ func TestSystemPrompt_SupplierEn_GuardsWriteTools(t *testing.T) {
 		}
 	}
 
-	antiPreSearch := []string{"pre-call list_requirements", "second line of defence"}
+	// rule 5/6 still ban pre-search defence (REVERSE CASES + second line of defence).
+	antiPreSearch := []string{"REVERSE CASES", "second line of defence"}
 	for _, kw := range antiPreSearch {
 		if !strings.Contains(prompt, kw) {
 			t.Errorf("supplier en prompt must ban LLM-side pre-search; missing %q", kw)
