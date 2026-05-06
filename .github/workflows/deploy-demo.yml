@@ -4,6 +4,12 @@ name: Deploy to AWS Demo
 # its own EIP, postgres volume and seed data. Trigger is workflow_dispatch
 # only — demo is a stable snapshot for client/sales presentations and must
 # not auto-follow main like prod does.
+#
+# ⚠️ HUMAN-ONLY (2026-05-06 user constraint): the canonical deploy path is
+# `./scripts/deploy-demo.sh` run on the operator's laptop. **AI agents must
+# NOT trigger this workflow** (no `gh workflow run deploy-demo.yml`, no
+# scheduled re-deploys). This GitHub Actions entry is kept as a manual
+# fallback for humans who prefer the UI / are off-laptop.
 on:
   workflow_dispatch:
     inputs:
