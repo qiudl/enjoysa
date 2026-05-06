@@ -90,6 +90,30 @@ func (s *Seeder) seedRegions() error {
 			SortOrder:       7,
 			AttractionCount: 14,
 		},
+		{
+			Slug:            "fleurieu",
+			NameZh:          "弗勒里厄半岛",
+			NameEn:          "Fleurieu Peninsula",
+			DescZh:          "距阿德莱德仅一小时车程的迷人半岛，集葡萄酒产区麦克拉伦谷、海港小镇维克托港、河口古镇古洛瓦于一身。每年6月至10月可在海湾观赏南露脊鲸迁徙，冬春季更有壮观的鲸群浮游。",
+			DescEn:          "A charming peninsula just an hour from Adelaide, combining the McLaren Vale wine region, the seaside town of Victor Harbor, and the historic river-mouth town of Goolwa. Spot Southern Right Whales migrating in the bay between June and October.",
+			TaglineZh:       "葡萄酒、海岸与鲸鱼",
+			TaglineEn:       "Wine, Coast and Whales",
+			Image:           regionImage(7),
+			SortOrder:       8,
+			AttractionCount: 16,
+		},
+		{
+			Slug:            "yorke-peninsula",
+			NameZh:          "约克半岛",
+			NameEn:          "Yorke Peninsula",
+			DescZh:          "靴子形状的半岛三面环海，700公里海岸线上散布着洁白沙滩、嶙峋礁石和宁静海湾。伊纳斯国家公园保留着原始的灌木景观，伊纳斯灯塔守望着汹涌的西海岸。是钓鱼、潜水和野营的天堂。",
+			DescEn:          "A boot-shaped peninsula surrounded by sea on three sides, with 700km of coastline featuring white sandy beaches, rugged cliffs, and tranquil bays. Innes National Park preserves pristine bushland; Innes Lighthouse watches over the wild west coast. A paradise for fishing, diving, and camping.",
+			TaglineZh:       "700 公里海岸线的宁静",
+			TaglineEn:       "700km of Coastline Tranquility",
+			Image:           regionImage(8),
+			SortOrder:       9,
+			AttractionCount: 10,
+		},
 	}
 
 	count := 0
