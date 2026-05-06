@@ -1,7 +1,11 @@
 package seed
 
 import (
+	"errors"
+
 	productmodel "enjoysa-backend/internal/product/model"
+
+	"gorm.io/gorm"
 )
 
 func (s *Seeder) seedRegions() error {
@@ -118,25 +122,30 @@ func (s *Seeder) seedRegions() error {
 
 	count := 0
 	for _, r := range regions {
-		result := s.db.Where("slug = ?", r.Slug).FirstOrCreate(&r)
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected > 0 {
-			count++
+		// Use a separate target for First so r remains the seed source-of-truth.
+		// FirstOrCreate(&r) would hydrate r from DB on hit, making subsequent
+		// Updates(r.NameZh) a no-op that re-writes DB values to themselves.
+		var existing productmodel.Region
+		err := s.db.Where("slug = ?", r.Slug).First(&existing).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := s.db.Create(&r).Error; err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
 		} else {
-			// Update only seed-owned fields. desc/tagline/image/attraction_count are
-			// long-term curated by admin CMS; covering them with seed stubs would
-			// destroy production-curated content (REQ-20260507-0001).
-			if err := s.db.Model(&productmodel.Region{}).Where("slug = ?", r.Slug).Updates(map[string]interface{}{
+			// Update only seed-owned fields with seed source values. desc/tagline/image/
+			// attraction_count are long-term curated by admin CMS; covering them with seed
+			// stubs would destroy production-curated content (REQ-20260507-0001).
+			if err := s.db.Model(&existing).Updates(map[string]interface{}{
 				"name_zh":    r.NameZh,
 				"name_en":    r.NameEn,
 				"sort_order": r.SortOrder,
 			}).Error; err != nil {
 				return err
 			}
-			count++
 		}
+		count++
 	}
 
 	s.record("regions", count)
