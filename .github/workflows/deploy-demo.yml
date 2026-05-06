@@ -172,8 +172,11 @@ jobs:
           sleep 5
           RESULT=""
           if [ "${{ steps.scope.outputs.frontend }}" = "true" ]; then
-            STATUS=$(ssh aws-demo "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/")
-            echo "Frontend: HTTP $STATUS"
+            # nginx port 80 returns 301 → HTTPS; the meaningful check is the
+            # HTTPS endpoint. Hitting the public URL also exercises TLS
+            # termination + DNS together.
+            STATUS=$(curl -s -o /dev/null -m 10 -w '%{http_code}' https://demo.enjoysau.com/)
+            echo "Frontend (https): HTTP $STATUS"
             [ "$STATUS" = "200" ] || RESULT="Frontend failed (HTTP $STATUS)"
           fi
           if [ "${{ steps.scope.outputs.backend }}" = "true" ]; then
