@@ -315,11 +315,14 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 				return nil, fmt.Errorf("查询需求失败: %w", err)
 			}
 
-			// Format response. ai-proj returns:
-			//   { "success": true, "data": { "requirements": [...], "total": N, "pagination": {...} } }
-			// (Earlier versions of this code read `result["total"]` at the
-			// top level, which is always nil — total stayed 0 and the LLM
-			// thought there were no records.)
+			// Format response. ai-proj's paginated list endpoint returns
+			//   { "success": true, "data": { "data": [...], "total": N, "page": ..., "page_size": ... } }
+			// — the rows live under `data.data`, NOT `data.requirements`.
+			// The earlier `data.requirements` lookup was a silent bug
+			// (verified empirically against the live ai-proj instance during
+			// REQ-20260507-0002 dedup smoke: total>0 with empty rows means
+			// the field name is wrong). Keep `data.requirements` as a
+			// fallback in case the upstream ever standardizes back.
 			data, _ := result["data"].(map[string]interface{})
 			// REQ-20260506-0052: items must always serialize as `[]`, never
 			// `null`. A nil slice JSON-encodes to `null`, which the LLM then
@@ -327,24 +330,27 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			// stop short of calling create_requirement on an explicit ask.
 			items := []map[string]interface{}{}
 			if data != nil {
-				if reqs, ok := data["requirements"].([]interface{}); ok {
-					for _, r := range reqs {
-						if req, ok := r.(map[string]interface{}); ok {
-							items = append(items, map[string]interface{}{
-								"display_id": req["display_id"],
-								"title":      req["title"],
-								"status":     req["status"],
-								"priority":   req["priority"],
-								"category":   req["category"],
-								"created_at": req["created_at"],
-								// REQ-20260507-0002: include tags so the LLM
-								// can see chat-actor:<X> markers and so
-								// dedup-related diagnostics remain visible
-								// when the upstream returns them.
-								"tags": req["tags"],
-							})
-						}
+				rawList, ok := data["data"].([]interface{})
+				if !ok {
+					rawList, _ = data["requirements"].([]interface{})
+				}
+				for _, r := range rawList {
+					req, ok := r.(map[string]interface{})
+					if !ok {
+						continue
 					}
+					items = append(items, map[string]interface{}{
+						"display_id": req["display_id"],
+						"title":      req["title"],
+						"status":     req["status"],
+						"priority":   req["priority"],
+						"category":   req["category"],
+						"created_at": req["created_at"],
+						// REQ-20260507-0002: include tags so the LLM can
+						// see chat-actor:<X> markers and so dedup
+						// diagnostics remain visible from the chat surface.
+						"tags": req["tags"],
+					})
 				}
 			}
 
@@ -362,25 +368,10 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 					mapKeys(data), mapKeys(result), q.Encode())
 			}
 
-			// REQ-20260507-0002 diag: when total > 0 but items == 0 (the
-			// upstream returned a count without a list, suggesting a shape
-			// shift), surface the data-map keys + a raw sample so we can
-			// debug from the chat surface instead of needing prod log access.
 			out := map[string]interface{}{
 				"requirements": items,
 				"total":        total,
 				"showing":      len(items),
-			}
-			if total > 0 && len(items) == 0 {
-				out["_diag_data_keys"] = mapKeys(data)
-				out["_diag_top_keys"] = mapKeys(result)
-				if data != nil {
-					if rawList, ok := data["requirements"]; ok {
-						out["_diag_requirements_type"] = fmt.Sprintf("%T", rawList)
-					} else {
-						out["_diag_requirements_type"] = "missing"
-					}
-				}
 			}
 			return out, nil
 		},
