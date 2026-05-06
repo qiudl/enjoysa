@@ -125,17 +125,13 @@ func (s *Seeder) seedRegions() error {
 		if result.RowsAffected > 0 {
 			count++
 		} else {
-			// Record exists — update fields
+			// Update only seed-owned fields. desc/tagline/image/attraction_count are
+			// long-term curated by admin CMS; covering them with seed stubs would
+			// destroy production-curated content (REQ-20260507-0001).
 			if err := s.db.Model(&productmodel.Region{}).Where("slug = ?", r.Slug).Updates(map[string]interface{}{
-				"name_zh":          r.NameZh,
-				"name_en":          r.NameEn,
-				"desc_zh":          r.DescZh,
-				"desc_en":          r.DescEn,
-				"tagline_zh":       r.TaglineZh,
-				"tagline_en":       r.TaglineEn,
-				"image":            r.Image,
-				"sort_order":       r.SortOrder,
-				"attraction_count": r.AttractionCount,
+				"name_zh":    r.NameZh,
+				"name_en":    r.NameEn,
+				"sort_order": r.SortOrder,
 			}).Error; err != nil {
 				return err
 			}
