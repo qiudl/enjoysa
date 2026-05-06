@@ -12,7 +12,7 @@ import (
 func RegisterRecommendAttractions(ps *productstore.ProductStore, rs *productstore.RegionStore) model.ToolDef {
 	return model.ToolDef{
 		Name:        "recommend_attractions",
-		Description: "按区域推荐热门景点和产品。可用区域：adelaide（阿德莱德）、barossa（巴罗萨谷）、kangaroo-island（袋鼠岛）、flinders-ranges（弗林德斯山脉）、murray-river（墨累河）、limestone-coast（石灰岩海岸）。不传则推荐全部热门。也支持中文名模糊匹配。",
+		Description: "按区域推荐热门景点和产品。可用区域：adelaide（阿德莱德）、barossa（巴罗萨谷）、kangaroo-island（袋鼠岛）、flinders（弗林德斯山脉）、murray（墨累河）、limestone-coast（石灰岩海岸）、fleurieu（弗勒里厄半岛）、yorke-peninsula（约克半岛）。不传则推荐全部热门。也支持中文名模糊匹配。",
 		Category:    "query",
 		Parameters: map[string]interface{}{
 			"type": "object",
