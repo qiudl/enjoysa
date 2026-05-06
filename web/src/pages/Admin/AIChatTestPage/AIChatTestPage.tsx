@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, XCircle, Play, Loader2, Lock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Play, Loader2, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import clsx from 'clsx';
 
 import { scenarios, type Scenario } from '../../../services/aiChatTestScenarios';
@@ -29,6 +29,7 @@ export const AIChatTestPage: React.FC = () => {
 
   const [email, setEmail] = useState<string>(() => sessionStorage.getItem(CREDENTIALS_KEY) || '');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [token, setToken] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
   const [loggingIn, setLoggingIn] = useState<boolean>(false);
@@ -50,7 +51,15 @@ export const AIChatTestPage: React.FC = () => {
       setToken(tk);
       sessionStorage.setItem(CREDENTIALS_KEY, email);
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : String(err));
+      const raw = err instanceof Error ? err.message : String(err);
+      // Translate the generic 401 into something actionable: most users hit
+      // this because the seed account they used in dev does not exist on
+      // the prod database.
+      if (raw.includes('401') || /Invalid email or password/i.test(raw)) {
+        setLoginError(t('admin.aiChatTest.errors.unauthorized'));
+      } else {
+        setLoginError(raw);
+      }
     } finally {
       setLoggingIn(false);
     }
@@ -174,18 +183,33 @@ export const AIChatTestPage: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@kiodysseys.com.au"
+                placeholder={t('admin.aiChatTest.login.emailPlaceholder')}
                 autoComplete="off"
               />
             </label>
             <label className={styles.field}>
               <span>{t('admin.aiChatTest.login.password')}</span>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="off"
-              />
+              <div className={styles.passwordWrap}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={t(
+                    showPassword
+                      ? 'admin.aiChatTest.login.hidePassword'
+                      : 'admin.aiChatTest.login.showPassword',
+                  )}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </label>
             {loginError && (
               <div className={styles.loginError}>

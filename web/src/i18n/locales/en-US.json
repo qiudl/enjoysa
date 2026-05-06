@@ -993,13 +993,17 @@
       "runAll": "Run all",
       "login": {
         "title": "Sign in as test supplier",
-        "hint": "Use any seeded supplier account. A dedicated test account is recommended — runs write real session history.",
+        "hint": "Use a supplier account that actually exists in this deploy's database. Local dev can use backend/cmd/seed accounts; on prod those don't exist — use a real supplier. Every scenario writes real chat history under that account, so a dedicated test account is recommended.",
         "email": "Email",
+        "emailPlaceholder": "supplier@example.com",
         "password": "Password",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
         "submit": "Sign in"
       },
       "errors": {
-        "credentialsRequired": "Email and password are required"
+        "credentialsRequired": "Email and password are required",
+        "unauthorized": "Invalid email or password. Check: (1) the supplier account exists in this environment's database; (2) on prod, seed accounts (e.g. admin@kiodysseys.com.au) don't exist — use a real supplier; (3) password is case-sensitive (click the 👁 icon to reveal what you typed)."
       },
       "summary": {
         "session": "Signed in as {{email}}",
