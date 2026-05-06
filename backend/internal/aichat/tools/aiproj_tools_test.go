@@ -169,6 +169,74 @@ func TestListRequirements_ReadsTotalFromDataPath(t *testing.T) {
 	}
 }
 
+// REQ-20260506-0052: when ai-proj returns 0 items, the `requirements` field
+// in the tool's output must serialize as `[]` (empty array), not `null`.
+// Pre-fix the slice was declared as `var items []map[string]interface{}` and
+// stayed nil — JSON-encoding produced "requirements": null which the LLM
+// reads as "lookup failed" and stops short of calling create_requirement on
+// an explicit ask.
+func TestListRequirements_EmptyResultIsArrayNotNull(t *testing.T) {
+	cases := []struct {
+		name string
+		body interface{}
+	}{
+		{
+			name: "explicit empty array",
+			body: map[string]interface{}{
+				"success": true,
+				"data": map[string]interface{}{
+					"requirements": []interface{}{},
+					"total":        float64(167),
+				},
+			},
+		},
+		{
+			name: "missing requirements key",
+			body: map[string]interface{}{
+				"success": true,
+				"data":    map[string]interface{}{"total": float64(167)},
+			},
+		},
+		{
+			name: "data envelope missing entirely",
+			body: map[string]interface{}{"success": true},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			srv, _ := setupAIProjServer(t, c.body, 200)
+			res, err := runListRequirements(t, srv.URL, map[string]interface{}{})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			m := res.(map[string]interface{})
+			reqs, ok := m["requirements"]
+			if !ok {
+				t.Fatal("requirements field missing")
+			}
+			if reqs == nil {
+				t.Fatalf("requirements must never be nil/null even when empty; got nil")
+			}
+			items, ok := reqs.([]map[string]interface{})
+			if !ok {
+				t.Fatalf("requirements must be []map[string]interface{}; got %T", reqs)
+			}
+			if len(items) != 0 {
+				t.Errorf("expected 0 items, got %d", len(items))
+			}
+			// JSON serialization must be `[]` not `null` so the LLM sees a
+			// concrete "0 results" instead of "lookup failed".
+			b, err := json.Marshal(reqs)
+			if err != nil {
+				t.Fatalf("marshal failed: %v", err)
+			}
+			if string(b) != "[]" {
+				t.Errorf("requirements must JSON-encode as `[]`, got %s", string(b))
+			}
+		})
+	}
+}
+
 func TestListRequirements_PropagatesUpstreamError(t *testing.T) {
 	srv, _ := setupAIProjServer(t, map[string]string{"error": "boom"}, 500)
 
@@ -209,9 +277,11 @@ func TestCreateRequirementDescription_HasIntentAndDedupGuards(t *testing.T) {
 		AIProjProjID: 167,
 	})
 
+	// REQ-20260506-0022 reworded "显式同意" → "显式表达创建意图". Both express
+	// the same explicit-consent guard; the test now accepts either phrasing
+	// so future rewords don't silently drop the rule.
 	mustContain := []string{
-		"显式",                  // explicit consent rule
-		"同意",                  // user consent
+		"显式",                  // explicit consent rule (any wording)
 		"不是",                  // "uploading isn't a creation signal"
 		"list_requirements", // suggested fallback for similarity check
 	}
@@ -219,6 +289,18 @@ func TestCreateRequirementDescription_HasIntentAndDedupGuards(t *testing.T) {
 		if !strings.Contains(tool.Description, kw) {
 			t.Errorf("create_requirement description missing guard keyword %q\ndescription: %s", kw, tool.Description)
 		}
+	}
+
+	consentKeywords := []string{"同意", "意图"}
+	hitConsent := false
+	for _, kw := range consentKeywords {
+		if strings.Contains(tool.Description, kw) {
+			hitConsent = true
+			break
+		}
+	}
+	if !hitConsent {
+		t.Errorf("create_requirement description must mention explicit consent / intent (one of %v)\ndescription: %s", consentKeywords, tool.Description)
 	}
 
 	// Single-turn dedupe must be advertised in at least one form so the LLM
