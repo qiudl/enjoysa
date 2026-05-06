@@ -80,6 +80,7 @@ const BannerList = React.lazy(() => import('./pages/Admin/BannerList/BannerList'
 const RegionList = React.lazy(() => import('./pages/Admin/RegionList/RegionList'));
 const CategoryList = React.lazy(() => import('./pages/Admin/CategoryList/CategoryList'));
 const HomepageCMS = React.lazy(() => import('./pages/Admin/HomepageCMS/HomepageCMS'));
+const AIChatTestPage = React.lazy(() => import('./pages/Admin/AIChatTestPage/AIChatTestPage'));
 
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
@@ -1128,6 +1129,15 @@ function AdminSettingsWrapper() {
   );
 }
 
+// 包装组件：AdminAIChatTestWrapper (REQ-20260506-0026)
+function AdminAIChatTestWrapper() {
+  return (
+    <AdminLayout>
+      <AIChatTestPage />
+    </AdminLayout>
+  );
+}
+
 // 包装组件：AdminBannersWrapper
 function AdminBannersWrapper() {
   return (
@@ -1357,6 +1367,7 @@ function App() {
         <Route path="/admin/finance" element={<AdminAuthGuard requiredPermission="finance.view"><AdminFinanceWrapper /></AdminAuthGuard>} />
         <Route path="/admin/admins" element={<AdminAuthGuard requiredPermission="admins.view"><AdminAdminsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/settings" element={<AdminAuthGuard requiredPermission="settings.view"><AdminSettingsWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/ai-chat-test" element={<AdminAuthGuard requiredPermission="admins.view"><AdminAIChatTestWrapper /></AdminAuthGuard>} />
         <Route path="/admin/banners" element={<AdminAuthGuard><AdminBannersWrapper /></AdminAuthGuard>} />
         <Route path="/admin/regions" element={<AdminAuthGuard><AdminRegionsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />

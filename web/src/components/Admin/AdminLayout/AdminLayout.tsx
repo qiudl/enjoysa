@@ -20,6 +20,7 @@ import {
   Tag,
   Home,
   BarChart3,
+  Bot,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
@@ -51,6 +52,7 @@ const menuItems: MenuItem[] = [
   { key: 'categories', path: '/admin/categories', icon: <Tag size={20} />, labelKey: 'admin.menu.categories' },
   { key: 'homepage', path: '/admin/homepage', icon: <Home size={20} />, labelKey: 'admin.menu.homepage' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
+  { key: 'ai-chat-test', path: '/admin/ai-chat-test', icon: <Bot size={20} />, labelKey: 'admin.menu.aiChatTest', permission: 'admins.view' },
 ];
 
 const adminToolCategories: ToolCategory[] = [
