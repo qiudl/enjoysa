@@ -29,8 +29,9 @@ cd backend && go run ./cmd/seed     # Seed database
 # Full stack (Docker)
 docker compose up -d           # Postgres (port 6054) + backend (port 6080)
 
-# Deploy
-./scripts/deploy.sh            # Build frontend + deploy to server 43.134.28.147:6066
+# Deploy (interactive prompt: 1=full, 2=frontend only, 3=backend only)
+./scripts/build-and-deploy.sh  # Builds and rsyncs to AWS Sydney prod (13.239.210.53)
+                               # Frontend → http://13.239.210.53:6066, public https://enjoysau.com
 ```
 
 ## Architecture
