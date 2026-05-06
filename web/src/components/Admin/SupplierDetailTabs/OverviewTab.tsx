@@ -32,7 +32,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ supplierId, stats }) =
           adminService.getSupplierRevenueTrend(supplierId),
           adminService.getSupplierAuditLogs(supplierId),
         ]);
-        setTrendData(trend);
+        setTrendData(trend || []);
         setAuditLogs(logs.items || []);
       } catch {
         // keep defaults
