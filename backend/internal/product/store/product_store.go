@@ -30,7 +30,10 @@ func (s *ProductStore) Create(product *model.Product) error {
 }
 
 func (s *ProductStore) Update(product *model.Product) error {
-	return s.db.Save(product).Error
+	// FullSaveAssociations 确保 HasMany 关联（Images / Packages / Highlights / FAQs / Schedules）
+	// 在 Save 时会被完整 upsert——不开启时新建子行（ID=0）有概率不被持久化，
+	// 表现为：管理员/供应商在编辑页上传图片后保存，刷新后图片消失。
+	return s.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(product).Error
 }
 
 func (s *ProductStore) GetByID(id uint) (*model.Product, error) {
