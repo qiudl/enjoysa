@@ -132,10 +132,10 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 	client := newAIProjClient(cfg)
 	return model.ToolDef{
 		Name:         "create_requirement",
-		Description:  "在 ai-proj 项目管理系统中创建一个新需求（写操作）。⚠️ 调用前必须满足：(1) 用户用文字【显式同意】创建需求——如『帮我提需求』『记一下这个 bug』『提交反馈』；用户仅上传图片、描述问题、报告 bug 时【不是】创建信号，应先文字询问意图。(2) 同一会话内未创建过标题相似的需求（若不确定请先调用 list_requirements 确认）。(3) 同一轮回复内不要多次调用本工具——服务端会拒绝重复执行。",
+		Description:  "在 ai-proj 项目管理系统中创建一个新需求（写操作）。\n\n【何时调用】用户用文字显式表达创建意图时调用，常见中文触发词：『提需求』『创建需求』『建需求』『新建需求』『开个 issue』『开 ticket』『记录这个 bug』『加到需求池』『报个 bug』。英文触发词：『file an issue』『log this bug』『submit feedback』『open a ticket』『create a requirement』。\n\n【何时不调用 — 反向用例】以下场景必须使用其他工具，禁止调用 create_requirement：\n- 『看看现有需求 / 列一下需求 / 我的需求列表 / show me my requirements』→ 使用 list_requirements\n- 『REQ-XXX 怎么样了 / 查需求 REQ-XXX / get requirement REQ-XXX』→ 使用 get_requirement 或 list_requirements 过滤\n- 『归档需求 / 关闭需求 / archive this』→ 使用对应的 archive 工具\n- 『更新需求 / 修改需求 / update requirement』→ 使用 update_requirement\n\n【其它前置条件】(1) 用户仅上传图片、描述问题、报告 bug 时本身【不是】创建信号，应先文字询问意图。(2) 同一会话内未创建过标题相似的需求（若不确定先调用 list_requirements 确认）。(3) 同一轮回复内不要多次调用本工具——服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
-		Audience:     "supplier",
+		Audience:     "all",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -231,7 +231,7 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 		Description:  "查看 ai-proj 中的需求列表，支持按状态、优先级筛选。",
 		Category:     "query",
 		RequiresAuth: true,
-		Audience:     "supplier",
+		Audience:     "all",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -333,7 +333,7 @@ func RegisterUploadImageToRequirement(cfg config.AIConfig) model.ToolDef {
 		Description:  "上传截图并创建需求（写操作）。⚠️ 与 create_requirement 一样：调用前必须用户【显式同意】创建需求——仅上传截图本身不是创建信号；同一轮回复内禁止多次调用，服务端会拒绝重复执行。",
 		Category:     "action",
 		RequiresAuth: true,
-		Audience:     "supplier",
+		Audience:     "all",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
