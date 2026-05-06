@@ -4,7 +4,19 @@ import (
 	productmodel "enjoysa-backend/internal/product/model"
 )
 
+// seedCategories is init-only: categories are managed by admin CMS at runtime
+// (admin can edit/add/delete categories from /admin/categories), so seed must
+// not overwrite admin changes. If any categories already exist, skip entirely.
 func (s *Seeder) seedCategories() error {
+	var existing int64
+	if err := s.db.Model(&productmodel.Category{}).Count(&existing).Error; err != nil {
+		return err
+	}
+	if existing > 0 {
+		s.record("categories", 0)
+		return nil
+	}
+
 	categories := []productmodel.Category{
 		{
 			Slug:      "day-tours",
@@ -57,28 +69,9 @@ func (s *Seeder) seedCategories() error {
 		},
 	}
 
-	count := 0
-	for _, c := range categories {
-		result := s.db.Where("slug = ?", c.Slug).FirstOrCreate(&c)
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected > 0 {
-			count++
-		} else {
-			// Record exists — update fields
-			if err := s.db.Model(&productmodel.Category{}).Where("slug = ?", c.Slug).Updates(map[string]interface{}{
-				"name_zh":    c.NameZh,
-				"name_en":    c.NameEn,
-				"icon":       c.Icon,
-				"sort_order": c.SortOrder,
-			}).Error; err != nil {
-				return err
-			}
-			count++
-		}
+	if err := s.db.Create(&categories).Error; err != nil {
+		return err
 	}
-
-	s.record("categories", count)
+	s.record("categories", len(categories))
 	return nil
 }

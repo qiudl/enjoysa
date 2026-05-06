@@ -6,7 +6,19 @@ import (
 	bannerModel "enjoysa-backend/internal/admin/handler"
 )
 
+// seedBanners is init-only: banners are managed by admin CMS at runtime.
+// Without this guard, every seed run would INSERT 5 more duplicate banners
+// (no upsert here), and overwriting admin-curated rows is also unwanted.
 func (s *Seeder) seedBanners() error {
+	var existing int64
+	if err := s.db.Model(&bannerModel.Banner{}).Count(&existing).Error; err != nil {
+		return err
+	}
+	if existing > 0 {
+		s.record("banners", 0)
+		return nil
+	}
+
 	banners := []bannerModel.Banner{
 		{
 			TitleEn:    "Explore Kangaroo Island",
