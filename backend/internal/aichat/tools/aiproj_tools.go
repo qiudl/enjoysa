@@ -284,7 +284,11 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			// top level, which is always nil — total stayed 0 and the LLM
 			// thought there were no records.)
 			data, _ := result["data"].(map[string]interface{})
-			var items []map[string]interface{}
+			// REQ-20260506-0052: items must always serialize as `[]`, never
+			// `null`. A nil slice JSON-encodes to `null`, which the LLM then
+			// reads as "lookup failed" instead of "0 matches" — leading it to
+			// stop short of calling create_requirement on an explicit ask.
+			items := []map[string]interface{}{}
 			if data != nil {
 				if reqs, ok := data["requirements"].([]interface{}); ok {
 					for _, r := range reqs {

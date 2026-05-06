@@ -7,25 +7,58 @@ import (
 	aichatmodel "enjoysa-backend/internal/aichat/model"
 )
 
-// REQ-20260506-0003: prompt must guard write tools behind explicit user
-// intent and not encourage proactive create_requirement calls.
+// REQ-20260506-0003 + REQ-20260506-0052: the supplier prompt is the first
+// (and most influential) of three guard layers. It must (a) gate write tools
+// behind explicit user intent, (b) tell the LLM to call create_requirement
+// directly on explicit triggers without pre-searching, (c) carry few-shot
+// examples that anchor the right behaviour. Drop any of these and the LLM
+// silently regresses to plain-text "I'll create..." or to defensive
+// list_requirements pre-checks that loop forever on weird upstream responses.
 func TestSystemPrompt_SupplierZh_GuardsWriteTools(t *testing.T) {
 	prompt := SystemPrompt("zh", "", &aichatmodel.ChatUser{
 		UserType: "supplier",
 		Name:     "测试供应商",
 	})
 
-	mustContain := []string{
+	// Layer 1: explicit-intent gating preserved from REQ-0003.
+	intentGuards := []string{
 		"显式",
 		"create_requirement",
 		"不是创建信号",
-		"是否需要我帮你创建",
 		"服务端会拒绝",
 	}
-	for _, kw := range mustContain {
+	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
-			t.Errorf("supplier zh prompt missing intent-guard keyword %q\nprompt:\n%s", kw, prompt)
+			t.Errorf("supplier zh prompt missing intent-guard keyword %q", kw)
 		}
+	}
+
+	// REQ-0052 add-ons: must explicitly cover the "创建需求" trigger word and
+	// must explicitly ban pre-search defence so the LLM does not loop on a
+	// list_requirements response it cannot interpret.
+	createTriggers := []string{"创建需求", "提需求"}
+	for _, kw := range createTriggers {
+		if !strings.Contains(prompt, kw) {
+			t.Errorf("supplier zh prompt missing create-trigger %q (REQ-0052)", kw)
+		}
+	}
+
+	antiPreSearch := []string{"预查重", "list_requirements"}
+	for _, kw := range antiPreSearch {
+		if !strings.Contains(prompt, kw) {
+			t.Errorf("supplier zh prompt must explicitly ban LLM-side pre-search; missing %q", kw)
+		}
+	}
+
+	// few-shot block must exist so the LLM has concrete behaviour anchors.
+	if !strings.Contains(prompt, "few-shot") {
+		t.Error("supplier zh prompt must include a few-shot block (REQ-0052)")
+	}
+	if !strings.Contains(prompt, "立刻 create_requirement") {
+		t.Error("supplier zh few-shot must show an immediate create_requirement example")
+	}
+	if !strings.Contains(prompt, "不要先调 list_requirements") {
+		t.Error("supplier zh few-shot must explicitly call out the no-pre-search anti-pattern")
 	}
 
 	if strings.Contains(prompt, "create_requirement 和 list_requirements 工具可以操作 ai-proj 需求系统，积极使用它们") {
@@ -39,17 +72,41 @@ func TestSystemPrompt_SupplierEn_GuardsWriteTools(t *testing.T) {
 		Name:     "Test Supplier",
 	})
 
-	mustContain := []string{
+	intentGuards := []string{
 		"WRITE tool",
 		"create_requirement",
 		"explicitly",
 		"NOT by itself a creation signal",
-		"server will reject",
+		"server rejects",
 	}
-	for _, kw := range mustContain {
+	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
-			t.Errorf("supplier en prompt missing intent-guard keyword %q\nprompt:\n%s", kw, prompt)
+			t.Errorf("supplier en prompt missing intent-guard keyword %q", kw)
 		}
+	}
+
+	createTriggers := []string{"create a requirement", "file an issue"}
+	for _, kw := range createTriggers {
+		if !strings.Contains(prompt, kw) {
+			t.Errorf("supplier en prompt missing create-trigger %q (REQ-0052)", kw)
+		}
+	}
+
+	antiPreSearch := []string{"pre-call list_requirements", "second line of defence"}
+	for _, kw := range antiPreSearch {
+		if !strings.Contains(prompt, kw) {
+			t.Errorf("supplier en prompt must ban LLM-side pre-search; missing %q", kw)
+		}
+	}
+
+	if !strings.Contains(prompt, "Few-shot") {
+		t.Error("supplier en prompt must include a Few-shot block (REQ-0052)")
+	}
+	if !strings.Contains(prompt, "Immediately create_requirement") {
+		t.Error("supplier en few-shot must show an immediate create_requirement example")
+	}
+	if !strings.Contains(prompt, "Do NOT call list_requirements first") {
+		t.Error("supplier en few-shot must explicitly call out the no-pre-search anti-pattern")
 	}
 
 	if strings.Contains(prompt, "create_requirement and list_requirements tools to manage the ai-proj system — use them proactively") {
