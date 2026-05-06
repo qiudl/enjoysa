@@ -127,7 +127,12 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 	if req.SessionID > 0 {
 		var err error
 		session, err = h.store.GetSession(req.SessionID)
-		if err != nil || (userType == "user" && session.UserID != userID) {
+		// REQ-20260506-0050 [SECURITY]: ownership check must apply to ALL identities
+		// (user / supplier / admin), not only userType=="user". Pre-fix a supplier
+		// or admin token could pass any sessionID and read/append to another user's
+		// chat history. Mirrors the double-check (user_id + user_type) already
+		// enforced in GetMessages / ListSessions / ShareHandler.
+		if err != nil || !sessionAccessibleBy(session, userID, userType) {
 			response.NotFound(c, "Session not found")
 			return
 		}
@@ -260,6 +265,20 @@ func (h *ChatHandler) finishStream(c *gin.Context, session *chatmodel.ChatSessio
 
 	fmt.Fprintf(c.Writer, "data: {\"type\":\"done\"}\n\n")
 	c.Writer.Flush()
+}
+
+// sessionAccessibleBy reports whether the caller (userID + userType) owns the
+// chat session. Both user_id AND user_type must match — numeric IDs collide
+// across the three identity tables (users / supplier_users / admins), so a
+// supplier and an admin with the same numeric ID must NOT see each other's
+// sessions. Pre REQ-20260506-0050 the SendMessageStream check only ran when
+// userType=="user", which let supplier/admin tokens append to any session.
+// Mirrors the matching predicate in GetMessages / ListSessions / ShareHandler.
+func sessionAccessibleBy(session *chatmodel.ChatSession, userID uint, userType string) bool {
+	if session == nil {
+		return false
+	}
+	return session.UserID == userID && session.UserType == userType
 }
 
 // isAIChatWriteTool reports whether a tool name is a write/persistence tool
