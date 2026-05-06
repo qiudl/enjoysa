@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -122,21 +123,31 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 		lang = "en"
 	}
 
-	// Get or create session
+	// Get or create session.
+	// REQ-20260506-0064: distinguish "stale session_id" (record gone after DB
+	// reset / cleanup / cross-env localStorage reuse) from "foreign session_id"
+	// (caller is not the owner). Stale → silently create a fresh session so the
+	// user can keep chatting; foreign → keep returning 404 to preserve the
+	// REQ-20260506-0050 ownership boundary.
 	var session *chatmodel.ChatSession
 	if req.SessionID > 0 {
-		var err error
-		session, err = h.store.GetSession(req.SessionID)
-		// REQ-20260506-0050 [SECURITY]: ownership check must apply to ALL identities
-		// (user / supplier / admin), not only userType=="user". Pre-fix a supplier
-		// or admin token could pass any sessionID and read/append to another user's
-		// chat history. Mirrors the double-check (user_id + user_type) already
-		// enforced in GetMessages / ListSessions / ShareHandler.
-		if err != nil || !sessionAccessibleBy(session, userID, userType) {
+		existing, err := h.store.GetSession(req.SessionID)
+		switch resolveSendMessageSession(existing, err, userID, userType) {
+		case sessionResolutionUseExisting:
+			session = existing
+		case sessionResolutionCreateNew:
+			// stale id — fall through to creation below
+			session = nil
+		case sessionResolutionDenyForeign:
 			response.NotFound(c, "Session not found")
 			return
+		case sessionResolutionDBError:
+			logger.Errorf("[Chat] GetSession failed: %v", err)
+			response.ServerError(c, "Failed to load session")
+			return
 		}
-	} else {
+	}
+	if session == nil {
 		session = &chatmodel.ChatSession{
 			UserID:   userID,
 			UserType: userType,
@@ -279,6 +290,46 @@ func sessionAccessibleBy(session *chatmodel.ChatSession, userID uint, userType s
 		return false
 	}
 	return session.UserID == userID && session.UserType == userType
+}
+
+// sessionResolution is the policy outcome of looking up a caller-supplied
+// session_id during /chat/send. Pure value so the policy is unit-testable
+// without spinning up a full HTTP harness — the handler maps each variant to
+// HTTP behavior.
+type sessionResolution int
+
+const (
+	// sessionResolutionUseExisting: row exists and belongs to the caller.
+	sessionResolutionUseExisting sessionResolution = iota
+	// sessionResolutionCreateNew: row is gone (DB reset, cleanup, cross-env
+	// localStorage reuse). REQ-20260506-0064 graceful recovery — silently
+	// create a fresh session instead of stranding the user on a 404 loop.
+	sessionResolutionCreateNew
+	// sessionResolutionDenyForeign: row exists but (user_id, user_type) does
+	// not match the caller. REQ-20260506-0050 ownership boundary — must stay
+	// 404 to prevent cross-identity read/append.
+	sessionResolutionDenyForeign
+	// sessionResolutionDBError: store lookup failed for a non-not-found
+	// reason (connection drop, etc). Surface as 500 so clients retry instead
+	// of treating it as "session gone".
+	sessionResolutionDBError
+)
+
+// resolveSendMessageSession decides how SendMessageStream should handle a
+// caller-supplied session_id given the store lookup result. Splits the two
+// pre-REQ-0064 404 cases (record gone vs. owned by someone else) so the
+// stale-cache UX bug is fixed without weakening the REQ-0050 ownership check.
+func resolveSendMessageSession(session *chatmodel.ChatSession, lookupErr error, userID uint, userType string) sessionResolution {
+	if errors.Is(lookupErr, gorm.ErrRecordNotFound) {
+		return sessionResolutionCreateNew
+	}
+	if lookupErr != nil {
+		return sessionResolutionDBError
+	}
+	if !sessionAccessibleBy(session, userID, userType) {
+		return sessionResolutionDenyForeign
+	}
+	return sessionResolutionUseExisting
 }
 
 // isAIChatWriteTool reports whether a tool name is a write/persistence tool
