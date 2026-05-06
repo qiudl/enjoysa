@@ -1,0 +1,188 @@
+name: Deploy to AWS Demo
+
+# REQ-20260506-0056: demo runs on a separate t4g.small (ARM64) EC2 with
+# its own EIP, postgres volume and seed data. Trigger is workflow_dispatch
+# only — demo is a stable snapshot for client/sales presentations and must
+# not auto-follow main like prod does.
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: '部署范围'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - frontend
+          - backend
+      reset_db:
+        description: '重置 demo 数据库 + 重跑 seed (会清空所有 demo 数据)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  SERVER_IP: 13.239.207.90
+  SERVER_USER: ubuntu
+  FRONTEND_DEPLOY: /opt/enjoysa/frontend
+  BACKEND_DEPLOY: /opt/enjoysa-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine deploy scope
+        id: scope
+        run: |
+          SCOPE="${{ github.event.inputs.scope || 'full' }}"
+          if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "frontend" ]; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          fi
+          if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "backend" ]; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Host aws-demo
+            HostName ${{ env.SERVER_IP }}
+            User ${{ env.SERVER_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no" > ~/.ssh/config
+
+      # --- Frontend (built with --mode demo to load web/.env.demo) ---
+      - name: Setup Node.js
+        if: steps.scope.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install & Build frontend (demo mode)
+        if: steps.scope.outputs.frontend == 'true'
+        working-directory: web
+        run: |
+          npm ci
+          npm run build -- --mode demo
+
+      - name: Deploy frontend
+        if: steps.scope.outputs.frontend == 'true'
+        run: |
+          ssh aws-demo "sudo mkdir -p ${{ env.FRONTEND_DEPLOY }} && sudo chown -R ubuntu:ubuntu ${{ env.FRONTEND_DEPLOY }}"
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            web/dist/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.FRONTEND_DEPLOY }}/
+          ssh aws-demo "find ${{ env.FRONTEND_DEPLOY }}/assets -type f -mtime +7 -delete 2>/dev/null || true"
+
+      # --- Backend (built natively on demo since the host is arm64) ---
+      - name: Override config.production.yaml with demo values
+        if: steps.scope.outputs.backend == 'true'
+        run: |
+          # Dockerfile CMD reads configs/config.production.yaml. Rather than
+          # touch the prod-shared Dockerfile, we shim by overwriting that
+          # file with demo content in the CI workspace before rsync. The
+          # image baked on the demo host therefore carries demo config.
+          cp backend/configs/config.demo.yaml backend/configs/config.production.yaml
+
+      - name: Deploy backend
+        if: steps.scope.outputs.backend == 'true'
+        run: |
+          ssh aws-demo "sudo mkdir -p ${{ env.BACKEND_DEPLOY }} && sudo chown -R ubuntu:ubuntu ${{ env.BACKEND_DEPLOY }}"
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'tmp' \
+            --exclude 'uploads/*' \
+            --exclude 'enjoysa-backend' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/backend/
+          scp -i ~/.ssh/deploy_key \
+            docker-compose.yml ${{ env.SERVER_USER }}@${{ env.SERVER_IP }}:${{ env.BACKEND_DEPLOY }}/docker-compose.yml
+          # Demo runs with neutered integrations: empty Stripe / Resend /
+          # ai-proj keys → mock payments, no outbound email, write tools
+          # (create_requirement etc.) NOT registered in chat. Different
+          # JWT secret from prod so a leaked demo token can never reach
+          # prod APIs.
+          ssh aws-demo "cd ${{ env.BACKEND_DEPLOY }} && \
+            export DB_PASSWORD='enjoysa-demo-2026' && \
+            export JWT_SECRET='enjoysa-demo-jwt-secret-2026' && \
+            export STRIPE_SECRET_KEY='' && \
+            export STRIPE_WEBHOOK_SECRET='' && \
+            export RESEND_API_KEY='' && \
+            export AI_PROJ_BASE='' && \
+            export AI_PROJ_TOKEN='' && \
+            export AI_PROJ_PROJ_ID='' && \
+            export AI_GLM_BASE_URL='' && \
+            export AI_GLM_API_KEY='' && \
+            export FEISHU_WEBHOOK_URL='' && \
+            docker compose up -d --build --wait --remove-orphans"
+
+      # --- Optional DB reset ---
+      # Wipes demo postgres volume so the schema + sample data is regenerated
+      # by the backend's auto-migration on next startup. Seed binary is not
+      # baked into the image yet — running domain seeders needs a separate
+      # follow-up (track via REQ-0056 follow-up task).
+      - name: Reset demo database
+        if: github.event.inputs.reset_db == 'true' && steps.scope.outputs.backend == 'true'
+        run: |
+          ssh aws-demo "cd ${{ env.BACKEND_DEPLOY }} && \
+            export DB_PASSWORD='enjoysa-demo-2026' && \
+            docker compose down postgres -v && \
+            docker compose up -d postgres --wait && \
+            docker compose restart backend"
+
+      # --- Nginx Config (demo.enjoysau.com server block) ---
+      - name: Deploy nginx config
+        if: steps.scope.outputs.frontend == 'true' || steps.scope.outputs.backend == 'true'
+        run: |
+          set -e
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key" deploy/nginx/sites-available/enjoysa-demo aws-demo:/tmp/enjoysa-demo.new
+          ssh aws-demo 'set -e
+            sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+            if [ -f /etc/nginx/sites-available/enjoysa-demo ]; then
+              sudo cp /etc/nginx/sites-available/enjoysa-demo /etc/nginx/sites-available/enjoysa-demo.bak.$(date +%Y%m%d-%H%M%S)
+              echo "=== nginx config diff (server vs new) ==="
+              diff /etc/nginx/sites-available/enjoysa-demo /tmp/enjoysa-demo.new || true
+              echo "=== end diff ==="
+            fi
+            sudo cp /tmp/enjoysa-demo.new /etc/nginx/sites-available/enjoysa-demo
+            sudo ln -sf /etc/nginx/sites-available/enjoysa-demo /etc/nginx/sites-enabled/enjoysa-demo
+            sudo rm -f /etc/nginx/sites-enabled/default
+            if ! sudo nginx -t; then
+              echo "[ROLLBACK] nginx -t failed"
+              LATEST_BAK=$(ls -t /etc/nginx/sites-available/enjoysa-demo.bak.* 2>/dev/null | head -1)
+              [ -n "$LATEST_BAK" ] && sudo cp "$LATEST_BAK" /etc/nginx/sites-available/enjoysa-demo
+              exit 1
+            fi
+            sudo systemctl reload nginx
+            rm /tmp/enjoysa-demo.new
+            echo "nginx config synced and reloaded"
+          '
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          RESULT=""
+          if [ "${{ steps.scope.outputs.frontend }}" = "true" ]; then
+            STATUS=$(ssh aws-demo "curl -s -o /dev/null -w '%{http_code}' http://localhost:80/")
+            echo "Frontend: HTTP $STATUS"
+            [ "$STATUS" = "200" ] || RESULT="Frontend failed (HTTP $STATUS)"
+          fi
+          if [ "${{ steps.scope.outputs.backend }}" = "true" ]; then
+            STATUS=$(ssh aws-demo "curl -s -o /dev/null -w '%{http_code}' http://localhost:6080/health")
+            echo "Backend: HTTP $STATUS"
+            [ "$STATUS" = "200" ] || RESULT="${RESULT} Backend failed (HTTP $STATUS)"
+          fi
+          if [ -n "$RESULT" ]; then
+            echo "::error::$RESULT"
+            exit 1
+          fi
+          echo "✅ Demo deployment verified successfully"

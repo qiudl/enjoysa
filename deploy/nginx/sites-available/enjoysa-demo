@@ -1,0 +1,95 @@
+# EnjoySA Demo - AWS Sydney (REQ-20260506-0056)
+# HTTP → HTTPS redirect + Let's Encrypt SSL termination
+# First-time bootstrap (must DNS-resolve demo.enjoysau.com first):
+#   ssh enjoysa-demo 'sudo systemctl stop nginx && \
+#     sudo certbot certonly --standalone -d demo.enjoysau.com \
+#       --non-interactive --agree-tos -m linyemiao91@msn.com && \
+#     sudo systemctl start nginx'
+# After cert is in /etc/letsencrypt/live/demo.enjoysau.com/, this file is
+# valid for nginx -t and the deploy-demo.yml workflow can sync it.
+
+# HTTP → HTTPS redirect (also serves /.well-known/acme-challenge for renewal)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name demo.enjoysau.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name demo.enjoysau.com;
+
+    # Let's Encrypt cert (issued via certbot certonly --standalone first run,
+    # renewed via certbot.timer using the /.well-known path above).
+    ssl_certificate     /etc/letsencrypt/live/demo.enjoysau.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/demo.enjoysau.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    root /opt/enjoysa/frontend;
+    index index.html;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Environment "demo" always;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_comp_level 5;
+
+    client_max_body_size 10m;
+
+    # SPA routing
+    location / {
+        location = /index.html {
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            expires 0;
+        }
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:6080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        # SSE / WebSocket
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 300s;
+    }
+
+    # Upload files proxy
+    location ^~ /uploads/ {
+        proxy_pass http://127.0.0.1:6080;
+        proxy_set_header Host $host;
+    }
+
+    # Static assets cache
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
