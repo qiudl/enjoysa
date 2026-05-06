@@ -7,7 +7,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/
+# REQ-20260506-0056: also build the seed binary so demo can populate full
+# fixture data via `docker compose exec backend ./seed --clean`. Prod won't
+# invoke this binary in normal operation, only ssh-in operators can.
+RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/ && \
+    CGO_ENABLED=0 GOOS=linux go build -o /seed ./cmd/seed/
 
 FROM alpine:3.19
 
@@ -17,7 +21,7 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata wget
 
 WORKDIR /app
-COPY --from=builder /server .
+COPY --from=builder /server /seed ./
 COPY configs/ configs/
 
 RUN mkdir -p uploads

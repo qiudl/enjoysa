@@ -12,6 +12,15 @@
 #   ./scripts/deploy-demo.sh frontend       # 只发前端
 #   ./scripts/deploy-demo.sh backend        # 只发后端
 #   ./scripts/deploy-demo.sh full --reset   # full deploy + 清空 demo 数据库
+#   ./scripts/deploy-demo.sh full --seed    # full deploy + 清表 + 跑完整 seeder
+#                                             （40 个产品 + 区域 + 类目 + 供应商 + 首页模块；
+#                                             给客户演示用的 fully populated 状态）
+#
+# --reset 与 --seed 的区别：
+#   --reset  drops 整个 postgres 卷，让 backend 启动时跑 cmd/server 里的简
+#            化 auto-seed（4-5 个产品，演示效果差）
+#   --seed   先 reset 再 docker compose exec backend ./seed --clean，落
+#            internal/seed/ 里的完整 fixture（推荐）
 #
 # 前置条件：
 #   - 在 macOS 笔记本上运行（不是 CI）
@@ -23,7 +32,15 @@ set -euo pipefail
 
 SCOPE="${1:-full}"
 RESET_DB=0
-[ "${2:-}" = "--reset" ] && RESET_DB=1
+RUN_SEED=0
+shift || true
+for arg in "$@"; do
+  case "$arg" in
+    --reset) RESET_DB=1 ;;
+    --seed)  RESET_DB=1; RUN_SEED=1 ;;
+    *) echo "❌ unknown flag: $arg"; exit 1 ;;
+  esac
+done
 
 case "$SCOPE" in
   full|frontend|backend) ;;
@@ -38,7 +55,7 @@ BACKEND_DEPLOY=/opt/enjoysa-backend
 
 echo "────────────────────────────────────────"
 echo "  Demo deploy → demo.enjoysau.com ($SERVER_IP)"
-echo "  scope=$SCOPE  reset_db=$RESET_DB"
+echo "  scope=$SCOPE  reset_db=$RESET_DB  run_seed=$RUN_SEED"
 echo "────────────────────────────────────────"
 
 # Sanity: ensure we're on main / clean tree, otherwise demo would deploy
@@ -112,6 +129,15 @@ if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "backend" ]; then
     export AI_GLM_API_KEY='' && \
     export FEISHU_WEBHOOK_URL='' && \
     docker compose up -d --build --wait --remove-orphans"
+
+  if [ "$RUN_SEED" = "1" ]; then
+    echo ""
+    echo "→ Running full seeder (./seed --clean) inside backend container"
+    # The seed binary is now baked into the image (REQ-0056 Dockerfile change).
+    # --clean drops business tables first so the seeder starts from a known state.
+    ssh "$DEMO_HOST" "cd $BACKEND_DEPLOY && \
+      docker compose exec -T backend ./seed --clean --config configs/config.production.yaml"
+  fi
 fi
 
 # ---- nginx ----
