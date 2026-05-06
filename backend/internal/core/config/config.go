@@ -33,14 +33,28 @@ type AfterSalesConfig struct {
 }
 
 type AIConfig struct {
-	BaseURL      string `mapstructure:"base_url"`
-	APIKey       string `mapstructure:"api_key"`
-	Model        string `mapstructure:"model"`
-	GLMBaseURL   string `mapstructure:"glm_base_url"`   // https://open.bigmodel.cn/api/paas/v4
-	GLMAPIKey    string `mapstructure:"glm_api_key"`
-	AIProjBase   string `mapstructure:"aiproj_base"`
-	AIProjToken  string `mapstructure:"aiproj_token"`
-	AIProjProjID int    `mapstructure:"aiproj_proj_id"`
+	BaseURL      string            `mapstructure:"base_url"`
+	APIKey       string            `mapstructure:"api_key"`
+	Model        string            `mapstructure:"model"`
+	GLMBaseURL   string            `mapstructure:"glm_base_url"` // https://open.bigmodel.cn/api/paas/v4
+	GLMAPIKey    string            `mapstructure:"glm_api_key"`
+	AIProjBase   string            `mapstructure:"aiproj_base"`
+	AIProjToken  string            `mapstructure:"aiproj_token"`
+	AIProjProjID int               `mapstructure:"aiproj_proj_id"`
+	Dedup        AIChatDedupConfig `mapstructure:"dedup"`
+}
+
+// AIChatDedupConfig holds REQ-20260507-0002 cross-turn duplicate detection
+// knobs for create_requirement. Defaults are applied in Load() so a missing
+// `ai.dedup` yaml block is safe.
+type AIChatDedupConfig struct {
+	Enabled        bool    `mapstructure:"enabled"`
+	TimeoutMs      int     `mapstructure:"timeout_ms"`
+	WindowHours    int     `mapstructure:"window_hours"`
+	MaxCandidates  int     `mapstructure:"max_candidates"`
+	HitThreshold   float64 `mapstructure:"hit_threshold"`
+	GrayThreshold  float64 `mapstructure:"gray_threshold"`
+	CacheTTLSec    int     `mapstructure:"cache_ttl_sec"`
 }
 
 type ResendConfig struct {
@@ -113,6 +127,19 @@ func Load(configPath string) (*Config, error) {
 	v.SetEnvPrefix("ENJOYSA")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	// REQ-20260507-0002 cross-turn dedup defaults. Tuned against the real
+	// 0059/0060/0061 case (Jaccard ≈ 0.27 between R59↔R60, ≈ 0.08 between
+	// R59↔R61): hit_threshold=0.25 catches the highest-similarity pair as a
+	// hard match; gray_threshold=0.05 surfaces the looser pairs to the LLM
+	// for a confirmation prompt. Unrelated titles score 0 and miss cleanly.
+	v.SetDefault("ai.dedup.enabled", true)
+	v.SetDefault("ai.dedup.timeout_ms", 1500)
+	v.SetDefault("ai.dedup.window_hours", 24)
+	v.SetDefault("ai.dedup.max_candidates", 10)
+	v.SetDefault("ai.dedup.hit_threshold", 0.25)
+	v.SetDefault("ai.dedup.gray_threshold", 0.05)
+	v.SetDefault("ai.dedup.cache_ttl_sec", 60)
+
 	// Bind environment variables to nested config keys
 	_ = v.BindEnv("database.host", "ENJOYSA_DB_HOST")
 	_ = v.BindEnv("database.password", "ENJOYSA_DB_PASSWORD")
@@ -129,6 +156,13 @@ func Load(configPath string) (*Config, error) {
 	_ = v.BindEnv("ai.aiproj_base", "ENJOYSA_AI_AIPROJ_BASE")
 	_ = v.BindEnv("ai.aiproj_token", "ENJOYSA_AI_AIPROJ_TOKEN")
 	_ = v.BindEnv("ai.aiproj_proj_id", "ENJOYSA_AI_AIPROJ_PROJ_ID")
+	_ = v.BindEnv("ai.dedup.enabled", "AICHAT_DEDUP_ENABLED")
+	_ = v.BindEnv("ai.dedup.timeout_ms", "AICHAT_DEDUP_TIMEOUT_MS")
+	_ = v.BindEnv("ai.dedup.window_hours", "AICHAT_DEDUP_WINDOW_HOURS")
+	_ = v.BindEnv("ai.dedup.max_candidates", "AICHAT_DEDUP_MAX_CANDIDATES")
+	_ = v.BindEnv("ai.dedup.hit_threshold", "AICHAT_DEDUP_HIT_THRESHOLD")
+	_ = v.BindEnv("ai.dedup.gray_threshold", "AICHAT_DEDUP_GRAY_THRESHOLD")
+	_ = v.BindEnv("ai.dedup.cache_ttl_sec", "AICHAT_DEDUP_CACHE_TTL_SEC")
 	_ = v.BindEnv("aftersales.service_key", "ENJOYSA_AFTERSALES_KEY")
 	_ = v.BindEnv("feishu.webhook_url", "ENJOYSA_FEISHU_WEBHOOK_URL")
 

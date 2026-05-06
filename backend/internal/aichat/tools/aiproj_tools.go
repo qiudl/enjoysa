@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,22 +34,32 @@ func mapKeys(m map[string]interface{}) []string {
 
 // aiProjClient is a simple HTTP client for ai-proj API.
 type aiProjClient struct {
-	baseURL   string
-	token     string
-	projectID int
-	client    *http.Client
+	baseURL     string
+	token       string
+	projectID   int
+	client      *http.Client
+	dedupCfg    config.AIChatDedupConfig // REQ-20260507-0002 cross-turn dedup knobs
+	dedupCache  *dedupCache              // shared per-client TTL cache keyed by actor tag
 }
 
 func newAIProjClient(cfg config.AIConfig) *aiProjClient {
 	return &aiProjClient{
-		baseURL:   strings.TrimRight(cfg.AIProjBase, "/"),
-		token:     cfg.AIProjToken,
-		projectID: cfg.AIProjProjID,
-		client:    &http.Client{Timeout: 15 * time.Second},
+		baseURL:    strings.TrimRight(cfg.AIProjBase, "/"),
+		token:      cfg.AIProjToken,
+		projectID:  cfg.AIProjProjID,
+		client:     &http.Client{Timeout: 15 * time.Second},
+		dedupCfg:   cfg.Dedup,
+		dedupCache: newDedupCache(cfg.Dedup.CacheTTLSec),
 	}
 }
 
 func (c *aiProjClient) doJSON(method, path string, body interface{}) (map[string]interface{}, error) {
+	return c.doJSONCtx(context.Background(), method, path, body)
+}
+
+// doJSONCtx is the context-aware sibling — REQ-20260507-0002 cross-turn
+// dedup uses a 1.5s deadline so a slow ai-proj cannot stall the chat reply.
+func (c *aiProjClient) doJSONCtx(ctx context.Context, method, path string, body interface{}) (map[string]interface{}, error) {
 	var reqBody io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -58,7 +69,7 @@ func (c *aiProjClient) doJSON(method, path string, body interface{}) (map[string
 		reqBody = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequest(method, c.baseURL+path, reqBody)
+	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -132,7 +143,7 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 	client := newAIProjClient(cfg)
 	return model.ToolDef{
 		Name:         "create_requirement",
-		Description:  "在 ai-proj 项目管理系统中创建一个新需求（写操作）。\n\n【何时调用】用户用文字显式表达创建意图时调用，常见中文触发词：『提需求』『创建需求』『建需求』『新建需求』『开个 issue』『开 ticket』『记录这个 bug』『加到需求池』『报个 bug』。英文触发词：『file an issue』『log this bug』『submit feedback』『open a ticket』『create a requirement』。\n\n【何时不调用 — 反向用例】以下场景必须使用其他工具，禁止调用 create_requirement：\n- 『看看现有需求 / 列一下需求 / 我的需求列表 / show me my requirements』→ 使用 list_requirements\n- 『REQ-XXX 怎么样了 / 查需求 REQ-XXX / get requirement REQ-XXX』→ 使用 get_requirement 或 list_requirements 过滤\n- 『归档需求 / 关闭需求 / archive this』→ 使用对应的 archive 工具\n- 『更新需求 / 修改需求 / update requirement』→ 使用 update_requirement\n\n【其它前置条件】(1) 用户仅上传图片、描述问题、报告 bug 时本身【不是】创建信号，应先文字询问意图。(2) 同一会话内未创建过标题相似的需求（若不确定先调用 list_requirements 确认）。(3) 同一轮回复内不要多次调用本工具——服务端会拒绝重复执行。",
+		Description:  "在 ai-proj 项目管理系统中创建一个新需求（写操作）。\n\n【何时调用】用户用文字显式表达创建意图时调用，常见中文触发词：『提需求』『创建需求』『建需求』『新建需求』『开个 issue』『开 ticket』『记录这个 bug』『加到需求池』『报个 bug』。英文触发词：『file an issue』『log this bug』『submit feedback』『open a ticket』『create a requirement』。\n\n【何时不调用 — 反向用例】以下场景必须使用其他工具，禁止调用 create_requirement：\n- 『看看现有需求 / 列一下需求 / 我的需求列表 / show me my requirements』→ 使用 list_requirements\n- 『REQ-XXX 怎么样了 / 查需求 REQ-XXX / get requirement REQ-XXX』→ 使用 get_requirement 或 list_requirements 过滤\n- 『归档需求 / 关闭需求 / archive this』→ 使用对应的 archive 工具\n- 『更新需求 / 修改需求 / update requirement』→ 使用 update_requirement\n\n【其它前置条件】(1) 用户仅上传图片、描述问题、报告 bug 时本身【不是】创建信号，应先文字询问意图。(2) 同一会话内未创建过标题相似的需求（若不确定先调用 list_requirements 确认）。(3) 同一轮回复内不要多次调用本工具——服务端会拒绝重复执行。\n\n【REQ-20260507-0002 跨轮去重】服务端会自动检索你所属用户最近 24h 内通过 chat 创建的 draft 需求；标题主题相似时会返回 action=detected_similar_requirement 与候选列表，**此时禁止默默重试**——必须用自然语言把候选 REQ-ID 与标题告诉用户，问『你是想更新这个、还是确实要新建？』。用户明确说『新建』时再次调用本工具并把 force_new 设为 true 跳过检测。",
 		Category:     "action",
 		RequiresAuth: true,
 		Audience:     "all",
@@ -162,6 +173,10 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 					"items":       map[string]interface{}{"type": "string"},
 					"description": "截图 URL 列表，会自动插入描述末尾",
 				},
+				"force_new": map[string]interface{}{
+					"type":        "boolean",
+					"description": "REQ-20260507-0002: 仅当上一轮服务端返回 detected_similar_requirement 且用户明确说『要新建、不要更新刚才那个』时设为 true 跳过去重检测。任何其他场景都不要传，让服务端正常做跨轮去重。",
+				},
 			},
 			"required": []string{"title"},
 		},
@@ -180,6 +195,7 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 			if priority == "" {
 				priority = "medium"
 			}
+			forceNew, _ := args["force_new"].(bool)
 
 			// Append image URLs to description
 			if imageURLs, ok := args["image_urls"].([]interface{}); ok {
@@ -190,6 +206,20 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 				}
 			}
 
+			// REQ-20260507-0002: cross-turn duplicate detection. Skip when
+			// any of: dedup disabled, no chat session (non-chat caller),
+			// LLM passed force_new=true (user already declined to update),
+			// or actor identity unresolved. fail-open on any upstream issue.
+			actorTag := ""
+			if ctx.User != nil && ctx.UserID != nil {
+				actorTag = actorTagFor(ctx.User.UserType, ctx.UserID)
+			}
+			if client.dedupCfg.Enabled && ctx.SessionID != nil && actorTag != "" && !forceNew {
+				if v := dedupPrecheck(client, actorTag, title, description); v != nil {
+					return v, nil
+				}
+			}
+
 			body := map[string]interface{}{
 				"title":              title,
 				"description":        description,
@@ -197,12 +227,18 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 				"category":           category,
 				"priority":           priority,
 				"allow_self_approve": true,
-				"tags":               []string{"from-ai-chat", "supplier-feedback"},
+				"tags":               buildCreateTags(actorTag),
 			}
 
 			result, err := client.doJSON("POST", "/mcp/requirements/create", body)
 			if err != nil {
 				return nil, fmt.Errorf("创建需求失败: %w", err)
+			}
+
+			// Successful create invalidates the actor's dedup cache so the
+			// just-created REQ shows up on the next round.
+			if actorTag != "" && client.dedupCache != nil {
+				client.dedupCache.invalidate(actorTag)
 			}
 
 			// Extract display_id from response
@@ -215,6 +251,7 @@ func RegisterCreateRequirement(cfg config.AIConfig) model.ToolDef {
 
 			return map[string]interface{}{
 				"success":    true,
+				"action":     "created",
 				"display_id": displayID,
 				"title":      title,
 				"message":    fmt.Sprintf("需求「%s」已创建 (%s)", title, displayID),
