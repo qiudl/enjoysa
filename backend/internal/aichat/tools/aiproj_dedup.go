@@ -122,7 +122,14 @@ func (c *aiProjClient) findRecentDraftsForActor(
 	if data == nil {
 		return nil, nil
 	}
-	rawList, _ := data["requirements"].([]interface{})
+	// ai-proj's paginated list endpoint returns rows under data.data
+	// (not data.requirements — that name was the old wrapper convention
+	// and silently breaks here, see list_requirements tool comment).
+	// Fall back to data.requirements if the upstream ever standardizes back.
+	rawList, ok := data["data"].([]interface{})
+	if !ok {
+		rawList, _ = data["requirements"].([]interface{})
+	}
 
 	cutoff := time.Now().Add(-time.Duration(windowHours) * time.Hour)
 	out := make([]candidate, 0, maxCandidates)
