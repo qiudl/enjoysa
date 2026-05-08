@@ -17,6 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { supplierProductService } from '../../../services/supplierProductService';
 import type { ImagePayload, PackagePayload, HighlightPayload, FAQPayload } from '../../../services/supplierProductService';
+import { ChinesePreview } from '../../../components/Supplier/ChinesePreview';
 import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
 import styles from './SupplierProductFormPage.module.css';
@@ -949,6 +950,12 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
           <h1 className={styles.pageTitle}>
             {isEditMode ? t('supplier.products.edit') : t('supplier.products.addProduct')}
           </h1>
+
+          {/* REQ-20260508-0002: AI-translated Chinese preview, visible after the
+              supplier has submitted the product (or while the AI is working). */}
+          {isEditMode && productId && productStatus !== 'draft' && (
+            <ChinesePreview productId={Number(productId)} />
+          )}
 
           {/* Step Indicator */}
           <div className={styles.stepper}>

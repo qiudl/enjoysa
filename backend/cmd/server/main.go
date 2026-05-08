@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"enjoysa-backend/internal/ai/translate"
 	"enjoysa-backend/internal/aichat"
 	aimodel "enjoysa-backend/internal/aichat/model"
 	aichatstore "enjoysa-backend/internal/aichat/store"
@@ -42,6 +43,7 @@ import (
 	"enjoysa-backend/internal/router"
 	settingsmodel "enjoysa-backend/internal/settings/model"
 	settlementmodel "enjoysa-backend/internal/settlement/model"
+	"enjoysa-backend/internal/translation"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -110,25 +112,34 @@ func main() {
 		reviewstore.NewReviewStore(db),
 	)
 
+	// Build translation service here so the same instance feeds both the
+	// router (handlers) and the background worker (main.go owns ctx).
+	translationStore := translation.NewStore(db)
+	translator := translate.New(aiModule.LLMClient, cfg.AI.Model)
+	productStore := productstore.NewProductStore(db)
+	translationSvc := translation.NewService(translationStore, translator, productStore)
+
 	// Setup router
 	r := router.Setup(router.Config{
-		FrontendURL:      cfg.Server.FrontendURL,
-		DB:               db,
-		JWTService:       jwtService,
-		UploadConfig:     cfg.Upload,
-		StripeConfig:     cfg.Stripe,
-		ResendConfig:     cfg.Resend,
-		AIConfig:         cfg.AI,
-		AfterSalesConfig: cfg.AfterSales,
-		FeishuConfig:     cfg.Feishu,
-		CasbinEnforcer:   enforcer,
-		AIModule:         aiModule,
+		FrontendURL:        cfg.Server.FrontendURL,
+		DB:                 db,
+		JWTService:         jwtService,
+		UploadConfig:       cfg.Upload,
+		StripeConfig:       cfg.Stripe,
+		ResendConfig:       cfg.Resend,
+		AIConfig:           cfg.AI,
+		AfterSalesConfig:   cfg.AfterSales,
+		FeishuConfig:       cfg.Feishu,
+		CasbinEnforcer:     enforcer,
+		AIModule:           aiModule,
+		TranslationService: translationSvc,
 	})
 
-	// Start expired order cleanup
+	// Start expired order cleanup + translation worker
 	oStore := orderstore.NewOrderStore(db)
 	ctx, cancel := context.WithCancel(context.Background())
 	go expiredOrderCleanup(ctx, oStore)
+	translation.StartWorker(ctx, translationSvc)
 
 	// Start server
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -236,6 +247,8 @@ func autoMigrate(db *gorm.DB) error {
 		&homepage.HomepageTestimonial{},
 		&homepage.HomepagePartner{},
 		&homepage.HomepageModule{},
+		// Translation pipeline (REQ-20260508-0002)
+		&translation.TranslationTask{},
 	)
 }
 

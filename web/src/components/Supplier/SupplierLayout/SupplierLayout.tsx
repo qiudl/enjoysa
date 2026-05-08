@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { setSupplierLocale } from '../../../i18n';
 import {
   LayoutDashboard,
   Package,
@@ -129,7 +130,7 @@ const supplierToolCategories: ToolCategory[] = [
 ];
 
 export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { supplier, supplierStatus, logout } = useSupplierAuth();
@@ -138,13 +139,16 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // REQ-20260508-0002: lock supplier backend to en-US so suppliers don't get
+  // mixed-language UI. Re-apply on every mount because i18n state is shared
+  // with the C-side app and the user may have switched there.
+  useEffect(() => {
+    setSupplierLocale();
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate('/supplier/login');
-  };
-
-  const handleLanguageChange = (lang: string) => {
-    i18n.changeLanguage(lang);
   };
 
   const isActiveRoute = (path: string) => {
@@ -260,12 +264,8 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
             {/* Notifications */}
             <NotificationPanel onViewAll={() => navigate('/supplier/notifications')} />
 
-            {/* Language Switcher */}
-            <LanguageSwitcher
-              variant="dropdown"
-              size="sm"
-              onLanguageChange={handleLanguageChange}
-            />
+            {/* Language Switcher: hidden in supplier backend per REQ-20260508-0002. */}
+            <LanguageSwitcher hidden />
 
             {/* User Menu */}
             <div className={styles.userMenu}>

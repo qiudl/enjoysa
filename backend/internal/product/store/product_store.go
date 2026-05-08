@@ -149,6 +149,45 @@ func (s *ProductStore) UpdateStatus(id uint, status model.ProductStatus) error {
 	return s.db.Model(&model.Product{}).Where("id = ?", id).Update("status", status).Error
 }
 
+// DB exposes the underlying connection so callers can compose multi-table
+// transactions (e.g. submit-for-review enqueues a translation task in the
+// same commit as the product status flip).
+func (s *ProductStore) DB() *gorm.DB {
+	return s.db
+}
+
+// translatedColumnByKey maps the abstract field names used by the translation
+// pipeline ("name", "summary", "description", "address") to concrete *_zh
+// columns on the products table. Unknown keys are dropped silently so a
+// future field addition on the LLM side cannot accidentally write to a column
+// that doesn't exist.
+var translatedColumnByKey = map[string]string{
+	"name":        "name_zh",
+	"summary":     "summary_zh",
+	"description": "description_zh",
+	"address":     "address_zh",
+}
+
+// UpdateTranslatedFields writes LLM translation results back to the *_zh
+// columns. Implements translation.ProductFieldUpdater.
+func (s *ProductStore) UpdateTranslatedFields(productID uint, fields map[string]string) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	updates := make(map[string]interface{}, len(fields))
+	for k, v := range fields {
+		col, ok := translatedColumnByKey[k]
+		if !ok {
+			continue
+		}
+		updates[col] = v
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+	return s.db.Model(&model.Product{}).Where("id = ?", productID).Updates(updates).Error
+}
+
 func (s *ProductStore) RejectWithReason(id uint, reason string) error {
 	return s.db.Model(&model.Product{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status":        model.ProductStatusRejected,
