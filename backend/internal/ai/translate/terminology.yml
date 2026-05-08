@@ -1,0 +1,47 @@
+# EnjoySA supplier-content translation glossary v0
+# Used by internal/ai/translate to constrain LLM output for product fields.
+# Keep entries short and unambiguous.
+
+places:
+  - { en: "Adelaide", zh: "阿德莱德" }
+  - { en: "Barossa Valley", zh: "巴罗萨谷" }
+  - { en: "Kangaroo Island", zh: "袋鼠岛" }
+  - { en: "McLaren Vale", zh: "麦克拉伦谷" }
+  - { en: "Glenelg", zh: "格莱内尔格" }
+  - { en: "Port Adelaide", zh: "阿德莱德港" }
+  - { en: "Hahndorf", zh: "汉多夫" }
+  - { en: "Adelaide Hills", zh: "阿德莱德山" }
+  - { en: "Flinders Ranges", zh: "弗林德斯山脉" }
+  - { en: "Eyre Peninsula", zh: "艾尔半岛" }
+  - { en: "Fleurieu Peninsula", zh: "弗勒里厄半岛" }
+  - { en: "Coober Pedy", zh: "库伯佩迪" }
+  - { en: "Murray River", zh: "墨累河" }
+  - { en: "Lake Eyre", zh: "艾尔湖" }
+  - { en: "Mount Gambier", zh: "甘比尔山" }
+  - { en: "Victor Harbor", zh: "维克多港" }
+  - { en: "Coorong", zh: "库荣" }
+  - { en: "Clare Valley", zh: "克莱尔谷" }
+  - { en: "Limestone Coast", zh: "石灰岩海岸" }
+  - { en: "Robe", zh: "罗布镇" }
+  - { en: "Whyalla", zh: "怀阿拉" }
+
+business:
+  - { en: "Tour", zh: "旅行团" }
+  - { en: "Day Tour", zh: "一日游" }
+  - { en: "Half-Day Tour", zh: "半日游" }
+  - { en: "Multi-Day Tour", zh: "多日游" }
+  - { en: "Private Tour", zh: "私人定制游" }
+  - { en: "Group Tour", zh: "拼团游" }
+  - { en: "Wine Tasting", zh: "品酒" }
+  - { en: "Winery", zh: "酒庄" }
+  - { en: "Cellar Door", zh: "酒庄品鉴室" }
+  - { en: "Pickup", zh: "接客" }
+  - { en: "Drop-off", zh: "送达" }
+  - { en: "Hotel Pickup", zh: "酒店接送" }
+  - { en: "Self-drive", zh: "自驾" }
+  - { en: "Shuttle", zh: "穿梭巴士" }
+  - { en: "Hop-on Hop-off", zh: "随上随下" }
+  - { en: "Itinerary", zh: "行程" }
+  - { en: "Highlights", zh: "亮点" }
+  - { en: "Inclusions", zh: "包含项目" }
+  - { en: "Exclusions", zh: "不含项目" }

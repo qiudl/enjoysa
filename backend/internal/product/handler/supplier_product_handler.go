@@ -4,17 +4,24 @@ import (
 	"strconv"
 	"time"
 
+	"enjoysa-backend/internal/core/logger"
 	"enjoysa-backend/internal/product/model"
 	"enjoysa-backend/internal/product/store"
+	"enjoysa-backend/internal/translation"
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type SupplierProductHandler struct {
 	productStore  *store.ProductStore
 	scheduleStore *store.ScheduleStore
 	regionStore   *store.RegionStore
+	// translation is optional; when set, SubmitForReview enqueues an EN→ZH
+	// translation task in the same transaction so the supplier sees a
+	// Chinese preview shortly after submitting.
+	translation *translation.Service
 }
 
 func NewSupplierProductHandler(
@@ -27,6 +34,12 @@ func NewSupplierProductHandler(
 		scheduleStore: scheduleStore,
 		regionStore:   regionStore,
 	}
+}
+
+// SetTranslationService wires up the AI translation pipeline. Optional so
+// tests and minimal builds can run without LLM access.
+func (h *SupplierProductHandler) SetTranslationService(ts *translation.Service) {
+	h.translation = ts
 }
 
 func (h *SupplierProductHandler) getSupplierID(c *gin.Context) uint {
@@ -382,12 +395,61 @@ func (h *SupplierProductHandler) SubmitForReview(c *gin.Context) {
 		return
 	}
 
-	if err := h.productStore.UpdateStatus(product.ID, model.ProductStatusPending); err != nil {
+	// Flip status and enqueue translation in a single transaction so a crash
+	// can never leave a "pending" product without a translation task (or a
+	// task referencing a still-draft product).
+	var taskID uint
+	err = h.productStore.DB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.Product{}).Where("id = ?", product.ID).
+			Update("status", model.ProductStatusPending).Error; err != nil {
+			return err
+		}
+		if h.translation == nil {
+			return nil
+		}
+		fields := translationFieldsFromProduct(product)
+		if !hasTranslatableContent(fields) {
+			// Skip enqueue when there is nothing to translate (all-empty EN).
+			return nil
+		}
+		task, err := h.translation.EnqueueProductTranslationInTx(tx, product.ID, supplierID, fields)
+		if err != nil {
+			return err
+		}
+		taskID = task.ID
+		return nil
+	})
+	if err != nil {
+		logger.Errorf("submit product %d failed: %v", product.ID, err)
 		response.ServerError(c, "Failed to submit product")
 		return
 	}
 
-	response.SuccessMessage(c, "Product submitted for review")
+	response.Success(c, gin.H{
+		"message":             "Product submitted for review",
+		"translation_task_id": taskID,
+	})
+}
+
+// translationFieldsFromProduct extracts the EN-side text fields the LLM
+// translates into Chinese. Keep keys in sync with
+// product/store.translatedColumnByKey so writes round-trip cleanly.
+func translationFieldsFromProduct(p *model.Product) map[string]string {
+	return map[string]string{
+		"name":        p.NameEn,
+		"summary":     p.SummaryEn,
+		"description": p.DescriptionEn,
+		"address":     p.AddressEn,
+	}
+}
+
+func hasTranslatableContent(fields map[string]string) bool {
+	for _, v := range fields {
+		if v != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *SupplierProductHandler) Offline(c *gin.Context) {

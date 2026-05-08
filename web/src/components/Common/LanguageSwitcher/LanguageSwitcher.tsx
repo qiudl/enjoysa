@@ -15,6 +15,11 @@ export interface LanguageSwitcherProps {
   showLabel?: boolean;
   /** 语言变更回调 */
   onLanguageChange?: (language: string) => void;
+  /**
+   * REQ-20260508-0002: render nothing inside supplier backend. Suppliers are
+   * forced to en-US so the switcher would just confuse them.
+   */
+  hidden?: boolean;
 }
 
 const languages = [
@@ -29,8 +34,10 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   showIcon = true,
   showLabel = true,
   onLanguageChange,
+  hidden = false,
 }) => {
   const { i18n } = useTranslation();
+  if (hidden) return null;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

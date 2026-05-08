@@ -54,6 +54,8 @@ import (
 	teamstore "enjoysa-backend/internal/team/store"
 	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
 	aftersalesstore "enjoysa-backend/internal/aftersales/store"
+	"enjoysa-backend/internal/ai/translate"
+	"enjoysa-backend/internal/translation"
 	uploadhandler "enjoysa-backend/internal/upload/handler"
 	usercontacthandler "enjoysa-backend/internal/usercontact/handler"
 	usercontactstore "enjoysa-backend/internal/usercontact/store"
@@ -75,6 +77,11 @@ type Config struct {
 	FeishuConfig     config.FeishuConfig
 	CasbinEnforcer   *casbin.SyncedEnforcer
 	AIModule         *aichat.Module
+	// TranslationService is optional. When set the router wires it into the
+	// supplier product handler; when nil the router builds one inline. The
+	// caller (main.go) typically constructs it so it can also start the
+	// background worker against the same instance.
+	TranslationService *translation.Service
 }
 
 func Setup(cfg Config) *gin.Engine {
@@ -162,6 +169,20 @@ func Setup(cfg Config) *gin.Engine {
 	hotelStore := productstore.NewHotelStore(cfg.DB)
 	publicProductHandler := producthandler.NewPublicProductHandler(cfg.DB, pStore, regionStore, categoryStore, scheduleStore)
 	supplierProductHandler := producthandler.NewSupplierProductHandler(pStore, scheduleStore, regionStore)
+
+	// === Translation pipeline (REQ-20260508-0002 Phase 1) ===
+	// EN→ZH translator on top of the existing DeepSeek LLM client. Wires
+	// into supplier product submission so a Chinese preview arrives shortly
+	// after the supplier hits "Submit for review". The worker that drains
+	// the queue is started from main.go (it owns the long-running ctx).
+	translationSvc := cfg.TranslationService
+	if translationSvc == nil {
+		translationStore := translation.NewStore(cfg.DB)
+		translator := translate.New(cfg.AIModule.LLMClient, cfg.AIConfig.Model)
+		translationSvc = translation.NewService(translationStore, translator, pStore)
+	}
+	supplierProductHandler.SetTranslationService(translationSvc)
+	supplierTranslationHandler := producthandler.NewSupplierTranslationHandler(pStore, translationSvc)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore, notifSvc)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
@@ -435,6 +456,9 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.POST("/:id/submit", supplierProductHandler.SubmitForReview)
 		supplierProducts.POST("/:id/offline", supplierProductHandler.Offline)
 		supplierProducts.POST("/:id/online", supplierProductHandler.Online)
+		// REQ-20260508-0002: AI translation (EN→ZH) status & manual retry.
+		supplierProducts.GET("/:id/translation-status", supplierTranslationHandler.GetStatus)
+		supplierProducts.POST("/:id/translation-retry", supplierTranslationHandler.Retry)
 		supplierProducts.POST("/:id/schedules", supplierProductHandler.CreateSchedule)
 		supplierProducts.POST("/:id/schedules/batch", supplierProductHandler.BatchCreateSchedules)
 		supplierProducts.PUT("/:id/schedules/:sid", supplierProductHandler.UpdateSchedule)

@@ -70,6 +70,22 @@ export interface FAQPayload {
   sort_order?: number;
 }
 
+export type TranslationTaskStatus = 'pending' | 'running' | 'success' | 'failed';
+
+export interface TranslationStatus {
+  task_id: number;
+  status: TranslationTaskStatus;
+  retries: number;
+  last_error?: string;
+  updated_at: string;
+  preview?: {
+    name_zh?: string;
+    summary_zh?: string;
+    description_zh?: string;
+    address_zh?: string;
+  };
+}
+
 export const supplierProductService = {
   /** 供应商产品列表 */
   async list(params: { page?: number; page_size?: number; status?: string } = {}) {
@@ -106,7 +122,29 @@ export const supplierProductService = {
 
   /** 提交审核 */
   async submitForReview(id: number) {
-    return post<void>(`/supplier/products/${id}/submit`, undefined, 'supplier');
+    return post<{ message?: string; translation_task_id?: number }>(
+      `/supplier/products/${id}/submit`,
+      undefined,
+      'supplier',
+    );
+  },
+
+  /**
+   * REQ-20260508-0002: poll the AI translation task that was enqueued when
+   * the supplier hit Submit for review. Returns the task status plus a
+   * `preview` map of `*_zh` strings once it succeeds.
+   */
+  async getTranslationStatus(id: number) {
+    return get<TranslationStatus>(`/supplier/products/${id}/translation-status`, 'supplier');
+  },
+
+  /** Manually retry a failed translation. */
+  async retryTranslation(id: number) {
+    return post<{ task_id: number; status: string }>(
+      `/supplier/products/${id}/translation-retry`,
+      undefined,
+      'supplier',
+    );
   },
 
   /** 上架 */

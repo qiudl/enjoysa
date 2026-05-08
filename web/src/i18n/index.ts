@@ -27,4 +27,18 @@ i18n.on('languageChanged', (lng) => {
   localStorage.setItem('i18n-lang', lng);
 });
 
+/**
+ * Force the supplier backend (`/supplier/*`) into English regardless of the
+ * user's stored preference. Called by SupplierLayout on mount.
+ *
+ * REQ-20260508-0002: the supplier backend is EN-only because most South
+ * Australian suppliers cannot read Chinese; consumer-side language is decoupled
+ * via the AI translation pipeline.
+ */
+export function setSupplierLocale(): void {
+  if (i18n.language !== 'en') {
+    i18n.changeLanguage('en');
+  }
+}
+
 export default i18n;
