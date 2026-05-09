@@ -1285,6 +1285,10 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	if err := req.ValidateAtLeastOneName(); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
 
 	// Validate supplier exists and is approved
 	var supplier models.Supplier
@@ -1444,6 +1448,10 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	var req AdminCreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := req.ValidateAtLeastOneName(); err != nil {
+		response.BadRequest(c, err.Error())
 		return
 	}
 

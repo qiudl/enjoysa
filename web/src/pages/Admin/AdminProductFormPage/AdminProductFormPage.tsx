@@ -1084,7 +1084,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
                 type="button"
                 className={`${styles.btn} ${styles.btnSuccess}`}
                 onClick={handleSave}
-                disabled={saving || !form.name_zh || !form.name_en || !form.supplier_id}
+                disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id}
               >
                 <Save size={16} />
                 {saving ? t('supplier.productForm.saving') : t('common.save')}
@@ -1094,7 +1094,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
                   type="button"
                   className={`${styles.btn} ${styles.btnPrimary}`}
                   onClick={handleSaveAndPublish}
-                  disabled={saving || !form.name_zh || !form.name_en || !form.supplier_id}
+                  disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id}
                   title={
                     isZh
                       ? '跳过审核直接上架（仅适用于代录场景）'
