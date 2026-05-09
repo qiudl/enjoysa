@@ -1,6 +1,6 @@
 // REQ-20260509-0037 dev-3: workspace + channel + agent + membership CRUD.
-// Routing + sending messages live in the legacy chat_handler.go for now and
-// move to dev-4's group send handler.
+// dev-4 added the channel send pipeline (group_chat_send.go), wired in via
+// AttachLLMSupport from router.go.
 package handler
 
 import (
@@ -13,15 +13,21 @@ import (
 	chatmodel "enjoysa-backend/internal/chat/model"
 	chatstore "enjoysa-backend/internal/chat/store"
 	"enjoysa-backend/internal/core/logger"
+	"enjoysa-backend/internal/llmprovider"
 	"enjoysa-backend/pkg/response"
 )
 
-// GroupChatHandler exposes workspace / channel / agent CRUD endpoints.
+// GroupChatHandler exposes workspace / channel / agent CRUD endpoints
+// plus the channel send pipeline (see group_chat_send.go).
 type GroupChatHandler struct {
 	workspaces *chatstore.WorkspaceStore
 	channels   *chatstore.ChannelStore
 	members    *chatstore.ChannelMemberStore
 	agents     *chatstore.AgentStore
+
+	// Wired by AttachLLMSupport — required for SendChannelMessage (dev-4).
+	messages  *chatstore.MessageStore
+	providers *llmprovider.Registry
 }
 
 func NewGroupChatHandler(

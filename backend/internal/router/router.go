@@ -19,6 +19,7 @@ import (
 	aichatservice "enjoysa-backend/internal/aichat/service"
 	aichatstore "enjoysa-backend/internal/aichat/store"
 	"enjoysa-backend/internal/integration/feishu"
+	"enjoysa-backend/internal/llmprovider"
 	contacthandler "enjoysa-backend/internal/contact/handler"
 	contactstore "enjoysa-backend/internal/contact/store"
 	"enjoysa-backend/internal/core/config"
@@ -149,7 +150,10 @@ func Setup(cfg Config) *gin.Engine {
 	chnlStore := chatstore.NewChannelStore(cfg.DB)
 	chnlMemberStore := chatstore.NewChannelMemberStore(cfg.DB)
 	chatAgentStore := chatstore.NewAgentStore(cfg.DB)
+	chatMsgStore := chatstore.NewMessageStore(cfg.DB)
+	llmRegistry := llmprovider.SetupRegistry(cfg.AIConfig)
 	groupChatHandler := chathandler.NewGroupChatHandler(wsStore, chnlStore, chnlMemberStore, chatAgentStore)
+	groupChatHandler.AttachLLMSupport(chatMsgStore, llmRegistry)
 
 	// === Chat share (Feishu) ===
 	shareStore := chatstore.NewShareStore(cfg.DB)
@@ -366,6 +370,9 @@ func Setup(cfg Config) *gin.Engine {
 		chatGroup.PATCH("/channels/:id", groupChatHandler.UpdateChannel)
 		chatGroup.POST("/channels/:id/archive", groupChatHandler.ArchiveChannel)
 		chatGroup.PATCH("/channels/:id/members/:agent_id", groupChatHandler.UpdateMember)
+
+		// dev-4: channel send (SSE).
+		chatGroup.POST("/channels/:id/messages", groupChatHandler.SendChannelMessage)
 	}
 
 	// ========================================
