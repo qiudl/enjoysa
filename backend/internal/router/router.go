@@ -190,7 +190,7 @@ func Setup(cfg Config) *gin.Engine {
 	adminTranslationHandler := handler.NewAdminTranslationHandler(cfg.DB, pStore, translationSvc)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore, notifSvc)
-	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
+	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc, aStore, rvStore, slStore, supplierAuditStore)

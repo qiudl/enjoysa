@@ -19,6 +19,11 @@ type ProductPackage struct {
 	DescEn    string  `gorm:"size:1000" json:"desc_en"`
 	Price     float64 `gorm:"type:decimal(10,2);not null" json:"price"`
 	SortOrder int     `gorm:"default:0" json:"sort_order"`
+
+	// REQ-20260509-0035: 库存。-1 = 无限量（向后兼容历史商品）。
+	// 下单事务 SELECT FOR UPDATE 这一行避免超卖；cancel 回补 sold。
+	StockTotal int `gorm:"not null;default:-1" json:"stock_total"`
+	StockSold  int `gorm:"not null;default:0" json:"stock_sold"`
 }
 
 func (ProductPackage) TableName() string {

@@ -1,10 +1,16 @@
 package store
 
 import (
+	"errors"
+
 	"enjoysa-backend/internal/product/model"
 
 	"gorm.io/gorm"
 )
+
+// ErrInsufficientStock — REQ-20260509-0035 — surfaced to handler as 422
+// INSUFFICIENT_STOCK so the frontend can show a "库存不足" toast.
+var ErrInsufficientStock = errors.New("insufficient stock")
 
 type ProductStore struct {
 	db *gorm.DB
@@ -283,6 +289,43 @@ func (s *ProductStore) DeleteRelated(productID uint) error {
 	s.db.Where("product_id = ?", productID).Delete(&model.ProductFAQ{})
 	s.db.Where("product_id = ?", productID).Delete(&model.ProductSchedule{})
 	return nil
+}
+
+// DecrementPackageStock atomically reserves `qty` units from a package
+// (REQ-20260509-0035). Uses conditional UPDATE WHERE stock_total = -1 OR
+// stock_sold + qty <= stock_total — concurrency-safe without an explicit
+// row lock. Returns ErrInsufficientStock if no row matched (sold out or
+// not enough remaining). Mirrors ScheduleStore.DecrementSlot pattern.
+//
+// `tx` lets the caller include this update in the order-creation
+// transaction so a failed order create rolls back the reservation.
+func (s *ProductStore) DecrementPackageStock(tx *gorm.DB, packageID uint, qty int) error {
+	if tx == nil {
+		tx = s.db
+	}
+	res := tx.Model(&model.ProductPackage{}).
+		Where("id = ? AND (stock_total = -1 OR stock_sold + ? <= stock_total)", packageID, qty).
+		Update("stock_sold", gorm.Expr("stock_sold + ?", qty))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrInsufficientStock
+	}
+	return nil
+}
+
+// IncrementPackageStock refunds `qty` units when an order is cancelled
+// (REQ-20260509-0035). Skipped for unlimited packages (stock_total = -1)
+// where stock_sold is not tracked. min(0) guard via GREATEST() in case
+// of stale data — never go negative.
+func (s *ProductStore) IncrementPackageStock(tx *gorm.DB, packageID uint, qty int) error {
+	if tx == nil {
+		tx = s.db
+	}
+	return tx.Model(&model.ProductPackage{}).
+		Where("id = ? AND stock_total != -1", packageID).
+		Update("stock_sold", gorm.Expr("GREATEST(stock_sold - ?, 0)", qty)).Error
 }
 
 // PopulateCreatedByAdminName looks up the admin name for an admin_proxy

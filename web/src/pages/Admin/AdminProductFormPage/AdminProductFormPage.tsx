@@ -218,6 +218,9 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
             desc_zh: pkg.desc_zh || '',
             desc_en: pkg.desc_en || '',
             price: pkg.price,
+            // REQ-20260509-0035
+            stock_total: pkg.stock_total ?? -1,
+            stock_sold: pkg.stock_sold ?? 0,
           })),
         );
         setHighlights(
@@ -280,6 +283,8 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
         desc_en: pkg.desc_en,
         price: pkg.price,
         sort_order: i,
+        // REQ-20260509-0035: -1 = 无限量，传 undefined 后端也按 -1 处理
+        stock_total: pkg.stock_total ?? -1,
       })),
       highlights: highlights.map((h, i) => ({
         title_zh: h.title_zh,
@@ -403,6 +408,8 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
   const addPackage = () => {
     setPackages((prev) => [...prev, {
       _id: uid(), name_zh: '', name_en: '', desc_zh: '', desc_en: '', price: 0,
+      // REQ-20260509-0035: 新建包默认无限量（-1），sold = 0
+      stock_total: -1, stock_sold: 0,
     }]);
   };
 
@@ -718,11 +725,42 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
                   onChange={(e) => updatePackage(pkg._id, 'desc_en', e.target.value)} />
               </div>
             </div>
-            <div className={styles.formGroup} style={{ maxWidth: 200 }}>
-              <label className={styles.label}>{t('supplier.productForm.packagePrice')} *</label>
-              <input type="number" className={styles.input} value={pkg.price || ''}
-                onChange={(e) => updatePackage(pkg._id, 'price', parseFloat(e.target.value) || 0)}
-                min="0" step="0.01" />
+            <div className={styles.formRow}>
+              <div className={styles.formGroup} style={{ maxWidth: 200 }}>
+                <label className={styles.label}>{t('supplier.productForm.packagePrice')} *</label>
+                <input type="number" className={styles.input} value={pkg.price || ''}
+                  onChange={(e) => updatePackage(pkg._id, 'price', parseFloat(e.target.value) || 0)}
+                  min="0" step="0.01" />
+              </div>
+              {/* REQ-20260509-0035: 库存输入 + 无限量 checkbox + 已售/总只读展示 */}
+              <div className={styles.formGroup} style={{ maxWidth: 200 }}>
+                <label className={styles.label}>
+                  {t('supplier.productForm.packageStock', '库存')}
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="number" className={styles.input}
+                    style={{ flex: 1 }}
+                    value={pkg.stock_total === -1 ? '' : (pkg.stock_total ?? '')}
+                    placeholder={t('supplier.productForm.packageStockUnlimited', '无限量') as string}
+                    disabled={pkg.stock_total === -1}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      updatePackage(pkg._id, 'stock_total', v === '' ? -1 : Math.max(0, parseInt(v, 10) || 0));
+                    }}
+                    min="0" step="1" />
+                  <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                    <input type="checkbox"
+                      checked={pkg.stock_total === -1 || pkg.stock_total === undefined}
+                      onChange={(e) => updatePackage(pkg._id, 'stock_total', e.target.checked ? -1 : 0)} />
+                    {t('supplier.productForm.packageStockUnlimited', '无限量')}
+                  </label>
+                </div>
+                {pkg.stock_total !== -1 && pkg.stock_total !== undefined && (pkg.stock_sold ?? 0) > 0 && (
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                    {t('supplier.productForm.packageStockSold', '已售 {{sold}} / 总 {{total}}', { sold: pkg.stock_sold, total: pkg.stock_total })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))
