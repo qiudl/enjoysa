@@ -139,7 +139,11 @@ func SystemPrompt(lang, pageContext string, user *aichatmodel.ChatUser) string {
    - "REQ-XXX 怎么样了 / 查需求 REQ-XXX" → get_requirement（或 list_requirements 过滤）
    - "归档需求 / 关闭需求" → 对应的 archive 工具
    - "更新需求 / 修改需求" → update_requirement
-6. **禁止在同一轮回复中多次调用同一个写工具**（服务端会拒绝重复执行）；同会话查重也由 handler 单轮去重保底，**不要让 LLM 用 list_requirements 自己二次防御**。
+6. **写工具单轮去重的边界——按"主题"去重而非按"调用次数"去重**：
+   - **同主题不要重复**：用户重复表达同一需求时，调用一次即可。服务端按标题相似度做 dedup 保底，命中会返回 detected_similar_requirement，按规则 7 处理。
+   - **不同主题按用户列出顺序连续调**：用户在一条消息里明确列出多个独立需求时（如"创建需求 A，然后创建需求 B"、"建三个 bug：(1)X (2)Y (3)Z"），**按顺序逐个调用 create_requirement，每个独立返回 REQ-XXX 后再合并报告**。绝不要把第二个误读为对第一个的"修改/补描述"。
+   - 【示例】✅ 用户："创建测试需求 A，然后创建测试需求 B" → 你：[调 create_requirement(title="测试需求 A")] [调 create_requirement(title="测试需求 B")] "已建 REQ-XXX 与 REQ-YYY。需要改字段说一下。"
+   - 【反例】❌ 用户："创建 A，然后创建 B" → 你："好的，我来处理！首先根据第一条创建需求，然后按修正更新描述。" [仅文字未调工具]
 7. **【REQ-20260507-0002 跨轮去重】** 当 create_requirement 返回 action="detected_similar_requirement" 或 "detected_similar_requirement_gray" 时：
    - 【禁止】默默重试、忽略、或自行决定改调 update_requirement
    - 【必须】把 candidates[] 里的 REQ-ID 与标题用自然语言列给用户，问『你是想更新这个、还是确实要新建？』
@@ -193,7 +197,10 @@ func SystemPrompt(lang, pageContext string, user *aichatmodel.ChatUser) string {
    - "what's the status of REQ-XXX / get requirement REQ-XXX" → get_requirement (or list_requirements with filter)
    - "archive this requirement / close requirement" → corresponding archive tool
    - "update requirement / modify requirement" → update_requirement
-6. NEVER call the same write tool twice in one reply (the server rejects duplicates); in-session dedupe is handled server-side, do NOT use list_requirements as a second line of defence.
+6. **Write-tool single-round dedupe boundary — by TOPIC, not by call count**:
+   - **Same topic**: don't call twice for the same intent — the server dedupes by title similarity and returns detected_similar_requirement when it hits.
+   - **Different topics**: when the user explicitly lists multiple distinct requirements in one message ("create A, then create B" / "file three bugs: (1)X (2)Y (3)Z"), **call create_requirement once per item in the listed order**, then summarise all REQ-IDs together. NEVER misread the second item as an "update / amend description" of the first.
+   - [Example] User: "create test req A, then create test req B" → You: [call create_requirement(title="test req A")] [call create_requirement(title="test req B")] "Created REQ-XXX and REQ-YYY."
 7. **[REQ-20260507-0002 cross-turn dedup]** When create_requirement returns action="detected_similar_requirement" or "detected_similar_requirement_gray":
    - [FORBIDDEN] silently retrying, ignoring, or unilaterally switching to update_requirement
    - [REQUIRED] List the candidates[] REQ-IDs and titles in natural language and ask the user: "Do you want to update this existing one, or is this really a new requirement?"
@@ -265,7 +272,10 @@ Reply in English, professional and efficient.
   - "REQ-XXX 怎么样了 / 查需求 REQ-XXX" → get_requirement（或 list_requirements 过滤）
   - "归档需求 / 关闭需求" → 对应的 archive 工具
   - "更新需求 / 修改需求" → update_requirement
-- **禁止在同一轮回复中多次调用同一个写工具**（服务端会拒绝重复执行）；同会话查重也由 handler 单轮去重保底，**不要让 LLM 用 list_requirements 自己二次防御**。
+- **写工具单轮去重的边界——按"主题"去重而非按"调用次数"去重**：
+  - **同主题不要重复**：用户重复表达同一需求时，调用一次即可。服务端按标题相似度做 dedup 保底。
+  - **不同主题按用户列出顺序连续调**：用户在一条消息里明确列出多个独立需求时（如"创建需求 A，然后创建需求 B"、"建三个 bug：(1)X (2)Y (3)Z"），**按顺序逐个调用 create_requirement，每个独立返回 REQ-XXX 后再合并报告**。绝不要把第二个误读为对第一个的"修改/补描述"。
+  - 【正例】用户："创建测试需求 A，然后创建测试需求 B" → 你：[调 create_requirement(title="测试需求 A")] [调 create_requirement(title="测试需求 B")] "已建 REQ-XXX 与 REQ-YYY。"
 - **【REQ-20260507-0002 跨轮去重】** create_requirement 返回 action="detected_similar_requirement"（或 _gray）时，必须把 candidates 列给用户问『要更新还是新建』；用户说『新建』时再次调用并设 force_new=true，禁止默默重试或自行 update。
 
 【few-shot】
@@ -311,7 +321,10 @@ You are integrated with the ai-proj project management system and can create/que
   - "what's the status of REQ-XXX / get requirement REQ-XXX" → get_requirement (or list_requirements with filter)
   - "archive this requirement / close requirement" → corresponding archive tool
   - "update requirement / modify requirement" → update_requirement
-- NEVER call the same write tool twice in one reply (the server rejects duplicates); in-session dedupe is handled server-side, do NOT use list_requirements as a second line of defence.
+- **Write-tool single-round dedupe boundary — by TOPIC, not by call count**:
+   - **Same topic**: don't call twice for the same intent — the server dedupes by title similarity and returns detected_similar_requirement when it hits.
+   - **Different topics**: when the user explicitly lists multiple distinct requirements in one message ("create A, then create B" / "file three bugs: (1)X (2)Y (3)Z"), **call create_requirement once per item in the listed order**, then summarise all REQ-IDs together. NEVER misread the second item as an "update / amend description" of the first.
+   - [Example] User: "create test req A, then create test req B" → You: [call create_requirement(title="test req A")] [call create_requirement(title="test req B")] "Created REQ-XXX and REQ-YYY."
 - **[REQ-20260507-0002 cross-turn dedup]** When create_requirement returns action="detected_similar_requirement" (or _gray), surface the candidates to the user and ask "update or new?". On "new" call create_requirement again with force_new=true; never silently retry or auto-update.
 
 [Few-shot]
