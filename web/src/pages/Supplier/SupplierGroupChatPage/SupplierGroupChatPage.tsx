@@ -1,10 +1,12 @@
 /**
- * SupplierGroupChatPage — REQ-20260509-0037 dev-8.
+ * SupplierGroupChatPage — REQ-20260509-0037 dev-8 + dev-9.
  *
  * 3-column shell for the new workspace + channel + thread chat experience.
  *   left:   ChannelSidebar   — channel list, agent dot indicators
  *   center: ChannelMain      — channel header + message list + composer
- *   right:  ThreadPanel      — placeholder for dev-9
+ *   right:  ThreadPanel      — slides in when activeThreadParentId is set
+ *                              (dev-9). Layout collapses back to 2-col when
+ *                              the user closes the panel.
  *
  * Mounts <GroupChatProvider userType="supplier"> and bootstraps once on
  * mount so the workspace is ready before any child renders.
@@ -13,8 +15,8 @@
  *   /supplier/chat            → opens default channel (#kefu-default)
  *   /supplier/chat/:slug      → opens the named channel after bootstrap
  *
- * The legacy /supplier/ai-chat page stays untouched until dev-9/10 land
- * the thread panel + create-channel modal — then we can swap or redirect.
+ * The legacy /supplier/ai-chat page stays untouched until dev-10 lands the
+ * create-channel modal + @mention dropdown — then we can swap or redirect.
  */
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -22,6 +24,7 @@ import { useParams } from 'react-router-dom';
 import { GroupChatProvider, useGroupChat } from '../../../contexts/GroupChatContext';
 import { ChannelSidebar } from './ChannelSidebar';
 import { ChannelMain } from './ChannelMain';
+import { ThreadPanel } from './ThreadPanel';
 import styles from './SupplierGroupChatPage.module.css';
 
 interface SupplierGroupChatPageProps {
@@ -30,7 +33,15 @@ interface SupplierGroupChatPageProps {
 }
 
 function SupplierGroupChatShell({ slugFromRoute }: { slugFromRoute?: string }) {
-  const { bootstrap, channels, activeChannelId, selectChannel, isBootstrapping, lastError } = useGroupChat();
+  const {
+    bootstrap,
+    channels,
+    activeChannelId,
+    activeThreadParentId,
+    selectChannel,
+    isBootstrapping,
+    lastError,
+  } = useGroupChat();
 
   // One-shot bootstrap. The provider's `bootstrap` is stable; calling twice is
   // harmless (the GET is idempotent) but the conditional keeps logs quiet.
@@ -49,11 +60,13 @@ function SupplierGroupChatShell({ slugFromRoute }: { slugFromRoute?: string }) {
     }
   }, [slugFromRoute, channels, activeChannelId, selectChannel]);
 
+  const threadOpen = activeThreadParentId !== null;
+
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-thread-open={threadOpen ? 'true' : 'false'}>
       <ChannelSidebar />
       <ChannelMain />
-      {/* dev-9 will render <ThreadPanel /> here when activeThreadParentId is set. */}
+      {threadOpen && <ThreadPanel />}
       {lastError && (
         <div className={styles.errorToast} role="alert">
           {lastError}

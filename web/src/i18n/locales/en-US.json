@@ -917,6 +917,16 @@
       "aria": "Message input",
       "send": "Send",
       "sending": "Sending..."
+    },
+    "thread": {
+      "title": "Thread",
+      "aria": "Thread panel",
+      "close": "Close thread",
+      "replyAction": "Reply in thread",
+      "replyCount": "{{count}} replies",
+      "alsoInChannel": "Also send to channel",
+      "composerPlaceholder": "Reply in thread...",
+      "composerAria": "Thread reply input"
     }
   },
   "shop": {
