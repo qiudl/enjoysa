@@ -22,6 +22,7 @@ import (
 	settlementstore "enjoysa-backend/internal/settlement/store"
 	supplierauditstore "enjoysa-backend/internal/supplier/store"
 	"enjoysa-backend/internal/supplier/tier"
+	"enjoysa-backend/internal/translation"
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,19 @@ type AdminHandler struct {
 	reviewStore        *reviewstore.ReviewStore
 	settlementStore    *settlementstore.SettlementStore
 	supplierAuditStore *supplierauditstore.AuditLogStore
+
+	// translationSvc is the optional ZH→EN translator wired via
+	// SetTranslationService (REQ-20260509-0004). When unset, admin
+	// product Create/Update is unchanged — useful for tests that don't
+	// care about the translation pipeline.
+	translationSvc *translation.Service
+}
+
+// SetTranslationService wires the ZH→EN translator that admin Create /
+// UpdateProduct fires after a successful save. Optional — leaving it nil
+// preserves the pre-REQ-0004 behaviour.
+func (h *AdminHandler) SetTranslationService(svc *translation.Service) {
+	h.translationSvc = svc
 }
 
 func NewAdminHandler(
@@ -1169,6 +1183,8 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 		h.regionStore.UpdateAttractionCount(product.RegionID)
 	}
 
+	h.maybeEnqueueZhToEn(c, product)
+
 	product, _ = h.productStore.GetByID(product.ID)
 	response.Created(c, product)
 }
@@ -1282,8 +1298,64 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		}
 	}
 
+	h.maybeEnqueueZhToEn(c, product)
+
 	product, _ = h.productStore.GetByID(product.ID)
 	response.Success(c, product)
+}
+
+// maybeEnqueueZhToEn fires a ZH→EN translation task for the product when
+// admin-side conditions allow it (REQ-20260509-0004). All checks are best-
+// effort: any error is logged via the audit logger but never bubbled to
+// the caller — translation is an enhancement, not a save prerequisite.
+//
+// Skip conditions:
+//   - translationSvc not wired (test, or feature off)
+//   - product.ManualOverrideEn = true (admin locked the EN side)
+//   - All four EN fields are already populated (don't clobber human work)
+//   - A pending or running zh2en task already exists (idempotent)
+//   - All four ZH fields empty (nothing to translate)
+func (h *AdminHandler) maybeEnqueueZhToEn(c *gin.Context, product *productmodel.Product) {
+	if h.translationSvc == nil || product == nil {
+		return
+	}
+	if product.ManualOverrideEn {
+		return
+	}
+
+	// Don't overwrite the admin's own English entries — only fill blanks.
+	if product.NameEn != "" && product.SummaryEn != "" && product.DescriptionEn != "" && product.AddressEn != "" {
+		return
+	}
+
+	fields := map[string]string{}
+	if product.NameZh != "" {
+		fields["name"] = product.NameZh
+	}
+	if product.SummaryZh != "" {
+		fields["summary"] = product.SummaryZh
+	}
+	if product.DescriptionZh != "" {
+		fields["description"] = product.DescriptionZh
+	}
+	if product.AddressZh != "" {
+		fields["address"] = product.AddressZh
+	}
+	if len(fields) == 0 {
+		return
+	}
+
+	inflight, err := h.translationSvc.Store().HasInflight(translation.TargetTypeProduct, product.ID, translation.DirectionZH2EN)
+	if err != nil || inflight {
+		return
+	}
+
+	adminID, _ := c.Get("admin_id")
+	enqueuedBy, _ := adminID.(uint)
+	_ = h.db.Transaction(func(tx *gorm.DB) error {
+		_, txErr := h.translationSvc.EnqueueProductZhToEnInTx(tx, product.ID, enqueuedBy, fields)
+		return txErr
+	})
 }
 
 func (h *AdminHandler) DeleteProduct(c *gin.Context) {
