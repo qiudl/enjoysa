@@ -202,11 +202,10 @@
 }
 
 /* Main Content Area
- * REQ-20260509-0026: AIPanel 现在按 layout 暴露 3 个 var (right/left/bottom)，
- * bubble 模式 / 未挂载时全部为 0px。margin-left 叠加 sidebar 与 AIPanel 左 dock。 */
+ * REQ-20260509-0026: AIPanel 暴露 right/bottom 两个 var；bubble / 未挂载时为 0px。 */
 .main {
   flex: 1;
-  margin-left: calc(260px + var(--ai-panel-left-width, 0px));
+  margin-left: 260px;
   margin-right: var(--ai-panel-width, 380px);
   padding-bottom: var(--ai-panel-bottom-height, 0px);
   transition: margin-left 0.3s ease;
@@ -217,7 +216,7 @@
 
 .sidebar.collapsed + .main,
 .collapsed ~ .main {
-  margin-left: calc(72px + var(--ai-panel-left-width, 0px));
+  margin-left: 72px;
 }
 
 /* Top Bar */

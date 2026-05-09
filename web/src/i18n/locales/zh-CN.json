@@ -838,7 +838,6 @@
     "layoutSwitcher": "面板布局",
     "layout": {
       "right": "停靠右侧",
-      "left": "停靠左侧",
       "bottom": "停靠底部",
       "bubble": "气泡浮动"
     },
