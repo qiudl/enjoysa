@@ -304,6 +304,10 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
       alert(isZh ? '请选择归属供应商' : 'Please select a supplier');
       return;
     }
+    if (!form.region_id || !form.category_id) {
+      alert(isZh ? '请选择目的地与分类（无法由 AI 自动填充）' : 'Please select a region and category (these cannot be auto-filled)');
+      return;
+    }
     setSaving(true);
     try {
       const payload = buildPayload();
@@ -326,6 +330,10 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
   const handleSaveAndPublish = async () => {
     if (!form.supplier_id) {
       alert(isZh ? '请选择归属供应商' : 'Please select a supplier');
+      return;
+    }
+    if (!form.region_id || !form.category_id) {
+      alert(isZh ? '请选择目的地与分类（无法由 AI 自动填充）' : 'Please select a region and category (these cannot be auto-filled)');
       return;
     }
     const confirmMsg = isZh
@@ -1084,7 +1092,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
                 type="button"
                 className={`${styles.btn} ${styles.btnSuccess}`}
                 onClick={handleSave}
-                disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id}
+                disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id || !form.region_id || !form.category_id}
               >
                 <Save size={16} />
                 {saving ? t('supplier.productForm.saving') : t('common.save')}
@@ -1094,7 +1102,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
                   type="button"
                   className={`${styles.btn} ${styles.btnPrimary}`}
                   onClick={handleSaveAndPublish}
-                  disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id}
+                  disabled={saving || (!form.name_zh && !form.name_en) || !form.supplier_id || !form.region_id || !form.category_id}
                   title={
                     isZh
                       ? '跳过审核直接上架（仅适用于代录场景）'

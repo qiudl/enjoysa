@@ -174,6 +174,12 @@ func (h *SupplierProductHandler) CreateProduct(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// REQ-20260509-0015 G6 hotfix: region/category 是 FK，AI 不会填；
+	// 兜底挡掉 0 值避免 GORM 报 fk_products_region 500。
+	if req.RegionID == 0 || req.CategoryID == 0 {
+		response.BadRequest(c, "region_id and category_id are required")
+		return
+	}
 
 	product := &model.Product{
 		NameZh:        req.NameZh,
@@ -291,6 +297,10 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 	}
 	if err := req.ValidateAtLeastOneName(); err != nil {
 		response.BadRequest(c, err.Error())
+		return
+	}
+	if req.RegionID == 0 || req.CategoryID == 0 {
+		response.BadRequest(c, "region_id and category_id are required")
 		return
 	}
 
