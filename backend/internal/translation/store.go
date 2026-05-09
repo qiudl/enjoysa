@@ -86,20 +86,26 @@ func (s *Store) HasInflight(targetType TargetType, targetID uint, direction Dire
 // ClaimNextPending atomically picks the oldest pending task and marks it as
 // running. Uses SELECT ... FOR UPDATE SKIP LOCKED so concurrent workers cannot
 // claim the same row. Returns nil, nil when no work is available.
+//
+// Implementation note: we use Limit(1).Find rather than First because First
+// returns gorm.ErrRecordNotFound on empty result and GORM logs that at warn
+// level by default. The worker polls every 5s, so on an empty queue the warn
+// log was firing 12×/minute — pure noise that drowned real errors.
 func (s *Store) ClaimNextPending() (*TranslationTask, error) {
 	var task *TranslationTask
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		var t TranslationTask
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
+		var rows []TranslationTask
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
 			Where("status = ?", StatusPending).
 			Order("id ASC").
-			First(&t).Error
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil
-			}
+			Limit(1).
+			Find(&rows).Error; err != nil {
 			return err
 		}
+		if len(rows) == 0 {
+			return nil
+		}
+		t := rows[0]
 		now := time.Now()
 		t.Status = StatusRunning
 		t.StartedAt = &now
