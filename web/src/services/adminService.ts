@@ -351,8 +351,15 @@ export const adminService = {
     return get<ApiProduct>(`/admin/products/${id}`, 'admin');
   },
 
-  async createProduct(data: ProductPayload & { supplier_id: number; status?: string; is_featured?: boolean }) {
-    return post<ApiProduct>('/admin/products', data, 'admin');
+  // REQ-20260509-0019: opts.autoApprove=true 让 admin 一站式 "代录 + 上架"，
+  // 后端走 status=approved + 双 audit + supplier 收到 "已上架" 通知。
+  // 不传 / false 时是常规代录（默认 status=pending），supplier 收到代录待审通知。
+  async createProduct(
+    data: ProductPayload & { supplier_id: number; status?: string; is_featured?: boolean },
+    opts: { autoApprove?: boolean } = {},
+  ) {
+    const qs = opts.autoApprove ? '?auto_approve=true' : '';
+    return post<ApiProduct>(`/admin/products${qs}`, data, 'admin');
   },
 
   async updateProduct(id: number, data: ProductPayload & { supplier_id: number; status?: string; is_featured?: boolean }) {
