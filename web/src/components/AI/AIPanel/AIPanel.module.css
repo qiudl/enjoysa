@@ -2,9 +2,8 @@
  * REQ-20260509-0026: z-index lowered 999 → 90 so right-side drawers
  * (admin SupplierDetail/OrderDetail/etc. z=100/101) cover the panel
  * naturally — eliminates the "collapsed strip blocks drawer" bug.
- * Layout variants .right/.bottom/.bubble swap positioning;
- * .right is the historical default and matches base styles below.
- * (Left dock removed — sidebar 260/72px covers it.) */
+ * Layout variants .right/.left/.bottom/.bubble swap positioning;
+ * .right is the historical default and matches base styles below. */
 .panel {
   width: 380px;
   height: 100vh;
@@ -20,6 +19,20 @@
 
 .panel.collapsed {
   width: 48px;
+}
+
+/* === Layout: left dock — 紧贴 sidebar 右侧（不与 sidebar 重叠） ===
+ * sidebar 宽度由 AdminLayout/SupplierLayout 通过 --app-sidebar-width 暴露
+ * (260px 展开 / 72px 折叠)。fallback 0 让独立挂载 (无 sidebar) 也能用。 */
+.panel.left {
+  right: auto;
+  left: var(--app-sidebar-width, 0px);
+  border-left: none;
+  border-right: 1px solid #e8e8e8;
+}
+.panel.left .resizeHandle {
+  left: auto;
+  right: -3px;
 }
 
 /* === Layout: bottom dock === */
@@ -1108,15 +1121,18 @@
 
 /* ===== Responsive ===== */
 /* REQ-20260509-0026: 1024px tablet 旧逻辑（强制折叠成 48px 竖条）只对
- * right dock 生效，bottom/bubble 保留各自自然形态。 */
+ * right/left dock 生效，bottom/bubble 保留各自自然形态。 */
 @media (max-width: 1024px) {
-  .panel.right:not(.collapsed) {
+  .panel.right:not(.collapsed),
+  .panel.left:not(.collapsed) {
     width: 48px;
   }
-  .panel.right:not(.collapsed) .expandedContent {
+  .panel.right:not(.collapsed) .expandedContent,
+  .panel.left:not(.collapsed) .expandedContent {
     display: none;
   }
-  .panel.right:not(.collapsed) .collapsedBar {
+  .panel.right:not(.collapsed) .collapsedBar,
+  .panel.left:not(.collapsed) .collapsedBar {
     display: flex;
   }
 }

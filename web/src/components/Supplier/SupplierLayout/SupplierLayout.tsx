@@ -165,8 +165,15 @@ export const SupplierLayout: React.FC<SupplierLayoutProps> = ({ children }) => {
 
   const supplierName = supplier?.supplier?.name || supplier?.name || '';
 
+  // REQ-20260509-0026: 把 sidebar 当前宽度暴露给 AIPanel 的 left dock，
+  // 让 AI 面板紧贴 sidebar 右侧而不是被压在底下。
+  const sidebarWidthVar = sidebarCollapsed ? '72px' : '260px';
+
   return (
-    <div className={styles.layout}>
+    <div
+      className={styles.layout}
+      style={{ '--app-sidebar-width': sidebarWidthVar } as React.CSSProperties}
+    >
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
