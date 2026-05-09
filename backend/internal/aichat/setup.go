@@ -83,6 +83,11 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 	if cfg.AIProjBase != "" && cfg.AIProjToken != "" {
 		registry.Register(tools.RegisterCreateRequirement(cfg))
 		registry.Register(tools.RegisterListRequirements(cfg))
+		// REQ-20260506-0062: update_requirement so the LLM can act on
+		// "modify / change priority / rename" prompts the chat already
+		// instructs it to act on (previously orphaned — no handler
+		// existed, so the LLM had no way to fulfill those requests).
+		registry.Register(tools.RegisterUpdateRequirement(cfg))
 		registry.Register(tools.RegisterUploadImageToRequirement(cfg))
 		logger.Info("AI-Proj integration enabled: %s (project %d)", cfg.AIProjBase, cfg.AIProjProjID)
 	}
