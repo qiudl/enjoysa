@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -93,8 +94,12 @@ func (h *SupplierProductHandler) ListProducts(c *gin.Context) {
 }
 
 type CreateProductRequest struct {
-	NameZh        string  `json:"name_zh" binding:"required"`
-	NameEn        string  `json:"name_en" binding:"required"`
+	// REQ-20260509-0015: 双向 AI 翻译要求允许"只填一种语言"，所以这里
+	// 不能再用 binding:"required"。改用 ValidateAtLeastOneName() 在 handler
+	// 入口校验"至少填一种"，缺失的那一边由 maybeEnqueueZhToEn /
+	// maybeEnqueueEnToZh 自动翻译补齐。
+	NameZh        string  `json:"name_zh"`
+	NameEn        string  `json:"name_en"`
 	RegionID      uint    `json:"region_id"`
 	CategoryID    uint    `json:"category_id"`
 	PriceFrom     float64 `json:"price_from"`
@@ -112,6 +117,18 @@ type CreateProductRequest struct {
 	Packages   []CreatePackageRequest   `json:"packages"`
 	Highlights []CreateHighlightRequest `json:"highlights"`
 	FAQs       []CreateFAQRequest       `json:"faqs"`
+}
+
+// ValidateAtLeastOneName enforces the bidirectional-translation rule from
+// REQ-20260509-0015: at least one of name_zh / name_en must be non-empty so
+// the AI translator has source material to fill the missing side from.
+// Empty-both is the only blocked state — the rest of the form (summary /
+// description / address) can stay empty and inherit translation later.
+func (r *CreateProductRequest) ValidateAtLeastOneName() error {
+	if r.NameZh == "" && r.NameEn == "" {
+		return errors.New("at least one of name_zh or name_en is required")
+	}
+	return nil
 }
 
 type CreateImageRequest struct {
@@ -151,6 +168,10 @@ func (h *SupplierProductHandler) CreateProduct(c *gin.Context) {
 	var req CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := req.ValidateAtLeastOneName(); err != nil {
+		response.BadRequest(c, err.Error())
 		return
 	}
 
@@ -266,6 +287,10 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 	var req CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if err := req.ValidateAtLeastOneName(); err != nil {
+		response.BadRequest(c, err.Error())
 		return
 	}
 

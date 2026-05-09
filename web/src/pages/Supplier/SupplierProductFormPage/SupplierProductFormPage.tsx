@@ -1011,7 +1011,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                 type="button"
                 className={`${styles.btn} ${styles.btnSecondary}`}
                 onClick={handleSaveDraft}
-                disabled={saving || !form.name_zh || !form.name_en}
+                disabled={saving || (!form.name_zh && !form.name_en)}
               >
                 <Save size={16} />
                 {saving ? t('supplier.productForm.saving') : t('supplier.productForm.saveDraft')}
@@ -1027,7 +1027,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                   type="button"
                   className={`${styles.btn} ${styles.btnSuccess}`}
                   onClick={handleSaveAndSubmit}
-                  disabled={saving || !form.name_zh || !form.name_en}
+                  disabled={saving || (!form.name_zh && !form.name_en)}
                 >
                   <Send size={16} />
                   {saving ? t('supplier.productForm.submitting') : t('supplier.productForm.saveAndSubmit')}
@@ -1037,7 +1037,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                   type="button"
                   className={`${styles.btn} ${styles.btnPrimary}`}
                   onClick={handleSaveDraft}
-                  disabled={saving || !form.name_zh || !form.name_en}
+                  disabled={saving || (!form.name_zh && !form.name_en)}
                 >
                   <Save size={16} />
                   {saving ? t('supplier.productForm.saving') : t('supplier.productForm.saveDraft')}
