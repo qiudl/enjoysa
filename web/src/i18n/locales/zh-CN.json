@@ -931,6 +931,16 @@
       "aria": "消息输入框",
       "send": "发送",
       "sending": "发送中..."
+    },
+    "thread": {
+      "title": "主题",
+      "aria": "主题面板",
+      "close": "关闭主题",
+      "replyAction": "在主题中回复",
+      "replyCount": "{{count}} 条回复",
+      "alsoInChannel": "同时发送到频道",
+      "composerPlaceholder": "在主题里回复...",
+      "composerAria": "主题回复输入框"
     }
   },
   "shop": {

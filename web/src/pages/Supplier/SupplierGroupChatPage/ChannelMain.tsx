@@ -1,5 +1,5 @@
 /**
- * ChannelMain — REQ-20260509-0037 dev-8.
+ * ChannelMain — REQ-20260509-0037 dev-8 + dev-9.
  *
  * Center column: channel topbar + main-flow message list + composer.
  *
@@ -11,14 +11,18 @@
  *   - On `done`, the optimistic assistant message in messagesByChannel is
  *     authoritative — the live `assembled` clears.
  *
- * Defers (dev-9 / dev-10):
- *   - "在主题中回复" hover action on each message
+ * dev-9 additions:
+ *   - Hover action "在主题中回复" on each main-flow message → opens ThreadPanel.
+ *   - "N 条回复" badge under messages that already have a thread.
+ *
+ * Defers (dev-10):
  *   - @mention dropdown
  *   - Tool call / tool result inline cards
  *   - Image upload UI
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { MessageSquare } from 'lucide-react';
 
 import { useGroupChat } from '../../../contexts/GroupChatContext';
 import type { ChatGroupMessage } from '../../../services/groupChatService';
@@ -30,10 +34,13 @@ export function ChannelMain() {
     channels,
     agents,
     activeChannelId,
+    activeThreadParentId,
     messagesByChannel,
+    threadReplyCounts,
     streaming,
     isLoadingChannel,
     sendToChannel,
+    openThread,
   } = useGroupChat();
 
   const [draft, setDraft] = useState('');
@@ -115,7 +122,17 @@ export function ChannelMain() {
           <div className={styles.systemNote}>{t('groupChat.empty.noMessages')}</div>
         )}
         {messages.map(m => (
-          <MessageBubble key={m.id} message={m} agentName={getSenderDisplay(m, agentById)} agentColor={getSenderColor(m, agentById)} />
+          <MessageBubble
+            key={m.id}
+            message={m}
+            agentName={getSenderDisplay(m, agentById)}
+            agentColor={getSenderColor(m, agentById)}
+            replyCount={m.id > 0 ? (threadReplyCounts[m.id] ?? 0) : 0}
+            isActiveThreadParent={m.id === activeThreadParentId}
+            onOpenThread={() => void openThread(m)}
+            replyLabel={t('groupChat.thread.replyAction')}
+            countLabel={(n: number) => t('groupChat.thread.replyCount', { count: n })}
+          />
         ))}
         {isStreamingHere && (streaming.assembledContent || streaming.status) && (
           <div className={styles.bubble} data-role="ai" data-streaming="true">
@@ -159,22 +176,60 @@ function MessageBubble({
   message,
   agentName,
   agentColor,
+  replyCount,
+  isActiveThreadParent,
+  onOpenThread,
+  replyLabel,
+  countLabel,
 }: {
   message: ChatGroupMessage;
   agentName: string;
   agentColor: string | null;
+  replyCount: number;
+  isActiveThreadParent: boolean;
+  onOpenThread: () => void;
+  replyLabel: string;
+  countLabel: (n: number) => string;
 }) {
   const isUser = message.sender_type === 'user';
+  const isOptimisticStub = message.id <= 0;
+
   return (
     <div
-      className={styles.bubble}
-      data-role={isUser ? 'user' : 'ai'}
-      style={!isUser && agentColor ? { borderLeftColor: agentColor } : undefined}
+      className={styles.bubbleWrapper}
+      data-active-thread={isActiveThreadParent ? 'true' : undefined}
     >
-      <div className={styles.bubbleHeader}>
-        <span className={styles.senderName}>{agentName}</span>
+      <div
+        className={styles.bubble}
+        data-role={isUser ? 'user' : 'ai'}
+        style={!isUser && agentColor ? { borderLeftColor: agentColor } : undefined}
+      >
+        <div className={styles.bubbleHeader}>
+          <span className={styles.senderName}>{agentName}</span>
+        </div>
+        <div className={styles.bubbleBody}>{message.content}</div>
+        {replyCount > 0 && (
+          <button
+            type="button"
+            className={styles.replyCountBadge}
+            onClick={onOpenThread}
+            title={replyLabel}
+          >
+            <MessageSquare size={12} aria-hidden /> {countLabel(replyCount)}
+          </button>
+        )}
       </div>
-      <div className={styles.bubbleBody}>{message.content}</div>
+      {!isOptimisticStub && (
+        <button
+          type="button"
+          className={styles.hoverAction}
+          onClick={onOpenThread}
+          title={replyLabel}
+          aria-label={replyLabel}
+        >
+          <MessageSquare size={14} aria-hidden /> {replyLabel}
+        </button>
+      )}
     </div>
   );
 }

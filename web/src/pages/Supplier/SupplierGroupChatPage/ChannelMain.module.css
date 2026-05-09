@@ -88,8 +88,79 @@
   padding: 24px 0;
 }
 
-.bubble {
+.bubbleWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
   max-width: 80%;
+}
+
+.bubbleWrapper:has(.bubble[data-role='user']) {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.bubbleWrapper[data-active-thread='true'] .bubble {
+  outline: 2px solid #fde68a;
+  outline-offset: 2px;
+}
+
+.bubbleWrapper:hover .hoverAction,
+.bubbleWrapper:focus-within .hoverAction {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hoverAction {
+  position: absolute;
+  top: -10px;
+  right: 8px;
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  z-index: 1;
+}
+
+.hoverAction:hover {
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.replyCountBadge {
+  margin-top: 4px;
+  align-self: flex-start;
+  appearance: none;
+  border: 0;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.12s ease;
+}
+
+.replyCountBadge:hover {
+  background: rgba(37, 99, 235, 0.16);
+}
+
+.bubble {
   padding: 8px 12px;
   border-radius: 6px;
   background: #f3f4f6;
@@ -99,11 +170,9 @@
   color: #111827;
   word-wrap: break-word;
   white-space: pre-wrap;
-  align-self: flex-start;
 }
 
 .bubble[data-role='user'] {
-  align-self: flex-end;
   background: #dbeafe;
   border-left-color: #2563eb;
 }
