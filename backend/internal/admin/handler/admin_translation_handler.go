@@ -217,3 +217,172 @@ func zhFieldsForTranslation(name, summary, description, address string) map[stri
 	}
 	return out
 }
+
+// enFieldsForTranslation is the EN→ZH counterpart of zhFieldsForTranslation
+// (REQ-20260509-0015). Same JSON contract — keys "name" / "summary" /
+// "description" / "address" — so the prompt template stays direction-agnostic.
+func enFieldsForTranslation(name, summary, description, address string) map[string]string {
+	out := map[string]string{}
+	if name != "" {
+		out["name"] = name
+	}
+	if summary != "" {
+		out["summary"] = summary
+	}
+	if description != "" {
+		out["description"] = description
+	}
+	if address != "" {
+		out["address"] = address
+	}
+	return out
+}
+
+// GetZhStatus returns the latest EN→ZH translation task for the product.
+// Mirrors GetStatus structurally; scoped to direction=en2zh and surfaces
+// *_zh preview fields. Powers the admin ChinesePreview UI introduced for
+// REQ-20260509-0015.
+func (h *AdminTranslationHandler) GetZhStatus(c *gin.Context) {
+	pid, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(pid))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	task, err := h.translation.GetLatestForProductByDirection(uint(pid), string(translation.DirectionEN2ZH))
+	if err != nil {
+		response.ServerError(c, "Failed to load translation status")
+		return
+	}
+	if task == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "no en2zh translation task for this product",
+		})
+		return
+	}
+
+	out := adminTranslationStatusResponse{
+		TaskID:    task.ID,
+		Direction: string(task.Direction),
+		Status:    string(task.Status),
+		Retries:   task.Retries,
+		LastError: task.LastError,
+		UpdatedAt: task.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+
+	if task.Status == translation.StatusSuccess {
+		out.Preview = map[string]string{
+			"name_zh":        product.NameZh,
+			"summary_zh":     product.SummaryZh,
+			"description_zh": product.DescriptionZh,
+			"address_zh":     product.AddressZh,
+		}
+		if len(task.FieldsOutput) > 0 {
+			var raw map[string]string
+			if err := json.Unmarshal(task.FieldsOutput, &raw); err == nil {
+				if out.Preview["name_zh"] == "" {
+					if v, ok := raw["name"]; ok {
+						out.Preview["name_zh"] = v
+					}
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": out})
+}
+
+// RetryZh flips the latest EN→ZH translation task back to pending so the
+// worker re-runs it. 409 when the task is not currently in failed state.
+func (h *AdminTranslationHandler) RetryZh(c *gin.Context) {
+	pid, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	if _, err := h.productStore.GetByID(uint(pid)); err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	task, err := h.translation.GetLatestForProductByDirection(uint(pid), string(translation.DirectionEN2ZH))
+	if err != nil {
+		response.ServerError(c, "Failed to load translation task")
+		return
+	}
+	if task == nil {
+		response.NotFound(c, "No en2zh translation task to retry")
+		return
+	}
+
+	if err := h.translation.RetryFailed(task.ID); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"task_id": task.ID, "status": "pending"}})
+}
+
+// RegenerateZh force-enqueues a new EN→ZH translation task using the
+// product's current EN fields. Refuses when manual_override_zh=true so
+// admin/supplier-locked Chinese content cannot be silently overwritten —
+// caller must clear the flag first via UpdateProduct.
+func (h *AdminTranslationHandler) RegenerateZh(c *gin.Context) {
+	pid, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	product, err := h.productStore.GetByID(uint(pid))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	if product.ManualOverrideZh {
+		c.JSON(http.StatusConflict, gin.H{
+			"success": false,
+			"error":   "manual_override_zh is set; clear it on the product first to allow re-translation",
+		})
+		return
+	}
+
+	fields := enFieldsForTranslation(product.NameEn, product.SummaryEn, product.DescriptionEn, product.AddressEn)
+	if len(fields) == 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"error":   "no english content to translate",
+		})
+		return
+	}
+
+	adminID := h.adminID(c)
+	var task *translation.TranslationTask
+	err = h.db.Transaction(func(tx *gorm.DB) error {
+		t, txErr := h.translation.EnqueueProductTranslationInTx(tx, uint(pid), adminID, fields)
+		if txErr != nil {
+			return txErr
+		}
+		task = t
+		return nil
+	})
+	if err != nil {
+		response.ServerError(c, "Failed to enqueue translation: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
+		"task_id":   task.ID,
+		"direction": string(task.Direction),
+		"status":    string(task.Status),
+	}})
+}

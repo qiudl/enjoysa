@@ -617,6 +617,14 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/products/:id/translation-retry", adminTranslationHandler.Retry)
 		adminGroup.POST("/products/:id/translation-regenerate", adminTranslationHandler.Regenerate)
 
+		// REQ-20260509-0015: EN→ZH translation status / retry / regenerate.
+		// Mirror of the ZH→EN trio above; admin ChinesePreview polls these
+		// when admin enters English content first and wants the system to
+		// generate the Chinese side.
+		adminGroup.GET("/products/:id/zh-translation-status", adminTranslationHandler.GetZhStatus)
+		adminGroup.POST("/products/:id/zh-translation-retry", adminTranslationHandler.RetryZh)
+		adminGroup.POST("/products/:id/zh-translation-regenerate", adminTranslationHandler.RegenerateZh)
+
 		// Order management
 		adminGroup.GET("/orders", adminHandler.ListOrders)
 		adminGroup.POST("/orders/:id/refund", adminHandler.AdminRefundOrder)

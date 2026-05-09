@@ -1184,6 +1184,7 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 	}
 
 	h.maybeEnqueueZhToEn(c, product)
+	h.maybeEnqueueEnToZh(c, product)
 
 	product, _ = h.productStore.GetByID(product.ID)
 	response.Created(c, product)
@@ -1299,6 +1300,7 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	h.maybeEnqueueZhToEn(c, product)
+	h.maybeEnqueueEnToZh(c, product)
 
 	product, _ = h.productStore.GetByID(product.ID)
 	response.Success(c, product)
@@ -1354,6 +1356,60 @@ func (h *AdminHandler) maybeEnqueueZhToEn(c *gin.Context, product *productmodel.
 	enqueuedBy, _ := adminID.(uint)
 	_ = h.db.Transaction(func(tx *gorm.DB) error {
 		_, txErr := h.translationSvc.EnqueueProductZhToEnInTx(tx, product.ID, enqueuedBy, fields)
+		return txErr
+	})
+}
+
+// maybeEnqueueEnToZh fires an EN→ZH translation task for the product when
+// admin-side conditions allow it (REQ-20260509-0015 双向对偶 0004). Mirrors
+// maybeEnqueueZhToEn structurally — same best-effort semantics, never blocks
+// the caller's save.
+//
+// Skip conditions:
+//   - translationSvc not wired (test, or feature off)
+//   - product.ManualOverrideZh = true (admin/supplier locked the ZH side)
+//   - All four ZH fields are already populated (don't clobber human work)
+//   - A pending or running en2zh task already exists (idempotent)
+//   - All four EN fields empty (nothing to translate)
+func (h *AdminHandler) maybeEnqueueEnToZh(c *gin.Context, product *productmodel.Product) {
+	if h.translationSvc == nil || product == nil {
+		return
+	}
+	if product.ManualOverrideZh {
+		return
+	}
+
+	// Don't overwrite existing Chinese content — only fill blanks.
+	if product.NameZh != "" && product.SummaryZh != "" && product.DescriptionZh != "" && product.AddressZh != "" {
+		return
+	}
+
+	fields := map[string]string{}
+	if product.NameEn != "" {
+		fields["name"] = product.NameEn
+	}
+	if product.SummaryEn != "" {
+		fields["summary"] = product.SummaryEn
+	}
+	if product.DescriptionEn != "" {
+		fields["description"] = product.DescriptionEn
+	}
+	if product.AddressEn != "" {
+		fields["address"] = product.AddressEn
+	}
+	if len(fields) == 0 {
+		return
+	}
+
+	inflight, err := h.translationSvc.Store().HasInflight(translation.TargetTypeProduct, product.ID, translation.DirectionEN2ZH)
+	if err != nil || inflight {
+		return
+	}
+
+	adminID, _ := c.Get("admin_id")
+	enqueuedBy, _ := adminID.(uint)
+	_ = h.db.Transaction(func(tx *gorm.DB) error {
+		_, txErr := h.translationSvc.EnqueueProductTranslationInTx(tx, product.ID, enqueuedBy, fields)
 		return txErr
 	})
 }

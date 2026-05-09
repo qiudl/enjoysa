@@ -18,6 +18,7 @@ import type { ImagePayload, PackagePayload, HighlightPayload, FAQPayload } from 
 import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
 import { EnglishPreview } from '../../../components/Admin/EnglishPreview';
+import { ChinesePreview } from '../../../components/Admin/ChinesePreview';
 import styles from './AdminProductFormPage.module.css';
 
 // ────────────────────────────── Types ──────────────────────────────
@@ -1003,13 +1004,30 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
       {currentStep === 4 && renderStepPreview()}
 
       {/*
-        REQ-20260509-0004: AI ZH→EN translation preview. Active only when
-        editing a saved product so the panel has a productId to poll. The
-        backend enqueues a task on Save when the EN side has blanks; the
-        admin can also explicitly hit Regenerate from inside the panel.
+        REQ-20260509-0004 + REQ-20260509-0015: AI translation preview panels,
+        bidirectional. EnglishPreview surfaces ZH→EN; ChinesePreview surfaces
+        EN→ZH. Both poll independently and either one can be regenerated. The
+        backend triggers whichever direction makes sense based on which side
+        has blanks at Save time. Sub-tables (highlights / packages / FAQs) are
+        not auto-translated — admin must mirror those manually.
       */}
       {isEditMode && productId && (
-        <EnglishPreview productId={Number(productId)} active={true} />
+        <>
+          <EnglishPreview productId={Number(productId)} active={true} />
+          <ChinesePreview productId={Number(productId)} active={true} />
+          <div style={{
+            marginTop: 12,
+            padding: '8px 12px',
+            background: '#fff7ed',
+            border: '1px solid #fed7aa',
+            borderRadius: 6,
+            color: '#9a3412',
+            fontSize: 13,
+          }}>
+            ⚠️ Highlights / Packages / FAQs are not auto-translated. Edit both ZH
+            and EN versions manually for those sub-tables.
+          </div>
+        </>
       )}
 
       {/* Footer Navigation */}
