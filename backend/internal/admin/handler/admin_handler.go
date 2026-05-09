@@ -1289,6 +1289,13 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
+	// REQ-20260509-0015 G6 hotfix: region/category 是结构性元数据，AI 翻译填不了，
+	// 必须由 admin 显式选择。前端已 disable Save 按钮，这里是后端兜底——挡掉
+	// 直接 hit API 或前端校验绕过的场景，避免 GORM 报 fk_products_region 500。
+	if req.RegionID == 0 || req.CategoryID == 0 {
+		response.BadRequest(c, "region_id and category_id are required")
+		return
+	}
 
 	// Validate supplier exists and is approved
 	var supplier models.Supplier
@@ -1457,6 +1464,10 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	}
 	if err := req.ValidateAtLeastOneName(); err != nil {
 		response.BadRequest(c, err.Error())
+		return
+	}
+	if req.RegionID == 0 || req.CategoryID == 0 {
+		response.BadRequest(c, "region_id and category_id are required")
 		return
 	}
 
