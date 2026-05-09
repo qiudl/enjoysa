@@ -1397,16 +1397,21 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 	// REQ-20260509-0019: 代录审计 + 通知 supplier。
 	// 审计两条便后续按动作分类统计；auto_approve 路径不重新调 ApproveProduct
 	// （那会重发原 approved 通知 + audit 不一致），直接补一条 audit 与一条专属通知。
+	//
+	// G6 hotfix: notifications.type 字段是 VARCHAR(30)。原 key
+	// "product_created_by_admin_pending" (32) / "_approved" (33) 超长，
+	// 写入静默失败（GORM 报错但调用方 ignore）。改用 30 内的对偶 key，
+	// 与 audit action 命名一致更便于检索。
 	h.audit.Log(c, "proxy_create", "product", product.ID, product.NameEn)
 	if h.notifSvc != nil {
 		if autoApprove {
 			h.audit.Log(c, "proxy_create_and_approve", "product", product.ID, product.NameEn)
-			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_created_by_admin_approved",
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "proxy_create_approved",
 				"Product created and published",
 				fmt.Sprintf("The platform created and published a new product on your behalf: '%s'. AI-generated translations are queued — please review.", productDisplayName(product)),
 				"product", product.ID)
 		} else {
-			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_created_by_admin_pending",
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "proxy_create_pending",
 				"Product created on your behalf",
 				fmt.Sprintf("The platform created a new product on your behalf and submitted it for review: '%s'. AI-generated translations are queued — feel free to refine them while you wait.", productDisplayName(product)),
 				"product", product.ID)
