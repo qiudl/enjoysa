@@ -36,10 +36,13 @@
 }
 
 /* === Layout: bottom dock === */
+/* bottom dock: 让出 sidebar 占用的左侧 (--app-sidebar-width)，
+ * 避免 sidebar (z=998/999) 压住 dock 左半。drop !important + 100vw，
+ * 用 left/right 双锚点天然撑满剩余宽度。 */
 .panel.bottom {
-  width: 100vw !important;
+  width: auto;
   right: 0;
-  left: 0;
+  left: var(--app-sidebar-width, 0px);
   top: auto;
   bottom: 0;
   height: 340px;
@@ -47,7 +50,7 @@
   border-top: 1px solid #e8e8e8;
 }
 .panel.bottom.collapsed {
-  width: 100vw !important;
+  width: auto;
   height: 48px;
 }
 .panel.bottom .collapsedBar {
