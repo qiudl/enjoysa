@@ -36,11 +36,17 @@ export const ChinesePreview: React.FC<ChinesePreviewProps> = ({
   const [retrying, setRetrying] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  // Existing products with no EN→ZH task return 404 from /zh-translation-status.
+  // Surface that as a quiet "no history" state and stop polling so the
+  // console isn't flooded; admin can hit Regenerate to start a fresh task.
+  const [noTaskYet, setNoTaskYet] = useState(false);
+  const [pollKey, setPollKey] = useState(0);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (!active) return;
     cancelledRef.current = false;
+    let timer: number | undefined;
 
     const poll = async () => {
       try {
@@ -49,27 +55,34 @@ export const ChinesePreview: React.FC<ChinesePreviewProps> = ({
         if (resp) {
           setStatus(resp);
           setError(null);
+          setNoTaskYet(false);
           if (isTerminal(resp.status)) return; // stop polling
         }
       } catch (err) {
-        // 404 = no task yet (e.g. brand-new product before first save).
-        // Keep polling — the next save by the admin will enqueue one.
         const message = err instanceof Error ? err.message : String(err);
-        if (!message.includes('no en2zh translation task')) {
-          setError(message);
+        if (message.includes('no en2zh translation task')) {
+          setNoTaskYet(true);
+          return;
         }
+        setError(message);
       }
       if (!cancelledRef.current) {
         timer = window.setTimeout(poll, pollIntervalMs);
       }
     };
 
-    let timer = window.setTimeout(poll, 0);
+    timer = window.setTimeout(poll, 0);
     return () => {
       cancelledRef.current = true;
-      window.clearTimeout(timer);
+      if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [productId, active, pollIntervalMs]);
+  }, [productId, active, pollIntervalMs, pollKey]);
+
+  const restartPolling = () => {
+    setNoTaskYet(false);
+    setError(null);
+    setPollKey((k) => k + 1);
+  };
 
   const handleRetry = async () => {
     setRetrying(true);
@@ -78,6 +91,7 @@ export const ChinesePreview: React.FC<ChinesePreviewProps> = ({
       setStatus((prev) =>
         prev ? { ...prev, status: 'pending', retries: 0, last_error: undefined } : prev,
       );
+      restartPolling();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -90,8 +104,17 @@ export const ChinesePreview: React.FC<ChinesePreviewProps> = ({
     try {
       await adminService.regenerateZhTranslation(productId);
       setStatus((prev) =>
-        prev ? { ...prev, status: 'pending', retries: 0, last_error: undefined } : prev,
+        prev
+          ? { ...prev, status: 'pending', retries: 0, last_error: undefined }
+          : {
+              task_id: 0,
+              direction: 'en2zh',
+              status: 'pending',
+              retries: 0,
+              updated_at: new Date().toISOString(),
+            },
       );
+      restartPolling();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -126,9 +149,17 @@ export const ChinesePreview: React.FC<ChinesePreviewProps> = ({
       </div>
       {!collapsed && (
         <div className={styles.body}>
-          <StatusRow status={status} error={error} retrying={retrying} onRetry={handleRetry} />
-          {status?.status === 'success' && status.preview && (
-            <PreviewBody preview={status.preview} />
+          {noTaskYet ? (
+            <div className={`${styles.statusRow} ${styles.statusPending}`}>
+              <span>该商品暂无中文自动翻译记录。点击 ↻ Regenerate 从英文重新生成中文。</span>
+            </div>
+          ) : (
+            <>
+              <StatusRow status={status} error={error} retrying={retrying} onRetry={handleRetry} />
+              {status?.status === 'success' && status.preview && (
+                <PreviewBody preview={status.preview} />
+              )}
+            </>
           )}
         </div>
       )}
