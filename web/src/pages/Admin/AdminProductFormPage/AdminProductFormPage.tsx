@@ -19,6 +19,7 @@ import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
 import { EnglishPreview } from '../../../components/Admin/EnglishPreview';
 import { ChinesePreview } from '../../../components/Admin/ChinesePreview';
+import { FormBatchStockBar } from '../../../components/Common/FormBatchStockBar';
 import styles from './AdminProductFormPage.module.css';
 
 // ────────────────────────────── Types ──────────────────────────────
@@ -683,6 +684,14 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
           {t('supplier.productForm.addPackage')}
         </button>
       </div>
+
+      {/* REQ-20260509-0035 Phase 3c: form-top batch stock toolbar */}
+      <FormBatchStockBar
+        packages={packages}
+        onApply={(changes) => setPackages((prev) => prev.map((p) =>
+          changes.has(p._id) ? { ...p, stock_total: changes.get(p._id)! } : p,
+        ))}
+      />
 
       {packages.length === 0 ? (
         <div className={styles.emptyState}>
