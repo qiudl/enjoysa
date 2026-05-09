@@ -378,6 +378,193 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 	}
 }
 
+// RegisterUpdateRequirement registers the update_requirement tool.
+//
+// REQ-20260506-0062: the chat prompt has long instructed the LLM to call
+// update_requirement when the user asks to "modify / change priority /
+// rename" an existing REQ — but the tool was never registered, so the LLM
+// had nothing to call. This adds the missing handler so write tools cover
+// (create, list, update) instead of just (create, list).
+//
+// Three-layer protection per AI write-tool guidance:
+//  1. Prompt (chat/service/ai_service.go) already directs the LLM here.
+//  2. Tool description below spells out triggers + reverse cases.
+//  3. Handler bails on missing identifier / empty patch and returns a
+//     stable response shape so the LLM cannot loop on it.
+func RegisterUpdateRequirement(cfg config.AIConfig) model.ToolDef {
+	client := newAIProjClient(cfg)
+	return model.ToolDef{
+		Name: "update_requirement",
+		Description: "更新 ai-proj 项目管理系统中已有需求的字段（写操作）。\n\n" +
+			"【何时调用】用户**显式**要求修改已有需求时调用，常见中文触发词：『更新需求 X』『修改需求 X』『把 REQ-XXX 的优先级改成 high』『REQ-XXX 标题改成 ...』『REQ-XXX 加 tag ...』『REQ-XXX 改成 bug 类型』。英文触发词：『update REQ-XXX』『change priority of REQ-XXX』『rename REQ-XXX to ...』『modify the description of REQ-XXX』。\n\n" +
+			"【何时不调用 — 反向用例】\n- 『提需求 / 创建新需求 / report a bug』→ 使用 create_requirement\n- 『查看 REQ-XXX / show me REQ-XXX』→ 使用 list_requirements 过滤 display_id\n- 『归档 / 关闭 REQ-XXX』→ 不要用 update（status 字段不在本工具白名单），告诉用户暂未支持 archive 工具\n\n" +
+			"【参数提示】display_id（如 REQ-20260509-0004）和 id（数字主键）二选一必填——用户消息里出现 REQ-XXXXXXXX-XXXX 形式时使用 display_id。其余字段（title/description/priority/category/tags）只传用户**明确想改的**，省略不动的字段。\n\n" +
+			"【单轮调用约束】同一轮回复内对同一需求只能调用一次本工具——服务端不会强制去重，但重复调用会让 LLM 与用户陷入'我又改了一次'的循环。",
+		Category:     "action",
+		RequiresAuth: true,
+		Audience:     "all",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"display_id": map[string]interface{}{
+					"type":        "string",
+					"description": "需求的 display_id，如 REQ-20260509-0004。优先使用此字段。",
+				},
+				"id": map[string]interface{}{
+					"type":        "integer",
+					"description": "需求数字主键 id。仅当用户消息里给的就是数字（不是 REQ-XXX 形式）时使用。",
+				},
+				"title": map[string]interface{}{
+					"type":        "string",
+					"description": "新标题。仅当用户明确要改标题时传。",
+				},
+				"description": map[string]interface{}{
+					"type":        "string",
+					"description": "新描述（替换式，不是追加）。仅当用户明确要改描述时传。",
+				},
+				"priority": map[string]interface{}{
+					"type":        "string",
+					"description": "新优先级",
+					"enum":        []string{"low", "medium", "high"},
+				},
+				"category": map[string]interface{}{
+					"type":        "string",
+					"description": "新分类",
+					"enum":        []string{"feature", "bug", "improvement", "documentation", "other"},
+				},
+				"tags": map[string]interface{}{
+					"type":        "array",
+					"items":       map[string]interface{}{"type": "string"},
+					"description": "新标签列表（替换式，不是追加）。",
+				},
+			},
+		},
+		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			displayID, _ := args["display_id"].(string)
+			idFloat, _ := args["id"].(float64)
+			id := int(idFloat)
+
+			if displayID == "" && id == 0 {
+				return nil, fmt.Errorf("display_id 或 id 必填其一")
+			}
+
+			// Build the patch from only the fields the LLM actually
+			// passed — leaving a key off the request keeps that field
+			// unchanged on the server side. Empty-string title/description
+			// is intentionally rejected so the LLM cannot accidentally
+			// blank a row by passing "".
+			updates := map[string]interface{}{}
+			if title, ok := args["title"].(string); ok && title != "" {
+				updates["title"] = title
+			}
+			if description, ok := args["description"].(string); ok && description != "" {
+				updates["description"] = description
+			}
+			if priority, ok := args["priority"].(string); ok && priority != "" {
+				updates["priority"] = priority
+			}
+			if category, ok := args["category"].(string); ok && category != "" {
+				updates["category"] = category
+			}
+			if rawTags, ok := args["tags"].([]interface{}); ok {
+				tags := make([]string, 0, len(rawTags))
+				for _, t := range rawTags {
+					if s, ok := t.(string); ok {
+						tags = append(tags, s)
+					}
+				}
+				updates["tags"] = tags
+			}
+
+			if len(updates) == 0 {
+				return nil, fmt.Errorf("没有可更新的字段——至少传 title / description / priority / category / tags 中的一个")
+			}
+
+			// Resolve to a numeric id when only display_id was supplied;
+			// the REST endpoint expects the numeric primary key in the
+			// path. Use list_requirements with a tight filter so we don't
+			// pull the whole project.
+			if id == 0 {
+				resolved, err := resolveRequirementIDByDisplayID(client, displayID)
+				if err != nil {
+					return nil, fmt.Errorf("查询需求 %s 失败: %w", displayID, err)
+				}
+				if resolved == 0 {
+					return nil, fmt.Errorf("找不到 display_id=%s 的需求", displayID)
+				}
+				id = resolved
+			}
+
+			body := map[string]interface{}{"updates": updates}
+			path := fmt.Sprintf("/mcp/requirements/%d", id)
+			result, err := client.doJSON("PATCH", path, body)
+			if err != nil {
+				return nil, fmt.Errorf("更新需求失败: %w", err)
+			}
+
+			// Pull display_id from the response so we can echo it back to
+			// the user in a confirmation message — falling back to the
+			// caller-supplied one if the server didn't include it.
+			respDisplayID := displayID
+			if data, ok := result["data"].(map[string]interface{}); ok {
+				if did, ok := data["display_id"].(string); ok && did != "" {
+					respDisplayID = did
+				}
+			}
+
+			updatedKeys := make([]string, 0, len(updates))
+			for k := range updates {
+				updatedKeys = append(updatedKeys, k)
+			}
+
+			return map[string]interface{}{
+				"success":      true,
+				"action":       "updated",
+				"display_id":   respDisplayID,
+				"id":           id,
+				"updated_keys": updatedKeys,
+				"message":      fmt.Sprintf("需求 %s 已更新（%v）", respDisplayID, updatedKeys),
+			}, nil
+		},
+	}
+}
+
+// resolveRequirementIDByDisplayID hits the same /mcp/requirements list
+// endpoint list_requirements uses, scoped to the display_id, to map the
+// human-friendly REQ-YYYYMMDD-NNNN string back to the numeric primary key
+// the update endpoint needs in its path. Returns 0, nil when no row
+// matches (caller treats as "not found").
+func resolveRequirementIDByDisplayID(client *aiProjClient, displayID string) (int, error) {
+	q := url.Values{}
+	q.Set("project_id", strconv.Itoa(client.projectID))
+	q.Set("page_size", "1")
+	q.Set("search", displayID)
+	result, err := client.doJSON("GET", "/mcp/requirements?"+q.Encode(), nil)
+	if err != nil {
+		return 0, err
+	}
+	data, _ := result["data"].(map[string]interface{})
+	if data == nil {
+		return 0, nil
+	}
+	rows, ok := data["data"].([]interface{})
+	if !ok {
+		rows, _ = data["requirements"].([]interface{})
+	}
+	for _, r := range rows {
+		row, ok := r.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if did, _ := row["display_id"].(string); did == displayID {
+			if v, ok := row["id"].(float64); ok {
+				return int(v), nil
+			}
+		}
+	}
+	return 0, nil
+}
+
 // RegisterUploadImageToRequirement registers the upload_and_create_requirement tool.
 func RegisterUploadImageToRequirement(cfg config.AIConfig) model.ToolDef {
 	client := newAIProjClient(cfg)

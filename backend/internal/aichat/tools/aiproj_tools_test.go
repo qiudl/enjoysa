@@ -358,3 +358,150 @@ func TestMapKeys(t *testing.T) {
 		t.Errorf("expected 2 keys, got %d", len(keys))
 	}
 }
+
+// === REQ-20260506-0062: update_requirement tests ===========================
+
+// recordedUpdateRequest captures both the path/method/query AND the body so
+// update tests can assert on the PATCH payload (not just on URL shape).
+type recordedUpdateRequest struct {
+	method string
+	path   string
+	body   map[string]interface{}
+}
+
+// setupUpdateAIProjServer routes both PATCH (the actual update) and GET
+// (the display_id → numeric id resolution) to the same recording handler so
+// a single test can drive the resolve-then-patch flow end to end.
+func setupUpdateAIProjServer(t *testing.T, listResponse interface{}, patchResponse interface{}) (*httptest.Server, *recordedUpdateRequest) {
+	t.Helper()
+	rec := &recordedUpdateRequest{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case http.MethodGet:
+			// display_id → id resolution lookup
+			_ = json.NewEncoder(w).Encode(listResponse)
+		case http.MethodPatch:
+			rec.method = r.Method
+			rec.path = r.URL.Path
+			body := map[string]interface{}{}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			rec.body = body
+			_ = json.NewEncoder(w).Encode(patchResponse)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv, rec
+}
+
+func runUpdateRequirement(t *testing.T, srvURL string, args map[string]interface{}) (interface{}, error) {
+	t.Helper()
+	tool := RegisterUpdateRequirement(config.AIConfig{
+		AIProjBase:   srvURL,
+		AIProjToken:  "test-token",
+		AIProjProjID: 167,
+	})
+	return tool.Handler(model.ToolContext{Language: "zh"}, args)
+}
+
+func TestUpdateRequirement_RejectsCallWithNoIdentifier(t *testing.T) {
+	srv, _ := setupUpdateAIProjServer(t, nil, nil)
+	_, err := runUpdateRequirement(t, srv.URL, map[string]interface{}{
+		"priority": "high",
+	})
+	if err == nil {
+		t.Fatal("expected error when display_id and id both missing")
+	}
+	if !strings.Contains(err.Error(), "display_id") {
+		t.Errorf("error should mention identifier requirement, got: %v", err)
+	}
+}
+
+func TestUpdateRequirement_RejectsEmptyPatch(t *testing.T) {
+	srv, _ := setupUpdateAIProjServer(t, nil, nil)
+	_, err := runUpdateRequirement(t, srv.URL, map[string]interface{}{
+		"id": float64(2502),
+	})
+	if err == nil {
+		t.Fatal("expected error when no fields to update")
+	}
+	if !strings.Contains(err.Error(), "可更新") {
+		t.Errorf("error should mention nothing to update, got: %v", err)
+	}
+}
+
+func TestUpdateRequirement_PatchesBodyAndPath(t *testing.T) {
+	patchResp := map[string]interface{}{
+		"success": true,
+		"data":    map[string]interface{}{"display_id": "REQ-20260509-0004"},
+	}
+	srv, rec := setupUpdateAIProjServer(t, nil, patchResp)
+
+	out, err := runUpdateRequirement(t, srv.URL, map[string]interface{}{
+		"id":       float64(2502),
+		"priority": "high",
+		"tags":     []interface{}{"hot", "blocker"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rec.path != "/mcp/requirements/2502" {
+		t.Errorf("expected path /mcp/requirements/2502, got %q", rec.path)
+	}
+	updates, _ := rec.body["updates"].(map[string]interface{})
+	if updates["priority"] != "high" {
+		t.Errorf("priority not in updates: %#v", updates)
+	}
+	tags, _ := updates["tags"].([]interface{})
+	if len(tags) != 2 || tags[0] != "hot" {
+		t.Errorf("tags not preserved through marshal: %#v", updates["tags"])
+	}
+
+	// Empty title arg should NOT appear in the patch — keeps the LLM
+	// from accidentally blanking a field by passing an empty string.
+	if _, present := updates["title"]; present {
+		t.Error("empty title should be dropped from patch, but appeared in body")
+	}
+
+	resp, _ := out.(map[string]interface{})
+	if resp["action"] != "updated" {
+		t.Errorf("expected action=updated, got %v", resp["action"])
+	}
+	if resp["display_id"] != "REQ-20260509-0004" {
+		t.Errorf("display_id should echo server response, got %v", resp["display_id"])
+	}
+}
+
+func TestUpdateRequirement_ResolvesDisplayIdToNumericId(t *testing.T) {
+	listResp := map[string]interface{}{
+		"success": true,
+		"data": map[string]interface{}{
+			"data": []interface{}{
+				map[string]interface{}{
+					"id":         float64(2502),
+					"display_id": "REQ-20260509-0004",
+				},
+			},
+			"total": float64(1),
+		},
+	}
+	patchResp := map[string]interface{}{
+		"success": true,
+		"data":    map[string]interface{}{"display_id": "REQ-20260509-0004"},
+	}
+	srv, rec := setupUpdateAIProjServer(t, listResp, patchResp)
+
+	_, err := runUpdateRequirement(t, srv.URL, map[string]interface{}{
+		"display_id": "REQ-20260509-0004",
+		"priority":   "high",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rec.path != "/mcp/requirements/2502" {
+		t.Errorf("display_id should resolve to numeric id 2502, got path %q", rec.path)
+	}
+}
