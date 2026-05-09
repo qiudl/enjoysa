@@ -625,6 +625,11 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/products/:id/approve", adminHandler.ApproveProduct)
 		adminGroup.POST("/products/:id/reject", adminHandler.RejectProduct)
 
+		// REQ-20260509-0035 Phase 2: 轻量改库存，绕开 UpdateProduct 的
+		// delete-recreate 重型流程（不触发翻译/审核重置）。让运营在列表页
+		// 一键调整 stock_total。
+		adminGroup.PATCH("/products/:id/packages/:pkgId/stock", adminHandler.UpdatePackageStock)
+
 		// REQ-20260509-0019: 批量审核 + 待审计数。Cap 50 / 请求；返回 per-item
 		// status 让前端能显示哪些跳过、哪些成功。pending-counts 给 admin 主页
 		// 徽章用（PR-C 接入），仅严格 status=pending。

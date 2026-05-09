@@ -991,6 +991,13 @@
     "validationError": "输入有误，请检查"
   },
   "admin": {
+    "stockAdjust": {
+      "title": "调整库存",
+      "noPackages": "该商品没有套餐",
+      "sold": "已售 {{n}}",
+      "invalidNumber": "请输入有效的数字",
+      "belowSold": "不能低于已售数量。先取消订单释放已售数。"
+    },
     "menu": {
       "dashboard": "控制台",
       "suppliers": "供应商管理",
@@ -1388,7 +1395,8 @@
         "reject": "驳回",
         "create": "新建产品",
         "edit": "编辑",
-        "delete": "删除"
+        "delete": "删除",
+        "adjustStock": "调整库存"
       },
       "deleteConfirm": "确定要删除产品「{{name}}」吗？此操作不可撤销。",
       "form": {

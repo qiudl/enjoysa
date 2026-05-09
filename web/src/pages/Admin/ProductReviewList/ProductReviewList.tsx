@@ -7,6 +7,7 @@ import type { ProductReviewStatsData } from '../../../components/Admin/ProductRe
 import { ProductReviewTable } from '../../../components/Admin/ProductReviewTable';
 import type { ProductReview, ProductReviewStatus } from '../../../components/Admin/ProductReviewTable';
 import { ProductReviewDetail } from '../../../components/Admin/ProductReviewDetail';
+import { StockAdjustModal } from '../../../components/Admin/StockAdjustModal';
 import { adminService, type ApiAdminProduct, type BatchProductOpResponse } from '../../../services/adminService';
 import styles from './ProductReviewList.module.css';
 
@@ -62,6 +63,8 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductReview | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  // REQ-20260509-0035 Phase 2: 列表页直接调库存 modal
+  const [stockModalProduct, setStockModalProduct] = useState<ProductReview | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -248,6 +251,11 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
     } catch { /* ignore */ }
   };
 
+  // REQ-20260509-0035 Phase 2
+  const handleAdjustStock = (product: ProductReview) => {
+    setStockModalProduct(product);
+  };
+
   const from = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const to = Math.min(currentPage * PAGE_SIZE, totalItems);
 
@@ -365,6 +373,7 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
         onReject={(p) => handleReject(p, '')}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onAdjustStock={handleAdjustStock}
       />
 
       {/* Pagination */}
@@ -421,6 +430,15 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
         onClose={() => setDetailOpen(false)}
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      {/* REQ-20260509-0035 Phase 2: 库存快速调整 modal */}
+      <StockAdjustModal
+        productId={stockModalProduct ? Number(stockModalProduct.id) : null}
+        productName={stockModalProduct?.name}
+        open={stockModalProduct !== null}
+        onClose={() => setStockModalProduct(null)}
+        onSaved={() => loadData(currentPage)}
       />
 
       {/*
