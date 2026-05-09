@@ -917,7 +917,9 @@
     "loading": "加载中...",
     "sidebar": {
       "aria": "频道导航",
-      "channels": "频道列表"
+      "channels": "频道列表",
+      "channelsHeading": "频道",
+      "newChannel": "新建频道"
     },
     "empty": {
       "noChannel": "请从左侧选择一个频道开始对话",
@@ -941,6 +943,28 @@
       "alsoInChannel": "同时发送到频道",
       "composerPlaceholder": "在主题里回复...",
       "composerAria": "主题回复输入框"
+    },
+    "createChannel": {
+      "title": "新建频道",
+      "close": "关闭",
+      "nameLabel": "频道名称",
+      "namePlaceholder": "API-技术",
+      "descriptionLabel": "频道描述",
+      "descriptionPlaceholder": "聊些什么？(可选)",
+      "agentsLabel": "频道成员",
+      "agentsHint": "至少选 1 个；首位为默认应答 agent",
+      "makeDefault": "设为默认",
+      "defaultBadge": "默认",
+      "keywordsLabel": "关键词规则（可选）",
+      "keywordsPlaceholder": "api, bug, 报错",
+      "keywordsHint": "用逗号分隔；命中后软提示切到本频道",
+      "submit": "创建",
+      "submitting": "创建中...",
+      "cancel": "取消"
+    },
+    "mention": {
+      "aria": "提及候选",
+      "nonMember": "非成员"
     }
   },
   "shop": {

@@ -1,24 +1,26 @@
 /**
- * ChannelSidebar — REQ-20260509-0037 dev-8.
+ * ChannelSidebar — REQ-20260509-0037 dev-8 + dev-10.
  *
- * Left rail: workspace header + scrollable channel list. Each row shows
- * `#name`, the channel description (one-line truncated), and small colored
- * dots for the agent members. Active channel is highlighted; clicking a
- * row routes through GroupChatContext.selectChannel.
+ * Left rail: workspace header + scrollable channel list + "+" button to open
+ * CreateChannelModal (dev-10). Each channel row shows `#name`, agent color
+ * dots, and active-state highlight; clicking routes through selectChannel.
  *
- * Defers (dev-9 / dev-10):
- *   - "+ New channel" button → CreateChannelModal
+ * Defers (post-dev-10):
  *   - Unread red dot
  *   - Archive UI
  */
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
 
 import { useGroupChat } from '../../../contexts/GroupChatContext';
+import { CreateChannelModal } from './CreateChannelModal';
 import styles from './ChannelSidebar.module.css';
 
 export function ChannelSidebar() {
   const { t } = useTranslation();
   const { workspace, channels, agents, activeChannelId, selectChannel, isBootstrapping } = useGroupChat();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const agentById = new Map(agents.map(a => [a.id, a]));
 
@@ -30,6 +32,19 @@ export function ChannelSidebar() {
           {workspace ? t('groupChat.workspaceLabel', { id: workspace.id }) : t('groupChat.loading')}
         </div>
       </header>
+
+      <div className={styles.channelHeading}>
+        <span>{t('groupChat.sidebar.channelsHeading')}</span>
+        <button
+          type="button"
+          className={styles.newChannelBtn}
+          onClick={() => setShowCreateModal(true)}
+          aria-label={t('groupChat.sidebar.newChannel')}
+          title={t('groupChat.sidebar.newChannel')}
+        >
+          <Plus size={14} aria-hidden />
+        </button>
+      </div>
 
       <nav className={styles.channelList} aria-label={t('groupChat.sidebar.channels')}>
         {isBootstrapping && channels.length === 0 && (
@@ -66,6 +81,13 @@ export function ChannelSidebar() {
           );
         })}
       </nav>
+
+      {showCreateModal && (
+        <CreateChannelModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={id => void selectChannel(id)}
+        />
+      )}
     </aside>
   );
 }

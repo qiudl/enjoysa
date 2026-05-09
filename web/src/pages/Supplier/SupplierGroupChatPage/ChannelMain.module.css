@@ -232,6 +232,60 @@
   padding: 10px 16px 14px;
   border-top: 1px solid #e5e7eb;
   background: #fff;
+  position: relative;
+}
+
+.mentionDropdown {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 16px;
+  right: 16px;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.mentionRow {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  color: #111827;
+  transition: background 0.1s ease;
+}
+
+.mentionRow:hover,
+.mentionRowActive {
+  background: #eff6ff;
+}
+
+.mentionName {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nonMemberTag {
+  font-size: 10px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 999px;
 }
 
 .composerInput {

@@ -917,7 +917,9 @@
     "loading": "Loading...",
     "sidebar": {
       "aria": "Channel navigation",
-      "channels": "Channels"
+      "channels": "Channels",
+      "channelsHeading": "Channels",
+      "newChannel": "New channel"
     },
     "empty": {
       "noChannel": "Pick a channel from the left to start chatting",
@@ -941,6 +943,28 @@
       "alsoInChannel": "Also send to channel",
       "composerPlaceholder": "Reply in thread...",
       "composerAria": "Thread reply input"
+    },
+    "createChannel": {
+      "title": "New channel",
+      "close": "Close",
+      "nameLabel": "Channel name",
+      "namePlaceholder": "api-tech",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What's this channel about? (optional)",
+      "agentsLabel": "Members",
+      "agentsHint": "Pick at least 1 — the first is the default responder",
+      "makeDefault": "Make default",
+      "defaultBadge": "Default",
+      "keywordsLabel": "Keyword rules (optional)",
+      "keywordsPlaceholder": "api, bug, error",
+      "keywordsHint": "Comma-separated; hits prompt to switch here",
+      "submit": "Create",
+      "submitting": "Creating...",
+      "cancel": "Cancel"
+    },
+    "mention": {
+      "aria": "Mention suggestions",
+      "nonMember": "non-member"
     }
   },
   "shop": {
