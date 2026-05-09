@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { adminService } from '../../../services/adminService';
 import {
   LayoutDashboard,
   Building2,
@@ -90,6 +91,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // REQ-20260509-0019: pending counts powering the Products nav badge.
+  // 5min poll keeps DB pressure trivial (single COUNT WHERE status=...);
+  // dropping a count badge to zero auto-clears next tick. Failed lookups
+  // leave the badge stale rather than removing it — better than misleading.
+  const [pendingProducts, setPendingProducts] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const r = await adminService.getPendingCounts();
+        if (!cancelled) setPendingProducts(r.products ?? 0);
+      } catch {
+        // leave stale; admin will see updated value when next poll succeeds
+      }
+    };
+    fetchCounts();
+    const id = window.setInterval(fetchCounts, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate('/admin/login');
@@ -156,22 +180,38 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         {/* Navigation */}
         <nav className={styles.nav}>
-          {filteredMenuItems.map((item) => (
-            <button
-              key={item.key}
-              className={`${styles.navItem} ${isActiveRoute(item.path) ? styles.active : ''}`}
-              onClick={() => {
-                navigate(item.path);
-                setMobileMenuOpen(false);
-              }}
-              title={sidebarCollapsed ? t(item.labelKey) : undefined}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              {!sidebarCollapsed && (
-                <span className={styles.navLabel}>{t(item.labelKey)}</span>
-              )}
-            </button>
-          ))}
+          {filteredMenuItems.map((item) => {
+            const showBadge = item.key === 'products' && pendingProducts !== null && pendingProducts > 0;
+            return (
+              <button
+                key={item.key}
+                className={`${styles.navItem} ${isActiveRoute(item.path) ? styles.active : ''}`}
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileMenuOpen(false);
+                }}
+                title={sidebarCollapsed ? t(item.labelKey) : undefined}
+              >
+                <span className={styles.navIcon}>
+                  {item.icon}
+                  {showBadge && (
+                    <span
+                      className={styles.navIconBadge}
+                      title={t('admin.menu.pendingReview', {
+                        defaultValue: '{{count}} awaiting review',
+                        count: pendingProducts,
+                      })}
+                    >
+                      {pendingProducts! > 99 ? '99+' : pendingProducts}
+                    </span>
+                  )}
+                </span>
+                {!sidebarCollapsed && (
+                  <span className={styles.navLabel}>{t(item.labelKey)}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Sidebar Footer */}
