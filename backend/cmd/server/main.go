@@ -70,6 +70,14 @@ func main() {
 	// Set gin mode
 	gin.SetMode(cfg.Server.Mode)
 
+	// REQ-20260509-0034: fail-fast on missing Stripe key in prod.
+	// Historical bug: server happily booted with pg=nil and silently rejected
+	// every payment with "Payment not configured". Crashing on boot makes
+	// missing config impossible to miss in CI/deploy.
+	if cfg.Server.Mode == gin.ReleaseMode && cfg.Stripe.SecretKey == "" {
+		logger.Fatalf("STRIPE secret key missing in release mode — set ENJOYSA_STRIPE_SECRET")
+	}
+
 	// Init database
 	db, err := database.Init(cfg.Database)
 	if err != nil {

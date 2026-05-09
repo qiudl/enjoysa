@@ -11,6 +11,10 @@ type Response struct {
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
+	// Code: machine-readable error identifier (REQ-20260509-0034). Frontend can
+	// branch on this without parsing localized Error strings. Optional — old
+	// helpers don't emit it; new structured helpers do.
+	Code string `json:"code,omitempty"`
 }
 
 type PaginatedData struct {
@@ -74,6 +78,18 @@ func ServerError(c *gin.Context, message string) {
 	c.JSON(http.StatusInternalServerError, Response{
 		Success: false,
 		Error:   message,
+	})
+}
+
+// Fail emits a structured error with explicit HTTP status, machine-readable
+// code, and human message (REQ-20260509-0034). Use when the frontend needs
+// to branch on the error type — e.g. PAYMENT_DISABLED vs STRIPE_ERROR vs
+// ORDER_INVALID — without parsing localized error text.
+func Fail(c *gin.Context, status int, code, message string) {
+	c.JSON(status, Response{
+		Success: false,
+		Error:   message,
+		Code:    code,
 	})
 }
 

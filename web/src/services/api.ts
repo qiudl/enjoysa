@@ -20,6 +20,9 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   error?: string;
+  // REQ-20260509-0034: machine-readable error code from response.Fail.
+  // Frontend branches on this for tailored error UX (e.g. PAYMENT_DISABLED).
+  code?: string;
 }
 
 // 分页响应
@@ -232,6 +235,7 @@ async function requestWithRetry<T>(
     throw new ApiError(
       data.error || data.message || 'Request failed',
       response.status,
+      data.code,
     );
   }
 

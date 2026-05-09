@@ -286,6 +286,11 @@
     "continueShopping": "继续购物",
     "packageName": "套餐",
     "timeSlot": "时段",
+    "orderFailed": "下单失败：{{detail}}",
+    "payment": {
+      "disabled": "支付服务暂时不可用，请稍后再试或联系客服",
+      "failed": "无法跳转支付页面：{{detail}}"
+    },
     "errors": {
       "firstNameRequired": "请输入名字",
       "lastNameRequired": "请输入姓氏",
@@ -313,6 +318,7 @@
     "payNow": "立即支付",
     "viewDetails": "查看详情",
     "cancelOrder": "取消订单",
+    "cancelFailed": "取消订单失败：{{detail}}",
     "confirmCancel": "确认取消订单？",
     "cancelReason": "取消原因",
     "requestRefund": "申请退款",
