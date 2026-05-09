@@ -240,7 +240,11 @@
     "selectTimeSlot": "Select Time Slot",
     "unitPrice": "Unit Price",
     "slotsRemaining": "remaining",
-    "allDatesSoldOut": "All dates sold out for this package"
+    "allDatesSoldOut": "All dates sold out for this package",
+    "stock": {
+      "remaining": "Only {{count}} left",
+      "soldOut": "Sold out"
+    }
   },
   "tags": {
     "hot": "Hot",
@@ -287,6 +291,9 @@
     "packageName": "Package",
     "timeSlot": "Time Slot",
     "orderFailed": "Order failed: {{detail}}",
+    "orderError": {
+      "insufficientStock": "Not enough stock — please reduce quantity or pick another package."
+    },
     "payment": {
       "disabled": "Payment is temporarily unavailable. Please try again later or contact support.",
       "failed": "Could not open payment page: {{detail}}"
@@ -2173,6 +2180,9 @@
       "packageDescZh": "Description (Chinese)",
       "packageDescEn": "Description (English)",
       "packagePrice": "Price (AUD)",
+      "packageStock": "Stock",
+      "packageStockUnlimited": "Unlimited",
+      "packageStockSold": "Sold {{sold}} / Total {{total}}",
       "noPackages": "No packages yet, click the button above to add",
       "highlights": "Highlights",
       "addHighlight": "Add Highlight",

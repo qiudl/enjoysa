@@ -52,6 +52,10 @@ export interface PackagePayload {
   desc_en?: string;
   price: number;
   sort_order?: number;
+  // REQ-20260509-0035: stock_total = -1 表示无限量；不传时后端按 -1 处理。
+  // stock_sold 由后端维护，编辑表单会把它当作只读展示。
+  stock_total?: number;
+  stock_sold?: number;
 }
 
 export interface HighlightPayload {

@@ -380,9 +380,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     } catch (err) {
       // REQ-20260509-0034: surface order-creation failures instead of
       // silently leaving the user staring at a stuck "Submitting…" button.
+      // REQ-20260509-0035: 库存不足走专属文案。
       console.error('[Checkout] order create failed', err);
+      const code = err instanceof ApiError ? err.code : undefined;
       const detail = err instanceof Error ? err.message : String(err);
-      alert(t('checkout.orderFailed', '下单失败：{{detail}}', { detail }));
+      const message = code === 'INSUFFICIENT_STOCK'
+        ? t('checkout.orderError.insufficientStock', '库存不足，请减少购买数量或选择其他套餐')
+        : t('checkout.orderFailed', '下单失败：{{detail}}', { detail });
+      alert(message);
     } finally {
       setSubmitting(false);
     }

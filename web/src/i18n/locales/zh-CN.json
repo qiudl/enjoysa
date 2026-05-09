@@ -240,7 +240,11 @@
     "selectTimeSlot": "选择时段",
     "unitPrice": "单价",
     "slotsRemaining": "余位",
-    "allDatesSoldOut": "该套餐所有日期已售罄"
+    "allDatesSoldOut": "该套餐所有日期已售罄",
+    "stock": {
+      "remaining": "仅剩 {{count}} 份",
+      "soldOut": "已售罄"
+    }
   },
   "tags": {
     "hot": "热卖",
@@ -287,6 +291,9 @@
     "packageName": "套餐",
     "timeSlot": "时段",
     "orderFailed": "下单失败：{{detail}}",
+    "orderError": {
+      "insufficientStock": "库存不足，请减少购买数量或选择其他套餐"
+    },
     "payment": {
       "disabled": "支付服务暂时不可用，请稍后再试或联系客服",
       "failed": "无法跳转支付页面：{{detail}}"
@@ -2168,6 +2175,9 @@
       "packageDescZh": "套餐说明（中文）",
       "packageDescEn": "套餐说明（英文）",
       "packagePrice": "价格（AUD）",
+      "packageStock": "库存",
+      "packageStockUnlimited": "无限量",
+      "packageStockSold": "已售 {{sold}} / 总 {{total}}",
       "noPackages": "暂无套餐，点击上方按钮添加",
       "highlights": "产品亮点",
       "addHighlight": "添加亮点",

@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,6 +15,13 @@ import (
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+// REQ-20260509-0035: structured order error codes — frontend branches on
+// these for tailored toast text.
+const (
+	codeInsufficientStock = "INSUFFICIENT_STOCK"
 )
 
 type OrderHandler struct {
@@ -155,7 +164,28 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		order.ContactEmail = user.Email
 	}
 
-	if err := h.orderStore.Create(order); err != nil {
+	// REQ-20260509-0035: 库存预扣 + 订单创建放进同一事务，避免超卖。
+	// SELECT FOR UPDATE 风格的条件 UPDATE 在 DecrementPackageStock 内部处理。
+	// stock_total = -1 的历史商品自动跳过库存校验（无限量），零回归。
+	// 注意：schedule slot dec 保留原行为不在 tx 内（status quo，超出本期范围）。
+	err = h.productStore.DB().Transaction(func(tx *gorm.DB) error {
+		if err := h.productStore.DecrementPackageStock(tx, req.PackageID, req.Quantity); err != nil {
+			return err
+		}
+		return tx.Create(order).Error
+	})
+	if errors.Is(err, productstore.ErrInsufficientStock) {
+		// schedule 已经预占了 slot，需要回补，否则那个 slot 永远 leak
+		if req.ScheduleID != nil {
+			h.scheduleStore.IncrementSlot(*req.ScheduleID, req.Quantity)
+		}
+		response.Fail(c, http.StatusUnprocessableEntity, codeInsufficientStock, "Not enough stock for this package")
+		return
+	}
+	if err != nil {
+		if req.ScheduleID != nil {
+			h.scheduleStore.IncrementSlot(*req.ScheduleID, req.Quantity)
+		}
 		response.ServerError(c, "Failed to create order")
 		return
 	}
@@ -276,6 +306,14 @@ func (h *OrderHandler) CancelOrder(c *gin.Context) {
 	// Release schedule slots if applicable
 	if order.ScheduleID != nil {
 		h.scheduleStore.IncrementSlot(*order.ScheduleID, order.Quantity)
+	}
+
+	// REQ-20260509-0035: refund package stock so the seat opens back up.
+	// stock_total = -1 (unlimited) packages skip refund automatically (the
+	// store-level WHERE clause filters them out). GREATEST(0) guard prevents
+	// negative stock_sold under stale data.
+	if order.PackageID > 0 {
+		_ = h.productStore.IncrementPackageStock(nil, order.PackageID, order.Quantity)
 	}
 
 	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{

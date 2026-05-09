@@ -137,6 +137,15 @@ type CreateImageRequest struct {
 	IsCover   bool   `json:"is_cover"`
 }
 
+// StockTotalOrUnlimited (REQ-20260509-0035): missing pointer = -1 (unlimited),
+// preserves backwards compatibility for clients that don't send the field.
+func StockTotalOrUnlimited(p *int) int {
+	if p == nil {
+		return -1
+	}
+	return *p
+}
+
 type CreatePackageRequest struct {
 	NameZh    string  `json:"name_zh" binding:"required"`
 	NameEn    string  `json:"name_en" binding:"required"`
@@ -144,6 +153,9 @@ type CreatePackageRequest struct {
 	DescEn    string  `json:"desc_en"`
 	Price     float64 `json:"price" binding:"required"`
 	SortOrder int     `json:"sort_order"`
+	// REQ-20260509-0035: stock_total. -1 = 无限量。前端不发即默认 -1（不限量
+	// 兼容历史商品，零回归）。stock_sold 不在请求里——服务端自己维护。
+	StockTotal *int `json:"stock_total,omitempty"`
 }
 
 type CreateHighlightRequest struct {
@@ -209,12 +221,14 @@ func (h *SupplierProductHandler) CreateProduct(c *gin.Context) {
 	}
 	for _, pkg := range req.Packages {
 		product.Packages = append(product.Packages, model.ProductPackage{
-			NameZh:    pkg.NameZh,
-			NameEn:    pkg.NameEn,
-			DescZh:    pkg.DescZh,
-			DescEn:    pkg.DescEn,
-			Price:     pkg.Price,
-			SortOrder: pkg.SortOrder,
+			NameZh:     pkg.NameZh,
+			NameEn:     pkg.NameEn,
+			DescZh:     pkg.DescZh,
+			DescEn:     pkg.DescEn,
+			Price:      pkg.Price,
+			SortOrder:  pkg.SortOrder,
+			StockTotal: StockTotalOrUnlimited(pkg.StockTotal),
+			// StockSold defaults to 0 for new packages (REQ-20260509-0035)
 		})
 	}
 	for _, hl := range req.Highlights {
@@ -321,6 +335,17 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 		product.Tags = req.Tags
 	}
 
+	// REQ-20260509-0035: snapshot stock_sold by (name_zh, name_en) fingerprint
+	// before delete-recreate so admin/supplier edits don't zero out actual sales.
+	// Limitation: 重命名 package 会丢失 stock_sold（fingerprint 不再匹配）——
+	// Phase 2 改成 update-in-place 时移除该 limitation。
+	oldStockSold := make(map[string]int, len(product.Packages))
+	for _, p := range product.Packages {
+		if p.StockTotal != -1 {
+			oldStockSold[p.NameZh+"|"+p.NameEn] = p.StockSold
+		}
+	}
+
 	// Delete old related and re-create
 	h.productStore.DeleteRelated(product.ID)
 
@@ -338,15 +363,20 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 		})
 	}
 	for _, pkg := range req.Packages {
-		product.Packages = append(product.Packages, model.ProductPackage{
-			ProductID: product.ID,
-			NameZh:    pkg.NameZh,
-			NameEn:    pkg.NameEn,
-			DescZh:    pkg.DescZh,
-			DescEn:    pkg.DescEn,
-			Price:     pkg.Price,
-			SortOrder: pkg.SortOrder,
-		})
+		newPkg := model.ProductPackage{
+			ProductID:  product.ID,
+			NameZh:     pkg.NameZh,
+			NameEn:     pkg.NameEn,
+			DescZh:     pkg.DescZh,
+			DescEn:     pkg.DescEn,
+			Price:      pkg.Price,
+			SortOrder:  pkg.SortOrder,
+			StockTotal: StockTotalOrUnlimited(pkg.StockTotal),
+		}
+		if sold, ok := oldStockSold[pkg.NameZh+"|"+pkg.NameEn]; ok {
+			newPkg.StockSold = sold
+		}
+		product.Packages = append(product.Packages, newPkg)
 	}
 	for _, hl := range req.Highlights {
 		product.Highlights = append(product.Highlights, model.ProductHighlight{

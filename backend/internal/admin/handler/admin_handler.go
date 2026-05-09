@@ -1361,12 +1361,13 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 	}
 	for _, pkg := range req.Packages {
 		product.Packages = append(product.Packages, productmodel.ProductPackage{
-			NameZh:    pkg.NameZh,
-			NameEn:    pkg.NameEn,
-			DescZh:    pkg.DescZh,
-			DescEn:    pkg.DescEn,
-			Price:     pkg.Price,
-			SortOrder: pkg.SortOrder,
+			NameZh:     pkg.NameZh,
+			NameEn:     pkg.NameEn,
+			DescZh:     pkg.DescZh,
+			DescEn:     pkg.DescEn,
+			Price:      pkg.Price,
+			SortOrder:  pkg.SortOrder,
+			StockTotal: producthandler.StockTotalOrUnlimited(pkg.StockTotal), // REQ-20260509-0035
 		})
 	}
 	for _, hl := range req.Highlights {
@@ -1498,6 +1499,15 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		product.IsFeatured = *req.IsFeatured
 	}
 
+	// REQ-20260509-0035: snapshot stock_sold by (name_zh, name_en) fingerprint
+	// before delete-recreate so admin edits don't zero out actual sales.
+	oldStockSold := make(map[string]int, len(product.Packages))
+	for _, p := range product.Packages {
+		if p.StockTotal != -1 {
+			oldStockSold[p.NameZh+"|"+p.NameEn] = p.StockSold
+		}
+	}
+
 	// Delete old related and re-create
 	h.productStore.DeleteRelated(product.ID)
 
@@ -1515,15 +1525,20 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		})
 	}
 	for _, pkg := range req.Packages {
-		product.Packages = append(product.Packages, productmodel.ProductPackage{
-			ProductID: product.ID,
-			NameZh:    pkg.NameZh,
-			NameEn:    pkg.NameEn,
-			DescZh:    pkg.DescZh,
-			DescEn:    pkg.DescEn,
-			Price:     pkg.Price,
-			SortOrder: pkg.SortOrder,
-		})
+		newPkg := productmodel.ProductPackage{
+			ProductID:  product.ID,
+			NameZh:     pkg.NameZh,
+			NameEn:     pkg.NameEn,
+			DescZh:     pkg.DescZh,
+			DescEn:     pkg.DescEn,
+			Price:      pkg.Price,
+			SortOrder:  pkg.SortOrder,
+			StockTotal: producthandler.StockTotalOrUnlimited(pkg.StockTotal),
+		}
+		if sold, ok := oldStockSold[pkg.NameZh+"|"+pkg.NameEn]; ok {
+			newPkg.StockSold = sold
+		}
+		product.Packages = append(product.Packages, newPkg)
 	}
 	for _, hl := range req.Highlights {
 		product.Highlights = append(product.Highlights, productmodel.ProductHighlight{

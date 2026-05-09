@@ -9,6 +9,7 @@ import (
 	ordermodel "enjoysa-backend/internal/order/model"
 	"enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
+	productstore "enjoysa-backend/internal/product/store"
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +17,14 @@ import (
 
 type SupplierOrderHandler struct {
 	orderStore     *store.OrderStore
+	productStore   *productstore.ProductStore
 	paymentGateway gateway.PaymentGateway
 }
 
-func NewSupplierOrderHandler(orderStore *store.OrderStore, paymentGateway gateway.PaymentGateway) *SupplierOrderHandler {
+func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *productstore.ProductStore, paymentGateway gateway.PaymentGateway) *SupplierOrderHandler {
 	return &SupplierOrderHandler{
 		orderStore:     orderStore,
+		productStore:   productStore,
 		paymentGateway: paymentGateway,
 	}
 }
@@ -176,6 +179,11 @@ func (h *SupplierOrderHandler) RejectOrder(c *gin.Context) {
 	if err := h.orderStore.Update(order); err != nil {
 		response.ServerError(c, "Failed to reject order")
 		return
+	}
+
+	// REQ-20260509-0035: refund package stock when supplier rejects.
+	if order.PackageID > 0 && h.productStore != nil {
+		_ = h.productStore.IncrementPackageStock(nil, order.PackageID, order.Quantity)
 	}
 
 	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{

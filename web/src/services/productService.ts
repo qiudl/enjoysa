@@ -24,6 +24,9 @@ export interface ApiProductPackage {
   desc_zh: string;
   desc_en: string;
   price: number;
+  // REQ-20260509-0035: -1 = 无限量；前端按 (stock_total - stock_sold) 算 remaining。
+  stock_total?: number;
+  stock_sold?: number;
 }
 
 // 后端产品亮点
