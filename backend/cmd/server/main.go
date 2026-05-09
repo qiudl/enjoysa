@@ -70,12 +70,12 @@ func main() {
 	// Set gin mode
 	gin.SetMode(cfg.Server.Mode)
 
-	// REQ-20260509-0034: fail-fast on missing Stripe key in prod.
-	// Historical bug: server happily booted with pg=nil and silently rejected
-	// every payment with "Payment not configured". Crashing on boot makes
-	// missing config impossible to miss in CI/deploy.
+	// REQ-20260509-0034: prod 启动时若 Stripe key 缺失，**响亮警告但不 panic**。
+	// 之前 Fatalf 让 prod 撞墙起不来（key 历史就空，pg=nil 一直依赖前端 silent
+	// fall-through 兜住）。前端现已能弹 PAYMENT_DISABLED toast，所以不必再用
+	// "宁可不起" 的策略。一旦 prod 配上真实 key，可改回 Fatalf。
 	if cfg.Server.Mode == gin.ReleaseMode && cfg.Stripe.SecretKey == "" {
-		logger.Fatalf("STRIPE secret key missing in release mode — set ENJOYSA_STRIPE_SECRET")
+		logger.Errorf("⚠️  STRIPE secret key missing in release mode — payment endpoints will return 503 PAYMENT_DISABLED. Set ENJOYSA_STRIPE_SECRET to enable.")
 	}
 
 	// Init database
