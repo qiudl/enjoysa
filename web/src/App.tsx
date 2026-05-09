@@ -53,6 +53,9 @@ const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/Sup
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
 const AIChatPage = React.lazy(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
+// REQ-20260509-0037 dev-8: new 3-col group chat (workspace + channels + threads).
+// Coexists with the legacy /supplier/ai-chat until dev-9/10 land thread panel + create modal.
+const SupplierGroupChatPage = React.lazy(() => import('./pages/Supplier/SupplierGroupChatPage/SupplierGroupChatPage'));
 
 // Wrapper that pulls the :id route param and forwards it to AIChatPage so
 // Feishu share-card links like /admin/ai-chat/sessions/9 auto-load that
@@ -1350,6 +1353,9 @@ function App() {
         <Route path="/supplier/products/:id/preview" element={<SupplierAuthGuard><SupplierProductPreviewPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/ai-chat" element={<SupplierAuthGuard><AIChatPage role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
         <Route path="/supplier/ai-chat/sessions/:id" element={<SupplierAuthGuard><AIChatPageWithRouteSession role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
+        {/* REQ-20260509-0037 dev-8: new group-chat (workspace + channels). */}
+        <Route path="/supplier/chat" element={<SupplierAuthGuard><SupplierGroupChatPage /></SupplierAuthGuard>} />
+        <Route path="/supplier/chat/:slug" element={<SupplierAuthGuard><SupplierGroupChatPage /></SupplierAuthGuard>} />
 
         {/* 平台管理端 - 登录页无需保护 */}
         <Route path="/admin/login" element={<AdminLoginPageWrapper />} />

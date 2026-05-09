@@ -214,7 +214,7 @@
     "available": "Available",
     "limited": "Limited Availability",
     "soldOut": "Sold Out",
-    "allDatesSoldOut": "All dates are sold out for this package",
+    "allDatesSoldOut": "All dates sold out for this package",
     "addToCart": "Add to Cart",
     "buyNow": "Book Now",
     "addToFavorites": "Add to Favorites",
@@ -240,7 +240,6 @@
     "selectTimeSlot": "Select Time Slot",
     "unitPrice": "Unit Price",
     "slotsRemaining": "remaining",
-    "allDatesSoldOut": "All dates sold out for this package",
     "stock": {
       "remaining": "Only {{count}} left",
       "soldOut": "Sold out"
@@ -896,6 +895,28 @@
       "failure": "Send failed, please retry",
       "retry": "Retry",
       "empty": "No messages to share"
+    }
+  },
+  "groupChat": {
+    "brand": "EnjoySA AI Workspace",
+    "workspaceLabel": "Workspace #{{id}}",
+    "loading": "Loading...",
+    "sidebar": {
+      "aria": "Channel navigation",
+      "channels": "Channels"
+    },
+    "empty": {
+      "noChannel": "Pick a channel from the left to start chatting",
+      "noMessages": "No messages here yet — say hi 👋"
+    },
+    "streaming": {
+      "responder": "AI is replying"
+    },
+    "composer": {
+      "placeholder": "Message #{{channel}} (Enter to send, Shift+Enter for newline)",
+      "aria": "Message input",
+      "send": "Send",
+      "sending": "Sending..."
     }
   },
   "shop": {

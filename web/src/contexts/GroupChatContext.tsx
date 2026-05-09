@@ -132,26 +132,6 @@ export function GroupChatProvider({ userType, children }: GroupChatProviderProps
     setStreaming(next);
   }, []);
 
-  const bootstrap = useCallback(async () => {
-    setIsBootstrapping(true);
-    setLastError(null);
-    try {
-      const ws = await getWorkspace(userType);
-      setWorkspace(ws.workspace);
-      setChannels(ws.channels);
-      setAgents(ws.agents);
-      // Auto-select the default channel on first load if nothing is active.
-      const def = ws.channels.find(c => c.is_default) ?? ws.channels[0];
-      if (def && activeChannelId === null) {
-        setActiveChannelId(def.id);
-      }
-    } catch (err) {
-      setLastError((err as Error).message);
-    } finally {
-      setIsBootstrapping(false);
-    }
-  }, [userType, activeChannelId]);
-
   const loadChannelMessages = useCallback(async (channelId: number, before?: number) => {
     setIsLoadingChannel(prev => ({ ...prev, [channelId]: true }));
     try {
@@ -177,6 +157,29 @@ export function GroupChatProvider({ userType, children }: GroupChatProviderProps
       await loadChannelMessages(channelId);
     }
   }, [messagesByChannel, loadChannelMessages]);
+
+  const bootstrap = useCallback(async () => {
+    setIsBootstrapping(true);
+    setLastError(null);
+    try {
+      const ws = await getWorkspace(userType);
+      setWorkspace(ws.workspace);
+      setChannels(ws.channels);
+      setAgents(ws.agents);
+      // Auto-select the default channel + eagerly load its messages so the
+      // user lands on a populated pane, not an empty one.
+      const def = ws.channels.find(c => c.is_default) ?? ws.channels[0];
+      if (def && activeChannelId === null) {
+        setActiveChannelId(def.id);
+        // Fire-and-forget — bootstrap shouldn't block on the message fetch.
+        void loadChannelMessages(def.id);
+      }
+    } catch (err) {
+      setLastError((err as Error).message);
+    } finally {
+      setIsBootstrapping(false);
+    }
+  }, [userType, activeChannelId, loadChannelMessages]);
 
   const loadThreadReplies = useCallback(async (parentId: number) => {
     setIsLoadingThread(prev => ({ ...prev, [parentId]: true }));
