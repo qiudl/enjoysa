@@ -178,6 +178,25 @@ export interface EnTranslationStatus {
   };
 }
 
+// REQ-20260509-0015: EN→ZH translation status for the admin ChinesePreview
+// panel — mirror of EnTranslationStatus, scoped to *_zh preview fields.
+export type ZhTranslationTaskStatus = 'pending' | 'running' | 'success' | 'failed';
+
+export interface ZhTranslationStatus {
+  task_id: number;
+  direction: 'en2zh';
+  status: ZhTranslationTaskStatus;
+  retries: number;
+  last_error?: string;
+  updated_at: string;
+  preview?: {
+    name_zh?: string;
+    summary_zh?: string;
+    description_zh?: string;
+    address_zh?: string;
+  };
+}
+
 // 后端 Product 响应（admin 列表视图）
 export interface ApiAdminProduct {
   id: number;
@@ -362,6 +381,29 @@ export const adminService = {
   async regenerateEnTranslation(id: number) {
     return post<{ task_id: number; status: string; direction: string }>(
       `/admin/products/${id}/translation-regenerate`,
+      undefined,
+      'admin',
+    );
+  },
+
+  // REQ-20260509-0015: EN→ZH translation for admin-edited products. Mirrors
+  // the ZH→EN trio above, hits zh-translation-* routes, and powers the admin
+  // ChinesePreview panel.
+  async getZhTranslationStatus(id: number) {
+    return get<ZhTranslationStatus>(`/admin/products/${id}/zh-translation-status`, 'admin');
+  },
+
+  async retryZhTranslation(id: number) {
+    return post<{ task_id: number; status: string }>(
+      `/admin/products/${id}/zh-translation-retry`,
+      undefined,
+      'admin',
+    );
+  },
+
+  async regenerateZhTranslation(id: number) {
+    return post<{ task_id: number; status: string; direction: string }>(
+      `/admin/products/${id}/zh-translation-regenerate`,
       undefined,
       'admin',
     );
