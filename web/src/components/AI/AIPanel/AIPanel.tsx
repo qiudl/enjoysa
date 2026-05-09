@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2, Paperclip } from 'lucide-react';
+import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2, Paperclip, PanelRight, PanelLeft, PanelBottom, MessageCircle } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
@@ -18,12 +18,20 @@ import clsx from 'clsx';
 
 export type AIRole = 'supplier' | 'admin';
 type TabKey = 'chat' | 'feed' | 'tools';
+// REQ-20260509-0026: 4 种 layout 模式。'right' 是历史默认；'left'/'bottom'
+// 对偶给经常用右抽屉/底部表单的工作流；'bubble' 复用 C 端 ChatWidget UX。
+export type LayoutMode = 'right' | 'left' | 'bottom' | 'bubble';
+const LAYOUT_MODES: LayoutMode[] = ['right', 'bottom', 'left', 'bubble'];
 
 const STORAGE_KEY = 'enjoysa_ai_panel_collapsed';
 const WIDTH_STORAGE_KEY = 'enjoysa_ai_panel_width';
+const layoutStorageKey = (role: AIRole) => `enjoysa_ai_panel_layout_${role}`;
 const MIN_WIDTH = 300;
 const MAX_WIDTH = 700;
 const DEFAULT_WIDTH = 380;
+const BOTTOM_HEIGHT = 340;
+const COLLAPSED_SIZE = 48;
+const MOBILE_BREAKPOINT = '(max-width: 767px)';
 
 interface AIPanelProps {
   role: AIRole;
@@ -125,6 +133,30 @@ export const AIPanel: React.FC<AIPanelProps> = ({
       return saved ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Number(saved))) : DEFAULT_WIDTH;
     } catch { return DEFAULT_WIDTH; }
   });
+  // REQ-20260509-0026: layout 偏好按角色独立持久化，supplier 和 admin 各自记住。
+  const [layout, setLayoutState] = useState<LayoutMode>(() => {
+    try {
+      const saved = localStorage.getItem(layoutStorageKey(role));
+      if (saved === 'right' || saved === 'left' || saved === 'bottom' || saved === 'bubble') return saved;
+    } catch { /* */ }
+    return 'right';
+  });
+  // 移动端强制 bubble，不污染 desktop 偏好（mq listener 切回 desktop 时恢复保存值）。
+  const [isMobile, setIsMobile] = useState(() => {
+    try { return window.matchMedia(MOBILE_BREAKPOINT).matches; } catch { return false; }
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia(MOBILE_BREAKPOINT);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  const effectiveLayout: LayoutMode = isMobile ? 'bubble' : layout;
+  const setLayout = useCallback((next: LayoutMode) => {
+    setLayoutState(next);
+    try { localStorage.setItem(layoutStorageKey(role), next); } catch { /* */ }
+  }, [role]);
   const [activeTab, setActiveTab] = useState<TabKey>('chat');
   const [input, setInput] = useState('');
   const [isComposing, setIsComposing] = useState(false);
@@ -144,15 +176,17 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     e.target.value = '';
   }, []);
 
-  // Resize handler
+  // Resize handler. REQ-20260509-0026: left layout 把 handle 放在面板右侧，
+  // 拖拽方向相反——拖右 = 加宽（delta = ev - start），拖左 = 减窄。
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
     const startX = e.clientX;
     const startWidth = panelWidth;
+    const isLeftDock = layout === 'left' && !isMobile;
 
     const onMouseMove = (ev: MouseEvent) => {
-      const delta = startX - ev.clientX;
+      const delta = isLeftDock ? (ev.clientX - startX) : (startX - ev.clientX);
       const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
       setPanelWidth(newWidth);
     };
@@ -171,17 +205,27 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [panelWidth]);
+  }, [panelWidth, layout, isMobile]);
 
-  // Sync panel width to CSS custom property for layout margin-right
+  // REQ-20260509-0026: 3 个 CSS var 对应 right/left/bottom 三种 dock layout，
+  // 把 panel 当前占用尺寸暴露给 AdminLayout/SupplierLayout 的 main 内容做让位。
+  // bubble layout 不参与让位（浮动元素），三个 var 全部写 0px。
   useEffect(() => {
-    const width = collapsed ? 48 : panelWidth;
-    document.documentElement.style.setProperty('--ai-panel-width', `${width}px`);
+    const root = document.documentElement;
+    const width = collapsed ? COLLAPSED_SIZE : panelWidth;
+    const height = collapsed ? COLLAPSED_SIZE : BOTTOM_HEIGHT;
+    root.style.setProperty('--ai-panel-width', effectiveLayout === 'right' ? `${width}px` : '0px');
+    root.style.setProperty('--ai-panel-left-width', effectiveLayout === 'left' ? `${width}px` : '0px');
+    root.style.setProperty('--ai-panel-bottom-height', effectiveLayout === 'bottom' ? `${height}px` : '0px');
     if (!isResizing) {
       try { localStorage.setItem(WIDTH_STORAGE_KEY, String(panelWidth)); } catch { /* */ }
     }
-    return () => { document.documentElement.style.removeProperty('--ai-panel-width'); };
-  }, [panelWidth, collapsed, isResizing]);
+    return () => {
+      root.style.removeProperty('--ai-panel-width');
+      root.style.removeProperty('--ai-panel-left-width');
+      root.style.removeProperty('--ai-panel-bottom-height');
+    };
+  }, [effectiveLayout, panelWidth, collapsed, isResizing]);
 
   const togglePanel = useCallback(() => {
     setCollapsed(prev => {
@@ -337,11 +381,21 @@ export const AIPanel: React.FC<AIPanelProps> = ({
 
   return (
     <div
-      className={clsx(styles.panel, collapsed && styles.collapsed)}
-      style={collapsed ? undefined : { width: panelWidth }}
+      className={clsx(
+        styles.panel,
+        styles[effectiveLayout],
+        collapsed && styles.collapsed,
+      )}
+      style={
+        // 仅 right/left dock 模式下 inline width 由用户拖拽控制；
+        // bottom 模式宽度=100vw、bubble 模式尺寸固定，都让 CSS 接管。
+        collapsed || effectiveLayout === 'bottom' || effectiveLayout === 'bubble'
+          ? undefined
+          : { width: panelWidth }
+      }
     >
-      {/* Resize handle */}
-      {!collapsed && (
+      {/* Resize handle: only meaningful for right/left dock and when not collapsed */}
+      {!collapsed && (effectiveLayout === 'right' || effectiveLayout === 'left') && (
         <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
       )}
       {/* Collapsed bar */}
@@ -377,6 +431,32 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             <span className={styles.brandName}>{t('aiPanel.brand', '畅游南澳AI')}</span>
           </div>
           <div className={styles.headerActions}>
+            {/* REQ-20260509-0026: layout 切换器，移动端 disabled（自动 bubble） */}
+            <div className={styles.layoutSwitcher} role="group" aria-label={t('aiPanel.layoutSwitcher', '面板布局') as string}>
+              {LAYOUT_MODES.map(mode => {
+                const Icon = mode === 'right' ? PanelRight
+                  : mode === 'left' ? PanelLeft
+                    : mode === 'bottom' ? PanelBottom
+                      : MessageCircle;
+                const label = mode === 'right' ? t('aiPanel.layout.right', '右侧')
+                  : mode === 'left' ? t('aiPanel.layout.left', '左侧')
+                    : mode === 'bottom' ? t('aiPanel.layout.bottom', '底部')
+                      : t('aiPanel.layout.bubble', '气泡');
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={clsx(styles.layoutBtn, effectiveLayout === mode && styles.active)}
+                    onClick={() => setLayout(mode)}
+                    disabled={isMobile}
+                    aria-pressed={effectiveLayout === mode}
+                    title={label as string}
+                  >
+                    <Icon size={14} />
+                  </button>
+                );
+              })}
+            </div>
             {activeTab === 'chat' && (
               <button className={styles.actionBtn} onClick={newSession} title={t('aiPanel.newChat', '新对话')}>
                 <Plus size={16} />

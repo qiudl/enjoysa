@@ -1,4 +1,9 @@
-/* ===== AI Panel Container ===== */
+/* ===== AI Panel Container =====
+ * REQ-20260509-0026: z-index lowered 999 → 90 so right-side drawers
+ * (admin SupplierDetail/OrderDetail/etc. z=100/101) cover the panel
+ * naturally — eliminates the "collapsed strip blocks drawer" bug.
+ * Layout variants .right/.left/.bottom/.bubble swap positioning;
+ * .right is the historical default and matches base styles below. */
 .panel {
   width: 380px;
   height: 100vh;
@@ -7,13 +12,133 @@
   top: 0;
   background: #fff;
   border-left: 1px solid #e8e8e8;
-  z-index: 999;
+  z-index: 90;
   display: flex;
   flex-direction: column;
 }
 
 .panel.collapsed {
   width: 48px;
+}
+
+/* === Layout: left dock (mirror of right) === */
+.panel.left {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid #e8e8e8;
+}
+.panel.left .resizeHandle {
+  left: auto;
+  right: -3px;
+}
+
+/* === Layout: bottom dock === */
+.panel.bottom {
+  width: 100vw !important;
+  right: 0;
+  left: 0;
+  top: auto;
+  bottom: 0;
+  height: 340px;
+  border-left: none;
+  border-top: 1px solid #e8e8e8;
+}
+.panel.bottom.collapsed {
+  width: 100vw !important;
+  height: 48px;
+}
+.panel.bottom .collapsedBar {
+  width: 100%;
+  height: 48px;
+  flex-direction: row;
+  padding: 0 14px;
+  gap: 14px;
+  align-items: center;
+}
+
+/* === Layout: bubble (floating button + popover) === */
+.panel.bubble {
+  width: auto !important;
+  height: auto;
+  top: auto;
+  right: 24px;
+  bottom: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.panel.bubble.collapsed {
+  width: 56px !important;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1677ff 0%, #0f4c3a 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.panel.bubble.collapsed .collapsedBar {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
+/* Bubble closed = single brand button only */
+.panel.bubble.collapsed .collapsedTabIcon {
+  display: none;
+}
+.panel.bubble.collapsed .collapsedBrand {
+  background: transparent;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+.panel.bubble:not(.collapsed) {
+  width: 380px !important;
+  height: 520px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+/* ===== Layout switcher (4 icon buttons in header) ===== */
+.layoutSwitcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  margin-right: 4px;
+}
+.layoutBtn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #999;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.layoutBtn:hover:not(:disabled) {
+  background: #fff;
+  color: #1a1a1a;
+}
+.layoutBtn.active {
+  background: #fff;
+  color: #1677ff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.layoutBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Resize handle */
@@ -993,20 +1118,30 @@
 }
 
 /* ===== Responsive ===== */
+/* REQ-20260509-0026: 1024px tablet 旧逻辑（强制折叠成 48px 竖条）只对
+ * right/left dock 生效，否则 bottom/bubble 会被错误压缩。 */
 @media (max-width: 1024px) {
-  .panel:not(.collapsed) {
+  .panel.right:not(.collapsed),
+  .panel.left:not(.collapsed) {
     width: 48px;
   }
-  .panel:not(.collapsed) .expandedContent {
+  .panel.right:not(.collapsed) .expandedContent,
+  .panel.left:not(.collapsed) .expandedContent {
     display: none;
   }
-  .panel:not(.collapsed) .collapsedBar {
+  .panel.right:not(.collapsed) .collapsedBar,
+  .panel.left:not(.collapsed) .collapsedBar {
     display: flex;
   }
 }
 
-@media (max-width: 768px) {
-  .panel {
-    display: none;
+/* <768px：JS isMobile 强制 bubble layout，原 display:none 删除。
+ * bubble 在窄屏依然可用（浮按钮 + 全宽弹窗）。 */
+@media (max-width: 480px) {
+  .panel.bubble:not(.collapsed) {
+    width: calc(100vw - 32px) !important;
+    right: 16px;
+    left: 16px;
+    bottom: 80px;
   }
 }
