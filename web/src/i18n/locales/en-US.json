@@ -838,6 +838,7 @@
     "layoutSwitcher": "Panel layout",
     "layout": {
       "right": "Dock right",
+      "left": "Dock left",
       "bottom": "Dock bottom",
       "bubble": "Floating bubble"
     },

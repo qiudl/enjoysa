@@ -182,10 +182,11 @@
 }
 
 /* Main Content Area
- * REQ-20260509-0026: AIPanel 暴露 right/bottom 两个 var；bubble / 未挂载时为 0px。 */
+ * REQ-20260509-0026: AIPanel 暴露 right/left/bottom 三个 var；bubble/未挂载时为 0px。
+ * margin-left 叠加 sidebar (260/72px) + left dock AI 面板宽度。 */
 .main {
   flex: 1;
-  margin-left: 260px;
+  margin-left: calc(260px + var(--ai-panel-left-width, 0px));
   margin-right: var(--ai-panel-width, 380px);
   padding-bottom: var(--ai-panel-bottom-height, 0px);
   transition: margin-left 0.3s ease;
@@ -196,7 +197,7 @@
 
 .sidebar.collapsed + .main,
 .collapsed ~ .main {
-  margin-left: 72px;
+  margin-left: calc(72px + var(--ai-panel-left-width, 0px));
 }
 
 /* Top Bar */
