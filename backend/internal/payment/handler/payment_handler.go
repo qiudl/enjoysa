@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"enjoysa-backend/internal/core/logger"
@@ -12,6 +13,16 @@ import (
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
+)
+
+// REQ-20260509-0034: structured error codes — frontend branches on these
+// to render the right user message without parsing localized text.
+const (
+	codePaymentDisabled = "PAYMENT_DISABLED"
+	codeStripeError     = "STRIPE_ERROR"
+	codeOrderInvalid    = "ORDER_INVALID"
+	codeOrderNotFound   = "ORDER_NOT_FOUND"
+	codeAccessDenied    = "ACCESS_DENIED"
 )
 
 type PaymentHandler struct {
@@ -41,21 +52,21 @@ func (h *PaymentHandler) CreateCheckoutSession(c *gin.Context) {
 
 	var req CreateCheckoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request")
+		response.Fail(c, http.StatusBadRequest, codeOrderInvalid, "Invalid request")
 		return
 	}
 
 	order, err := h.orderStore.GetByID(req.OrderID)
 	if err != nil {
-		response.NotFound(c, "Order not found")
+		response.Fail(c, http.StatusNotFound, codeOrderNotFound, "Order not found")
 		return
 	}
 	if order.UserID != userID {
-		response.Forbidden(c, "Access denied")
+		response.Fail(c, http.StatusForbidden, codeAccessDenied, "Access denied")
 		return
 	}
 	if order.Status != ordermodel.OrderStatusPending {
-		response.BadRequest(c, "Order is not pending payment")
+		response.Fail(c, http.StatusUnprocessableEntity, codeOrderInvalid, "Order is not pending payment")
 		return
 	}
 
@@ -63,12 +74,16 @@ func (h *PaymentHandler) CreateCheckoutSession(c *gin.Context) {
 	if order.ExpiresAt != nil && order.ExpiresAt.Before(time.Now()) {
 		order.Status = ordermodel.OrderStatusCancelled
 		h.orderStore.Update(order)
-		response.BadRequest(c, "Order has expired")
+		response.Fail(c, http.StatusUnprocessableEntity, codeOrderInvalid, "Order has expired")
 		return
 	}
 
 	if h.paymentGateway == nil {
-		response.BadRequest(c, "Payment not configured")
+		// REQ-20260509-0034: 503 + PAYMENT_DISABLED so the frontend can show
+		// a "支付服务暂时不可用" toast instead of falling through to a fake
+		// success page (the historical bug).
+		logger.Errorf("CreateCheckoutSession: payment gateway is nil — Stripe key missing in config")
+		response.Fail(c, http.StatusServiceUnavailable, codePaymentDisabled, "Payment service is not configured")
 		return
 	}
 
@@ -83,14 +98,16 @@ func (h *PaymentHandler) CreateCheckoutSession(c *gin.Context) {
 		CancelURL:   fmt.Sprintf("%s/orders/%d?status=cancel", h.frontendURL, order.ID),
 	})
 	if err != nil {
-		logger.Errorf("Failed to create checkout session: %v", err)
-		response.ServerError(c, "Failed to create payment session")
+		logger.Errorf("CreateCheckoutSession: stripe create failed for order %d (%s): %v", order.ID, order.OrderNo, err)
+		response.Fail(c, http.StatusBadGateway, codeStripeError, "Failed to create payment session")
 		return
 	}
 
 	// Save session ID
 	order.StripeSessionID = sess.SessionID
 	h.orderStore.Update(order)
+
+	logger.Infof("CreateCheckoutSession: order %d (%s) → session %s", order.ID, order.OrderNo, sess.SessionID)
 
 	response.Success(c, gin.H{
 		"session_id":   sess.SessionID,

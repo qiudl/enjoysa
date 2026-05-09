@@ -286,6 +286,11 @@
     "continueShopping": "Continue Shopping",
     "packageName": "Package",
     "timeSlot": "Time Slot",
+    "orderFailed": "Order failed: {{detail}}",
+    "payment": {
+      "disabled": "Payment is temporarily unavailable. Please try again later or contact support.",
+      "failed": "Could not open payment page: {{detail}}"
+    },
     "errors": {
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
@@ -313,6 +318,7 @@
     "payNow": "Pay Now",
     "viewDetails": "View Details",
     "cancelOrder": "Cancel Order",
+    "cancelFailed": "Cancel order failed: {{detail}}",
     "confirmCancel": "Confirm cancellation?",
     "cancelReason": "Cancellation Reason",
     "requestRefund": "Request Refund",

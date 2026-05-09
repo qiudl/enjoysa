@@ -4,7 +4,7 @@ const TravelReminder = lazy(() => import('../../components/AI/TravelReminder/Tra
 import { Header, Footer, Loading } from '../../components/Common';
 import { OrderDetail } from '../../components/Order';
 import { getOrder, cancelOrder, type Order as ApiOrder } from '../../services/orderService';
-import { post } from '../../services/api';
+import { post, ApiError } from '../../services/api';
 import type { Order, OrderStatus } from '../../types';
 import styles from './OrderDetailPage.module.css';
 
@@ -123,11 +123,21 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
         'user',
       );
       if (result.checkout_url) {
+        setRetrying(false);
         window.location.href = result.checkout_url;
         return;
       }
-    } catch {
-      // Could show error toast
+      throw new Error('Empty checkout_url from /checkout/create-session');
+    } catch (err) {
+      // REQ-20260509-0034: surface payment-init failures so the user knows
+      // why the redirect didn't happen, instead of looking at a stuck button.
+      console.error('[OrderDetail] retry-payment failed', err);
+      const code = err instanceof ApiError ? err.code : undefined;
+      const fallbackMsg = err instanceof Error ? err.message : String(err);
+      const message = code === 'PAYMENT_DISABLED'
+        ? t('checkout.payment.disabled', '支付服务暂时不可用，请稍后再试或联系客服')
+        : t('checkout.payment.failed', '无法跳转支付页面：{{detail}}', { detail: fallbackMsg });
+      alert(message);
     } finally {
       setRetrying(false);
     }
@@ -138,8 +148,11 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({
     try {
       await cancelOrder(rawOrder.id);
       fetchOrder();
-    } catch {
-      // Could show error toast
+    } catch (err) {
+      console.error('[OrderDetail] cancel failed', err);
+      alert(t('order.cancelFailed', '取消订单失败：{{detail}}', {
+        detail: err instanceof Error ? err.message : String(err),
+      }));
     }
   };
 

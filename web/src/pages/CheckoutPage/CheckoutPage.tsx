@@ -14,7 +14,7 @@ import {
 import type { Product, ParticipantDetail, PaymentMethod } from '../../types';
 import type { CartItem } from '../../contexts/CartContext';
 import { createOrder } from '../../services/orderService';
-import { post } from '../../services/api';
+import { post, ApiError } from '../../services/api';
 import { productService, transformApiProduct, type ApiProductPackage } from '../../services/productService';
 import styles from './CheckoutPage.module.css';
 
@@ -339,7 +339,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           travelDate,
         });
 
-        // Attempt Stripe checkout if payment gateway is available
+        // REQ-20260509-0034: Stripe checkout MUST surface failures to the
+        // user. Historical bug: this catch silently fell through to the
+        // success page, so users saw "下单成功" without ever paying.
         if (paymentMethod === 'stripe' || paymentMethod === 'credit_card') {
           try {
             const checkoutResult = await post<{ session_id: string; checkout_url: string }>(
@@ -348,11 +350,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               'user',
             );
             if (checkoutResult.checkout_url) {
+              setSubmitting(false); // release the button before browser redirect kicks in
               window.location.href = checkoutResult.checkout_url;
               return;
             }
-          } catch {
-            // Stripe not configured — fall through to success page
+            // Defensive: success response with no URL is also a failure.
+            throw new Error('Empty checkout_url from /checkout/create-session');
+          } catch (err) {
+            console.error('[Checkout] create-session failed', err);
+            const code = err instanceof ApiError ? err.code : undefined;
+            const fallbackMsg = err instanceof Error ? err.message : String(err);
+            const message = code === 'PAYMENT_DISABLED'
+              ? t('checkout.payment.disabled', '支付服务暂时不可用，请稍后再试或联系客服')
+              : t('checkout.payment.failed', '无法跳转支付页面：{{detail}}', { detail: fallbackMsg });
+            alert(message);
+            setSubmitting(false);
+            return; // stay on checkout, do NOT show fake success
           }
         }
 
@@ -364,8 +377,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           setShowSuccess(true);
         }
       }
-    } catch {
-      // order creation failed — could show error
+    } catch (err) {
+      // REQ-20260509-0034: surface order-creation failures instead of
+      // silently leaving the user staring at a stuck "Submitting…" button.
+      console.error('[Checkout] order create failed', err);
+      const detail = err instanceof Error ? err.message : String(err);
+      alert(t('checkout.orderFailed', '下单失败：{{detail}}', { detail }));
     } finally {
       setSubmitting(false);
     }
