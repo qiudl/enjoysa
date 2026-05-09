@@ -22,13 +22,16 @@ func TestSystemPrompt_SupplierZh_GuardsWriteTools(t *testing.T) {
 
 	// Layer 1: explicit-intent gating preserved from REQ-0003 / REQ-0052.
 	// REQ-20260506-0052 (round 2): rule 4 reworded — "明确表示创建意图" replaces
-	// "显式同意"; "虚假创建" replaces "不是创建信号"; the server-rejects clause
-	// moved to rule 6 so we still verify it but via different keywords.
+	// "显式同意"; "虚假创建" replaces "不是创建信号".
+	// REQ-20260509-0024: rule 6 reworded from "server rejects duplicates" to
+	// topic-based dedupe semantics — sentinel "服务端按标题相似度做 dedup" must be
+	// present so the LLM understands it can call multiple distinct creates
+	// in one turn while still respecting same-topic dedupe.
 	intentGuards := []string{
 		"明确表示创建意图",
 		"create_requirement",
 		"虚假创建",
-		"服务端会拒绝", // still present in rule 6
+		"服务端按标题相似度做 dedup", // REQ-0024: replaces old "服务端会拒绝"
 	}
 	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
@@ -77,14 +80,16 @@ func TestSystemPrompt_SupplierEn_GuardsWriteTools(t *testing.T) {
 	})
 
 	// REQ-20260506-0052 (round 2): rule 4 reworded — "Write tools" replaces
-	// "WRITE tool"; "fake creation" replaces "NOT by itself a creation signal";
-	// the server-rejects clause and pre-search ban moved to rule 5/6.
+	// "WRITE tool"; "fake creation" replaces "NOT by itself a creation signal".
+	// REQ-20260509-0024: dedupe semantic switched from per-call to per-topic;
+	// sentinel "server dedupes by title similarity" must be present so the LLM
+	// allows multiple distinct creates in one turn.
 	intentGuards := []string{
 		"Write tools",
 		"create_requirement",
 		"explicitly",
 		"fake creation",
-		"server rejects", // still present in rule 6
+		"server dedupes by title similarity", // REQ-0024: replaces old "server rejects"
 	}
 	for _, kw := range intentGuards {
 		if !strings.Contains(prompt, kw) {
@@ -99,8 +104,10 @@ func TestSystemPrompt_SupplierEn_GuardsWriteTools(t *testing.T) {
 		}
 	}
 
-	// rule 5/6 still ban pre-search defence (REVERSE CASES + second line of defence).
-	antiPreSearch := []string{"REVERSE CASES", "second line of defence"}
+	// rule 5 still bans pre-search defence (REVERSE CASES). REQ-0024 dropped
+	// the "second line of defence" wording when rule 6 was rewritten — the
+	// REVERSE CASES table now carries the no-list-requirements-pre-check rule.
+	antiPreSearch := []string{"REVERSE CASES"}
 	for _, kw := range antiPreSearch {
 		if !strings.Contains(prompt, kw) {
 			t.Errorf("supplier en prompt must ban LLM-side pre-search; missing %q", kw)
