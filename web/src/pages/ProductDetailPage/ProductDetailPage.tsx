@@ -15,6 +15,7 @@ import {
 import type { Product } from '../../types';
 import { productService, transformApiProduct } from '../../services/productService';
 import type { ApiProductSchedule, ApiProductPackage } from '../../services/productService';
+import { getLocalizedField } from '../../utils/getLocalizedField';
 import styles from './ProductDetailPage.module.css';
 
 /** Booking data passed to onBookNow */
@@ -40,6 +41,18 @@ export interface ProductDetailPageProps {
   onNavClick?: (path: string) => void;
   onBookNow?: (data: BookingData) => void;
   onAddToCart?: (product: Product, selectedDate?: string, selectedTime?: string, packageId?: number, scheduleId?: number) => void;
+  /**
+   * REQ-20260510-0001 F1: 预览模式
+   *   - 禁用「立即预订」/「加入购物车」CTA（替换为灰按钮 Preview only）
+   *   - 禁用 lazy 加载子组件（SmartFAQ / FitCheck / ReviewSummary）减少二次请求
+   *   - 内部取语言字段时 strict=true，缺字段不 fallback（由组件层显 skeleton）
+   */
+  previewMode?: boolean;
+  /**
+   * REQ-20260510-0001 F1: 预览数据。优先于 productId fetch。
+   * 用于 supplier/admin 编辑中的草稿走预览（避免公开 API 取不到草稿）。
+   */
+  previewData?: Product;
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
@@ -54,6 +67,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onNavClick,
   onBookNow,
   onAddToCart,
+  previewMode = false,
+  previewData,
 }) => {
   const { t, i18n } = useTranslation();
   const currentLang = language || (i18n.language?.startsWith('zh') ? 'zh' : 'en') as 'zh' | 'en';
@@ -77,7 +92,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const addedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Fetch product + schedules
+  // REQ-20260510-0001 F1: previewData 优先，跳过 fetch 直接渲染当前 form 草稿
   useEffect(() => {
+    if (previewData) {
+      setProduct(previewData);
+      setSchedules([]);
+      setApiPackages([]);
+      setLoading(false);
+      return;
+    }
     if (!productId) return;
     setLoading(true);
     const numId = Number(productId);
@@ -94,7 +117,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     ])
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [productId]);
+  }, [productId, previewData]);
 
   // Reset date & time when package changes
   useEffect(() => {
@@ -222,9 +245,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     );
   }
 
-  const title = !isZh && product.titleEn ? product.titleEn : product.title;
-  const location = !isZh && product.locationEn ? product.locationEn : product.location;
-  const duration = !isZh && product.durationEn ? product.durationEn : product.duration;
+  // REQ-20260510-0001 F1/F6: 统一用 getLocalizedField helper，previewMode 启用 strict
+  // strict=false（C 端默认）保留现有 fallback 行为，零回归。
+  const title = getLocalizedField({ zh: product.title, en: product.titleEn }, currentLang, { strict: previewMode }) ?? '';
+  const location = getLocalizedField({ zh: product.location, en: product.locationEn }, currentLang, { strict: previewMode }) ?? '';
+  const duration = getLocalizedField({ zh: product.duration, en: product.durationEn }, currentLang, { strict: previewMode }) ?? '';
   const meetingPoint = product.meetingPoint;
 
   const canBook = selectedDate && (selectedDateSlots.length === 0 || selectedScheduleId !== null);
@@ -340,23 +365,28 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
 
             {/* ========== AI Enhanced Sections ========== */}
-            <Suspense fallback={null}>
-              <SmartFAQ productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
-            </Suspense>
+            {/* REQ-20260510-0001 F1: previewMode 下禁用 lazy 子组件，减少二次请求 + 避免预览时混入推荐位 */}
+            {!previewMode && (
+              <>
+                <Suspense fallback={null}>
+                  <SmartFAQ productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
+                </Suspense>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <Suspense fallback={null}>
-                <FitCheck productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
-              </Suspense>
-              <Suspense fallback={null}>
-                <ReviewSummary
-                  productId={Number(productId)}
-                  rating={product.rating}
-                  reviewCount={product.reviewCount || 0}
-                  language={isZh ? 'zh' : 'en'}
-                />
-              </Suspense>
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Suspense fallback={null}>
+                    <FitCheck productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <ReviewSummary
+                      productId={Number(productId)}
+                      rating={product.rating}
+                      reviewCount={product.reviewCount || 0}
+                      language={isZh ? 'zh' : 'en'}
+                    />
+                  </Suspense>
+                </div>
+              </>
+            )}
           </div>
 
           {/* ========== Booking Card ========== */}
@@ -508,14 +538,28 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
 
             {/* Actions */}
+            {/* REQ-20260510-0001 F1: previewMode 下 CTA 替换为灰按钮，明确"仅预览"状态 */}
             <div className={styles.actions}>
-              <Button variant="primary" size="lg" fullWidth disabled={!canBook} onClick={handleBook}>
-                {t('product.buyNow')}
-              </Button>
-              <Button variant={addedToCart ? 'success' : 'outline'} size="lg" fullWidth
-                disabled={!selectedDate} onClick={handleAddToCart}>
-                {addedToCart ? `${t('cart.added')} ✓` : t('product.addToCart')}
-              </Button>
+              {previewMode ? (
+                <>
+                  <Button variant="outline" size="lg" fullWidth disabled>
+                    {t('preview.previewOnly')} · {t('product.buyNow')}
+                  </Button>
+                  <Button variant="outline" size="lg" fullWidth disabled>
+                    {t('preview.previewOnly')} · {t('product.addToCart')}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="primary" size="lg" fullWidth disabled={!canBook} onClick={handleBook}>
+                    {t('product.buyNow')}
+                  </Button>
+                  <Button variant={addedToCart ? 'success' : 'outline'} size="lg" fullWidth
+                    disabled={!selectedDate} onClick={handleAddToCart}>
+                    {addedToCart ? `${t('cart.added')} ✓` : t('product.addToCart')}
+                  </Button>
+                </>
+              )}
             </div>
           </aside>
         </div>
