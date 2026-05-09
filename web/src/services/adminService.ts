@@ -158,6 +158,30 @@ export interface ApiUser {
   updated_at: string;
 }
 
+// REQ-20260509-0019 PR-B: 批量审核 endpoint 响应结构。
+// best-effort：失败项不阻塞成功项；前端可显示 results 表让 admin 知道哪些跳过。
+export interface BatchProductOpResult {
+  id: number;
+  ok: boolean;
+  error?: string;
+}
+
+export interface BatchProductOpResponse {
+  results: BatchProductOpResult[];
+  summary: {
+    total: number;
+    success: number;
+    skipped: number;
+  };
+}
+
+export interface PendingCountsResponse {
+  products: number;
+  suppliers: number;
+  orders: number;
+  updated_at: string;
+}
+
 // REQ-20260509-0004: ZH→EN translation task status reported back to the
 // admin product editor. Mirrors the supplier-side TranslationStatus shape
 // but populates the *_en preview fields instead of *_zh.
@@ -345,6 +369,28 @@ export const adminService = {
 
   async rejectProduct(id: number, reason?: string) {
     return post<void>(`/admin/products/${id}/reject`, { reason }, 'admin');
+  },
+
+  // REQ-20260509-0019 PR-B: 批量审核 + 待审计数。Cap 50/请求；后端 best-
+  // effort，返回 per-item ok/error 结构让前端分别呈现成功与跳过。
+  async batchApproveProducts(productIds: number[]) {
+    return post<BatchProductOpResponse>(
+      '/admin/products/batch-approve',
+      { product_ids: productIds },
+      'admin',
+    );
+  },
+
+  async batchRejectProducts(productIds: number[], reason: string) {
+    return post<BatchProductOpResponse>(
+      '/admin/products/batch-reject',
+      { product_ids: productIds, reason },
+      'admin',
+    );
+  },
+
+  async getPendingCounts() {
+    return get<PendingCountsResponse>('/admin/dashboard/pending-counts', 'admin');
   },
 
   async getProduct(id: number) {

@@ -2449,6 +2449,10 @@
       "includes": "What's Included",
       "excludes": "Not Included",
       "notices": "Important Notes"
+    },
+    "product": {
+      "proxyCreatedBy": "Created on your behalf by {{name}} on {{date}}",
+      "formerAdmin": "a former admin"
     }
   },
   "contacts": {

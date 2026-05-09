@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"enjoysa-backend/internal/audit"
@@ -1026,6 +1027,188 @@ func (h *AdminHandler) ApproveProduct(c *gin.Context) {
 	response.SuccessMessage(c, "Product approved")
 }
 
+// REQ-20260509-0019 PR-B: 批量审核 + 待审计数 + 代录身份解析。
+
+const batchProductOpsCap = 50 // 一次请求最多操作 50 个商品，防 runaway。
+
+type batchProductsRequest struct {
+	ProductIDs []uint `json:"product_ids" binding:"required"`
+	Reason     string `json:"reason,omitempty"` // 仅 reject 用，必填校验在 handler 内
+}
+
+type batchOpResult struct {
+	ID    uint   `json:"id"`
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+type batchOpSummary struct {
+	Total   int `json:"total"`
+	Success int `json:"success"`
+	Skipped int `json:"skipped"`
+}
+
+// dedupeUints removes duplicate IDs while preserving first-seen order. Admin
+// dispatching the same id twice in a batch should not double-process the
+// product (would generate redundant audit + notifications).
+func dedupeUints(in []uint) []uint {
+	seen := make(map[uint]struct{}, len(in))
+	out := make([]uint, 0, len(in))
+	for _, v := range in {
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
+}
+
+// BatchApproveProducts approves up to 50 products in a single request,
+// returning per-item status so admin UI can render which slipped through.
+// Best-effort: not transactional. Notifications are side effects we don't
+// want to roll back when one product mid-batch hits a transient DB error.
+func (h *AdminHandler) BatchApproveProducts(c *gin.Context) {
+	var req batchProductsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	ids := dedupeUints(req.ProductIDs)
+	if len(ids) == 0 {
+		response.BadRequest(c, "product_ids cannot be empty")
+		return
+	}
+	if len(ids) > batchProductOpsCap {
+		response.BadRequest(c, fmt.Sprintf("too many: cap %d", batchProductOpsCap))
+		return
+	}
+
+	results := make([]batchOpResult, 0, len(ids))
+	successCount := 0
+	for _, id := range ids {
+		product, err := h.productStore.GetByID(id)
+		if err != nil {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "not found"})
+			continue
+		}
+		if product.Status == productmodel.ProductStatusApproved {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "already approved"})
+			continue
+		}
+		if err := h.productStore.UpdateStatus(product.ID, productmodel.ProductStatusApproved); err != nil {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "update failed"})
+			continue
+		}
+		if h.notifSvc != nil {
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_approved",
+				"Product Approved",
+				fmt.Sprintf("Your product '%s' has been approved and is now live", productDisplayName(product)),
+				"product", product.ID)
+		}
+		if product.RegionID > 0 {
+			h.regionStore.UpdateAttractionCount(product.RegionID)
+		}
+		results = append(results, batchOpResult{ID: id, OK: true})
+		successCount++
+	}
+
+	h.audit.Log(c, "batch_approve", "product", 0, fmt.Sprintf("ids=%v success=%d", ids, successCount))
+	response.Success(c, gin.H{
+		"results": results,
+		"summary": batchOpSummary{
+			Total:   len(ids),
+			Success: successCount,
+			Skipped: len(ids) - successCount,
+		},
+	})
+}
+
+// BatchRejectProducts rejects up to 50 products with a shared reason. The
+// reason is required so "no-reason batch reject" cannot become normal ops
+// hygiene — supplier notifications need to carry actionable feedback.
+func (h *AdminHandler) BatchRejectProducts(c *gin.Context) {
+	var req batchProductsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(req.Reason) == "" {
+		response.BadRequest(c, "reason is required for batch reject")
+		return
+	}
+	ids := dedupeUints(req.ProductIDs)
+	if len(ids) == 0 {
+		response.BadRequest(c, "product_ids cannot be empty")
+		return
+	}
+	if len(ids) > batchProductOpsCap {
+		response.BadRequest(c, fmt.Sprintf("too many: cap %d", batchProductOpsCap))
+		return
+	}
+
+	results := make([]batchOpResult, 0, len(ids))
+	successCount := 0
+	for _, id := range ids {
+		product, err := h.productStore.GetByID(id)
+		if err != nil {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "not found"})
+			continue
+		}
+		if product.Status == productmodel.ProductStatusRejected {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "already rejected"})
+			continue
+		}
+		if err := h.productStore.RejectWithReason(product.ID, req.Reason); err != nil {
+			results = append(results, batchOpResult{ID: id, OK: false, Error: "update failed"})
+			continue
+		}
+		if h.notifSvc != nil {
+			content := fmt.Sprintf("Your product '%s' has been rejected. Reason: %s", productDisplayName(product), req.Reason)
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_rejected",
+				"Product Rejected", content, "product", product.ID)
+		}
+		if product.RegionID > 0 {
+			h.regionStore.UpdateAttractionCount(product.RegionID)
+		}
+		results = append(results, batchOpResult{ID: id, OK: true})
+		successCount++
+	}
+
+	h.audit.Log(c, "batch_reject", "product", 0, fmt.Sprintf("ids=%v reason=%q success=%d", ids, req.Reason, successCount))
+	response.Success(c, gin.H{
+		"results": results,
+		"summary": batchOpSummary{
+			Total:   len(ids),
+			Success: successCount,
+			Skipped: len(ids) - successCount,
+		},
+	})
+}
+
+// GetPendingCounts returns counts of items awaiting admin attention. Used
+// by the AdminLayout sidebar badge (PR-C will consume this) and the admin
+// dashboard. Only counts strict status=pending — drafts are admin-private
+// work-in-progress and don't belong on the review queue.
+func (h *AdminHandler) GetPendingCounts(c *gin.Context) {
+	var pendingProducts int64
+	h.db.Model(&productmodel.Product{}).
+		Where("status = ?", productmodel.ProductStatusPending).
+		Count(&pendingProducts)
+
+	var pendingSuppliers int64
+	h.db.Model(&models.Supplier{}).
+		Where("status = ?", "pending").
+		Count(&pendingSuppliers)
+
+	response.Success(c, gin.H{
+		"products":   pendingProducts,
+		"suppliers":  pendingSuppliers,
+		"orders":     0, // 占位，后续 wave 接入
+		"updated_at": time.Now().Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
 func (h *AdminHandler) RejectProduct(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -1080,6 +1263,11 @@ func (h *AdminHandler) GetProduct(c *gin.Context) {
 		response.NotFound(c, "Product not found")
 		return
 	}
+
+	// REQ-20260509-0019: surface admin name on the response so the admin
+	// product detail UI shows "代录 by Mary Wang on 2026-05-09" without
+	// requiring a second admin lookup.
+	h.productStore.PopulateCreatedByAdminName(product)
 
 	response.Success(c, product)
 }

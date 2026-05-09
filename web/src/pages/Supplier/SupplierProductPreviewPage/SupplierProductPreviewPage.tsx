@@ -173,6 +173,25 @@ export const SupplierProductPreviewPage: React.FC<SupplierProductPreviewPageProp
         </span>
       </div>
 
+      {/*
+        REQ-20260509-0019: Created-by-admin attribution. Renders only when the
+        platform created this product on the supplier's behalf, so the supplier
+        knows who acted as their proxy and when. Quietly absent for self-served
+        products (created_via=supplier_self) — no need to clutter the page.
+      */}
+      {product.created_via === 'admin_proxy' && (
+        <div className={styles.previewBanner} style={{ background: '#fff7e6', borderColor: '#ffd591', color: '#874d00' }}>
+          <Info size={18} />
+          <span>
+            {t('supplier.product.proxyCreatedBy', {
+              defaultValue: 'Created on your behalf by {{name}} on {{date}}',
+              name: product.created_by_admin_name || t('supplier.product.formerAdmin', { defaultValue: 'a former admin' }),
+              date: new Date(product.created_at).toLocaleDateString(),
+            })}
+          </span>
+        </div>
+      )}
+
       {/* Header: back + edit */}
       <div className={styles.header}>
         <button

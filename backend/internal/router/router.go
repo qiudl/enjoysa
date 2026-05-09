@@ -609,6 +609,13 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/products/:id/approve", adminHandler.ApproveProduct)
 		adminGroup.POST("/products/:id/reject", adminHandler.RejectProduct)
 
+		// REQ-20260509-0019: 批量审核 + 待审计数。Cap 50 / 请求；返回 per-item
+		// status 让前端能显示哪些跳过、哪些成功。pending-counts 给 admin 主页
+		// 徽章用（PR-C 接入），仅严格 status=pending。
+		adminGroup.POST("/products/batch-approve", adminHandler.BatchApproveProducts)
+		adminGroup.POST("/products/batch-reject", adminHandler.BatchRejectProducts)
+		adminGroup.GET("/dashboard/pending-counts", adminHandler.GetPendingCounts)
+
 		// REQ-20260509-0004: ZH→EN translation status / retry / regenerate.
 		// Admin polls status while editing the product to surface the AI
 		// English preview; retry covers an LLM hiccup; regenerate force-
