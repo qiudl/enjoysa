@@ -158,6 +158,26 @@ export interface ApiUser {
   updated_at: string;
 }
 
+// REQ-20260509-0004: ZH→EN translation task status reported back to the
+// admin product editor. Mirrors the supplier-side TranslationStatus shape
+// but populates the *_en preview fields instead of *_zh.
+export type EnTranslationTaskStatus = 'pending' | 'running' | 'success' | 'failed';
+
+export interface EnTranslationStatus {
+  task_id: number;
+  direction: 'zh2en';
+  status: EnTranslationTaskStatus;
+  retries: number;
+  last_error?: string;
+  updated_at: string;
+  preview?: {
+    name_en?: string;
+    summary_en?: string;
+    description_en?: string;
+    address_en?: string;
+  };
+}
+
 // 后端 Product 响应（admin 列表视图）
 export interface ApiAdminProduct {
   id: number;
@@ -322,6 +342,29 @@ export const adminService = {
 
   async deleteProduct(id: number) {
     return del<void>(`/admin/products/${id}`, 'admin');
+  },
+
+  // REQ-20260509-0004: ZH→EN translation for admin-edited products. The
+  // task is enqueued automatically when admin saves; the UI polls status
+  // and surfaces a retry / regenerate button when needed.
+  async getEnTranslationStatus(id: number) {
+    return get<EnTranslationStatus>(`/admin/products/${id}/translation-status`, 'admin');
+  },
+
+  async retryEnTranslation(id: number) {
+    return post<{ task_id: number; status: string }>(
+      `/admin/products/${id}/translation-retry`,
+      undefined,
+      'admin',
+    );
+  },
+
+  async regenerateEnTranslation(id: number) {
+    return post<{ task_id: number; status: string; direction: string }>(
+      `/admin/products/${id}/translation-regenerate`,
+      undefined,
+      'admin',
+    );
   },
 
   async uploadFile(file: File): Promise<string> {

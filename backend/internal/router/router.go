@@ -183,12 +183,21 @@ func Setup(cfg Config) *gin.Engine {
 	}
 	supplierProductHandler.SetTranslationService(translationSvc)
 	supplierTranslationHandler := producthandler.NewSupplierTranslationHandler(pStore, translationSvc)
+	// REQ-20260509-0004: Admin-side ZH→EN translation. Same translation
+	// service / worker as the supplier side; the gate prevents the
+	// background worker from clobbering admin-locked English fields.
+	translationSvc.SetProductGate(pStore)
+	adminTranslationHandler := handler.NewAdminTranslationHandler(cfg.DB, pStore, translationSvc)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore, notifSvc)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc, aStore, rvStore, slStore, supplierAuditStore)
+	// REQ-20260509-0004: wire the same translation service so admin
+	// Create / UpdateProduct can fire ZH→EN translation tasks alongside
+	// the supplier EN→ZH pipeline.
+	adminHandler.SetTranslationService(translationSvc)
 	contactHandler := contacthandler.NewContactHandler(cStore)
 	userContactHandler := usercontacthandler.NewUserContactHandler(ucStore)
 	settingsHandler := settingshandler.NewSettingsHandler(stStore)
@@ -599,6 +608,14 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.DELETE("/products/:id", adminHandler.DeleteProduct)
 		adminGroup.POST("/products/:id/approve", adminHandler.ApproveProduct)
 		adminGroup.POST("/products/:id/reject", adminHandler.RejectProduct)
+
+		// REQ-20260509-0004: ZH→EN translation status / retry / regenerate.
+		// Admin polls status while editing the product to surface the AI
+		// English preview; retry covers an LLM hiccup; regenerate force-
+		// runs against the latest ZH content.
+		adminGroup.GET("/products/:id/translation-status", adminTranslationHandler.GetStatus)
+		adminGroup.POST("/products/:id/translation-retry", adminTranslationHandler.Retry)
+		adminGroup.POST("/products/:id/translation-regenerate", adminTranslationHandler.Regenerate)
 
 		// Order management
 		adminGroup.GET("/orders", adminHandler.ListOrders)

@@ -17,6 +17,7 @@ import { adminService, type ApiSupplier } from '../../../services/adminService';
 import type { ImagePayload, PackagePayload, HighlightPayload, FAQPayload } from '../../../services/supplierProductService';
 import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
+import { EnglishPreview } from '../../../components/Admin/EnglishPreview';
 import styles from './AdminProductFormPage.module.css';
 
 // ────────────────────────────── Types ──────────────────────────────
@@ -1000,6 +1001,16 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
       {currentStep === 2 && renderStepPackages()}
       {currentStep === 3 && renderStepExtras()}
       {currentStep === 4 && renderStepPreview()}
+
+      {/*
+        REQ-20260509-0004: AI ZH→EN translation preview. Active only when
+        editing a saved product so the panel has a productId to poll. The
+        backend enqueues a task on Save when the EN side has blanks; the
+        admin can also explicitly hit Regenerate from inside the panel.
+      */}
+      {isEditMode && productId && (
+        <EnglishPreview productId={Number(productId)} active={true} />
+      )}
 
       {/* Footer Navigation */}
       <div className={styles.footer}>

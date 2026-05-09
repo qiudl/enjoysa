@@ -55,6 +55,34 @@ func (s *Store) GetLatestForTarget(targetType TargetType, targetID uint) (*Trans
 	return &t, nil
 }
 
+// GetLatestForTargetAndDirection scopes the lookup to a specific direction.
+// Used by the admin status endpoint to pick the ZH→EN task even when a
+// supplier has also queued EN→ZH on the same product.
+func (s *Store) GetLatestForTargetAndDirection(targetType TargetType, targetID uint, direction Direction) (*TranslationTask, error) {
+	var t TranslationTask
+	err := s.db.Where("target_type = ? AND target_id = ? AND direction = ?", targetType, targetID, direction).
+		Order("id DESC").First(&t).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
+// HasInflight reports whether a pending or running task already exists for
+// the (target, direction) tuple. ZH→EN enqueue uses this to stay idempotent
+// when admin re-saves before the worker has finished the previous task.
+func (s *Store) HasInflight(targetType TargetType, targetID uint, direction Direction) (bool, error) {
+	var count int64
+	err := s.db.Model(&TranslationTask{}).
+		Where("target_type = ? AND target_id = ? AND direction = ? AND status IN ?",
+			targetType, targetID, direction, []Status{StatusPending, StatusRunning}).
+		Count(&count).Error
+	return count > 0, err
+}
+
 // ClaimNextPending atomically picks the oldest pending task and marks it as
 // running. Uses SELECT ... FOR UPDATE SKIP LOCKED so concurrent workers cannot
 // claim the same row. Returns nil, nil when no work is available.
