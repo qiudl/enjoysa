@@ -144,6 +144,13 @@ func Setup(cfg Config) *gin.Engine {
 	chatHandler.SetToolSupport(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.DB)
 	chatHandler.SetGLMClient(aichatservice.NewGLMClient(cfg.AIConfig))
 
+	// === Chat v2 (REQ-20260509-0037: workspaces + channels + threads) ===
+	wsStore := chatstore.NewWorkspaceStore(cfg.DB)
+	chnlStore := chatstore.NewChannelStore(cfg.DB)
+	chnlMemberStore := chatstore.NewChannelMemberStore(cfg.DB)
+	chatAgentStore := chatstore.NewAgentStore(cfg.DB)
+	groupChatHandler := chathandler.NewGroupChatHandler(wsStore, chnlStore, chnlMemberStore, chatAgentStore)
+
 	// === Chat share (Feishu) ===
 	shareStore := chatstore.NewShareStore(cfg.DB)
 	kbStore := aichatstore.NewKnowledgeStore(cfg.DB)
@@ -350,6 +357,15 @@ func Setup(cfg Config) *gin.Engine {
 	{
 		chatGroup.GET("/sessions", chatHandler.ListSessions)
 		chatGroup.GET("/sessions/:id/messages", chatHandler.GetMessages)
+
+		// REQ-20260509-0037 dev-3: workspace + channel CRUD.
+		// Auth required (handler rejects guests). Ownership enforced per-route
+		// inside the handler via ownsChannelInPath (defect-analysis S1).
+		chatGroup.GET("/v2/workspace", groupChatHandler.GetWorkspace)
+		chatGroup.POST("/channels", groupChatHandler.CreateChannel)
+		chatGroup.PATCH("/channels/:id", groupChatHandler.UpdateChannel)
+		chatGroup.POST("/channels/:id/archive", groupChatHandler.ArchiveChannel)
+		chatGroup.PATCH("/channels/:id/members/:agent_id", groupChatHandler.UpdateMember)
 	}
 
 	// ========================================
