@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2 } from 'lucide-react';
-import { adminService } from '../../../services/adminService';
 import { ApiError } from '../../../services/api';
-import type { ApiProductPackage } from '../../../services/productService';
+import type { ApiProductPackage, ApiProduct } from '../../../services/productService';
 import styles from './StockAdjustModal.module.css';
 
 export interface StockAdjustModalProps {
@@ -13,6 +12,18 @@ export interface StockAdjustModalProps {
   onClose: () => void;
   /** Called after at least one successful save so the parent can refresh. */
   onSaved?: () => void;
+
+  /**
+   * Lazy-loads the product (with packages) when the modal opens. Accepts
+   * either admin or supplier service so the modal stays role-agnostic.
+   */
+  loadProduct: (id: number) => Promise<ApiProduct>;
+  /** Persists the new stock_total for a single package. */
+  saveStock: (productId: number, packageId: number, stockTotal: number) => Promise<{
+    id: number;
+    stock_total: number;
+    stock_sold: number;
+  }>;
 }
 
 interface DraftRow {
@@ -27,9 +38,12 @@ interface DraftRow {
 }
 
 /**
- * REQ-20260509-0035 Phase 2: 列表页快速调整库存。打开时拉商品全量包列表，
+ * REQ-20260509-0035 Phase 2/3a: 列表页快速调整库存。打开时拉商品全量包列表，
  * 让运营改 stock_total（或勾"无限量"），逐个 PATCH。绕开 UpdateProduct
  * 的 delete-recreate 重型流程，不触发翻译/审核重置。
+ *
+ * Phase 3a 重构：从 Admin/ 提到 Common/，通过 loadProduct + saveStock 两个
+ * 回调注入服务，admin 和 supplier 共用同一个 modal。
  */
 export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
   productId,
@@ -37,6 +51,8 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
   open,
   onClose,
   onSaved,
+  loadProduct,
+  saveStock,
 }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -44,11 +60,11 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState(0);
 
-  const loadPackages = useCallback(async (id: number) => {
+  const fetchPackages = useCallback(async (id: number) => {
     setLoading(true);
     setGlobalError(null);
     try {
-      const product = await adminService.getProduct(id);
+      const product = await loadProduct(id);
       const pkgs = (product.packages || []) as ApiProductPackage[];
       setRows(pkgs.map((p) => {
         const total = p.stock_total ?? -1;
@@ -66,14 +82,14 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadProduct]);
 
   useEffect(() => {
     if (open && productId != null) {
       setSavedCount(0);
-      loadPackages(productId);
+      fetchPackages(productId);
     }
-  }, [open, productId, loadPackages]);
+  }, [open, productId, fetchPackages]);
 
   const handleDraftChange = (id: number, value: string) => {
     setRows((prev) => prev.map((r) =>
@@ -103,7 +119,7 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
     ));
 
     try {
-      const result = await adminService.updatePackageStock(productId, row.id, newTotal);
+      const result = await saveStock(productId, row.id, newTotal);
       setRows((prev) => prev.map((r) =>
         r.id === row.id
           ? { ...r, stock_total: result.stock_total, stock_sold: result.stock_sold, draftTotal: result.stock_total === -1 ? '' : String(result.stock_total), saving: false }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '../../../components/Common';
+import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
 import type { ApiProduct } from '../../../services/productService';
 import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierProductListPage.module.css';
@@ -58,6 +59,8 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchAction, setBatchAction] = useState<'online' | 'offline' | 'delete'>('online');
   const [batchLoading, setBatchLoading] = useState(false);
+  // REQ-20260509-0035 Phase 3a: 库存快速调整 modal
+  const [stockModalProduct, setStockModalProduct] = useState<SupplierProduct | null>(null);
 
   const loadProducts = async () => {
     try {
@@ -299,6 +302,13 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                       >
                         {t('supplier.preview.title')}
                       </button>
+                      {/* REQ-20260509-0035 Phase 3a: 列表页一键调库存 */}
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => setStockModalProduct(product)}
+                      >
+                        {t('supplier.products.adjustStock', { defaultValue: '调整库存' })}
+                      </button>
                       {product.status === 'active' ? (
                         <button className={styles.actionBtn} onClick={() => handleToggleStatus(product)}>{t('supplier.products.setOffline')}</button>
                       ) : product.status === 'inactive' ? (
@@ -322,6 +332,18 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
               <p className={styles.emptyHint}>{t('supplier.products.addFirst')}</p>
             </div>
           )}
+
+      {/* REQ-20260509-0035 Phase 3a: 库存快速调整 modal（supplier 走 supplier endpoint） */}
+      <StockAdjustModal
+        productId={stockModalProduct ? Number(stockModalProduct.id) : null}
+        productName={stockModalProduct?.title}
+        open={stockModalProduct !== null}
+        onClose={() => setStockModalProduct(null)}
+        onSaved={loadProducts}
+        loadProduct={(id) => supplierProductService.getById(id)}
+        saveStock={(productId, packageId, stockTotal) =>
+          supplierProductService.updatePackageStock(productId, packageId, stockTotal)}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal

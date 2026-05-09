@@ -3,7 +3,7 @@
  * 供应商产品管理 API（需要 supplier 认证）
  */
 
-import { get, post, put, del, getAccessToken } from './api';
+import { get, post, put, patch, del, getAccessToken } from './api';
 import type { ApiProduct, ApiProductSchedule } from './productService';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
@@ -122,6 +122,19 @@ export const supplierProductService = {
   /** 删除产品 */
   async remove(id: number) {
     return del<void>(`/supplier/products/${id}`, 'supplier');
+  },
+
+  /**
+   * REQ-20260509-0035 Phase 3a: 列表页快速调整库存。绕开 update() 重型流程
+   * （不触发翻译重置 / 不重新走审核）。stock_total = -1 表示无限量。
+   * 后端镜像 admin 的同名端点，加 supplier ownership 校验。
+   */
+  async updatePackageStock(productId: number, packageId: number, stockTotal: number) {
+    return patch<{ id: number; stock_total: number; stock_sold: number }>(
+      `/supplier/products/${productId}/packages/${packageId}/stock`,
+      { stock_total: stockTotal },
+      'supplier',
+    );
   },
 
   /** 提交审核 */
