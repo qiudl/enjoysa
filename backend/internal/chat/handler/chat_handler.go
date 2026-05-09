@@ -248,8 +248,7 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 
 	if streamErr != nil {
 		logger.Errorf("[Chat] stream error: %v", streamErr)
-		fmt.Fprintf(c.Writer, "data: {\"type\":\"error\",\"content\":\"AI service temporarily unavailable\"}\n\n")
-		c.Writer.Flush()
+		writeStreamErrorEvent(c, streamErr)
 		return
 	}
 
@@ -443,9 +442,8 @@ func (h *ChatHandler) streamWithTools(c *gin.Context, session *chatmodel.ChatSes
 		})
 
 		if err != nil {
-			logger.Errorf("[Chat] tool stream error: %v", err)
-			fmt.Fprintf(c.Writer, "data: {\"type\":\"error\",\"content\":\"AI service temporarily unavailable\"}\n\n")
-			c.Writer.Flush()
+			logger.Errorf("[Chat] tool stream error (round %d): %v", round, err)
+			writeStreamErrorEvent(c, err)
 			return
 		}
 
