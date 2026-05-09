@@ -4,25 +4,26 @@
 //
 // Pipeline:
 //   1. validate ownership (ownsChannelInPath)
-//   2. parse body { content, mentions[], image_urls[] (TODO dev-6) }
+//   2. parse body { content, mentions[], image_urls[] }
 //   3. persist user message (channel_id, sender_type=user, mentions[])
 //   4. load entities (channel + members + agents + sibling channels)
 //   5. Route() → Decision
 //      - no_responder → SSE "error" event + done
 //   6. emit SSE "user" + "route" events
-//   7. load main-flow history (last 30) + build prompt messages
-//   8. fetch LLMProvider from registry by responder.LLMProvider
-//   9. stream content; flush each chunk; accumulate
-//  10. persist assistant message with sender_agent_id
-//  11. emit SSE "done"
-//
-// Tools (agent.tool_keys ∩ user_type) are NOT wired here — that's dev-6.
-// Image OCR (image_urls → GLM vision) also dev-6.
+//   7. dev-6: GLM-4V OCR over image_urls → fold into prompt user content
+//   8. load main-flow history (last 30) + build prompt messages
+//   9. fetch LLMProvider from registry by responder.LLMProvider
+//  10. dev-6: agent.tool_keys ∩ user_type → tool list; if non-empty run the
+//      tool-calling loop with three-layer write protection, otherwise plain
+//      content stream (legacy dev-4 behavior).
+//  11. persist assistant message with sender_agent_id
+//  12. emit SSE "done"
 package handler
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -49,7 +50,7 @@ func (h *GroupChatHandler) AttachLLMSupport(messages *chatstore.MessageStore, re
 type sendChannelMessageRequest struct {
 	Content   string   `json:"content" binding:"required,max=4000"`
 	Mentions  []uint   `json:"mentions"`
-	ImageURLs []string `json:"image_urls"` // accepted but ignored in dev-4
+	ImageURLs []string `json:"image_urls"` // dev-6: GLM-4V OCR if vision client wired
 }
 
 // SendChannelMessage handles POST /api/v1/chat/channels/:id/messages.
@@ -159,7 +160,12 @@ func (h *GroupChatHandler) SendChannelMessage(c *gin.Context) {
 		"soft_hint": decision.SoftHint,
 	})
 
-	// 4. Build prompt history from channel main flow (excludes the just-saved user msg
+	// 4. dev-6: image OCR (no-op if no images / GLM not wired). Folded into
+	//    the LLM-facing user content only — the persisted user message stays
+	//    as the user typed it.
+	userContentForLLM := augmentUserContentWithOCR(c.Request.Context(), c, h.glmVision, req.ImageURLs, req.Content)
+
+	// 5. Build prompt history from channel main flow (excludes the just-saved user msg
 	//    only if we ask the store for messages strictly *before* userMsg.ID).
 	history, err := h.messages.ListChannelMain(channelID, userMsg.ID, 30)
 	if err != nil {
@@ -177,15 +183,15 @@ func (h *GroupChatHandler) SendChannelMessage(c *gin.Context) {
 		History:       toHistoryMessages(history, allAgents, owner),
 		SoftHint:      decision.SoftHint,
 	}
-	// Append the just-sent user message at the end of history.
+	// Append the just-sent user message (with any OCR augmentation) at the end of history.
 	promptCtx.History = append(promptCtx.History, chatservice.HistoryMessage{
 		SenderType:    "user",
 		SenderDisplay: ownerDisplay(owner),
-		Content:       req.Content,
+		Content:       userContentForLLM,
 	})
 	llmMessages := chatservice.BuildMessages(promptCtx)
 
-	// 5. Stream from provider.
+	// 6. Stream from provider, optionally with tool calling (dev-6).
 	provider, perr := h.providers.Get(decision.Agent.LLMProvider)
 	if perr != nil {
 		writeSSE(c, "error", map[string]any{
@@ -197,24 +203,10 @@ func (h *GroupChatHandler) SendChannelMessage(c *gin.Context) {
 		return
 	}
 
-	var assembled strings.Builder
-	streamErr := provider.ChatStream(c.Request.Context(), llmprovider.Request{
-		Model:    decision.Agent.LLMModel,
-		Messages: llmMessages,
-	}, func(ev llmprovider.StreamEvent) bool {
-		switch ev.Type {
-		case "content":
-			if ev.Content != "" {
-				assembled.WriteString(ev.Content)
-				writeSSE(c, "content", map[string]any{"content": ev.Content})
-			}
-		case "done":
-			// Final flush handled below; intentionally don't emit "done" here
-			// — we still need to persist before signaling done.
-		}
-		return c.Request.Context().Err() == nil
-	})
-	if streamErr != nil && streamErr != context.Canceled {
+	tools := selectToolsForAgent(h.tools, *decision.Agent, owner.UserType)
+	assembled, streamErr := h.streamProviderResponse(c, provider, decision.Agent, llmMessages, tools, channelID, owner.UserType)
+
+	if streamErr != nil && !errors.Is(streamErr, context.Canceled) {
 		writeSSE(c, "error", map[string]any{
 			"category": "llm_stream_error",
 			"hint":     "LLM 调用失败",
@@ -222,14 +214,14 @@ func (h *GroupChatHandler) SendChannelMessage(c *gin.Context) {
 		})
 	}
 
-	// 6. Persist assistant message (even on partial completion if any content arrived).
-	if assembled.Len() > 0 {
+	// 7. Persist assistant message (even on partial completion if any content arrived).
+	if assembled != "" {
 		agentID := decision.Agent.ID
 		_, perr := h.messages.Append(chatstore.AppendInput{
 			ChannelID:     channelID,
 			SenderType:    "ai",
 			SenderAgentID: &agentID,
-			Content:       assembled.String(),
+			Content:       assembled,
 		})
 		if perr != nil {
 			logger.Errorf("[group_chat] persist assistant: %v", perr)
@@ -237,6 +229,40 @@ func (h *GroupChatHandler) SendChannelMessage(c *gin.Context) {
 	}
 
 	writeSSE(c, "done", map[string]any{})
+}
+
+// streamProviderResponse runs the agent reply through either the tool-calling
+// loop (when tools is non-empty + tool registry wired) or a plain content
+// stream (legacy dev-4 path). Returns the assembled assistant text + any
+// stream error so the caller can persist + surface it uniformly.
+func (h *GroupChatHandler) streamProviderResponse(
+	c *gin.Context,
+	provider llmprovider.Provider,
+	agent *chatmodel.ChatAgent,
+	llmMessages []llmprovider.Message,
+	tools []llmprovider.Tool,
+	channelID uint,
+	userType string,
+) (string, error) {
+	if len(tools) > 0 && h.tools != nil {
+		chatUser := buildChatUser(c)
+		toolCtx := buildToolContext(chatUser, channelID, h.db)
+		res := runProviderToolLoop(c.Request.Context(), c, provider, agent.LLMModel, llmMessages, tools, h.tools, toolCtx)
+		return res.Assembled, res.StreamErr
+	}
+
+	var assembled strings.Builder
+	err := provider.ChatStream(c.Request.Context(), llmprovider.Request{
+		Model:    agent.LLMModel,
+		Messages: llmMessages,
+	}, func(ev llmprovider.StreamEvent) bool {
+		if ev.Type == "content" && ev.Content != "" {
+			assembled.WriteString(ev.Content)
+			writeSSE(c, "content", map[string]any{"content": ev.Content})
+		}
+		return c.Request.Context().Err() == nil
+	})
+	return assembled.String(), err
 }
 
 // =====================================================================

@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -27,7 +26,6 @@ import (
 	chatservice "enjoysa-backend/internal/chat/service"
 	chatstore "enjoysa-backend/internal/chat/store"
 	"enjoysa-backend/internal/core/logger"
-	"enjoysa-backend/internal/llmprovider"
 	"enjoysa-backend/pkg/response"
 )
 
@@ -145,7 +143,7 @@ type sendThreadMessageRequest struct {
 	Content       string   `json:"content" binding:"required,max=4000"`
 	Mentions      []uint   `json:"mentions"`
 	AlsoInChannel bool     `json:"also_in_channel"`
-	ImageURLs     []string `json:"image_urls"` // accepted; OCR is dev-6
+	ImageURLs     []string `json:"image_urls"` // dev-6: GLM-4V OCR if vision client wired
 }
 
 func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
@@ -283,7 +281,12 @@ func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
 		"soft_hint":           decision.SoftHint,
 	})
 
-	// 4. Build prompt with thread context: parent + thread replies + just-sent message.
+	// 4. dev-6: image OCR (no-op if no images / GLM not wired). Folded into
+	//    the LLM-facing user content only — the persisted user message stays
+	//    as the user typed it.
+	userContentForLLM := augmentUserContentWithOCR(c.Request.Context(), c, h.glmVision, req.ImageURLs, req.Content)
+
+	// 5. Build prompt with thread context: parent + thread replies + just-sent message.
 	parentSenderName := h.resolveSenderName(parent, allAgents, owner)
 	otherMembers := otherChannelMembersAsAgents(allAgents, members, decision.Agent.ID)
 
@@ -297,11 +300,11 @@ func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
 		Content:       parent.Content,
 	})
 	hist = append(hist, toHistoryMessages(threadHistory, allAgents, owner)...)
-	// Append the just-sent user message at the end of history.
+	// Append the just-sent user message (with any OCR augmentation) at the end of history.
 	hist = append(hist, chatservice.HistoryMessage{
 		SenderType:    "user",
 		SenderDisplay: ownerDisplay(owner),
-		Content:       req.Content,
+		Content:       userContentForLLM,
 	})
 
 	promptCtx := chatservice.PromptContext{
@@ -318,7 +321,7 @@ func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
 	}
 	llmMessages := chatservice.BuildMessages(promptCtx)
 
-	// 5. Stream.
+	// 6. Stream from provider, optionally with tool calling (dev-6).
 	provider, perr := h.providers.Get(decision.Agent.LLMProvider)
 	if perr != nil {
 		writeSSE(c, "error", map[string]any{
@@ -330,20 +333,9 @@ func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
 		return
 	}
 
-	var assembled strings.Builder
-	streamErr := provider.ChatStream(c.Request.Context(), llmprovider.Request{
-		Model:    decision.Agent.LLMModel,
-		Messages: llmMessages,
-	}, func(ev llmprovider.StreamEvent) bool {
-		switch ev.Type {
-		case "content":
-			if ev.Content != "" {
-				assembled.WriteString(ev.Content)
-				writeSSE(c, "content", map[string]any{"content": ev.Content})
-			}
-		}
-		return c.Request.Context().Err() == nil
-	})
+	tools := selectToolsForAgent(h.tools, *decision.Agent, owner.UserType)
+	assembled, streamErr := h.streamProviderResponse(c, provider, decision.Agent, llmMessages, tools, channelID, owner.UserType)
+
 	if streamErr != nil && !errors.Is(streamErr, context.Canceled) {
 		writeSSE(c, "error", map[string]any{
 			"category": "llm_stream_error",
@@ -352,15 +344,15 @@ func (h *GroupChatHandler) SendThreadMessage(c *gin.Context) {
 		})
 	}
 
-	// 6. Persist agent reply (always thread-only — agents never auto-cross-post).
-	if assembled.Len() > 0 {
+	// 7. Persist agent reply (always thread-only — agents never auto-cross-post).
+	if assembled != "" {
 		agentID := decision.Agent.ID
 		_, perr := h.messages.Append(chatstore.AppendInput{
 			ChannelID:      channelID,
 			ThreadParentID: &pid,
 			SenderType:     "ai",
 			SenderAgentID:  &agentID,
-			Content:        assembled.String(),
+			Content:        assembled,
 			AlsoInChannel:  false,
 		})
 		if perr != nil {

@@ -22,15 +22,27 @@ func (s *Seeder) seedChatAgents() error {
 		return nil
 	}
 
+	// ToolKeys reference real names registered in the aichat tool registry
+	// (see backend/internal/aichat/setup.go). Unknown keys are silently
+	// skipped at dispatch time, so seed evolution is loose-coupled.
 	defaults := []chatmodel.ChatAgent{
 		{
-			Code:                chatmodel.AgentCodeCustomerService,
-			Name:                "客服小南",
-			MemberType:          "ai",
-			LLMProvider:         "deepseek",
-			LLMModel:            "deepseek-chat",
-			SystemPrompt:        defaultCustomerServicePrompt,
-			ToolKeys:            pq.StringArray{"list_orders", "get_order", "refund_order", "faq_search"},
+			Code:         chatmodel.AgentCodeCustomerService,
+			Name:         "客服小南",
+			MemberType:   "ai",
+			LLMProvider:  "deepseek",
+			LLMModel:     "deepseek-chat",
+			SystemPrompt: defaultCustomerServicePrompt,
+			ToolKeys: pq.StringArray{
+				"search_orders",
+				"list_pending_orders",
+				"get_order_stats",
+				"get_settlement_detail",
+				"confirm_order",
+				"search_knowledge",
+				"create_requirement",
+				"upload_screenshot_requirement",
+			},
 			AvatarEmoji:         "🙋",
 			ColorHex:            "#16a34a",
 			SortOrder:           10,
@@ -38,13 +50,22 @@ func (s *Seeder) seedChatAgents() error {
 			Enabled:             true,
 		},
 		{
-			Code:                chatmodel.AgentCodeTechSupport,
-			Name:                "技术阿澳",
-			MemberType:          "ai",
-			LLMProvider:         "glm",
-			LLMModel:            "glm-4-flash",
-			SystemPrompt:        defaultTechSupportPrompt,
-			ToolKeys:            pq.StringArray{"search_products", "get_product_availability", "troubleshoot_api"},
+			Code:         chatmodel.AgentCodeTechSupport,
+			Name:         "技术阿澳",
+			MemberType:   "ai",
+			LLMProvider:  "glm",
+			LLMModel:     "glm-4-flash",
+			SystemPrompt: defaultTechSupportPrompt,
+			ToolKeys: pq.StringArray{
+				"search_products",
+				"get_product_detail",
+				"check_availability",
+				"get_reviews",
+				"get_review_stats",
+				"get_inventory_alerts",
+				"recommend_attractions",
+				"search_knowledge",
+			},
 			AvatarEmoji:         "🛠",
 			ColorHex:            "#2563eb",
 			SortOrder:           20,
