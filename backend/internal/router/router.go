@@ -492,6 +492,8 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.DELETE("/:id", supplierProductHandler.DeleteProduct)
 		// REQ-20260509-0035 Phase 3a: 列表页快速调整库存（绕开 PUT 重型流程）
 		supplierProducts.PATCH("/:id/packages/:pkgId/stock", supplierProductHandler.UpdatePackageStock)
+		// REQ-20260509-0035 Phase 3b: 列表页批量库存工具栏
+		supplierProducts.POST("/batch-stock", supplierProductHandler.BatchAdjustStock)
 		supplierProducts.POST("/:id/submit", supplierProductHandler.SubmitForReview)
 		supplierProducts.POST("/:id/offline", supplierProductHandler.Offline)
 		supplierProducts.POST("/:id/online", supplierProductHandler.Online)
@@ -649,6 +651,8 @@ func Setup(cfg Config) *gin.Engine {
 		// 徽章用（PR-C 接入），仅严格 status=pending。
 		adminGroup.POST("/products/batch-approve", adminHandler.BatchApproveProducts)
 		adminGroup.POST("/products/batch-reject", adminHandler.BatchRejectProducts)
+		// REQ-20260509-0035 Phase 3b: 列表页批量库存工具栏
+		adminGroup.POST("/products/batch-stock", adminHandler.BatchAdjustStock)
 		adminGroup.GET("/dashboard/pending-counts", adminHandler.GetPendingCounts)
 
 		// REQ-20260509-0004: ZH→EN translation status / retry / regenerate.

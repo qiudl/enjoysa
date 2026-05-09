@@ -93,6 +93,20 @@ func Fail(c *gin.Context, status int, code, message string) {
 	})
 }
 
+// FailWithData is Fail with structured details attached on Response.Data so
+// the frontend can branch on `code` and read structured context (e.g.
+// missing_ids, conflicting_packages) without parsing message strings.
+// REQ-20260509-0035 Phase 3b — batch endpoints need to return per-item
+// reasons when 422-ing the whole batch.
+func FailWithData(c *gin.Context, status int, code, message string, data interface{}) {
+	c.JSON(status, Response{
+		Success: false,
+		Error:   message,
+		Code:    code,
+		Data:    data,
+	})
+}
+
 func Paginated(c *gin.Context, items interface{}, total int64, page, pageSize int) {
 	totalPages := int(total) / pageSize
 	if int(total)%pageSize > 0 {

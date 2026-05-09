@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '../../../components/Common';
 import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
+import { BatchStockModal } from '../../../components/Common/BatchStockModal';
 import type { ApiProduct } from '../../../services/productService';
 import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierProductListPage.module.css';
@@ -61,6 +62,8 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const [batchLoading, setBatchLoading] = useState(false);
   // REQ-20260509-0035 Phase 3a: 库存快速调整 modal
   const [stockModalProduct, setStockModalProduct] = useState<SupplierProduct | null>(null);
+  // REQ-20260509-0035 Phase 3b: 批量库存调整 modal
+  const [batchStockOpen, setBatchStockOpen] = useState(false);
 
   const loadProducts = async () => {
     try {
@@ -222,6 +225,9 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
                 <Button size="sm" variant="danger" onClick={() => openBatchAction('delete')}>
                   {t('supplier.products.batchDelete')}
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => setBatchStockOpen(true)}>
+                  {t('supplier.products.batchStock', { defaultValue: '批量调整库存' })}
+                </Button>
               </div>
             </div>
           )}
@@ -343,6 +349,18 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
         loadProduct={(id) => supplierProductService.getById(id)}
         saveStock={(productId, packageId, stockTotal) =>
           supplierProductService.updatePackageStock(productId, packageId, stockTotal)}
+      />
+
+      {/* REQ-20260509-0035 Phase 3b: 批量库存调整 modal */}
+      <BatchStockModal
+        open={batchStockOpen}
+        onClose={() => setBatchStockOpen(false)}
+        productIds={Array.from(selectedIds).map((id) => Number(id))}
+        saveBatch={(req) => supplierProductService.batchAdjustStock(req)}
+        onSaved={() => {
+          setSelectedIds(new Set());
+          loadProducts();
+        }}
       />
 
       {/* Delete Confirmation Modal */}

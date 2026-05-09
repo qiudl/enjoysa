@@ -110,12 +110,18 @@ function tryRefresh(userType: UserType): Promise<string> {
 export class ApiError extends Error {
   status: number;
   code?: string;
+  // Structured payload from Response.Data on backend errors
+  // (REQ-20260509-0035 Phase 3b: e.g. { missing_ids, forbidden_ids,
+  // conflicting_packages } so the frontend can render specific toast
+  // copy instead of parsing strings).
+  data?: unknown;
 
-  constructor(message: string, status: number, code?: string) {
+  constructor(message: string, status: number, code?: string, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.data = data;
   }
 }
 
@@ -236,6 +242,7 @@ async function requestWithRetry<T>(
       data.error || data.message || 'Request failed',
       response.status,
       data.code,
+      data.data,
     );
   }
 
