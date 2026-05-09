@@ -1023,6 +1023,85 @@ func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
 	})
 }
 
+// REQ-20260509-0035 Phase 3b: supplier mirror of admin batch-stock. Ownership
+// is enforced inside ProductStore.BatchAdjustStock by passing the supplier
+// id so a supplier cannot ever leak / modify another supplier's stock.
+type batchAdjustStockRequest struct {
+	ProductIDs []uint `json:"product_ids"`
+	Operation  string `json:"operation"`
+	Value      int    `json:"value"`
+}
+
+// supplier-side cap mirrors admin's batchProductOpsCap (50). Kept inline
+// rather than imported to avoid a cross-package import cycle.
+const supplierBatchStockCap = 50
+
+func (h *SupplierProductHandler) BatchAdjustStock(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+	if supplierID == 0 {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	var req batchAdjustStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "Invalid request: "+err.Error())
+		return
+	}
+	op := store.BatchAdjustStockOp(req.Operation)
+	switch op {
+	case store.BatchAdjustStockAdd, store.BatchAdjustStockSub:
+		if req.Value <= 0 {
+			response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "value must be > 0 for add/sub")
+			return
+		}
+	case store.BatchAdjustStockSet:
+		if req.Value < 0 {
+			response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "value must be >= 0 for set")
+			return
+		}
+	case store.BatchAdjustStockZero:
+	default:
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "operation must be one of: add, sub, set, zero")
+		return
+	}
+	if len(req.ProductIDs) == 0 {
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "product_ids required")
+		return
+	}
+	if len(req.ProductIDs) > supplierBatchStockCap {
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST",
+			fmt.Sprintf("product_ids exceeds cap %d", supplierBatchStockCap))
+		return
+	}
+
+	owner := supplierID
+	result, err := h.productStore.BatchAdjustStock(req.ProductIDs, op, req.Value, &owner)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.ErrBatchProductNotFound):
+			response.FailWithData(c, http.StatusUnprocessableEntity, "BATCH_PRODUCT_NOT_FOUND",
+				"Some products do not exist", gin.H{"missing_ids": result.MissingIDs})
+		case errors.Is(err, store.ErrBatchForbidden):
+			response.FailWithData(c, http.StatusUnprocessableEntity, "BATCH_FORBIDDEN",
+				"Some products do not belong to this supplier", gin.H{"forbidden_ids": result.ForbiddenIDs})
+		case errors.Is(err, store.ErrBatchBelowSold):
+			response.FailWithData(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
+				"stock_total cannot be below already-sold for some packages",
+				gin.H{"conflicting_packages": result.ConflictingPackages})
+		default:
+			response.ServerError(c, "Failed to apply batch stock adjustment")
+		}
+		return
+	}
+
+	logger.Infof("supplier %d batch_stock_adjust op=%s value=%d products=%d packages=%d skipped=%d",
+		supplierID, req.Operation, req.Value,
+		result.UpdatedProducts, result.UpdatedPackages, result.SkippedUnlimited)
+
+	response.Success(c, result)
+}
+
 // ScheduleAlerts 库存预警
 func (h *SupplierProductHandler) ScheduleAlerts(c *gin.Context) {
 	supplierID := h.getSupplierID(c)

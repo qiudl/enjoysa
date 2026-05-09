@@ -5,6 +5,7 @@
 
 import { get, post, put, patch, del, getAccessToken } from './api';
 import type { ApiProduct, ApiProductSchedule } from './productService';
+import type { BatchStockRequest, BatchStockResponse } from './adminService';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
@@ -135,6 +136,15 @@ export const supplierProductService = {
       { stock_total: stockTotal },
       'supplier',
     );
+  },
+
+  /**
+   * REQ-20260509-0035 Phase 3b: 批量库存调整。镜像 admin batch-stock，但
+   * 后端用 ctx supplier_id 强制 ownership — supplier 永远只能改自家商品。
+   * 单事务，op=add/sub 跳过 unlimited(-1)；op=set/zero 覆写含 -1。
+   */
+  async batchAdjustStock(req: BatchStockRequest) {
+    return post<BatchStockResponse>('/supplier/products/batch-stock', req, 'supplier');
   },
 
   /** 提交审核 */

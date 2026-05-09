@@ -1864,6 +1864,7 @@
       "batchOnline": "Batch Activate",
       "batchOffline": "Batch Deactivate",
       "batchDelete": "Batch Delete",
+      "batchStock": "Batch Adjust Stock",
       "batchConfirm": "Are you sure you want to {{action}} {{count}} products?",
       "statusLabels": {
         "active": "Active",

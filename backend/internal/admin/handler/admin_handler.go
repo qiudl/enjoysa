@@ -2,6 +2,7 @@ package handler
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -1788,6 +1789,109 @@ func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
 		"stock_total": req.StockTotal,
 		"stock_sold":  pkg.StockSold,
 	})
+}
+
+// REQ-20260509-0035 Phase 3b: list-page batch toolbar — adjust stock for
+// every package of N selected products in a single transaction. 4 ops:
+// add / sub / set / zero. unlimited (-1) packages are silently skipped on
+// add/sub but explicitly overwritten on set/zero (the frontend shows a
+// confirm dialog for that case).
+type batchAdjustStockRequest struct {
+	ProductIDs []uint `json:"product_ids"`
+	Operation  string `json:"operation"`
+	Value      int    `json:"value"`
+}
+
+// validateBatchStockOp returns the canonical op + a human message if the
+// request body is malformed. Centralized so admin and supplier handlers
+// stay in lockstep.
+func validateBatchStockOp(req batchAdjustStockRequest) (productstore.BatchAdjustStockOp, string) {
+	op := productstore.BatchAdjustStockOp(req.Operation)
+	switch op {
+	case productstore.BatchAdjustStockAdd, productstore.BatchAdjustStockSub:
+		if req.Value <= 0 {
+			return op, "value must be > 0 for add/sub"
+		}
+	case productstore.BatchAdjustStockSet:
+		if req.Value < 0 {
+			return op, "value must be >= 0 for set"
+		}
+	case productstore.BatchAdjustStockZero:
+		// value ignored
+	default:
+		return op, "operation must be one of: add, sub, set, zero"
+	}
+	if len(req.ProductIDs) == 0 {
+		return op, "product_ids required"
+	}
+	if len(req.ProductIDs) > batchProductOpsCap {
+		return op, fmt.Sprintf("product_ids exceeds cap %d", batchProductOpsCap)
+	}
+	return op, ""
+}
+
+// buildBatchStockAuditDetail caps the per-package change list at 200 entries
+// (audit_log.detail is a TEXT column; defect-analysis #4 needs enough
+// context to reconstruct who changed what). The summary line stays short
+// so log indexers can grep it; the JSON detail is for reconstruction.
+func buildBatchStockAuditDetail(req batchAdjustStockRequest, result productstore.BatchAdjustStockResult) string {
+	const cap = 200
+	changes := result.Changes
+	truncated := false
+	if len(changes) > cap {
+		changes = changes[:cap]
+		truncated = true
+	}
+	summary := fmt.Sprintf("op=%s value=%d ids=%v products=%d packages=%d skipped_unlimited=%d",
+		req.Operation, req.Value, req.ProductIDs,
+		result.UpdatedProducts, result.UpdatedPackages, result.SkippedUnlimited)
+	if len(changes) == 0 {
+		return summary
+	}
+	parts := make([]string, 0, len(changes)+1)
+	parts = append(parts, summary)
+	for _, c := range changes {
+		parts = append(parts, fmt.Sprintf("p%d/pkg%d:%d->%d", c.ProductID, c.PackageID, c.Before, c.After))
+	}
+	if truncated {
+		parts = append(parts, fmt.Sprintf("...+%d more", len(result.Changes)-cap))
+	}
+	return strings.Join(parts, " | ")
+}
+
+func (h *AdminHandler) BatchAdjustStock(c *gin.Context) {
+	var req batchAdjustStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", "Invalid request: "+err.Error())
+		return
+	}
+	op, msg := validateBatchStockOp(req)
+	if msg != "" {
+		response.Fail(c, http.StatusBadRequest, "INVALID_BATCH_REQUEST", msg)
+		return
+	}
+
+	result, err := h.productStore.BatchAdjustStock(req.ProductIDs, op, req.Value, nil)
+	if err != nil {
+		switch {
+		case errors.Is(err, productstore.ErrBatchProductNotFound):
+			response.FailWithData(c, http.StatusUnprocessableEntity, "BATCH_PRODUCT_NOT_FOUND",
+				"Some products do not exist", gin.H{"missing_ids": result.MissingIDs})
+		case errors.Is(err, productstore.ErrBatchBelowSold):
+			response.FailWithData(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
+				"stock_total cannot be below already-sold for some packages",
+				gin.H{"conflicting_packages": result.ConflictingPackages})
+		default:
+			response.ServerError(c, "Failed to apply batch stock adjustment")
+		}
+		return
+	}
+
+	if h.audit != nil {
+		h.audit.Log(c, "batch_stock_adjust", "product_packages", 0, buildBatchStockAuditDetail(req, result))
+	}
+
+	response.Success(c, result)
 }
 
 // === Order Management ===

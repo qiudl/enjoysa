@@ -8,6 +8,7 @@ import { ProductReviewTable } from '../../../components/Admin/ProductReviewTable
 import type { ProductReview, ProductReviewStatus } from '../../../components/Admin/ProductReviewTable';
 import { ProductReviewDetail } from '../../../components/Admin/ProductReviewDetail';
 import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
+import { BatchStockModal } from '../../../components/Common/BatchStockModal';
 import { adminService, type ApiAdminProduct, type BatchProductOpResponse } from '../../../services/adminService';
 import styles from './ProductReviewList.module.css';
 
@@ -65,6 +66,8 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
   const [detailOpen, setDetailOpen] = useState(false);
   // REQ-20260509-0035 Phase 2: 列表页直接调库存 modal
   const [stockModalProduct, setStockModalProduct] = useState<ProductReview | null>(null);
+  // REQ-20260509-0035 Phase 3b: 列表页批量库存调整 modal
+  const [batchStockOpen, setBatchStockOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -304,6 +307,14 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
           <button
             type="button"
             className={styles.batchBtn}
+            onClick={() => setBatchStockOpen(true)}
+            disabled={batchSubmitting || selectedIds.length === 0 || selectedIds.length > 50}
+          >
+            {t('admin.products.batch.stock', { defaultValue: 'Adjust stock' })}
+          </button>
+          <button
+            type="button"
+            className={styles.batchBtn}
             onClick={() => setSelectedIds([])}
             disabled={batchSubmitting}
           >
@@ -442,6 +453,18 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
         loadProduct={(id) => adminService.getProduct(id)}
         saveStock={(productId, packageId, stockTotal) =>
           adminService.updatePackageStock(productId, packageId, stockTotal)}
+      />
+
+      {/* REQ-20260509-0035 Phase 3b: 批量库存调整 modal */}
+      <BatchStockModal
+        open={batchStockOpen}
+        onClose={() => setBatchStockOpen(false)}
+        productIds={selectedIds.map((id) => Number(id))}
+        saveBatch={(req) => adminService.batchAdjustStock(req)}
+        onSaved={() => {
+          setSelectedIds([]);
+          loadData(currentPage);
+        }}
       />
 
       {/*

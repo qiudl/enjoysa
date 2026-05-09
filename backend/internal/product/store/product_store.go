@@ -2,15 +2,72 @@ package store
 
 import (
 	"errors"
+	"sort"
 
 	"enjoysa-backend/internal/product/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ErrInsufficientStock — REQ-20260509-0035 — surfaced to handler as 422
 // INSUFFICIENT_STOCK so the frontend can show a "库存不足" toast.
 var ErrInsufficientStock = errors.New("insufficient stock")
+
+// REQ-20260509-0035 Phase 3b — batch stock adjustment sentinel errors. The
+// handler maps each to a specific 422 code so the frontend can render the
+// right toast (which IDs missing / forbidden / below-sold).
+var (
+	ErrBatchProductNotFound = errors.New("batch product not found")
+	ErrBatchForbidden       = errors.New("batch forbidden")
+	ErrBatchBelowSold       = errors.New("batch below sold")
+)
+
+// BatchAdjustStockOp — list-page batch toolbar operation set. Mirrors the
+// 4 PRD options: 全部 +N / 全部 -N / 全部设为 N / 一键归零.
+type BatchAdjustStockOp string
+
+const (
+	BatchAdjustStockAdd  BatchAdjustStockOp = "add"
+	BatchAdjustStockSub  BatchAdjustStockOp = "sub"
+	BatchAdjustStockSet  BatchAdjustStockOp = "set"
+	BatchAdjustStockZero BatchAdjustStockOp = "zero"
+)
+
+// BatchAdjustStockChange — per-package before/after for the audit trail
+// (defect-analysis #4: bulk audit needs per-row detail to support post-hoc
+// customer disputes).
+type BatchAdjustStockChange struct {
+	ProductID uint `json:"product_id"`
+	PackageID uint `json:"package_id"`
+	Before    int  `json:"before"`
+	After     int  `json:"after"`
+}
+
+// BatchAdjustStockConflict — populated when a set/zero would push
+// stock_total below the package's already-committed stock_sold. Surfaced
+// as 422 STOCK_BELOW_SOLD with the full conflict list so ops can decide
+// which orders to cancel before retrying.
+type BatchAdjustStockConflict struct {
+	ProductID      uint `json:"product_id"`
+	PackageID      uint `json:"package_id"`
+	StockSold      int  `json:"stock_sold"`
+	RequestedTotal int  `json:"requested_total"`
+}
+
+// BatchAdjustStockResult — summary + change list + conflict list. Returned
+// in both success and 422 paths so handler can attach data to the
+// response without an extra round-trip.
+type BatchAdjustStockResult struct {
+	UpdatedProducts     int                        `json:"updated_products"`
+	UpdatedPackages     int                        `json:"updated_packages"`
+	SkippedUnlimited    int                        `json:"skipped_unlimited"`
+	AffectedProductIDs  []uint                     `json:"affected_product_ids"`
+	Changes             []BatchAdjustStockChange   `json:"-"`
+	MissingIDs          []uint                     `json:"-"`
+	ForbiddenIDs        []uint                     `json:"-"`
+	ConflictingPackages []BatchAdjustStockConflict `json:"-"`
+}
 
 type ProductStore struct {
 	db *gorm.DB
@@ -326,6 +383,168 @@ func (s *ProductStore) IncrementPackageStock(tx *gorm.DB, packageID uint, qty in
 	return tx.Model(&model.ProductPackage{}).
 		Where("id = ? AND stock_total != -1", packageID).
 		Update("stock_sold", gorm.Expr("GREATEST(stock_sold - ?, 0)", qty)).Error
+}
+
+// BatchAdjustStock applies a batch stock operation to all packages of the
+// given product IDs in a single transaction (REQ-20260509-0035 Phase 3b).
+//
+// owner != nil restricts the batch to products with supplier_id == *owner
+// (supplier path). Admin path passes nil.
+//
+// Concurrency: the package SELECT uses FOR UPDATE + ORDER BY id ASC so
+// two concurrent batches with overlapping product IDs always lock rows in
+// the same global order, eliminating deadlocks. Order-creation uses a
+// conditional UPDATE which takes the same row lock; PostgreSQL serializes
+// the two paths so this batch cannot leave the system in a state where
+// stock_total < stock_sold mid-flight (defect-analysis #1).
+//
+// Operation semantics (mirror single-row UpdatePackageStock):
+//   - add (value>0): stock_total = -1 silently skipped; else += value
+//   - sub (value>0): stock_total = -1 silently skipped; else
+//     max(stock_sold, stock_total - value) (never below already-sold)
+//   - set (value>=0): all packages overwritten, including -1 unlimited.
+//     Returns ErrBatchBelowSold if any package has stock_sold > value.
+//   - zero: equivalent to set 0; same below-sold guard.
+func (s *ProductStore) BatchAdjustStock(productIDs []uint, op BatchAdjustStockOp, value int, owner *uint) (BatchAdjustStockResult, error) {
+	var result BatchAdjustStockResult
+	if len(productIDs) == 0 {
+		return result, errors.New("empty productIDs")
+	}
+
+	// Sorted dedup — defense-in-depth + lock ordering. The handler also
+	// sorts but we re-sort here so a misbehaving caller can't bypass it.
+	seen := make(map[uint]struct{}, len(productIDs))
+	sortedIDs := make([]uint, 0, len(productIDs))
+	for _, id := range productIDs {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		sortedIDs = append(sortedIDs, id)
+	}
+	sort.Slice(sortedIDs, func(i, j int) bool { return sortedIDs[i] < sortedIDs[j] })
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// 1) Validate existence + ownership.
+		var products []model.Product
+		if err := tx.Select("id", "supplier_id").
+			Where("id IN ?", sortedIDs).
+			Find(&products).Error; err != nil {
+			return err
+		}
+		foundOwner := make(map[uint]uint, len(products))
+		for _, p := range products {
+			foundOwner[p.ID] = p.SupplierID
+		}
+		for _, id := range sortedIDs {
+			if _, ok := foundOwner[id]; !ok {
+				result.MissingIDs = append(result.MissingIDs, id)
+			}
+		}
+		if len(result.MissingIDs) > 0 {
+			return ErrBatchProductNotFound
+		}
+		if owner != nil {
+			for _, id := range sortedIDs {
+				if foundOwner[id] != *owner {
+					result.ForbiddenIDs = append(result.ForbiddenIDs, id)
+				}
+			}
+			if len(result.ForbiddenIDs) > 0 {
+				return ErrBatchForbidden
+			}
+		}
+
+		// 2) Lock all packages with consistent global order.
+		var pkgs []model.ProductPackage
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("product_id IN ?", sortedIDs).
+			Order("id ASC").
+			Find(&pkgs).Error; err != nil {
+			return err
+		}
+
+		// 3) For set/zero, pre-collect ALL below-sold conflicts so the
+		// frontend gets the full picture in one shot.
+		if op == BatchAdjustStockSet || op == BatchAdjustStockZero {
+			target := value
+			if op == BatchAdjustStockZero {
+				target = 0
+			}
+			for _, p := range pkgs {
+				if target < p.StockSold {
+					result.ConflictingPackages = append(result.ConflictingPackages, BatchAdjustStockConflict{
+						ProductID:      p.ProductID,
+						PackageID:      p.ID,
+						StockSold:      p.StockSold,
+						RequestedTotal: target,
+					})
+				}
+			}
+			if len(result.ConflictingPackages) > 0 {
+				return ErrBatchBelowSold
+			}
+		}
+
+		// 4) Apply per package. Skip unchanged rows so the change list
+		// reflects actual writes.
+		affected := make(map[uint]struct{})
+		for _, p := range pkgs {
+			var newTotal int
+			switch op {
+			case BatchAdjustStockAdd:
+				if p.StockTotal == -1 {
+					result.SkippedUnlimited++
+					continue
+				}
+				newTotal = p.StockTotal + value
+			case BatchAdjustStockSub:
+				if p.StockTotal == -1 {
+					result.SkippedUnlimited++
+					continue
+				}
+				newTotal = p.StockTotal - value
+				if newTotal < p.StockSold {
+					newTotal = p.StockSold
+				}
+			case BatchAdjustStockSet:
+				newTotal = value
+			case BatchAdjustStockZero:
+				newTotal = 0
+			default:
+				return errors.New("unknown op")
+			}
+			if newTotal == p.StockTotal {
+				continue
+			}
+			if err := tx.Model(&model.ProductPackage{}).
+				Where("id = ?", p.ID).
+				Update("stock_total", newTotal).Error; err != nil {
+				return err
+			}
+			result.Changes = append(result.Changes, BatchAdjustStockChange{
+				ProductID: p.ProductID,
+				PackageID: p.ID,
+				Before:    p.StockTotal,
+				After:     newTotal,
+			})
+			result.UpdatedPackages++
+			affected[p.ProductID] = struct{}{}
+		}
+
+		result.UpdatedProducts = len(affected)
+		result.AffectedProductIDs = make([]uint, 0, len(affected))
+		for id := range affected {
+			result.AffectedProductIDs = append(result.AffectedProductIDs, id)
+		}
+		sort.Slice(result.AffectedProductIDs, func(i, j int) bool {
+			return result.AffectedProductIDs[i] < result.AffectedProductIDs[j]
+		})
+
+		return nil
+	})
+
+	return result, err
 }
 
 // PopulateCreatedByAdminName looks up the admin name for an admin_proxy

@@ -1927,6 +1927,7 @@
       "batchOnline": "批量上架",
       "batchOffline": "批量下架",
       "batchDelete": "批量删除",
+      "batchStock": "批量调整库存",
       "batchConfirm": "确定要对 {{count}} 个产品执行「{{action}}」操作吗？",
       "statusLabels": {
         "active": "已上架",

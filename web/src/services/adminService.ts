@@ -175,6 +175,31 @@ export interface BatchProductOpResponse {
   };
 }
 
+// REQ-20260509-0035 Phase 3b: 批量库存调整请求/响应。op + value 由前端
+// BatchStockModal 决定；后端按 sortedIDs ORDER BY id ASC 全选 packages 锁
+// 后单事务应用，response.affected_product_ids 用于前端定位刷新。
+export type BatchStockOp = 'add' | 'sub' | 'set' | 'zero';
+
+export interface BatchStockRequest {
+  product_ids: number[];
+  operation: BatchStockOp;
+  value?: number;
+}
+
+export interface BatchStockConflict {
+  product_id: number;
+  package_id: number;
+  stock_sold: number;
+  requested_total: number;
+}
+
+export interface BatchStockResponse {
+  updated_products: number;
+  updated_packages: number;
+  skipped_unlimited: number;
+  affected_product_ids: number[];
+}
+
 export interface PendingCountsResponse {
   products: number;
   suppliers: number;
@@ -424,6 +449,12 @@ export const adminService = {
       { stock_total: stockTotal },
       'admin',
     );
+  },
+
+  // REQ-20260509-0035 Phase 3b: 列表页批量库存工具栏。一次事务内调多商品所有
+  // 套餐 stock_total。op=add/sub 跳过 unlimited(-1)；op=set/zero 覆写含 -1。
+  async batchAdjustStock(req: BatchStockRequest) {
+    return post<BatchStockResponse>('/admin/products/batch-stock', req, 'admin');
   },
 
   // REQ-20260509-0004: ZH→EN translation for admin-edited products. The
