@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { supplierProductService } from '../../../services/supplierProductService';
 import type { ImagePayload, PackagePayload, HighlightPayload, FAQPayload } from '../../../services/supplierProductService';
 import { ChinesePreview } from '../../../components/Supplier/ChinesePreview';
+import { FormBatchStockBar } from '../../../components/Common/FormBatchStockBar';
 import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
 import styles from './SupplierProductFormPage.module.css';
@@ -651,6 +652,14 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
           {t('supplier.productForm.addPackage')}
         </button>
       </div>
+
+      {/* REQ-20260509-0035 Phase 3c: form-top batch stock toolbar */}
+      <FormBatchStockBar
+        packages={packages}
+        onApply={(changes) => setPackages((prev) => prev.map((p) =>
+          changes.has(p._id) ? { ...p, stock_total: changes.get(p._id)! } : p,
+        ))}
+      />
 
       {packages.length === 0 ? (
         <div className={styles.emptyState}>

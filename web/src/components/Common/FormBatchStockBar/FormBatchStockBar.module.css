@@ -1,0 +1,113 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+  background: #f5f7fa;
+  border: 1px solid #e0e6ee;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.label {
+  color: #555;
+  font-weight: 500;
+}
+
+.opGroup {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.opOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #d0d6df;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+}
+
+.opOption:hover {
+  border-color: #1677ff;
+}
+
+.opOptionActive {
+  border-color: #1677ff;
+  background: #e6f2ff;
+  color: #1677ff;
+}
+
+.opRadio {
+  margin: 0;
+}
+
+.valueInput {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid #d0d6df;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.valueInput:focus {
+  outline: none;
+  border-color: #1677ff;
+}
+
+.applyBtn {
+  padding: 5px 14px;
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.applyBtn:hover:not(:disabled) {
+  background: #1668e3;
+}
+
+.applyBtn:disabled {
+  background: #d0d0d0;
+  cursor: not-allowed;
+}
+
+.applyBtnDanger {
+  background: #dc2626;
+}
+
+.applyBtnDanger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.hint {
+  color: #666;
+  font-size: 12px;
+  flex-basis: 100%;
+}
+
+.hintWarn {
+  color: #b45309;
+  font-size: 12px;
+  flex-basis: 100%;
+}
+
+.hintError {
+  color: #b91c1c;
+  font-size: 12px;
+  flex-basis: 100%;
+}
+
+.hintSuccess {
+  color: #1a7f1a;
+  font-size: 12px;
+  flex-basis: 100%;
+}

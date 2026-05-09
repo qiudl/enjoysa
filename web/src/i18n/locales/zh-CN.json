@@ -40,6 +40,20 @@
     "tagline": "Enjoy South Australia",
     "subtitle": "畅游南澳"
   },
+  "formBatchStock": {
+    "label": "批量库存：",
+    "opAdd": "+N",
+    "opSub": "-N",
+    "opSet": "设为 N",
+    "opZero": "一键归零",
+    "value": "数值",
+    "apply": "应用",
+    "scope": "将作用于全部 {{n}} 个套餐（含未保存修改）",
+    "unlimitedWarn": "⚠️ {{n}} 个无限量套餐将被覆写",
+    "applied": "已更新 {{n}} 个套餐",
+    "skippedUnlimited": "跳过 {{n}} 个无限量套餐",
+    "belowSoldHint": "跳过 {{n}} 个含已售的套餐：{{names}}"
+  },
   "auth": {
     "login": "登录",
     "feature1": "轻松预订南澳热门景点",

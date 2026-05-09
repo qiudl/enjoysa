@@ -40,6 +40,20 @@
     "tagline": "Enjoy South Australia",
     "subtitle": "Enjoy South Australia"
   },
+  "formBatchStock": {
+    "label": "Batch stock:",
+    "opAdd": "+N",
+    "opSub": "-N",
+    "opSet": "Set to N",
+    "opZero": "Zero out",
+    "value": "Value",
+    "apply": "Apply",
+    "scope": "Will apply to all {{n}} packages (incl. unsaved changes)",
+    "unlimitedWarn": "⚠️ {{n}} unlimited package(s) will be overwritten",
+    "applied": "Updated {{n}} package(s)",
+    "skippedUnlimited": "skipped {{n}} unlimited package(s)",
+    "belowSoldHint": "Skipped {{n}} package(s) with existing sales: {{names}}"
+  },
   "auth": {
     "login": "Login",
     "feature1": "Easy booking for SA attractions",
