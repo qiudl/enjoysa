@@ -14,7 +14,7 @@ import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import { Search } from 'lucide-react';
 import SmartSearchDropdown from '../../components/AI/SmartSearch/SmartSearchDropdown';
-import { TestimonialSection, PartnerSection, PopularSection } from '../../components/Homepage';
+import { TestimonialSection, PartnerSection } from '../../components/Homepage';
 import { homepagePublicService, type HomepageConfig } from '../../services/homepageService';
 import styles from './HomePage.module.css';
 
@@ -141,16 +141,13 @@ export const HomePage: React.FC<HomePageProps> = ({
         onSearch={onSearch}
       />
 
-      {/* Popular Activities — 置顶，带 Tag 筛选 */}
-      {isModuleVisible('popular') && (
-        <PopularSection
-          defaultProducts={homepageConfig?.popular_products || []}
-          categories={categories}
-          regions={regions}
-          language={currentLang}
-          onProductClick={onProductClick ? (id) => onProductClick({ id: String(id) } as Product) : undefined}
-        />
-      )}
+      {/*
+        REQ-20260509-0029: Popular Activities 区块去除。原 REQ-20260505-0042
+        曾把它置顶代替 banner，本期 admin 反馈首页结构回归 banner 主导
+        （配合 REQ-20260509-0028 banner 改造），故移除该 section 渲染。
+        后端 popular_products / popular module 数据保持，admin CMS 未来想
+        重启用即可还原 import 与 JSX。
+      */}
 
       {/* Search Tabs */}
       <section className={styles.searchSection}>
