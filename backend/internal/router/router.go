@@ -485,6 +485,8 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.GET("/:id", supplierProductHandler.GetProduct)
 		supplierProducts.PUT("/:id", supplierProductHandler.UpdateProduct)
 		supplierProducts.DELETE("/:id", supplierProductHandler.DeleteProduct)
+		// REQ-20260509-0035 Phase 3a: 列表页快速调整库存（绕开 PUT 重型流程）
+		supplierProducts.PATCH("/:id/packages/:pkgId/stock", supplierProductHandler.UpdatePackageStock)
 		supplierProducts.POST("/:id/submit", supplierProductHandler.SubmitForReview)
 		supplierProducts.POST("/:id/offline", supplierProductHandler.Offline)
 		supplierProducts.POST("/:id/online", supplierProductHandler.Online)

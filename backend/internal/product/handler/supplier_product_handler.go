@@ -2,6 +2,8 @@ package handler
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -940,6 +942,85 @@ func (h *SupplierProductHandler) ScheduleCalendar(c *gin.Context) {
 	}
 
 	response.Success(c, items)
+}
+
+// REQ-20260509-0035 Phase 3a: supplier 列表页快速调整 stock。镜像 admin
+// PATCH 端点 (admin_handler.go UpdatePackageStock)，但加 supplier_id ownership
+// 校验避免 supplier 改别家产品的库存。stock_sold 服务端维护，请求里只传
+// stock_total。绕开 UpdateProduct 的 delete-recreate 重型流程。
+type updatePackageStockRequest struct {
+	StockTotal int `json:"stock_total"`
+}
+
+func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+	pkgID, err := strconv.ParseUint(c.Param("pkgId"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid package ID")
+		return
+	}
+
+	var req updatePackageStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.StockTotal < -1 {
+		response.BadRequest(c, "stock_total must be >= -1 (-1 = unlimited)")
+		return
+	}
+
+	// Ownership: load product first, verify supplier owns it before touching
+	// any package row. Avoids supplier-A guessing supplier-B's package id.
+	product, err := h.productStore.GetByID(uint(productID))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+	if product.SupplierID != supplierID {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	// Find the package within this product (and snapshot stock_sold for the
+	// below-sold guard).
+	var pkg *model.ProductPackage
+	for i := range product.Packages {
+		if product.Packages[i].ID == uint(pkgID) {
+			pkg = &product.Packages[i]
+			break
+		}
+	}
+	if pkg == nil {
+		response.BadRequest(c, "Package does not belong to product")
+		return
+	}
+
+	if req.StockTotal != -1 && req.StockTotal < pkg.StockSold {
+		response.Fail(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
+			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, pkg.StockSold))
+		return
+	}
+
+	if err := h.productStore.DB().Model(&model.ProductPackage{}).
+		Where("id = ?", pkgID).
+		Update("stock_total", req.StockTotal).Error; err != nil {
+		response.ServerError(c, "Failed to update package stock")
+		return
+	}
+
+	logger.Infof("supplier %d set product %d package %d stock_total %d → %d", supplierID, productID, pkgID, pkg.StockTotal, req.StockTotal)
+
+	response.Success(c, gin.H{
+		"id":          pkgID,
+		"stock_total": req.StockTotal,
+		"stock_sold":  pkg.StockSold,
+	})
 }
 
 // ScheduleAlerts 库存预警

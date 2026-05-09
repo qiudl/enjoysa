@@ -7,7 +7,7 @@ import type { ProductReviewStatsData } from '../../../components/Admin/ProductRe
 import { ProductReviewTable } from '../../../components/Admin/ProductReviewTable';
 import type { ProductReview, ProductReviewStatus } from '../../../components/Admin/ProductReviewTable';
 import { ProductReviewDetail } from '../../../components/Admin/ProductReviewDetail';
-import { StockAdjustModal } from '../../../components/Admin/StockAdjustModal';
+import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
 import { adminService, type ApiAdminProduct, type BatchProductOpResponse } from '../../../services/adminService';
 import styles from './ProductReviewList.module.css';
 
@@ -432,13 +432,16 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
         onReject={handleReject}
       />
 
-      {/* REQ-20260509-0035 Phase 2: 库存快速调整 modal */}
+      {/* REQ-20260509-0035 Phase 2/3a: 库存快速调整 modal（admin 走 admin endpoint） */}
       <StockAdjustModal
         productId={stockModalProduct ? Number(stockModalProduct.id) : null}
         productName={stockModalProduct?.name}
         open={stockModalProduct !== null}
         onClose={() => setStockModalProduct(null)}
         onSaved={() => loadData(currentPage)}
+        loadProduct={(id) => adminService.getProduct(id)}
+        saveStock={(productId, packageId, stockTotal) =>
+          adminService.updatePackageStock(productId, packageId, stockTotal)}
       />
 
       {/*
