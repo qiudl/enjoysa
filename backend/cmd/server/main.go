@@ -232,6 +232,10 @@ func autoMigrate(db *gorm.DB) error {
 		&chatmodel.ChatSession{},
 		&chatmodel.ChatMessage{},
 		&chatmodel.ChatMessageShare{},
+		&chatmodel.ChatWorkspace{},
+		&chatmodel.ChatAgent{},
+		&chatmodel.ChatChannel{},
+		&chatmodel.ChatChannelMember{},
 		// User contacts
 		&usercontactmodel.UserContact{},
 		// Reviews

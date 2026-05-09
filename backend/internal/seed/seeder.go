@@ -98,6 +98,7 @@ func (s *Seeder) allSteps() []seedStep {
 		{"Notifications", s.seedNotifications},
 		{"Banners", s.seedBanners},
 		{"Homepage", s.seedHomepage},
+		{"ChatAgents", s.seedChatAgents},
 	}
 }
 
