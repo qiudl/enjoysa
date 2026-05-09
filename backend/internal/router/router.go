@@ -373,6 +373,11 @@ func Setup(cfg Config) *gin.Engine {
 
 		// dev-4: channel send (SSE).
 		chatGroup.POST("/channels/:id/messages", groupChatHandler.SendChannelMessage)
+
+		// dev-5: list channel main flow + thread CRUD.
+		chatGroup.GET("/channels/:id/messages", groupChatHandler.GetChannelMessages)
+		chatGroup.GET("/threads/:parent_id/messages", groupChatHandler.GetThreadReplies)
+		chatGroup.POST("/threads/:parent_id/messages", groupChatHandler.SendThreadMessage)
 	}
 
 	// ========================================

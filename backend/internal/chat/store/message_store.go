@@ -97,6 +97,51 @@ func (s *MessageStore) ListThreadReplies(parentID uint, limit int) ([]chatmodel.
 	return rows, err
 }
 
+// Get loads a single message by id (used to validate thread parents).
+func (s *MessageStore) Get(id uint) (*chatmodel.ChatMessage, error) {
+	var m chatmodel.ChatMessage
+	if err := s.db.First(&m, id).Error; err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// CountThreadReplies returns the number of replies for a parent message.
+// Used by GetChannelMessages to surface the thread-reply count badge.
+func (s *MessageStore) CountThreadReplies(parentID uint) (int64, error) {
+	var n int64
+	err := s.db.Model(&chatmodel.ChatMessage{}).
+		Where("thread_parent_id = ?", parentID).Count(&n).Error
+	return n, err
+}
+
+// CountThreadRepliesBatch returns reply counts keyed by parent_id, for the
+// given parent message IDs. Avoids N+1 when listing channel main flow.
+func (s *MessageStore) CountThreadRepliesBatch(parentIDs []uint) (map[uint]int64, error) {
+	out := make(map[uint]int64, len(parentIDs))
+	if len(parentIDs) == 0 {
+		return out, nil
+	}
+	type row struct {
+		ParentID uint
+		N        int64
+	}
+	var rows []row
+	err := s.db.Raw(`
+		SELECT thread_parent_id AS parent_id, COUNT(*) AS n
+		FROM chat_messages
+		WHERE thread_parent_id IN (?)
+		GROUP BY thread_parent_id
+	`, parentIDs).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		out[r.ParentID] = r.N
+	}
+	return out, nil
+}
+
 func senderTypeToRole(senderType string) string {
 	switch senderType {
 	case "user", "human":
