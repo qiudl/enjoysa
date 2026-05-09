@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>REQ-20260509-0037 原型 — AI Chat 群聊化（频道 + 主题回复）</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --primary: #0066ff;
+    --primary-soft: #eaf2ff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --muted-2: #94a3b8;
+    --border: #e2e8f0;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --surface-page: #f1f5f9;
+    --success: #16a34a;
+    --success-soft: #ecfdf5;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --phase2: #7c3aed;
+    --phase2-soft: #f3e8ff;
+    --phase3: #ec4899;
+    --phase3-soft: #fce7f3;
+    --cs-color: #16a34a;
+    --cs-bg: #ecfdf5;
+    --tech-color: #2563eb;
+    --tech-bg: #dbeafe;
+    --human-color: #ea580c;
+    --human-bg: #ffedd5;
+    --thread-color: #8b5cf6;
+    --thread-soft: #f5f3ff;
+    --sidebar-bg: #1e1b4b;
+    --sidebar-bg-2: #312e81;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--surface-page);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header.page-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+  }
+  header.page-header h1 { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
+  header.page-header .meta { font-size: 13px; color: var(--muted); }
+  header.page-header .meta code {
+    background: var(--surface-alt);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .container { padding: 32px 40px 80px; max-width: 1320px; margin: 0 auto; }
+
+  .section { margin-bottom: 56px; }
+  .section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .badge-p1 { background: var(--success-soft); color: var(--success); }
+  .badge-p1-plus { background: #fef3c7; color: #b45309; }
+  .badge-p2 { background: var(--phase2-soft); color: var(--phase2); }
+  .badge-p3 { background: var(--phase3-soft); color: var(--phase3); }
+  .badge-info { background: var(--primary-soft); color: var(--primary); }
+
+  .frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.04);
+  }
+  .frame-toolbar {
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .frame-toolbar .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
+  .frame-toolbar .dot.r { background: #ef4444; }
+  .frame-toolbar .dot.y { background: #f59e0b; }
+  .frame-toolbar .dot.g { background: #10b981; }
+  .frame-toolbar .url {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 10px;
+    margin-left: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  /* ============ 3-column shell: channels | messages | thread ============ */
+  .chat-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr 360px;
+    min-height: 720px;
+  }
+
+  /* ====== Channel sidebar ====== */
+  .channel-side {
+    background: var(--sidebar-bg);
+    color: #cbd5e1;
+    padding: 14px 0;
+    font-size: 13px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .workspace-header {
+    padding: 0 16px 14px;
+    border-bottom: 1px solid #312e81;
+    margin-bottom: 14px;
+  }
+  .workspace-header .name { color: #fff; font-weight: 700; font-size: 15px; }
+  .workspace-header .role { color: #818cf8; font-size: 11px; margin-top: 2px; }
+
+  .ch-section {
+    color: #818cf8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 16px;
+    margin: 14px 0 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ch-section .add-btn {
+    background: none;
+    border: none;
+    color: #818cf8;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  .ch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    cursor: pointer;
+    color: #c7d2fe;
+    font-size: 13px;
+  }
+  .ch-row:hover { background: rgba(255,255,255,0.04); }
+  .ch-row.active { background: var(--primary); color: #fff; font-weight: 500; }
+  .ch-row .hash { color: #818cf8; font-weight: 600; }
+  .ch-row.active .hash { color: #fff; }
+  .ch-row .unread {
+    margin-left: auto;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    border-radius: 999px;
+    padding: 1px 6px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .ch-row .agent-dots {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+  }
+  .ch-row .agent-dots .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .dot-cs { background: var(--cs-color); }
+  .dot-tech { background: var(--tech-color); }
+  .dot-human { background: var(--human-color); }
+
+  /* ====== Main chat ====== */
+  .chat-main {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .chat-topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .chat-topbar .ch-name { font-weight: 600; font-size: 15px; }
+  .chat-topbar .ch-name .hash { color: var(--muted); }
+  .chat-topbar .ch-desc { color: var(--muted); font-size: 12px; flex: 1; }
+  .chat-topbar .members-pill {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .chat-topbar .members-pill .mini-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-right: -4px;
+    border: 1px solid #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #fff;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .msg.from-user { flex-direction: row-reverse; }
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .avatar.cs { background: var(--cs-color); color: #fff; }
+  .avatar.tech { background: var(--tech-color); color: #fff; }
+  .avatar.human { background: var(--human-color); color: #fff; }
+  .avatar.user { background: #475569; color: #fff; font-weight: 600; }
+  .avatar-sm { width: 24px; height: 24px; font-size: 12px; }
+
+  .msg .body { max-width: 75%; }
+  .msg .meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .msg.from-user .meta { justify-content: flex-end; }
+  .msg .name { font-weight: 600; color: var(--text); font-size: 12px; }
+  .msg .agent-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .agent-tag.cs { background: var(--cs-bg); color: var(--cs-color); }
+  .agent-tag.tech { background: var(--tech-bg); color: var(--tech-color); }
+  .agent-tag.human { background: var(--human-bg); color: var(--human-color); }
+  .msg .bubble {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    position: relative;
+  }
+  .msg.from-user .bubble {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .msg.from-agent.cs .bubble { border-left: 3px solid var(--cs-color); }
+  .msg.from-agent.tech .bubble { border-left: 3px solid var(--tech-color); }
+  .msg.from-human .bubble { border-left: 3px solid var(--human-color); }
+
+  .mention {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  /* ====== Message hover actions (Slack-like) ====== */
+  .msg-actions {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    margin-top: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    font-size: 11px;
+  }
+  .msg-actions button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .msg-actions button:hover { background: var(--surface-alt); color: var(--text); }
+  .msg-actions button.thread-btn { color: var(--thread-color); font-weight: 500; }
+
+  /* ====== Thread indicator (under message) ====== */
+  .thread-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--thread-soft);
+    border: 1px solid #ddd6fe;
+    color: var(--thread-color);
+    font-size: 12px;
+    width: fit-content;
+  }
+  .thread-indicator:hover { background: #ede9fe; }
+  .thread-indicator .stack {
+    display: flex;
+  }
+  .thread-indicator .stack .avatar-sm {
+    margin-right: -4px;
+    border: 1px solid #fff;
+  }
+  .thread-indicator .count { font-weight: 500; }
+  .thread-indicator .last-time { color: var(--muted); margin-left: 4px; }
+
+  .route-hint {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* ====== Input ====== */
+  .chat-input-bar {
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    background: var(--surface);
+    position: relative;
+  }
+  .chat-input {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chat-input .placeholder { color: var(--muted-2); }
+  .chat-input .typed { color: var(--text); }
+  .chat-input .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 16px;
+    background: var(--primary);
+    animation: blink 1s infinite;
+    vertical-align: middle;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .input-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .input-hint code {
+    background: var(--surface-alt);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+  }
+  .send-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* ====== Thread side panel ====== */
+  .thread-panel {
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .thread-header {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .thread-header .title { font-weight: 600; font-size: 14px; }
+  .thread-header .ch-ref { color: var(--muted); font-size: 12px; }
+  .thread-header .close-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .thread-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .thread-parent {
+    background: var(--thread-soft);
+    border-left: 3px solid var(--thread-color);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+  }
+  .thread-parent .meta { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
+  .thread-parent .text { font-size: 13.5px; }
+  .thread-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+    margin: 6px 0;
+  }
+  .thread-divider .line { flex: 1; height: 1px; background: var(--border); }
+  .thread-msg { display: flex; gap: 10px; }
+  .thread-msg .body { flex: 1; }
+  .thread-msg .meta { font-size: 11px; color: var(--muted); margin-bottom: 3px; display: flex; gap: 6px; align-items: center; }
+  .thread-msg .text {
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .thread-msg.cs .text { border-left: 3px solid var(--cs-color); }
+  .thread-msg.tech .text { border-left: 3px solid var(--tech-color); }
+  .thread-msg.user .text { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  .thread-input-bar {
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+  }
+  .thread-input {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 36px;
+    color: var(--muted-2);
+  }
+  .thread-input-meta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* @mention dropdown */
+  .mention-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 -4px 12px rgba(15,23,42,0.08);
+    min-width: 240px;
+    overflow: hidden;
+    z-index: 10;
+  }
+  .mention-dropdown .header {
+    background: var(--surface-alt);
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .mention-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .mention-item.highlighted { background: var(--primary-soft); }
+  .mention-item .info { flex: 1; }
+  .mention-item .name { font-weight: 500; }
+  .mention-item .role { font-size: 11px; color: var(--muted); }
+
+  /* ====== Demo cards ====== */
+  .demo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .demo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .demo-card h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+  .demo-card .subtitle { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .route-flow { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .route-flow .step {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+  }
+  .route-flow .arrow { color: var(--muted-2); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .legend .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+
+  /* ====== Modal: create channel ====== */
+  .modal-frame {
+    background: rgba(15,23,42,0.5);
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    width: 480px;
+    max-width: 100%;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header .title { font-weight: 600; font-size: 15px; }
+  .modal-body { padding: 20px; }
+  .form-row { margin-bottom: 16px; }
+  .form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .form-row input, .form-row textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .form-row .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .agent-pick {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .agent-pick label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .agent-pick label.checked { border-color: var(--primary); background: var(--primary-soft); }
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-alt);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+</style>
+</head>
+<body>
+<header class="page-header">
+  <h1>REQ-20260509-0037 — AI Chat 群聊化（频道 + 主题回复）</h1>
+  <div class="meta">
+    <code>display_id: REQ-20260509-0037</code>
+    &nbsp;|&nbsp; Slack-like：channels + thread replies + multi-agent
+    &nbsp;|&nbsp; 估期 ~5 周一人全栈（含频道 + 主题）
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- =================== 0. 模式对比 =================== -->
+  <section class="section">
+    <h2>0. 模式对比 — 1-on-1 → 群聊 → Slack 式频道+主题 <span class="badge badge-info">前提</span></h2>
+    <div class="frame" style="padding: 20px;">
+      <table style="width:100%; font-size:13px; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align:left; padding: 10px 16px;">维度</th>
+            <th style="text-align:left; padding: 10px 16px;">现状（1-on-1）</th>
+            <th style="text-align:left; padding: 10px 16px; background:var(--success-soft);">P1 后（频道 + 主题）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 16px;">用户体感</td><td style="padding:8px 16px;">单 AI 客服窗口</td><td style="padding:8px 16px;">类 Slack workspace：左侧频道 / 中间消息 / 右侧主题面板</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 16px;">话题组织</td><td style="padding:8px 16px;">线性 1 条流</td><td style="padding:8px 16px;">用户建频道按主题切分；任一消息可起主题（thread）</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 16px;">数据模型</td><td style="padding:8px 16px;">chat_sessions 1:1</td><td style="padding:8px 16px;">workspace 1:N channels；message 自指 thread_parent_id</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 16px;">谁来答</td><td style="padding:8px 16px;">单 LLM 兜全部</td><td style="padding:8px 16px;">@mention 强制 / channel 默认 agent / 关键词 fallback</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:8px 16px;">主题回复</td><td style="padding:8px 16px;">N/A</td><td style="padding:8px 16px;">主题不污染主频道流；agent 在主题内续答（含 reply 上下文）</td></tr>
+          <tr><td style="padding:8px 16px;">未来人工接入</td><td style="padding:8px 16px;">需重构 chat 路由</td><td style="padding:8px 16px;">P3 加 human member type 即可，0 破坏</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =================== 1. 主界面 — 3 列布局 =================== -->
+  <section class="section">
+    <h2>1. 主界面 — 频道 / 消息 / 主题面板 <span class="badge badge-p1">Phase 1</span></h2>
+    <div class="frame">
+      <div class="frame-toolbar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url">https://enjoysau.com/supplier/chat/退款专题</span>
+      </div>
+      <div class="chat-shell">
+
+        <!-- ====== Left: channels sidebar ====== -->
+        <aside class="channel-side">
+          <div class="workspace-header">
+            <div class="name">Barossa Wines</div>
+            <div class="role">Supplier · 1 个工作区</div>
+          </div>
+
+          <div class="ch-section">
+            频道
+            <button class="add-btn" title="新建频道">＋</button>
+          </div>
+          <div class="ch-row">
+            <span class="hash">#</span><span>客服-默认</span>
+            <span class="agent-dots">
+              <span class="dot dot-cs"></span>
+              <span class="dot dot-tech"></span>
+            </span>
+          </div>
+          <div class="ch-row active">
+            <span class="hash">#</span><span>退款专题</span>
+            <span class="unread">2</span>
+          </div>
+          <div class="ch-row">
+            <span class="hash">#</span><span>API-技术</span>
+            <span class="agent-dots"><span class="dot dot-tech"></span></span>
+          </div>
+          <div class="ch-row">
+            <span class="hash">#</span><span>店铺运营</span>
+            <span class="agent-dots">
+              <span class="dot dot-cs"></span>
+              <span class="dot dot-tech"></span>
+            </span>
+          </div>
+          <div class="ch-row" style="opacity:0.6;">
+            <span class="hash">#</span><span>归档-旧需求</span>
+          </div>
+
+          <div class="ch-section">直接消息（P3）</div>
+          <div class="ch-row" style="opacity:0.5;">
+            <div class="avatar avatar-sm human">👤</div><span>人工 admin</span>
+          </div>
+
+          <div class="ch-section">所有 Agent</div>
+          <div class="ch-row">
+            <div class="avatar avatar-sm cs">🙋</div><span style="font-size:12px;">客服小南 · DeepSeek</span>
+          </div>
+          <div class="ch-row">
+            <div class="avatar avatar-sm tech">🛠</div><span style="font-size:12px;">技术阿澳 · GLM</span>
+          </div>
+        </aside>
+
+        <!-- ====== Middle: messages in active channel ====== -->
+        <div class="chat-main">
+          <div class="chat-topbar">
+            <span class="ch-name"><span class="hash">#</span> 退款专题</span>
+            <span class="ch-desc">所有退款相关都在这里讨论</span>
+            <span class="members-pill">
+              <span class="mini-avatar" style="background:var(--cs-color);">🙋</span>
+              <span class="mini-avatar" style="background:#475569;">B</span>
+              <span style="margin-left:6px;">2 成员</span>
+            </span>
+          </div>
+
+          <div class="chat-messages">
+
+            <!-- Msg 1: user opens topic -->
+            <div class="msg from-user">
+              <div class="avatar user">B</div>
+              <div class="body">
+                <div class="meta"><span class="name">你</span><span>10:23</span></div>
+                <div class="bubble">订单 #20260509-08821 我要退款，能帮我处理吗？</div>
+              </div>
+            </div>
+
+            <!-- Msg 2: cs answers, this is the message that has a thread -->
+            <div class="msg from-agent cs">
+              <div class="avatar cs">🙋</div>
+              <div class="body">
+                <div class="meta"><span class="name">客服小南</span><span class="agent-tag cs">DeepSeek</span><span>10:23</span></div>
+                <div class="bubble">没问题。订单 #20260509-08821 已查到，金额 ¥199，状态"已支付"。请问退款原因？我来帮你提交。</div>
+                <div class="route-hint">↳ 路由：channel #退款专题 默认 agent = 客服小南</div>
+                <!-- Thread indicator -->
+                <div class="thread-indicator">
+                  <div class="stack">
+                    <div class="avatar avatar-sm user">B</div>
+                    <div class="avatar avatar-sm cs">🙋</div>
+                  </div>
+                  <span class="count">5 条主题回复</span>
+                  <span class="last-time">最后 10:31</span>
+                </div>
+                <div class="msg-actions">
+                  <button class="thread-btn">💬 在主题中回复</button>
+                  <button>👍</button>
+                  <button>📌</button>
+                  <button>⋯</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Msg 3: another user msg in main timeline (separate refund issue) -->
+            <div class="msg from-user">
+              <div class="avatar user">B</div>
+              <div class="body">
+                <div class="meta"><span class="name">你</span><span>10:42</span></div>
+                <div class="bubble">还有另一个订单 #20260508-08712 也想退，但用户说收到货了。这种能退吗？</div>
+              </div>
+            </div>
+
+            <div class="msg from-agent cs">
+              <div class="avatar cs">🙋</div>
+              <div class="body">
+                <div class="meta"><span class="name">客服小南</span><span class="agent-tag cs">DeepSeek</span><span>10:42</span></div>
+                <div class="bubble">已签收的订单 7 天内可走"七天无理由"。我先查这单的签收时间…</div>
+                <div class="route-hint">↳ 不污染上一条主题，新话题在主频道继续</div>
+                <div class="msg-actions">
+                  <button class="thread-btn">💬 在主题中回复</button>
+                  <button>👍</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="chat-input-bar">
+            <div class="chat-input">
+              <span class="placeholder">在 #退款专题 发消息</span>
+            </div>
+            <div class="input-actions">
+              <span class="input-hint">输入 <code>@</code> 选成员 / <code>Shift+Enter</code> 换行 / 悬停消息可在主题中回复</span>
+              <button class="send-btn">发送</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Right: thread panel ====== -->
+        <aside class="thread-panel">
+          <div class="thread-header">
+            <span class="title">主题</span>
+            <span class="ch-ref"># 退款专题</span>
+            <button class="close-btn">×</button>
+          </div>
+
+          <div class="thread-body">
+            <!-- Thread parent -->
+            <div class="thread-parent">
+              <div class="meta">
+                <span class="avatar avatar-sm cs">🙋</span>
+                <span class="name" style="font-size:12px; font-weight:600;">客服小南</span>
+                <span class="agent-tag cs">DeepSeek</span>
+                <span>10:23</span>
+              </div>
+              <div class="text">没问题。订单 #20260509-08821 已查到，金额 ¥199，状态"已支付"。请问退款原因？</div>
+            </div>
+
+            <div class="thread-divider">
+              <span class="line"></span>
+              <span>5 条回复</span>
+              <span class="line"></span>
+            </div>
+
+            <!-- Reply 1: user -->
+            <div class="thread-msg user">
+              <div class="avatar avatar-sm user">B</div>
+              <div class="body">
+                <div class="meta"><span class="name">你</span><span>10:25</span></div>
+                <div class="text">用户说酒瓶到货时碎了。</div>
+              </div>
+            </div>
+
+            <!-- Reply 2: cs -->
+            <div class="thread-msg cs">
+              <div class="avatar avatar-sm cs">🙋</div>
+              <div class="body">
+                <div class="meta"><span class="name">客服小南</span><span>10:26</span></div>
+                <div class="text">"运输破损"是优先级最高的退款类型，会自动通过。我帮你打个 refund_order 工具…</div>
+              </div>
+            </div>
+
+            <!-- Reply 3: user @ tech -->
+            <div class="thread-msg user">
+              <div class="avatar avatar-sm user">B</div>
+              <div class="body">
+                <div class="meta"><span class="name">你</span><span>10:28</span></div>
+                <div class="text"><span class="mention">@技术阿澳</span> 顺便问下，retail_price API 怎么批量更新？等下要降几款酒。</div>
+              </div>
+            </div>
+
+            <!-- Reply 4: tech (跨 agent 在主题里) -->
+            <div class="thread-msg tech">
+              <div class="avatar avatar-sm tech">🛠</div>
+              <div class="body">
+                <div class="meta"><span class="name">技术阿澳</span><span class="agent-tag tech">GLM</span><span>10:29</span></div>
+                <div class="text">主题里同样支持 @ 跨 agent。批量更新走 PATCH /api/v1/products/batch，body 传 {ids,fields}。要我贴个示例吗？</div>
+                <div class="route-hint">↳ 主题内 @mention 临时拉入 agent；主题结束不影响 channel 成员</div>
+              </div>
+            </div>
+
+            <!-- Reply 5: cs (refund 完成) -->
+            <div class="thread-msg cs">
+              <div class="avatar avatar-sm cs">🙋</div>
+              <div class="body">
+                <div class="meta"><span class="name">客服小南</span><span>10:31</span></div>
+                <div class="text">退款已提交（refund_id=R2026050900821），1-3 个工作日到账 ✅</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="thread-input-bar">
+            <div class="thread-input">在主题中回复…</div>
+            <div class="thread-input-meta">
+              <span>✅ 同时发送到 #退款专题（取消勾选则只发主题）</span>
+              <button class="send-btn" style="font-size:11px; padding:3px 10px;">发送</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--cs-color);"></span>客服 agent（DeepSeek）</span>
+      <span><span class="swatch" style="background:var(--tech-color);"></span>技术 agent（GLM）</span>
+      <span><span class="swatch" style="background:var(--human-color);"></span>人工 admin（P3）</span>
+      <span><span class="swatch" style="background:var(--thread-color);"></span>主题 (thread)</span>
+      <span><span class="swatch" style="background:var(--primary);"></span>用户</span>
+    </div>
+  </section>
+
+  <!-- =================== 2. 频道创建 + 成员管理 =================== -->
+  <section class="section">
+    <h2>2. 频道创建流程 <span class="badge badge-p1">Phase 1</span></h2>
+    <div class="frame">
+      <div class="frame-toolbar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url">supplier/chat — 新建频道弹窗</span>
+      </div>
+      <div class="modal-frame">
+        <div class="modal">
+          <div class="modal-header">
+            <div class="title">＋ 新建频道</div>
+            <button class="close-btn" style="background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer;">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row">
+              <label>名称</label>
+              <input type="text" value="退款专题" />
+              <div class="hint">最多 30 字，仅你的工作区可见</div>
+            </div>
+            <div class="form-row">
+              <label>描述（可选）</label>
+              <input type="text" value="所有退款相关都在这里讨论" />
+            </div>
+            <div class="form-row">
+              <label>邀请 Agent · 选 1-N</label>
+              <div class="agent-pick">
+                <label class="checked">
+                  <input type="checkbox" checked /> 🙋 客服小南 <span style="color:var(--muted); font-size:11px;">（默认）</span>
+                </label>
+                <label>
+                  <input type="checkbox" /> 🛠 技术阿澳
+                </label>
+              </div>
+              <div class="hint">至少 1 个 agent；第 1 个被设为「默认应答 agent」（无 @ 时由它兜）</div>
+            </div>
+            <div class="form-row">
+              <label>关键词路由（可选）</label>
+              <input type="text" value="退款 / 售后 / 取消订单" />
+              <div class="hint">用 / 分隔；其他频道命中会提示用户切到本频道</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn">取消</button>
+            <button class="btn primary">创建频道</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 3. 路由决策矩阵 =================== -->
+  <section class="section">
+    <h2>3. 路由决策矩阵（含 channel + thread） <span class="badge badge-p1">Phase 1</span></h2>
+    <div class="demo-grid">
+
+      <div class="demo-card">
+        <h3>① @mention 强制路由</h3>
+        <div class="subtitle">显式 @ → 指定 agent 必答（不论在 channel 还是 thread）</div>
+        <div class="route-flow">
+          <span class="step">"@技术 X 报错"</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--tech-bg);color:var(--tech-color);">技术答</span>
+        </div>
+        <div class="route-flow">
+          <span class="step">主题内 @ 不在 channel 的 agent</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--warning-soft);color:var(--warning);">临时拉入主题，不动 channel</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>② Channel 默认 agent</h3>
+        <div class="subtitle">无 @ 时由频道默认 agent 答（创建时指定）</div>
+        <div class="route-flow">
+          <span class="step">#退款专题</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--cs-bg);color:var(--cs-color);">客服</span>
+        </div>
+        <div class="route-flow">
+          <span class="step">#API-技术</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--tech-bg);color:var(--tech-color);">技术</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>③ 关键词跨频道提示</h3>
+        <div class="subtitle">在 #客服-默认 发"API 报错" → 提示切到 #API-技术</div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="step">在 #客服-默认 发 "API 报错"</span>
+        </div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--warning-soft);color:var(--warning);">客服回答 + 提示"是否切到 #API-技术？[一键切]"</span>
+        </div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--surface-alt);">不强制路由（避免反复跳频道反感）</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>④ Thread 路由</h3>
+        <div class="subtitle">主题内回复继承父消息上下文</div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="step">主题父消息是 cs 答的</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--cs-bg);color:var(--cs-color);">无 @ 时仍由 cs 答</span>
+        </div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="step">主题内 @技术</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--tech-bg);color:var(--tech-color);">技术加入主题</span>
+        </div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="step">主题答完 ≠ 频道默认改变</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>⑤ 一次仅 1 agent 答</h3>
+        <div class="subtitle">即使消息含两类关键词，也只 pick 1（按 channel 默认 → @ → 关键词优先级）</div>
+        <div class="route-flow" style="font-size:11px;">
+          <span class="step">"退款 + bug"</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--cs-bg);color:var(--cs-color);">channel 默认优先</span>
+          <span class="arrow">+</span>
+          <span class="step" style="background:var(--warning-soft);color:var(--warning);">提示 "@技术" or "切 #API-技术"</span>
+        </div>
+      </div>
+
+      <div class="demo-card">
+        <h3>⑥ Mute 静默</h3>
+        <div class="subtitle">用户右键 agent → 该 channel 内 mute</div>
+        <div class="route-flow">
+          <span class="step">@技术（已 mute）</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--surface);color:var(--muted);">无人答</span>
+          <span class="arrow">→</span>
+          <span class="step" style="background:var(--warning-soft);color:var(--warning);">UI 提示</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =================== 4. Agent 间感知（system prompt 示例） =================== -->
+  <section class="section">
+    <h2>4. Agent system prompt — 频道 + 主题感知 <span class="badge badge-p1">Phase 1</span></h2>
+    <div class="frame" style="padding: 20px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.7;">
+<pre style="margin:0; white-space: pre-wrap;">// 客服 agent system prompt 片段
+你是 EnjoySA 工作区里的"客服小南"，DeepSeek 驱动。
+
+【当前上下文】（每轮注入，由 backend 拼）
+- workspace: Barossa Wines
+- channel: #退款专题（默认 agent = 你；其他 channel: #客服-默认 #API-技术 #店铺运营）
+- thread: 当前在主题中（父消息 id=12345，由你 10:23 发出）
+  └ 主题已有 4 条回复，最后由 [技术阿澳] 在 10:29 发出
+
+【群里其他成员】
+- 技术阿澳（GLM）：负责 API / 商品技术 / bug 排查
+- 人工 admin：未上线（P3）
+
+【群聊规则】
+1. 历史以 [客服小南] / [技术阿澳] / [B] 前缀区分发言人。
+2. <b style="color: var(--danger);">看到[技术阿澳]已答的不要重复</b>，可以补充或承上。
+3. 用户 @ 你的消息必答；用户没 @ 任何人但消息触发 channel 默认或关键词
+   → 系统已路由到你，正常答。
+4. <b style="color: var(--danger);">不要假装自己是技术 agent 答 API 类问题</b>，
+   主动建议用户 "@技术阿澳" 或 "切到 #API-技术 频道"。
+
+【主题特别规则】
+5. 主题内回复继承父消息上下文，<b style="color: var(--danger);">不要重复 channel 寒暄</b>。
+6. 主题里被 @ 的 agent 临时入伙，不修改 channel 成员表。
+7. 主题答完 ≠ 频道默认 agent 变更。
+
+【可用工具】（与 user_type 取交集）
+- list_orders / get_order / refund_order / faq_search
+
+【写工具三层防护】沿用 REQ-0003/0015/0017 + REQ-0024
+- 同主题不重复 create
+- 同轮次不同主题按顺序连续 create
+- @mention 触发的 create 仍 dedup</pre>
+    </div>
+  </section>
+
+  <!-- =================== 5. 数据模型 =================== -->
+  <section class="section">
+    <h2>5. 数据模型 — 频道 + 主题 <span class="badge badge-p1">Phase 1</span></h2>
+    <div class="frame" style="padding: 20px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.7;">
+<pre style="margin:0;">// migrations/009_chat_workspaces_channels_threads.sql
+
+CREATE TABLE chat_workspaces (
+    id              BIGSERIAL PRIMARY KEY,
+    owner_user_id   BIGINT NOT NULL,
+    owner_user_type VARCHAR(20) NOT NULL,    -- supplier/admin/user
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(owner_user_id, owner_user_type)
+);
+
+CREATE TABLE chat_agents (
+    id               BIGSERIAL PRIMARY KEY,
+    code             VARCHAR(40) UNIQUE NOT NULL,
+    name             VARCHAR(50) NOT NULL,
+    member_type      VARCHAR(20) NOT NULL,   -- ai/human(P3)
+    llm_provider     VARCHAR(20),             -- deepseek/glm
+    llm_model        VARCHAR(40),
+    system_prompt    TEXT,
+    tool_keys        TEXT[],
+    avatar_emoji     VARCHAR(8),
+    sort_order       INT DEFAULT 0,
+    default_in_new_channel BOOLEAN DEFAULT TRUE,
+    created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE chat_channels (
+    id                BIGSERIAL PRIMARY KEY,
+    workspace_id      BIGINT REFERENCES chat_workspaces(id) ON DELETE CASCADE,
+    name              VARCHAR(40) NOT NULL,        -- "退款专题"（不带 #）
+    slug              VARCHAR(40) NOT NULL,        -- url-safe
+    description       VARCHAR(200),
+    default_agent_id  BIGINT REFERENCES chat_agents(id),  -- 无 @ 时谁答
+    keyword_rules     TEXT[],                       -- ['退款','售后']（其他 channel 命中时提示切来）
+    archived          BOOLEAN DEFAULT FALSE,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(workspace_id, slug)
+);
+-- 工作区初始化时 seed 一个 #客服-默认（含全部 default_in_new_channel=TRUE 的 agent）
+
+CREATE TABLE chat_channel_members (
+    id           BIGSERIAL PRIMARY KEY,
+    channel_id   BIGINT REFERENCES chat_channels(id) ON DELETE CASCADE,
+    member_type  VARCHAR(20) NOT NULL,    -- ai/human
+    agent_id     BIGINT REFERENCES chat_agents(id),
+    admin_id     BIGINT,                  -- P3
+    muted        BOOLEAN DEFAULT FALSE,
+    joined_at    TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(channel_id, agent_id)
+);
+
+-- chat_messages 扩展（核心：channel_id + thread_parent_id）
+ALTER TABLE chat_messages
+    ADD COLUMN channel_id        BIGINT REFERENCES chat_channels(id),
+    ADD COLUMN thread_parent_id  BIGINT REFERENCES chat_messages(id),  -- NULL = 主频道，非 NULL = 主题回复
+    ADD COLUMN sender_type       VARCHAR(20),       -- user/ai/human
+    ADD COLUMN sender_agent_id   BIGINT REFERENCES chat_agents(id),
+    ADD COLUMN sender_admin_id   BIGINT,
+    ADD COLUMN mentions          BIGINT[],
+    ADD COLUMN also_in_channel   BOOLEAN DEFAULT FALSE; -- 主题回复是否同时贴回频道
+
+CREATE INDEX idx_msg_channel_main ON chat_messages(channel_id, created_at)
+    WHERE thread_parent_id IS NULL;          -- channel 主流（thread 不污染）
+CREATE INDEX idx_msg_thread ON chat_messages(thread_parent_id, created_at)
+    WHERE thread_parent_id IS NOT NULL;      -- 主题查询
+
+-- 数据迁移
+-- 每老 chat_session →
+--   1 workspace + 1 #客服-默认 channel + 全部 default agent 入伙
+--   原 messages 全归到 #客服-默认，thread_parent_id 全 NULL</pre>
+    </div>
+  </section>
+
+  <!-- =================== 6. Phase 划分 =================== -->
+  <section class="section">
+    <h2>6. Phase 划分 — Roadmap（已扩容）</h2>
+    <div class="frame" style="padding: 20px;">
+      <table style="width:100%; font-size:13px; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align:left; padding: 10px;">Phase</th>
+            <th style="text-align:left; padding: 10px;">范围</th>
+            <th style="text-align:left; padding: 10px;">估期</th>
+            <th style="text-align:left; padding: 10px;">状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 10px;"><span class="badge badge-p1">P1</span> 群聊 + 频道 + 主题</td>
+            <td style="padding:8px 10px;">LLMProvider 抽象 / 2 hardcoded agent / @mention + channel 默认 + 关键词路由 / 频道 CRUD / 主题回复 / 数据迁移</td>
+            <td style="padding:8px 10px;"><b>~5 周</b><br><span style="font-size:11px; color:var(--muted);">（原 3 周 + 频道 0.7 周 + 主题 1.3 周）</span></td>
+            <td style="padding:8px 10px;"><span style="color:var(--primary);">本需求 (REQ-0037)</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 10px;"><span class="badge badge-p1-plus">P1.5</span> 频道高级</td>
+            <td style="padding:8px 10px;">私有/共享频道（admin 可见的 supplier 频道）/ pin 消息 / 搜索 / 频道间 @ 提及</td>
+            <td style="padding:8px 10px;">~2 周</td>
+            <td style="padding:8px 10px;"><span style="color:var(--muted);">P1 ship 后看用量决定</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 10px;"><span class="badge badge-p2">P2</span> Admin CMS</td>
+            <td style="padding:8px 10px;">/admin/agents 增删 + tool_keys 配置 / /admin/channels 看用户频道 / 默认频道模板</td>
+            <td style="padding:8px 10px;">~1.5 周</td>
+            <td style="padding:8px 10px;"><span style="color:var(--muted);">P1 ship 后立项</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 10px;"><span class="badge badge-p3">P3</span> 人工接入</td>
+            <td style="padding:8px 10px;">human member type / online 状态 / DM / "@AI" 协作模式 / 工单 dashboard</td>
+            <td style="padding:8px 10px;">~1.5–2 月</td>
+            <td style="padding:8px 10px;"><span style="color:var(--muted);">看 P1/P2 上线效果决定</span></td>
+          </tr>
+          <tr>
+            <td style="padding:8px 10px;"><span class="badge" style="background:#fee2e2; color:#dc2626;">P4</span> Dispatcher LLM</td>
+            <td style="padding:8px 10px;">智能路由（关键词规则升级为 LLM 判断 + 自动建主题）</td>
+            <td style="padding:8px 10px;">~1 周</td>
+            <td style="padding:8px 10px;"><span style="color:var(--muted);">需 P1-3 数据积累</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =================== 7. 不做清单 =================== -->
+  <section class="section">
+    <h2>7. P1 不做清单（明确划界）</h2>
+    <div class="frame" style="padding: 20px; font-size:13px; line-height:1.8;">
+      <ul style="margin:0; color: var(--muted);">
+        <li>❌ Admin CMS 配 agent — P2</li>
+        <li>❌ 人工 admin 加群 / DM — P3</li>
+        <li>❌ 跨工作区共享频道（多供应商同频道）— P1.5</li>
+        <li>❌ 多 agent 同时并发答 — 永远不做</li>
+        <li>❌ Dispatcher LLM 自动建主题 — P4</li>
+        <li>❌ Agent 主动召唤其他 agent（A 调 B）— 必须用户 @</li>
+        <li>❌ 主题嵌套（thread of thread）— 仅 1 层</li>
+        <li>❌ 频道权限细粒度（每条消息 ACL）</li>
+        <li>❌ 消息编辑/删除（先做仅 owner 删）/ 表情回应（reaction）/ 文件上传外的 emoji</li>
+        <li>❌ 搜索 — P1.5</li>
+        <li>❌ 通知中心 / 桌面提醒 — 看后续</li>
+        <li>❌ 不动现有写工具三层防护（沿用 REQ-0003/0015/0017/0024）</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
