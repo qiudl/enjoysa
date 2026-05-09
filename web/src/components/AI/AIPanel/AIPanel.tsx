@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2, Paperclip, PanelRight, PanelLeft, PanelBottom, MessageCircle } from 'lucide-react';
+import { Send, Maximize2, PanelRightClose, Plus, Sparkles, X, Loader2, Paperclip, PanelRight, PanelBottom, MessageCircle } from 'lucide-react';
 import { useChat } from '../../../contexts/ChatContext';
 import { AIPanelFeed } from './AIPanelFeed';
 import { AIPanelTools, type ToolCategory } from './AIPanelTools';
@@ -18,10 +18,11 @@ import clsx from 'clsx';
 
 export type AIRole = 'supplier' | 'admin';
 type TabKey = 'chat' | 'feed' | 'tools';
-// REQ-20260509-0026: 4 种 layout 模式。'right' 是历史默认；'left'/'bottom'
-// 对偶给经常用右抽屉/底部表单的工作流；'bubble' 复用 C 端 ChatWidget UX。
-export type LayoutMode = 'right' | 'left' | 'bottom' | 'bubble';
-const LAYOUT_MODES: LayoutMode[] = ['right', 'bottom', 'left', 'bubble'];
+// REQ-20260509-0026: 3 种 layout 模式。'left' 在 G6 验收时被移除——
+// admin/supplier sidebar (260px / 72px) 完全压住左侧 dock，体验报废。
+// 'right' 是历史默认，'bottom' 给底部表单流，'bubble' 复用 C 端 ChatWidget UX。
+export type LayoutMode = 'right' | 'bottom' | 'bubble';
+const LAYOUT_MODES: LayoutMode[] = ['right', 'bottom', 'bubble'];
 
 const STORAGE_KEY = 'enjoysa_ai_panel_collapsed';
 const WIDTH_STORAGE_KEY = 'enjoysa_ai_panel_width';
@@ -134,10 +135,11 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     } catch { return DEFAULT_WIDTH; }
   });
   // REQ-20260509-0026: layout 偏好按角色独立持久化，supplier 和 admin 各自记住。
+  // G6 反馈：移除 'left' 模式，旧偏好回退到 'right'。
   const [layout, setLayoutState] = useState<LayoutMode>(() => {
     try {
       const saved = localStorage.getItem(layoutStorageKey(role));
-      if (saved === 'right' || saved === 'left' || saved === 'bottom' || saved === 'bubble') return saved;
+      if (saved === 'right' || saved === 'bottom' || saved === 'bubble') return saved;
     } catch { /* */ }
     return 'right';
   });
@@ -176,17 +178,15 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     e.target.value = '';
   }, []);
 
-  // Resize handler. REQ-20260509-0026: left layout 把 handle 放在面板右侧，
-  // 拖拽方向相反——拖右 = 加宽（delta = ev - start），拖左 = 减窄。
+  // Resize handler — only meaningful for right dock now.
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
     const startX = e.clientX;
     const startWidth = panelWidth;
-    const isLeftDock = layout === 'left' && !isMobile;
 
     const onMouseMove = (ev: MouseEvent) => {
-      const delta = isLeftDock ? (ev.clientX - startX) : (startX - ev.clientX);
+      const delta = startX - ev.clientX;
       const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
       setPanelWidth(newWidth);
     };
@@ -205,24 +205,22 @@ export const AIPanel: React.FC<AIPanelProps> = ({
     document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-  }, [panelWidth, layout, isMobile]);
+  }, [panelWidth]);
 
-  // REQ-20260509-0026: 3 个 CSS var 对应 right/left/bottom 三种 dock layout，
+  // REQ-20260509-0026: 2 个 CSS var 对应 right/bottom dock layout，
   // 把 panel 当前占用尺寸暴露给 AdminLayout/SupplierLayout 的 main 内容做让位。
-  // bubble layout 不参与让位（浮动元素），三个 var 全部写 0px。
+  // bubble layout 不参与让位（浮动元素），两个 var 都写 0px。
   useEffect(() => {
     const root = document.documentElement;
     const width = collapsed ? COLLAPSED_SIZE : panelWidth;
     const height = collapsed ? COLLAPSED_SIZE : BOTTOM_HEIGHT;
     root.style.setProperty('--ai-panel-width', effectiveLayout === 'right' ? `${width}px` : '0px');
-    root.style.setProperty('--ai-panel-left-width', effectiveLayout === 'left' ? `${width}px` : '0px');
     root.style.setProperty('--ai-panel-bottom-height', effectiveLayout === 'bottom' ? `${height}px` : '0px');
     if (!isResizing) {
       try { localStorage.setItem(WIDTH_STORAGE_KEY, String(panelWidth)); } catch { /* */ }
     }
     return () => {
       root.style.removeProperty('--ai-panel-width');
-      root.style.removeProperty('--ai-panel-left-width');
       root.style.removeProperty('--ai-panel-bottom-height');
     };
   }, [effectiveLayout, panelWidth, collapsed, isResizing]);
@@ -394,8 +392,8 @@ export const AIPanel: React.FC<AIPanelProps> = ({
           : { width: panelWidth }
       }
     >
-      {/* Resize handle: only meaningful for right/left dock and when not collapsed */}
-      {!collapsed && (effectiveLayout === 'right' || effectiveLayout === 'left') && (
+      {/* Resize handle: only meaningful for right dock and when not collapsed */}
+      {!collapsed && effectiveLayout === 'right' && (
         <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
       )}
       {/* Collapsed bar */}
@@ -435,13 +433,11 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             <div className={styles.layoutSwitcher} role="group" aria-label={t('aiPanel.layoutSwitcher', '面板布局') as string}>
               {LAYOUT_MODES.map(mode => {
                 const Icon = mode === 'right' ? PanelRight
-                  : mode === 'left' ? PanelLeft
-                    : mode === 'bottom' ? PanelBottom
-                      : MessageCircle;
+                  : mode === 'bottom' ? PanelBottom
+                    : MessageCircle;
                 const label = mode === 'right' ? t('aiPanel.layout.right', '右侧')
-                  : mode === 'left' ? t('aiPanel.layout.left', '左侧')
-                    : mode === 'bottom' ? t('aiPanel.layout.bottom', '底部')
-                      : t('aiPanel.layout.bubble', '气泡');
+                  : mode === 'bottom' ? t('aiPanel.layout.bottom', '底部')
+                    : t('aiPanel.layout.bubble', '气泡');
                 return (
                   <button
                     key={mode}
