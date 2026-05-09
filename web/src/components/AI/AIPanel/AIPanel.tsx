@@ -465,7 +465,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
             )}
             <button
               className={styles.actionBtn}
-              onClick={() => navigate(role === 'supplier' ? '/supplier/ai-chat' : '/admin/ai-chat')}
+              onClick={() => navigate(role === 'supplier' ? '/supplier/chat' : '/admin/ai-chat')}
               title={t('aiPanel.fullscreen', '全屏')}
             >
               <Maximize2 size={14} />
@@ -599,7 +599,7 @@ export const AIPanel: React.FC<AIPanelProps> = ({
               />
               <button
                 className={styles.chatExpandBtn}
-                onClick={() => navigate(role === 'supplier' ? '/supplier/ai-chat' : '/admin/ai-chat')}
+                onClick={() => navigate(role === 'supplier' ? '/supplier/chat' : '/admin/ai-chat')}
                 title={t('aiPanel.fullscreen', '全屏对话')}
               >
                 <Maximize2 size={14} />

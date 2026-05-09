@@ -25,7 +25,8 @@ import { useTranslation } from 'react-i18next';
 import { MessageSquare } from 'lucide-react';
 
 import { useGroupChat } from '../../../contexts/GroupChatContext';
-import type { ChatGroupMessage } from '../../../services/groupChatService';
+import type { ChatAgent, ChatGroupMessage } from '../../../services/groupChatService';
+import { applyMention, detectMentionContext, extractMentionIds, filterMentionCandidates } from './mention';
 import styles from './ChannelMain.module.css';
 
 export function ChannelMain() {
@@ -44,7 +45,9 @@ export function ChannelMain() {
   } = useGroupChat();
 
   const [draft, setDraft] = useState('');
+  const [mentionState, setMentionState] = useState<{ atIndex: number; query: string; activeIndex: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const activeChannel = useMemo(
     () => channels.find(c => c.id === activeChannelId) || null,
@@ -54,6 +57,21 @@ export function ChannelMain() {
   const agentById = useMemo(() => new Map(agents.map(a => [a.id, a])), [agents]);
   const isStreamingHere = streaming.channelId !== null && streaming.channelId === activeChannelId;
   const isLoading = activeChannelId ? !!isLoadingChannel[activeChannelId] : false;
+
+  // Mention dropdown candidates: prioritize channel members, fall back to all
+  // agents (so users can pull a non-member agent into a thread later).
+  const mentionCandidates = useMemo<ChatAgent[]>(() => {
+    if (!activeChannel) return [];
+    const memberIds = new Set(activeChannel.member_agent_ids);
+    const members = agents.filter(a => memberIds.has(a.id));
+    const others = agents.filter(a => !memberIds.has(a.id));
+    return [...members, ...others];
+  }, [activeChannel, agents]);
+
+  const mentionMatches = useMemo<ChatAgent[]>(
+    () => (mentionState ? filterMentionCandidates(mentionCandidates, mentionState.query).slice(0, 8) : []),
+    [mentionCandidates, mentionState],
+  );
 
   // Auto-scroll the message list to the bottom when new messages or stream
   // chunks arrive. Smooth scroll for new messages, instant for stream chunks
@@ -76,8 +94,10 @@ export function ChannelMain() {
     const content = draft.trim();
     if (!content || isStreamingHere) return;
     setDraft('');
+    setMentionState(null);
+    const mentions = extractMentionIds(content, agents);
     try {
-      await sendToChannel(activeChannel.id, { content });
+      await sendToChannel(activeChannel.id, { content, mentions });
     } catch {
       // Errors land in lastError via the context; the page-level toast
       // surfaces them. Restoring the draft would be hostile to the user
@@ -85,7 +105,57 @@ export function ChannelMain() {
     }
   };
 
+  const refreshMentionState = (text: string, caret: number) => {
+    const ctx = detectMentionContext(text, caret);
+    if (!ctx) {
+      setMentionState(null);
+      return;
+    }
+    setMentionState({ atIndex: ctx.atIndex, query: ctx.query, activeIndex: 0 });
+  };
+
+  const insertMention = (agent: ChatAgent) => {
+    const ta = textareaRef.current;
+    if (!ta || !mentionState) return;
+    const caret = ta.selectionStart ?? draft.length;
+    const next = applyMention(draft, mentionState.atIndex, caret, agent.name);
+    setDraft(next.text);
+    setMentionState(null);
+    // Restore caret position after React updates the value.
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(next.caret, next.caret);
+      }
+    });
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Mention dropdown navigation/selection takes priority over send.
+    if (mentionState && mentionMatches.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionState(s => s && { ...s, activeIndex: (s.activeIndex + 1) % mentionMatches.length });
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionState(s => s && { ...s, activeIndex: (s.activeIndex - 1 + mentionMatches.length) % mentionMatches.length });
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (!e.nativeEvent.isComposing) {
+          e.preventDefault();
+          insertMention(mentionMatches[mentionState.activeIndex]);
+          return;
+        }
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionState(null);
+        return;
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       void onSubmit(e);
     }
@@ -150,12 +220,47 @@ export function ChannelMain() {
       </div>
 
       <form className={styles.composer} onSubmit={onSubmit}>
+        {mentionState && mentionMatches.length > 0 && (
+          <div className={styles.mentionDropdown} role="listbox" aria-label={t('groupChat.mention.aria')}>
+            {mentionMatches.map((a, i) => {
+              const isMember = activeChannel.member_agent_ids.includes(a.id);
+              const isActive = i === mentionState.activeIndex;
+              return (
+                <button
+                  type="button"
+                  key={a.id}
+                  className={`${styles.mentionRow} ${isActive ? styles.mentionRowActive : ''}`}
+                  data-non-member={!isMember || undefined}
+                  onMouseDown={e => { e.preventDefault(); insertMention(a); }}
+                  role="option"
+                  aria-selected={isActive}
+                >
+                  <span className={styles.memberDot} style={{ background: a.color_hex || '#94a3b8' }} />
+                  <span className={styles.mentionName}>{a.avatar_emoji || '🤖'} {a.name}</span>
+                  {!isMember && <span className={styles.nonMemberTag}>{t('groupChat.mention.nonMember')}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <textarea
+          ref={textareaRef}
           className={styles.composerInput}
           rows={2}
           placeholder={t('groupChat.composer.placeholder', { channel: activeChannel.name })}
           value={draft}
-          onChange={e => setDraft(e.target.value)}
+          onChange={e => {
+            setDraft(e.target.value);
+            refreshMentionState(e.target.value, e.target.selectionStart ?? e.target.value.length);
+          }}
+          onKeyUp={e => {
+            const ta = e.currentTarget;
+            refreshMentionState(ta.value, ta.selectionStart ?? ta.value.length);
+          }}
+          onClick={e => {
+            const ta = e.currentTarget;
+            refreshMentionState(ta.value, ta.selectionStart ?? ta.value.length);
+          }}
           onKeyDown={onKeyDown}
           disabled={isStreamingHere}
           aria-label={t('groupChat.composer.aria')}
