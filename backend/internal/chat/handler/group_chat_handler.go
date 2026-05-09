@@ -1,6 +1,8 @@
 // REQ-20260509-0037 dev-3: workspace + channel + agent + membership CRUD.
 // dev-4 added the channel send pipeline (group_chat_send.go), wired in via
 // AttachLLMSupport from router.go.
+// dev-6 wires the aichat tool registry + GLM vision OCR via AttachToolSupport;
+// when both are nil the send pipeline still works as a plain text stream.
 package handler
 
 import (
@@ -10,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	aichatservice "enjoysa-backend/internal/aichat/service"
 	chatmodel "enjoysa-backend/internal/chat/model"
 	chatstore "enjoysa-backend/internal/chat/store"
 	"enjoysa-backend/internal/core/logger"
@@ -28,6 +31,20 @@ type GroupChatHandler struct {
 	// Wired by AttachLLMSupport — required for SendChannelMessage (dev-4).
 	messages  *chatstore.MessageStore
 	providers *llmprovider.Registry
+
+	// Wired by AttachToolSupport (dev-6). All optional: when nil the send
+	// pipeline degrades to plain-text streaming with no tool calls / OCR.
+	tools     *aichatservice.ToolRegistry
+	glmVision *aichatservice.GLMClient
+	db        *gorm.DB
+}
+
+// AttachToolSupport wires the dev-6 dependencies. Safe to call with any
+// subset nil — each capability self-gates on its own pointer.
+func (h *GroupChatHandler) AttachToolSupport(tools *aichatservice.ToolRegistry, glm *aichatservice.GLMClient, db *gorm.DB) {
+	h.tools = tools
+	h.glmVision = glm
+	h.db = db
 }
 
 func NewGroupChatHandler(

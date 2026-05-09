@@ -141,9 +141,10 @@ func Setup(cfg Config) *gin.Engine {
 	// === Chat ===
 	chStore := chatstore.NewChatStore(cfg.DB)
 	aiService := chatservice.NewAIService(cfg.AIConfig)
+	chatGLMVision := aichatservice.NewGLMClient(cfg.AIConfig)
 	chatHandler := chathandler.NewChatHandler(chStore, aiService)
 	chatHandler.SetToolSupport(cfg.AIModule.LLMClient, cfg.AIModule.ToolRegistry, cfg.DB)
-	chatHandler.SetGLMClient(aichatservice.NewGLMClient(cfg.AIConfig))
+	chatHandler.SetGLMClient(chatGLMVision)
 
 	// === Chat v2 (REQ-20260509-0037: workspaces + channels + threads) ===
 	wsStore := chatstore.NewWorkspaceStore(cfg.DB)
@@ -154,6 +155,8 @@ func Setup(cfg Config) *gin.Engine {
 	llmRegistry := llmprovider.SetupRegistry(cfg.AIConfig)
 	groupChatHandler := chathandler.NewGroupChatHandler(wsStore, chnlStore, chnlMemberStore, chatAgentStore)
 	groupChatHandler.AttachLLMSupport(chatMsgStore, llmRegistry)
+	// dev-6: tool registry + GLM-4V vision share the legacy aichat instances.
+	groupChatHandler.AttachToolSupport(cfg.AIModule.ToolRegistry, chatGLMVision, cfg.DB)
 
 	// === Chat share (Feishu) ===
 	shareStore := chatstore.NewShareStore(cfg.DB)
