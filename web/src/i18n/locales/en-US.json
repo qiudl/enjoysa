@@ -835,6 +835,13 @@
       "feed": "Feed",
       "tools": "Tools"
     },
+    "layoutSwitcher": "Panel layout",
+    "layout": {
+      "right": "Dock right",
+      "left": "Dock left",
+      "bottom": "Dock bottom",
+      "bubble": "Floating bubble"
+    },
     "expand": "Expand EnjoySA AI",
     "collapse": "Collapse",
     "fullscreen": "Full Screen",

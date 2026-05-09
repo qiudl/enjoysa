@@ -181,11 +181,14 @@
   display: none;
 }
 
-/* Main Content Area */
+/* Main Content Area
+ * REQ-20260509-0026: AIPanel 暴露 3 个 var (right/left/bottom dock)，
+ * bubble 模式 / 未挂载时全部 0px。叠加 sidebar 实现自适应让位。 */
 .main {
   flex: 1;
-  margin-left: 260px;
+  margin-left: calc(260px + var(--ai-panel-left-width, 0px));
   margin-right: var(--ai-panel-width, 380px);
+  padding-bottom: var(--ai-panel-bottom-height, 0px);
   transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -194,7 +197,7 @@
 
 .sidebar.collapsed + .main,
 .collapsed ~ .main {
-  margin-left: 72px;
+  margin-left: calc(72px + var(--ai-panel-left-width, 0px));
 }
 
 /* Top Bar */
