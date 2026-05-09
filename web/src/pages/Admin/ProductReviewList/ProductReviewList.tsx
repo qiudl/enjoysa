@@ -16,7 +16,17 @@ function transformProduct(p: ApiAdminProduct): ProductReview {
     id: String(p.id),
     name: p.name_zh,
     nameEn: p.name_en,
-    category: (p.category?.slug || 'other') as ProductReview['category'],
+    // REQ-20260509-0030: 直接传后端原始 category 对象（含 name_zh/name_en/
+    // slug），不再 cast 成前端硬写的字符串枚举。table/detail 渲染时按 locale
+    // 取本地化名，缺失回退 slug → "—"。
+    category: p.category
+      ? {
+          id: p.category.id,
+          slug: p.category.slug,
+          name_zh: p.category.name_zh,
+          name_en: p.category.name_en,
+        }
+      : undefined,
     supplierId: String(p.supplier_id),
     supplierName: p.supplier?.name || '',
     price: p.price_from,
