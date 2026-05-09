@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -1717,6 +1718,76 @@ func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 	}
 
 	response.SuccessMessage(c, "Product deleted")
+}
+
+// REQ-20260509-0035 Phase 2: lightweight stock-only PATCH that bypasses the
+// heavy UpdateProduct delete-recreate flow (which would reset translation
+// state, audit, and re-trigger AI work). Lets ops set stock_total directly
+// from the product list. stock_sold stays untouched — server-maintained.
+type updatePackageStockRequest struct {
+	StockTotal int `json:"stock_total"` // -1 = unlimited; >= 0 = explicit cap
+}
+
+func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+	pkgID, err := strconv.ParseUint(c.Param("pkgId"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid package ID")
+		return
+	}
+
+	var req updatePackageStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.StockTotal < -1 {
+		response.BadRequest(c, "stock_total must be >= -1 (-1 = unlimited)")
+		return
+	}
+
+	// Defense: reject if the package doesn't belong to the URL's product —
+	// avoids any-package-ID-can-be-edited-by-knowing-package-id leak.
+	var pkg productmodel.ProductPackage
+	if err := h.db.First(&pkg, pkgID).Error; err != nil {
+		response.NotFound(c, "Package not found")
+		return
+	}
+	if pkg.ProductID != uint(productID) {
+		response.BadRequest(c, "Package does not belong to product")
+		return
+	}
+
+	// REQ-20260509-0035: 不允许把 stock_total 调到比 stock_sold 还低（会让
+	// 已售订单数大于库存，超卖语义颠倒）。运营要 force-下调，先取消订单回补。
+	if req.StockTotal != -1 && req.StockTotal < pkg.StockSold {
+		response.Fail(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
+			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, pkg.StockSold))
+		return
+	}
+
+	if err := h.db.Model(&productmodel.ProductPackage{}).
+		Where("id = ?", pkgID).
+		Update("stock_total", req.StockTotal).Error; err != nil {
+		response.ServerError(c, "Failed to update package stock")
+		return
+	}
+
+	// Audit
+	if h.audit != nil {
+		h.audit.Log(c, "stock_update", "product_package", uint(pkgID),
+			fmt.Sprintf("product %d package %d stock_total: %d → %d", productID, pkgID, pkg.StockTotal, req.StockTotal))
+	}
+
+	response.Success(c, gin.H{
+		"id":          pkgID,
+		"stock_total": req.StockTotal,
+		"stock_sold":  pkg.StockSold,
+	})
 }
 
 // === Order Management ===

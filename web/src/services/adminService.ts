@@ -3,7 +3,7 @@
  * 管理后台 API（需要 admin 认证）
  */
 
-import { get, post, put, del, getAccessToken } from './api';
+import { get, post, put, patch, del, getAccessToken } from './api';
 import type { ApiProduct } from './productService';
 import type { ProductPayload } from './supplierProductService';
 
@@ -414,6 +414,16 @@ export const adminService = {
 
   async deleteProduct(id: number) {
     return del<void>(`/admin/products/${id}`, 'admin');
+  },
+
+  // REQ-20260509-0035 Phase 2: 列表页快速调整库存。绕开 updateProduct 重型
+  // 流程（不触发翻译/审核 reset）。stock_total = -1 表示无限量。
+  async updatePackageStock(productId: number, packageId: number, stockTotal: number) {
+    return patch<{ id: number; stock_total: number; stock_sold: number }>(
+      `/admin/products/${productId}/packages/${packageId}/stock`,
+      { stock_total: stockTotal },
+      'admin',
+    );
   },
 
   // REQ-20260509-0004: ZH→EN translation for admin-edited products. The

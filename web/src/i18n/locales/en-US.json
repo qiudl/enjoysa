@@ -991,6 +991,13 @@
     "validationError": "Invalid input, please check"
   },
   "admin": {
+    "stockAdjust": {
+      "title": "Adjust stock",
+      "noPackages": "This product has no packages",
+      "sold": "Sold {{n}}",
+      "invalidNumber": "Please enter a valid number",
+      "belowSold": "Cannot be below already-sold count. Cancel orders first to free up sold count."
+    },
     "menu": {
       "dashboard": "Dashboard",
       "suppliers": "Suppliers",
@@ -1393,7 +1400,8 @@
         "reject": "Reject",
         "create": "Create Product",
         "edit": "Edit",
-        "delete": "Delete"
+        "delete": "Delete",
+        "adjustStock": "Adjust stock"
       },
       "deleteConfirm": "Are you sure you want to delete product \"{{name}}\"? This action cannot be undone.",
       "form": {

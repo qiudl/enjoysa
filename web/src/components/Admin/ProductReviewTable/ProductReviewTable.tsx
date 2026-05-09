@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 const ProductPrecheck = lazy(() => import('../../AI/ProductPrecheck/ProductPrecheck'));
-import { Eye, CheckCircle, XCircle, Image, Pencil, Trash2 } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Image, Pencil, Trash2, Package } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './ProductReviewTable.module.css';
 
@@ -49,6 +49,8 @@ export interface ProductReviewTableProps {
   onReject?: (product: ProductReview) => void;
   onEdit?: (product: ProductReview) => void;
   onDelete?: (product: ProductReview) => void;
+  // REQ-20260509-0035 Phase 2: 列表页直接调库存。
+  onAdjustStock?: (product: ProductReview) => void;
 }
 
 export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
@@ -61,6 +63,7 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
   onReject,
   onEdit,
   onDelete,
+  onAdjustStock,
 }) => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === 'zh' || i18n.language === 'zh-CN';
@@ -242,6 +245,15 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                   >
                     <Pencil size={16} />
                   </button>
+                  {onAdjustStock && (
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => onAdjustStock(product)}
+                      title={t('admin.products.actions.adjustStock', '调整库存') as string}
+                    >
+                      <Package size={16} />
+                    </button>
+                  )}
                   {product.status === 'pending' && (
                     <>
                       <button
