@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>REQ-20260508-0002 原型 — 供应商 EN-only + AI EN→ZH 翻译 + 平台双语审核</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --primary: #0066ff;
+    --primary-soft: #eaf2ff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --muted-2: #94a3b8;
+    --border: #e2e8f0;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --surface-page: #f1f5f9;
+    --success: #16a34a;
+    --success-soft: #ecfdf5;
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --danger-border: #fecaca;
+    --phase2: #7c3aed;
+    --phase2-soft: #f3e8ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--surface-page);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header.page-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+  }
+  header.page-header h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  header.page-header .meta {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  header.page-header .meta code {
+    background: var(--surface-alt);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .container { padding: 32px 40px 80px; max-width: 1280px; margin: 0 auto; }
+
+  .section { margin-bottom: 56px; }
+  .section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .badge-phase1 { background: var(--success-soft); color: var(--success); }
+  .badge-phase2 { background: var(--phase2-soft); color: var(--phase2); }
+  .badge-info { background: var(--primary-soft); color: var(--primary); }
+
+  .frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.04);
+  }
+  .frame-toolbar {
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .frame-toolbar .dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
+  .frame-toolbar .dot.r { background: #ef4444; }
+  .frame-toolbar .dot.y { background: #f59e0b; }
+  .frame-toolbar .dot.g { background: #10b981; }
+  .frame-toolbar .url {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 10px;
+    margin-left: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  /* ====== Supplier shell ====== */
+  .supplier-shell { display: flex; min-height: 560px; }
+  .supplier-side {
+    width: 220px;
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 16px 12px;
+    font-size: 13px;
+  }
+  .supplier-side .brand {
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 8px 12px 18px;
+    letter-spacing: 0.3px;
+  }
+  .supplier-side .brand small { display: block; color: #64748b; font-weight: 400; font-size: 11px; margin-top: 2px; }
+  .supplier-side .nav-item {
+    padding: 9px 12px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    cursor: default;
+  }
+  .supplier-side .nav-item:hover { background: rgba(255,255,255,0.04); }
+  .supplier-side .nav-item.active { background: rgba(0,102,255,0.15); color: #fff; }
+  .supplier-main { flex: 1; background: var(--surface-page); }
+  .supplier-topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+  .supplier-topbar .right { display: flex; align-items: center; gap: 16px; color: var(--muted); }
+  .supplier-topbar .lang-switch-removed {
+    border: 1px dashed var(--danger-border);
+    background: var(--danger-soft);
+    color: var(--danger);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .supplier-content { padding: 24px; }
+
+  /* ====== Form ====== */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .form-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .form-card .form-sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .field-row { margin-bottom: 16px; }
+  .field-row .lbl {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    text-transform: none;
+  }
+  .field-row .input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .field-row textarea.input { min-height: 64px; resize: vertical; line-height: 1.5; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-actions { display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-ghost { background: transparent; }
+  .btn-danger-soft {
+    background: var(--danger-soft);
+    border-color: var(--danger-border);
+    color: var(--danger);
+  }
+  .helper-tag {
+    display: inline-block;
+    background: var(--warning-soft);
+    color: var(--warning);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+
+  /* ====== ChinesePreview panel (style-matched to actual component) ====== */
+  .cp-panel {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .cp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .cp-header .toggle {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--primary);
+    cursor: pointer;
+  }
+  .cp-body { padding: 16px; font-size: 14px; line-height: 1.6; }
+  .cp-status {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 16px;
+  }
+  .cp-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cp-status.pending { color: var(--muted); }
+  .cp-status.success { color: var(--success); }
+  .cp-status.failed  { color: var(--danger); }
+  .cp-retry {
+    margin-left: auto;
+    background: var(--danger-soft);
+    border: 1px solid var(--danger-border);
+    color: var(--danger);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .cp-field { margin-bottom: 12px; }
+  .cp-field-label {
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted); margin-bottom: 4px;
+  }
+  .cp-field-value { white-space: pre-wrap; word-break: break-word; }
+
+  /* highlight protected placeholders / glossary */
+  .placeholder-token {
+    background: #fef9c3;
+    color: #854d0e;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+  }
+  .glossary-token {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  /* ====== States grid ====== */
+  .state-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .state-grid .label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .state-grid .state-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  /* ====== Admin bilingual review (Phase 2) ====== */
+  .admin-shell { display: flex; min-height: 560px; }
+  .admin-side {
+    width: 220px;
+    background: #0b1220;
+    color: #cbd5e1;
+    padding: 16px 12px;
+    font-size: 13px;
+  }
+  .admin-side .brand { color: #fff; font-weight: 700; padding: 8px 12px 18px; }
+  .admin-side .nav-item { padding: 9px 12px; border-radius: 6px; }
+  .admin-side .nav-item.active { background: rgba(124,58,237,0.20); color: #fff; }
+  .admin-main { flex: 1; background: var(--surface-page); }
+  .admin-topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+  }
+  .admin-content { padding: 24px; }
+  .review-meta {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .review-meta .item .k { color: var(--muted); margin-right: 6px; }
+  .review-meta .item .v { font-weight: 600; }
+  .review-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .review-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .review-col-head {
+    padding: 10px 14px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+  }
+  .review-col-head .lang { font-weight: 600; }
+  .review-col-head .hint { color: var(--muted); font-size: 12px; }
+  .review-col-body { padding: 16px; }
+  .review-col.readonly .review-col-body { background: #fafbfc; }
+  .review-col textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: inherit;
+    color: var(--text);
+    resize: vertical;
+    min-height: 48px;
+  }
+  .review-col.readonly textarea {
+    background: #f8fafc;
+    color: #475569;
+  }
+  .review-col textarea:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+  .field-block { margin-bottom: 14px; }
+  .field-block .lbl {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+  }
+  .review-actions {
+    display: flex; gap: 10px; padding: 12px 14px;
+    border-top: 1px solid var(--border); background: var(--surface-alt);
+  }
+  .review-actions .grow { flex: 1; }
+  .audit-log {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .audit-log .head {
+    padding: 10px 14px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 600;
+  }
+  .audit-log table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .audit-log th, .audit-log td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    color: var(--muted);
+  }
+  .audit-log th { background: var(--surface); color: var(--text); font-weight: 600; }
+  .audit-log td.who { color: var(--text); }
+  .audit-log td.diff-old { color: var(--danger); text-decoration: line-through; }
+  .audit-log td.diff-new { color: var(--success); }
+
+  /* ====== C-side fallback ====== */
+  .c-shell { display: flex; flex-direction: column; min-height: 480px; background: var(--surface); }
+  .c-topbar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+  }
+  .c-topbar .brand { font-weight: 700; color: var(--text); font-size: 16px; }
+  .c-lang {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .c-lang span {
+    padding: 4px 10px;
+    border-right: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .c-lang span:last-child { border-right: 0; }
+  .c-lang span.on { background: var(--primary); color: #fff; }
+  .c-product { padding: 24px; display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+  .c-product .photo {
+    height: 220px;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #7c3aed 100%);
+    border-radius: 8px;
+    display: flex; align-items: flex-end; padding: 16px; color: #fff;
+    font-size: 12px;
+  }
+  .c-product .body h3 { margin: 0 0 4px; font-size: 20px; }
+  .c-product .body .sub { color: var(--muted); margin-bottom: 12px; font-size: 13px; }
+  .c-product .body p { font-size: 14px; line-height: 1.7; color: var(--text); }
+  .fallback-note {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: var(--warning-soft);
+    color: var(--warning);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  /* ====== Flow diagram ====== */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    align-items: stretch;
+  }
+  .flow-step {
+    padding: 16px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-step .icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .flow-step.phase2 .icon { background: var(--phase2-soft); color: var(--phase2); }
+  .flow-step h4 { margin: 0 0 4px; font-size: 13px; }
+  .flow-step p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .flow-step::after {
+    content: "→";
+    position: absolute;
+    right: -8px; top: 28px;
+    color: var(--muted-2);
+    font-size: 18px;
+  }
+  .flow-step:last-child::after { content: ""; }
+
+  /* ====== legend ====== */
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .legend .swatch {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 3px; margin-right: 6px; vertical-align: middle;
+  }
+
+  .description-paragraph .placeholder-token { white-space: nowrap; }
+
+  /* ====== Split layout (edit + preview side-by-side) ====== */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .status-bar .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-bar .pill.success { background: var(--success-soft); color: var(--success); }
+  .status-bar .pill.pending { background: var(--warning-soft); color: var(--warning); }
+  .status-bar .pill.failed  { background: var(--danger-soft);  color: var(--danger); }
+  .status-bar .grow { flex: 1; }
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .split-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .split-col-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .split-col-head .right {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-weight: 500; font-size: 12px;
+  }
+  .split-col-body { padding: 18px; }
+  .split-col.preview { background: #fafbfc; }
+  .split-col.preview .split-col-head { background: #f1f5fa; }
+  .split-col.preview .split-col-body { padding: 18px; }
+
+  .split-actions-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 16px;
+    align-items: center;
+    position: sticky;
+    bottom: 16px;
+  }
+  .split-actions-bar .grow { flex: 1; color: var(--muted); font-size: 12px; }
+
+  /* Compact field row for split layout */
+  .split .field-row { margin-bottom: 12px; }
+  .split .field-row .lbl {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .split .field-row .lbl .ctr { font-weight: 400; font-size: 11px; color: var(--muted-2); }
+
+  /* Right-column field display */
+  .preview-field {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .preview-field:last-child { border-bottom: none; padding-bottom: 0; }
+  .preview-field-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .preview-field-label {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+  .preview-field-meta { font-size: 11px; color: var(--muted-2); }
+  .preview-field-value {
+    font-size: 13.5px; line-height: 1.65;
+    color: var(--text);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .preview-field.translating .preview-field-value {
+    background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+    background-size: 200% 100%;
+    color: transparent;
+    border-radius: 4px;
+    min-height: 38px;
+    animation: shimmer 1.6s linear infinite;
+  }
+  .preview-field.empty .preview-field-value {
+    color: var(--muted-2);
+    font-style: italic;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .preview-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .preview-empty-state .ic { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+
+  .preview-lang-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 11px;
+    background: #fff;
+  }
+  .preview-lang-toggle span {
+    padding: 3px 9px;
+    border-right: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .preview-lang-toggle span:last-child { border-right: 0; }
+  .preview-lang-toggle span.on { background: var(--primary); color: #fff; }
+
+  /* Mini state cards row (replaces full state grid) */
+  .mini-states { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .mini-state {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .mini-state .mini-head {
+    padding: 8px 12px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .mini-state .mini-body { padding: 14px; min-height: 110px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header class="page-header">
+  <h1>REQ-20260508-0002 — 供应商后台 EN-only + AI EN→ZH 翻译 + 平台双语审核</h1>
+  <div class="meta">
+    <code>display_id: REQ-20260508-0002</code>
+    &nbsp;|&nbsp; Phase 1 已上线 (PR #86, commit cf0f400)
+    &nbsp;|&nbsp; Phase 2 待立项
+    &nbsp;|&nbsp; 原型版本 v1
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- =================== 1. 全流程鸟瞰 =================== -->
+  <section class="section">
+    <h2>0. 全流程鸟瞰 <span class="badge badge-info">Information</span></h2>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="icon">1</div>
+        <h4>Supplier 英文录入</h4>
+        <p>EN-only 后台，无中文残留</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon">2</div>
+        <h4>Submit 入队</h4>
+        <p>同事务 INSERT translation_task (pending)</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon">3</div>
+        <h4>Worker EN→ZH</h4>
+        <p>DeepSeek + 术语表 + 占位符保护</p>
+      </div>
+      <div class="flow-step phase2">
+        <div class="icon">4</div>
+        <h4>Admin 双栏审核</h4>
+        <p>Phase 2：左 EN 只读 / 右 ZH 可编</p>
+      </div>
+      <div class="flow-step phase2">
+        <div class="icon">5</div>
+        <h4>C 端按语言展示</h4>
+        <p>zh-CN / zh-TW → ZH，其他 → EN</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--primary-soft);"></span>Phase 1 — 已上线</span>
+      <span><span class="swatch" style="background:var(--phase2-soft);"></span>Phase 2 — 待立项</span>
+    </div>
+  </section>
+
+  <!-- =================== 1. Supplier 双列编辑 + 预览（新版） =================== -->
+  <section class="section">
+    <h2>1. Supplier 后台 — 编辑 / 预览 双列同屏 <span class="badge badge-phase1">Phase 1 重构</span></h2>
+    <div class="frame">
+      <div class="frame-toolbar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url">https://enjoysau.com/supplier/products/8421/edit</span>
+      </div>
+      <div class="supplier-shell">
+        <aside class="supplier-side">
+          <div class="brand">EnjoySA <small>Supplier portal</small></div>
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item active">Products</div>
+          <div class="nav-item">Orders</div>
+          <div class="nav-item">Settlements</div>
+          <div class="nav-item">Settings</div>
+        </aside>
+        <div class="supplier-main">
+          <div class="supplier-topbar">
+            <div>Products / Edit · #8421 — Barossa Valley Wine Tasting</div>
+            <div class="right">
+              <span class="lang-switch-removed">LanguageSwitcher hidden (locked: en-US)</span>
+              <span>· Coastal Tours Pty Ltd</span>
+            </div>
+          </div>
+          <div class="supplier-content">
+            <div class="status-bar">
+              <span>📝 Draft saved 30s ago</span>
+              <span>•</span>
+              <span>🌏 Chinese preview generated 2026-05-09 10:42 (DeepSeek V4 · 3.8s · $0.0042)</span>
+              <span class="grow"></span>
+              <span class="pill success">✓ ZH preview up-to-date</span>
+            </div>
+
+            <div class="split">
+              <!-- LEFT: English editor -->
+              <div class="split-col">
+                <div class="split-col-head">
+                  <span>🇬🇧 English (you edit)</span>
+                  <span class="right"><span>auto-save · 5s idle</span></span>
+                </div>
+                <div class="split-col-body">
+                  <div class="form-grid">
+                    <div class="field-row">
+                      <label class="lbl">Title <span class="ctr">52 / 120</span></label>
+                      <input class="input" value="Barossa Valley Wine Tasting Day Tour" />
+                    </div>
+                    <div class="field-row">
+                      <label class="lbl">Subtitle <span class="ctr">42 / 120</span></label>
+                      <input class="input" value="Small-group, hotel pickup from Adelaide CBD" />
+                    </div>
+                  </div>
+
+                  <div class="field-row">
+                    <label class="lbl">Description <span class="ctr">316 / 4000</span></label>
+                    <textarea class="input" rows="5">A relaxed full-day visit to four boutique cellar doors in the Barossa Valley. Pickup from Adelaide CBD hotels at 8:30am. Includes wine tastings, a two-course lunch, and pickup from your accommodation. Booking: book@coastaltours.com.au or +61 4 1234 5678. Pricing: AUD 199 per adult.</textarea>
+                  </div>
+
+                  <div class="form-grid">
+                    <div class="field-row">
+                      <label class="lbl">Inclusions</label>
+                      <textarea class="input">- Hotel pickup &amp; drop-off in Adelaide CBD
+- 4 cellar door tastings
+- Two-course lunch at Lyndoch
+- Bottled water</textarea>
+                    </div>
+                    <div class="field-row">
+                      <label class="lbl">Exclusions</label>
+                      <textarea class="input">- Bottle purchases
+- Gratuities
+- Personal expenses</textarea>
+                    </div>
+                  </div>
+
+                  <div class="field-row">
+                    <label class="lbl">Cancellation policy</label>
+                    <textarea class="input">Free cancellation up to 48h before departure. 50% refund within 48h. No refund within 24h.</textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT: Chinese preview -->
+              <div class="split-col preview">
+                <div class="split-col-head">
+                  <span>🇨🇳 中文预览 (AI 自动)</span>
+                  <span class="right">
+                    <span class="preview-lang-toggle"><span class="on">简体</span><span title="Phase 2">繁體</span></span>
+                    <button class="btn" style="padding:3px 10px; font-size:11px;">↻ Re-translate</button>
+                  </span>
+                </div>
+                <div class="split-col-body">
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">标题</span>
+                      <span class="preview-field-meta">EN→ZH · ✓ glossary</span>
+                    </div>
+                    <div class="preview-field-value"><span class="glossary-token">芭萝莎谷</span>葡萄酒品鉴一日游</div>
+                  </div>
+
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">副标题</span>
+                      <span class="preview-field-meta">EN→ZH</span>
+                    </div>
+                    <div class="preview-field-value">小团出行，从<span class="glossary-token">阿德莱德</span>市中心酒店出发</div>
+                  </div>
+
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">描述</span>
+                      <span class="preview-field-meta">3 placeholders 保护</span>
+                    </div>
+                    <div class="preview-field-value description-paragraph">轻松游览<span class="glossary-token">芭萝莎谷</span>四家精品酒庄。早上 8:30 从<span class="glossary-token">阿德莱德</span>市中心酒店接送。包含品酒、两道菜午餐与酒店接送。预订：<span class="placeholder-token">book@coastaltours.com.au</span> 或 <span class="placeholder-token">+61 4 1234 5678</span>。价格：<span class="placeholder-token">AUD 199</span>/成人。</div>
+                  </div>
+
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">包含项目</span>
+                      <span class="preview-field-meta">EN→ZH · 列表保形</span>
+                    </div>
+                    <div class="preview-field-value">- <span class="glossary-token">阿德莱德</span>市中心酒店接送
+- 4 家酒庄品酒
+- 林多赫两道菜午餐
+- 瓶装水</div>
+                  </div>
+
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">不含项目</span>
+                      <span class="preview-field-meta">EN→ZH · 列表保形</span>
+                    </div>
+                    <div class="preview-field-value">- 整瓶购买
+- 小费
+- 个人开销</div>
+                  </div>
+
+                  <div class="preview-field">
+                    <div class="preview-field-head">
+                      <span class="preview-field-label">退订政策</span>
+                      <span class="preview-field-meta">EN→ZH</span>
+                    </div>
+                    <div class="preview-field-value">出发前 48 小时以上可免费取消。48 小时内退订退还 50%，24 小时内不退款。</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="split-actions-bar">
+              <button class="btn">Save draft</button>
+              <button class="btn btn-primary">Submit for review</button>
+              <span class="grow">提交后状态进入 pending_review，平台审核 1–2 个工作日内回复</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span>✓ EN-only 录入；中文实时呈现，所见即所得</span>
+      <span>✓ 占位符保护（<span class="placeholder-token" style="margin-right:0;">URL/email/phone/price</span>）</span>
+      <span>✓ 术语表强约束（<span class="glossary-token" style="margin-right:0;">地名 / 业务词</span>）</span>
+      <span>✓ 列表/对象结构保形不拼成大段</span>
+      <span>✓ Re-translate 按钮显式触发，避免每次 Save 都烧 LLM</span>
+    </div>
+  </section>
+
+  <!-- =================== 2. 右栏状态参考 =================== -->
+  <section class="section">
+    <h2>2. 中文预览栏 — 4 个状态参考 <span class="badge badge-phase1">Phase 1 重构</span></h2>
+    <div class="mini-states">
+      <div class="mini-state">
+        <div class="mini-head">① Empty (新建未保存)</div>
+        <div class="mini-body">
+          <div class="preview-empty-state" style="padding: 20px 8px;">
+            <div class="ic">🌏</div>
+            填写左侧英文后<br>这里会自动生成中文
+          </div>
+        </div>
+      </div>
+      <div class="mini-state">
+        <div class="mini-head">② Translating (Save 后)</div>
+        <div class="mini-body">
+          <div class="preview-field translating">
+            <div class="preview-field-head">
+              <span class="preview-field-label">标题</span>
+              <span class="preview-field-meta"><span class="cp-spinner" style="display:inline-block; vertical-align:middle;"></span> 翻译中</span>
+            </div>
+            <div class="preview-field-value">placeholder</div>
+          </div>
+          <div class="preview-field translating">
+            <div class="preview-field-head">
+              <span class="preview-field-label">描述</span>
+              <span class="preview-field-meta">~ 8s</span>
+            </div>
+            <div class="preview-field-value">placeholder text here for shimmer</div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-state">
+        <div class="mini-head">③ Stale (改了 EN 还没重译)</div>
+        <div class="mini-body">
+          <div class="preview-field" style="opacity: 0.6;">
+            <div class="preview-field-head">
+              <span class="preview-field-label">描述</span>
+              <span class="preview-field-meta" style="color:var(--warning);">⚠ EN changed</span>
+            </div>
+            <div class="preview-field-value" style="font-size:12px;">悠然游览芭萝莎谷四家精品酒庄...</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:11px; padding:4px 10px; width:100%; margin-top:8px;">↻ Re-translate now</button>
+        </div>
+      </div>
+      <div class="mini-state">
+        <div class="mini-head">④ Failed</div>
+        <div class="mini-body">
+          <div class="cp-status failed" style="margin-bottom:8px; font-size:12px;">
+            <span>✗ LLM JSON parse error after 3 attempts</span>
+          </div>
+          <button class="cp-retry" style="margin-left:0; width:100%;">Retry translation</button>
+          <div style="margin-top:10px; font-size:11px; color:var(--muted);">提交按钮不被阻塞——失败也可继续 Submit，平台审核兜底</div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span>右栏与左栏字段一一对齐，视线不跳跃</span>
+      <span>翻译触发：<strong>Save</strong>（节流：5s idle 内只触发一次）+ 显式 <strong>Re-translate</strong></span>
+      <span>失败不阻塞 Submit；中文 stale 状态显式提示</span>
+    </div>
+  </section>
+
+  <!-- =================== 3. Admin 双栏对照审核（Phase 2） =================== -->
+  <section class="section">
+    <h2>3. Admin 双栏对照审核编辑器 <span class="badge badge-phase2">Phase 2</span></h2>
+    <div class="frame">
+      <div class="frame-toolbar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url">https://enjoysau.com/admin/products/8421/review</span>
+      </div>
+      <div class="admin-shell">
+        <aside class="admin-side">
+          <div class="brand">EnjoySA Admin</div>
+          <div class="nav-item">Dashboard</div>
+          <div class="nav-item active">Product Review</div>
+          <div class="nav-item">Suppliers</div>
+          <div class="nav-item">Orders</div>
+          <div class="nav-item">Settings</div>
+        </aside>
+        <div class="admin-main">
+          <div class="admin-topbar">
+            <div>Product Review / #8421 — Barossa Valley Wine Tasting</div>
+            <div>linyemiao91@msn.com (super_admin)</div>
+          </div>
+          <div class="admin-content">
+            <div class="review-meta">
+              <div class="item"><span class="k">供应商:</span><span class="v">Coastal Tours Pty Ltd</span></div>
+              <div class="item"><span class="k">提交时间:</span><span class="v">2026-05-09 10:42</span></div>
+              <div class="item"><span class="k">翻译任务:</span><span class="v" style="color:var(--success);">success · DeepSeek V4</span></div>
+              <div class="item"><span class="k">耗时:</span><span class="v">3.8s</span></div>
+              <div class="item"><span class="k">成本:</span><span class="v">$0.0042</span></div>
+              <div class="item" style="margin-left:auto;">
+                <button class="btn">↻ Re-translate from EN</button>
+              </div>
+            </div>
+
+            <div class="review-cols">
+              <div class="review-col readonly">
+                <div class="review-col-head">
+                  <span class="lang">English (供应商录入 · 只读)</span>
+                  <span class="hint">建议修改 → 通知供应商</span>
+                </div>
+                <div class="review-col-body">
+                  <div class="field-block">
+                    <div class="lbl">Title</div>
+                    <textarea readonly>Barossa Valley Wine Tasting Day Tour</textarea>
+                  </div>
+                  <div class="field-block">
+                    <div class="lbl">Description</div>
+                    <textarea readonly rows="4">A relaxed full-day visit to four boutique cellar doors in the Barossa Valley. Pickup from Adelaide CBD hotels at 8:30am. Includes wine tastings, a two-course lunch, and pickup from your accommodation.</textarea>
+                  </div>
+                  <div class="field-block">
+                    <div class="lbl">Cancellation policy</div>
+                    <textarea readonly>Free cancellation up to 48h before departure. 50% refund within 48h. No refund within 24h.</textarea>
+                  </div>
+                </div>
+                <div class="review-actions">
+                  <button class="btn">📝 Suggest edit to supplier</button>
+                  <span class="grow"></span>
+                </div>
+              </div>
+
+              <div class="review-col">
+                <div class="review-col-head">
+                  <span class="lang">中文 (AI 生成 · 可润色)</span>
+                  <span class="hint">普通保存不触发重译</span>
+                </div>
+                <div class="review-col-body">
+                  <div class="field-block">
+                    <div class="lbl">标题</div>
+                    <textarea>芭萝莎谷葡萄酒品鉴一日游</textarea>
+                  </div>
+                  <div class="field-block">
+                    <div class="lbl">描述</div>
+                    <textarea rows="4">悠然游览芭萝莎谷四家精品酒庄。早上 8:30 从阿德莱德市中心酒店接送。包含品酒、两道菜午餐与酒店接送。</textarea>
+                  </div>
+                  <div class="field-block">
+                    <div class="lbl">退订政策</div>
+                    <textarea>出发前 48 小时以上可免费取消。48 小时内退订退还 50%，24 小时内不退款。</textarea>
+                  </div>
+                </div>
+                <div class="review-actions">
+                  <button class="btn btn-primary">💾 Save Chinese</button>
+                  <button class="btn">✓ Approve &amp; Publish</button>
+                  <button class="btn btn-danger-soft">✗ Reject</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="audit-log">
+              <div class="head">Audit log</div>
+              <table>
+                <thead>
+                  <tr><th>时间</th><th>用户</th><th>字段</th><th>变更</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2026-05-09 10:55</td>
+                    <td class="who">admin@enjoysa.com.au</td>
+                    <td>description_zh</td>
+                    <td>
+                      <span class="diff-old">轻松游览</span>
+                      <span class="diff-new">悠然游览</span>
+                      （手动润色）
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2026-05-09 10:42</td>
+                    <td class="who">system (worker)</td>
+                    <td>description_zh / name_zh / address_zh</td>
+                    <td>AI 翻译初版生成（DeepSeek V4，3.8s，$0.0042）</td>
+                  </tr>
+                  <tr>
+                    <td>2026-05-09 10:42</td>
+                    <td class="who">supplier@coastaltours.com.au</td>
+                    <td>status</td>
+                    <td>draft → pending_review</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 4. C 端按语言展示 =================== -->
+  <section class="section">
+    <h2>4. C 端按语言展示 + 缺失字段降级 <span class="badge badge-phase2">Phase 2</span></h2>
+
+    <div class="state-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="state-card" style="padding:0; overflow:hidden;">
+        <div class="frame-toolbar" style="border-bottom: 1px solid var(--border);">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">https://enjoysau.com/products/8421?lang=zh-CN</span>
+        </div>
+        <div class="c-shell">
+          <div class="c-topbar">
+            <div class="brand">畅游南澳 EnjoySA</div>
+            <div class="c-lang">
+              <span class="on">中文</span>
+              <span>繁體</span>
+              <span>EN</span>
+            </div>
+          </div>
+          <div class="c-product">
+            <div class="photo">Barossa Valley · 配图</div>
+            <div class="body">
+              <h3>芭萝莎谷葡萄酒品鉴一日游</h3>
+              <div class="sub">小团出行，从阿德莱德市中心酒店出发</div>
+              <p>悠然游览芭萝莎谷四家精品酒庄。早上 8:30 从阿德莱德市中心酒店接送。包含品酒、两道菜午餐与酒店接送。预订：book@coastaltours.com.au 或 +61 4 1234 5678。价格：AUD 199/成人。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-card" style="padding:0; overflow:hidden;">
+        <div class="frame-toolbar" style="border-bottom: 1px solid var(--border);">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">https://enjoysau.com/products/8421?lang=en</span>
+        </div>
+        <div class="c-shell">
+          <div class="c-topbar">
+            <div class="brand">EnjoySA</div>
+            <div class="c-lang">
+              <span>中文</span>
+              <span>繁體</span>
+              <span class="on">EN</span>
+            </div>
+          </div>
+          <div class="c-product">
+            <div class="photo">Barossa Valley · photo</div>
+            <div class="body">
+              <h3>Barossa Valley Wine Tasting Day Tour</h3>
+              <div class="sub">Small-group, hotel pickup from Adelaide CBD</div>
+              <p>A relaxed full-day visit to four boutique cellar doors in the Barossa Valley. Pickup from Adelaide CBD hotels at 8:30am. Includes wine tastings, a two-course lunch, and pickup from your accommodation. Booking: book@coastaltours.com.au or +61 4 1234 5678. Pricing: AUD 199 per adult.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-card" style="padding:0; overflow:hidden; grid-column: span 2;">
+        <div class="frame-toolbar" style="border-bottom: 1px solid var(--border);">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">https://enjoysau.com/products/8421?lang=zh-CN — 缺失字段 fallback</span>
+        </div>
+        <div class="c-shell">
+          <div class="c-topbar">
+            <div class="brand">畅游南澳 EnjoySA</div>
+            <div class="c-lang"><span class="on">中文</span><span>繁體</span><span>EN</span></div>
+          </div>
+          <div class="c-product">
+            <div class="photo">某历史商品 · 配图</div>
+            <div class="body">
+              <h3>Kangaroo Island Day Trip</h3>
+              <div class="sub">从阿德莱德出发的一日游</div>
+              <p>本商品中文描述暂缺，下方为英文版本：<br><br>Visit Seal Bay, Flinders Chase National Park, and Remarkable Rocks in a single day...</p>
+              <div class="fallback-note">⚠ 历史商品 (auto_generated_en=false 且 description_zh 为空) → 字段级降级展示英文，title 用术语表回填。Phase 2 引导供应商完善。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 5. 不在范围 =================== -->
+  <section class="section">
+    <h2>5. 已划入 Phase 2 / 新需求 — 不在本期原型详细展开</h2>
+    <ul style="line-height:1.8; color: var(--muted); font-size: 14px;">
+      <li>Admin 双栏审核编辑器（上图为方向草图，待 Phase 2 立项细化）</li>
+      <li>供应商手动覆盖中文 (<code>manual_override</code>) — 标记后再 Submit 不被 AI 覆盖</li>
+      <li>EN 字段编辑后 diff 重译流（避免上架后整篇重译）</li>
+      <li>历史 ZH-only 商品反向 AI 生成 EN（<code>auto_generated_en=true</code>）+ 供应商一次性"领取并完善"banner</li>
+      <li>翻译成本日报 dashboard（运营方可见）</li>
+      <li>Supplier i18n key 100% 覆盖 + missing-key CI hard gate</li>
+      <li>Supplier 邮件 / 站内信 / PDF 完整英文模板（订单通知/审核结果/提现回执/催办）</li>
+      <li>繁体中文：基于 zh-CN 二次 LLM 转写（非本需求范围）</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>
