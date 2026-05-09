@@ -238,6 +238,10 @@ func (h *SupplierProductHandler) GetProduct(c *gin.Context) {
 		return
 	}
 
+	// REQ-20260509-0019: 在 admin 代录场景下补上 admin 姓名，让供应商看到
+	// "Created by ${admin} on ${date}" 而不是裸的 created_by_admin_id。
+	h.productStore.PopulateCreatedByAdminName(product)
+
 	response.Success(c, product)
 }
 

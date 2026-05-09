@@ -108,6 +108,11 @@ export interface ApiProduct {
   available_stock?: number;
   created_at: string;
   updated_at: string;
+  // REQ-20260509-0019: 代录身份。created_via='admin_proxy' 时 supplier 端
+  // 渲染 "Created by ${name} on ${date}" 提示条；name 由后端 admin 表查询填充。
+  created_via?: 'supplier_self' | 'admin_proxy';
+  created_by_admin_id?: number;
+  created_by_admin_name?: string;
 }
 
 // 分页响应

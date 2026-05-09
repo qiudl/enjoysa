@@ -2444,6 +2444,10 @@
       "includes": "费用包含",
       "excludes": "费用不含",
       "notices": "注意事项"
+    },
+    "product": {
+      "proxyCreatedBy": "由 {{name}} 于 {{date}} 代您录入",
+      "formerAdmin": "已离职管理员"
     }
   },
   "contacts": {

@@ -82,6 +82,11 @@ type Product struct {
 	CreatedVia       string `gorm:"size:20;default:supplier_self;not null" json:"created_via"`
 	CreatedByAdminID *uint  `json:"created_by_admin_id,omitempty"`
 
+	// REQ-20260509-0019: 仅 JSON 序列化用，不入库。GetProduct 等 handler 在
+	// 返回前查 admin 表填充 name；admin 已删除时留空，前端按"已离职 admin"展示。
+	// 避免在 product 表里冗余 admin 名字（admin 改名后 product 仍是旧名）。
+	CreatedByAdminName string `gorm:"-" json:"created_by_admin_name,omitempty"`
+
 	// 关联
 	Supplier   *models.Supplier  `gorm:"foreignKey:SupplierID" json:"supplier,omitempty"`
 	Region     *Region           `gorm:"foreignKey:RegionID" json:"region,omitempty"`

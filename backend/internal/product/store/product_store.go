@@ -284,3 +284,20 @@ func (s *ProductStore) DeleteRelated(productID uint) error {
 	s.db.Where("product_id = ?", productID).Delete(&model.ProductSchedule{})
 	return nil
 }
+
+// PopulateCreatedByAdminName looks up the admin name for an admin_proxy
+// product and stores it on the transient field. Best-effort: silently
+// returns when the product was not admin-created, when the admin row is
+// missing (deleted via ON DELETE SET NULL), or when the lookup errors.
+// Avoids importing internal/auth/* here by hitting the admins table via
+// a raw column select.
+func (s *ProductStore) PopulateCreatedByAdminName(p *model.Product) {
+	if p == nil || p.CreatedVia != "admin_proxy" || p.CreatedByAdminID == nil {
+		return
+	}
+	var name string
+	s.db.Table("admins").
+		Where("id = ?", *p.CreatedByAdminID).
+		Pluck("name", &name)
+	p.CreatedByAdminName = name
+}
