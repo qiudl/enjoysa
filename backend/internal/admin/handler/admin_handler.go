@@ -1109,9 +1109,17 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	status := productmodel.ProductStatusApproved
+	// REQ-20260509-0019: 代录工作流。
+	// auto_approve=true → 一站式上架（status=approved + 双 audit + send approved 通知）。
+	// 不传 auto_approve 且无 explicit status → 默认 pending（不再 draft，因为 admin 进
+	// 此 endpoint 已是“为 supplier 录入”动作，draft 语义与意图相悖）。
+	// 显式传 status=draft 仍尊重，保留 admin 暂存能力。
+	autoApprove := c.Query("auto_approve") == "true"
+	status := productmodel.ProductStatusPending
 	if req.Status != "" {
 		status = productmodel.ProductStatus(req.Status)
+	} else if autoApprove {
+		status = productmodel.ProductStatusApproved
 	}
 
 	product := &productmodel.Product{
@@ -1131,6 +1139,14 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 		GroupSize:     req.GroupSize,
 		Tags:          req.Tags,
 		Status:        status,
+		// REQ-20260509-0019: 凡走 admin endpoint 创建的商品都标 admin_proxy；
+		// supplier 自录走另一条 supplier handler 路径，不会经过这里。
+		CreatedVia: "admin_proxy",
+	}
+	if v, ok := c.Get("admin_id"); ok {
+		if adminID, ok := v.(uint); ok && adminID > 0 {
+			product.CreatedByAdminID = &adminID
+		}
 	}
 
 	if req.IsFeatured != nil {
@@ -1186,8 +1202,42 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 	h.maybeEnqueueZhToEn(c, product)
 	h.maybeEnqueueEnToZh(c, product)
 
+	// REQ-20260509-0019: 代录审计 + 通知 supplier。
+	// 审计两条便后续按动作分类统计；auto_approve 路径不重新调 ApproveProduct
+	// （那会重发原 approved 通知 + audit 不一致），直接补一条 audit 与一条专属通知。
+	h.audit.Log(c, "proxy_create", "product", product.ID, product.NameEn)
+	if h.notifSvc != nil {
+		if autoApprove {
+			h.audit.Log(c, "proxy_create_and_approve", "product", product.ID, product.NameEn)
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_created_by_admin_approved",
+				"Product created and published",
+				fmt.Sprintf("The platform created and published a new product on your behalf: '%s'. AI-generated translations are queued — please review.", productDisplayName(product)),
+				"product", product.ID)
+		} else {
+			_ = h.notifSvc.Send("supplier", product.SupplierID, "product_created_by_admin_pending",
+				"Product created on your behalf",
+				fmt.Sprintf("The platform created a new product on your behalf and submitted it for review: '%s'. AI-generated translations are queued — feel free to refine them while you wait.", productDisplayName(product)),
+				"product", product.ID)
+		}
+	}
+
 	product, _ = h.productStore.GetByID(product.ID)
 	response.Created(c, product)
+}
+
+// productDisplayName picks the most useful supplier-facing label for the
+// product across both locales — admins commonly fill only one side, and the
+// supplier should see something meaningful even if their default locale's
+// field happens to be empty at create time (translations arrive seconds
+// later via the AI pipeline).
+func productDisplayName(p *productmodel.Product) string {
+	if p == nil {
+		return ""
+	}
+	if p.NameEn != "" {
+		return p.NameEn
+	}
+	return p.NameZh
 }
 
 func (h *AdminHandler) UpdateProduct(c *gin.Context) {

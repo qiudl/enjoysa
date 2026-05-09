@@ -319,6 +319,30 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
     setSaving(false);
   };
 
+  // REQ-20260509-0019: 一站式 "代录 + 上架"。
+  // create-only path (not edit), 让 admin 在新建场景下点 "保存并直接上架"
+  // 跳过 pending → admin 自审两步。confirm dialog 是人机交互保险——admin
+  // 还得显式确认才发请求，防止误触。
+  const handleSaveAndPublish = async () => {
+    if (!form.supplier_id) {
+      alert(isZh ? '请选择归属供应商' : 'Please select a supplier');
+      return;
+    }
+    const confirmMsg = isZh
+      ? '将跳过审核，代录商品立即上架。确认继续？'
+      : 'This will skip review and publish the product immediately. Continue?';
+    if (!window.confirm(confirmMsg)) return;
+    setSaving(true);
+    try {
+      const payload = buildPayload();
+      await adminService.createProduct(payload, { autoApprove: true });
+      onNavigate?.('/admin/products');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Save failed');
+    }
+    setSaving(false);
+  };
+
   // ─── Image upload ───
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -1055,15 +1079,33 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
               <ChevronRight size={16} />
             </button>
           ) : (
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnSuccess}`}
-              onClick={handleSave}
-              disabled={saving || !form.name_zh || !form.name_en || !form.supplier_id}
-            >
-              <Save size={16} />
-              {saving ? t('supplier.productForm.saving') : t('common.save')}
-            </button>
+            <>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnSuccess}`}
+                onClick={handleSave}
+                disabled={saving || !form.name_zh || !form.name_en || !form.supplier_id}
+              >
+                <Save size={16} />
+                {saving ? t('supplier.productForm.saving') : t('common.save')}
+              </button>
+              {!isEditMode && (
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  onClick={handleSaveAndPublish}
+                  disabled={saving || !form.name_zh || !form.name_en || !form.supplier_id}
+                  title={
+                    isZh
+                      ? '跳过审核直接上架（仅适用于代录场景）'
+                      : 'Skip review and publish immediately (proxy-create only)'
+                  }
+                >
+                  <Save size={16} />
+                  {isZh ? '保存并直接上架' : 'Save & Publish Now'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
