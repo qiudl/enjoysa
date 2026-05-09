@@ -6,13 +6,27 @@ import clsx from 'clsx';
 import styles from './ProductReviewTable.module.css';
 
 export type ProductReviewStatus = 'pending' | 'approved' | 'rejected';
-export type ProductCategory = 'day_tour' | 'multi_day' | 'activity' | 'ticket';
+
+// REQ-20260509-0030: 旧的 ProductCategory string enum 与 DB 实际 category.slug
+// 完全不匹配（前端写死 day_tour/multi_day/activity/ticket，DB 用 day-tours/
+// wine/wildlife/...），强制 cast 后所有产品分类列都成 'other'，label 找不到 →
+// 空白。改为 nullable category 对象，name_zh/name_en 直接从后端来，不再走任何
+// 枚举映射。旧 enum 名作为 deprecated alias 保留以免外部 import 编译错误。
+export interface ProductCategoryRef {
+  id?: number;
+  slug?: string;
+  name_zh?: string;
+  name_en?: string;
+}
+
+/** @deprecated REQ-20260509-0030 — use ProductCategoryRef. */
+export type ProductCategory = ProductCategoryRef;
 
 export interface ProductReview {
   id: string;
   name: string;
   nameEn?: string;
-  category: ProductCategory;
+  category?: ProductCategoryRef;
   supplierId: string;
   supplierName: string;
   price: number;
@@ -60,14 +74,12 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
     return labels[status];
   };
 
-  const getCategoryLabel = (category: ProductCategory) => {
-    const labels: Record<ProductCategory, string> = {
-      day_tour: t('admin.products.categories.dayTour'),
-      multi_day: t('admin.products.categories.multiDay'),
-      activity: t('admin.products.categories.activity'),
-      ticket: t('admin.products.categories.ticket'),
-    };
-    return labels[category];
+  // REQ-20260509-0030: 直接读后端 category 对象的本地化字段，缺失就回退到
+  // slug 再回退到 "—"。不再走前端写死的枚举 → label 映射。
+  const getCategoryLabel = (category?: ProductCategoryRef) => {
+    if (!category) return '—';
+    const localized = isZh ? category.name_zh : category.name_en;
+    return localized || category.name_en || category.name_zh || category.slug || '—';
   };
 
   const formatPrice = (price: number) => {

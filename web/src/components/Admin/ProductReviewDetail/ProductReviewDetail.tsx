@@ -84,18 +84,15 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
     return labels[status];
   };
 
-  const getCategoryLabel = (category: ProductCategory) => {
-    // Use real category name from API if available
-    if (fullProduct?.category) {
-      return isZh ? fullProduct.category.name_zh : fullProduct.category.name_en;
-    }
-    const labels: Record<string, string> = {
-      day_tour: t('admin.products.categories.dayTour'),
-      multi_day: t('admin.products.categories.multiDay'),
-      activity: t('admin.products.categories.activity'),
-      ticket: t('admin.products.categories.ticket'),
-    };
-    return labels[category] || category;
+  // REQ-20260509-0030: 同 ProductReviewTable.getCategoryLabel — 仅读后端
+  // 真实分类对象，不再走死写枚举映射。fullProduct 是抓详情时拉到的完整记录，
+  // category 字段在那里始终有完整 name_zh/name_en；list 行 product 也从
+  // REQ-0030 开始携带同结构对象。
+  const getCategoryLabel = (category?: ProductCategory) => {
+    const candidate = fullProduct?.category ?? category;
+    if (!candidate) return '—';
+    const localized = isZh ? candidate.name_zh : candidate.name_en;
+    return localized || candidate.name_en || candidate.name_zh || candidate.slug || '—';
   };
 
   const formatPrice = (price: number) => `A$${price.toFixed(2)}`;
