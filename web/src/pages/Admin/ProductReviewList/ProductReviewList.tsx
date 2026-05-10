@@ -9,6 +9,7 @@ import type { ProductReview, ProductReviewStatus } from '../../../components/Adm
 import { ProductReviewDetail } from '../../../components/Admin/ProductReviewDetail';
 import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
 import { BatchStockModal } from '../../../components/Common/BatchStockModal';
+import { ExcelImport } from '../../../components/Common/ExcelImport';
 import { adminService, type ApiAdminProduct, type BatchProductOpResponse } from '../../../services/adminService';
 import styles from './ProductReviewList.module.css';
 
@@ -68,6 +69,8 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
   const [stockModalProduct, setStockModalProduct] = useState<ProductReview | null>(null);
   // REQ-20260509-0035 Phase 3b: 列表页批量库存调整 modal
   const [batchStockOpen, setBatchStockOpen] = useState(false);
+  // REQ-20260510-0005: Excel 批量导入 modal
+  const [excelImportOpen, setExcelImportOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -364,6 +367,14 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
             <Plus size={16} />
             {t('admin.products.actions.create')}
           </button>
+          {/* REQ-20260510-0005: Excel 批量导入 — 不依赖选中行 */}
+          <button
+            className={styles.batchBtn}
+            onClick={() => setExcelImportOpen(true)}
+            title={t('admin.products.excelImport', { defaultValue: 'Excel 导入' }) as string}
+          >
+            {t('admin.products.excelImport', { defaultValue: 'Excel 导入' })}
+          </button>
           <button className={styles.iconBtn} onClick={() => loadData(currentPage)} title={t('common.refresh')}>
             <RefreshCw size={18} />
           </button>
@@ -464,6 +475,21 @@ export const ProductReviewList: React.FC<ProductReviewListProps> = ({ onNavigate
         onSaved={() => {
           setSelectedIds([]);
           loadData(currentPage);
+        }}
+      />
+
+      {/* REQ-20260510-0005: Excel 批量导入 modal — 全部 supplier 全部产品 */}
+      <ExcelImport
+        open={excelImportOpen}
+        onClose={() => setExcelImportOpen(false)}
+        loadFlat={() => adminService.listPackagesFlat()}
+        applyRow={(row) =>
+          adminService
+            .updatePackageStock(row.product_id, row.package_id, row.stock_total, row.low_stock_threshold)
+            .then(() => undefined)
+        }
+        onCompleted={({ ok }) => {
+          if (ok > 0) loadData(currentPage);
         }}
       />
 

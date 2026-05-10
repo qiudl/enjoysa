@@ -1421,6 +1421,7 @@
       "title": "产品审核",
       "search": "搜索产品...",
       "export": "导出",
+      "excelImport": "Excel 导入",
       "empty": "暂无产品数据",
       "showing": "显示 {{from}}-{{to}} 条，共 {{total}} 条",
       "stats": {
@@ -1997,6 +1998,7 @@
       "batchOffline": "批量下架",
       "batchDelete": "批量删除",
       "batchStock": "批量调整库存",
+      "excelImport": "Excel 导入",
       "batchConfirm": "确定要对 {{count}} 个产品执行「{{action}}」操作吗？",
       "statusLabels": {
         "active": "已上架",

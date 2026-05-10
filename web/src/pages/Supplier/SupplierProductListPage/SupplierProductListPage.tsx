@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Modal } from '../../../components/Common';
 import { StockAdjustModal } from '../../../components/Common/StockAdjustModal';
 import { BatchStockModal } from '../../../components/Common/BatchStockModal';
+import { ExcelImport } from '../../../components/Common/ExcelImport';
 import type { ApiProduct } from '../../../services/productService';
 import { supplierProductService } from '../../../services/supplierProductService';
 import styles from './SupplierProductListPage.module.css';
@@ -64,6 +65,8 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
   const [stockModalProduct, setStockModalProduct] = useState<SupplierProduct | null>(null);
   // REQ-20260509-0035 Phase 3b: 批量库存调整 modal
   const [batchStockOpen, setBatchStockOpen] = useState(false);
+  // REQ-20260510-0005: Excel 批量导入 modal
+  const [excelImportOpen, setExcelImportOpen] = useState(false);
 
   const loadProducts = async () => {
     try {
@@ -180,9 +183,15 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
           {/* Page Header */}
           <div className={styles.pageHeader}>
             <h1 className={styles.pageTitle}>{t('supplier.products.title')}</h1>
-            <Button variant="primary" onClick={() => onNavigate?.('/supplier/products/new')}>
-              + {t('supplier.products.addProduct')}
-            </Button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* REQ-20260510-0005: Excel 批量导入 — 不依赖选中行 */}
+              <Button variant="outline" onClick={() => setExcelImportOpen(true)}>
+                {t('supplier.products.excelImport', { defaultValue: 'Excel 导入' })}
+              </Button>
+              <Button variant="primary" onClick={() => onNavigate?.('/supplier/products/new')}>
+                + {t('supplier.products.addProduct')}
+              </Button>
+            </div>
           </div>
 
           {/* Filters and Search */}
@@ -360,6 +369,21 @@ export const SupplierProductListPage: React.FC<SupplierProductListPageProps> = (
         onSaved={() => {
           setSelectedIds(new Set());
           loadProducts();
+        }}
+      />
+
+      {/* REQ-20260510-0005: Excel 批量导入 modal — 仅自家产品（后端 ctx supplier_id 强制） */}
+      <ExcelImport
+        open={excelImportOpen}
+        onClose={() => setExcelImportOpen(false)}
+        loadFlat={() => supplierProductService.listPackagesFlat()}
+        applyRow={(row) =>
+          supplierProductService
+            .updatePackageStock(row.product_id, row.package_id, row.stock_total, row.low_stock_threshold)
+            .then(() => undefined)
+        }
+        onCompleted={({ ok }) => {
+          if (ok > 0) loadProducts();
         }}
       />
 

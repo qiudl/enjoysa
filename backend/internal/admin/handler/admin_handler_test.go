@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+	"strings"
 	"testing"
 
 	productmodel "enjoysa-backend/internal/product/model"
@@ -73,5 +75,62 @@ func TestBatchProductOpsCap_LockedAt50(t *testing.T) {
 	if batchProductOpsCap != 50 {
 		t.Errorf("batch cap changed from documented 50 to %d — update PRD AC13 + adminService too",
 			batchProductOpsCap)
+	}
+}
+
+// REQ-20260510-0005: parseProductIDsParam parses the comma-separated
+// `product_ids=1,2,3` query string powering the Excel-import flat package
+// endpoint. The Excel template UI sends the current page's product ids
+// to scope the response — bad input must surface as 400, empty input
+// must mean "no filter" (full listing).
+func TestParseProductIDsParam_EmptyInputReturnsNilNoError(t *testing.T) {
+	ids, err := parseProductIDsParam("")
+	if err != nil {
+		t.Fatalf("expected no error for empty input, got %v", err)
+	}
+	if ids != nil {
+		t.Errorf("expected nil slice for empty input (means no filter), got %v", ids)
+	}
+}
+
+func TestParseProductIDsParam_WhitespaceOnlyTreatedAsEmpty(t *testing.T) {
+	ids, err := parseProductIDsParam("   ")
+	if err != nil {
+		t.Fatalf("expected no error for whitespace input, got %v", err)
+	}
+	if ids != nil {
+		t.Errorf("expected nil slice for whitespace, got %v", ids)
+	}
+}
+
+func TestParseProductIDsParam_HappyPathTrimsAndParses(t *testing.T) {
+	ids, err := parseProductIDsParam(" 1, 2 ,3,  42 ")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	want := []uint{1, 2, 3, 42}
+	if len(ids) != len(want) {
+		t.Fatalf("expected 4 ids, got %d", len(ids))
+	}
+	for i := range want {
+		if ids[i] != want[i] {
+			t.Errorf("ids[%d]=%d, want %d", i, ids[i], want[i])
+		}
+	}
+}
+
+func TestParseProductIDsParam_RejectsNonNumeric(t *testing.T) {
+	if _, err := parseProductIDsParam("1,abc,3"); err == nil {
+		t.Errorf("expected error for non-numeric token")
+	}
+}
+
+func TestParseProductIDsParam_RejectsOver200(t *testing.T) {
+	parts := make([]string, 0, 201)
+	for i := 1; i <= 201; i++ {
+		parts = append(parts, strconv.Itoa(i))
+	}
+	if _, err := parseProductIDsParam(strings.Join(parts, ",")); err == nil {
+		t.Errorf("expected error when more than 200 IDs supplied")
 	}
 }

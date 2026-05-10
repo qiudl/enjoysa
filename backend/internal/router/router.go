@@ -505,6 +505,8 @@ func Setup(cfg Config) *gin.Engine {
 		supplierProducts.PATCH("/:id/packages/:pkgId/stock", supplierProductHandler.UpdatePackageStock)
 		// REQ-20260509-0035 Phase 3b: 列表页批量库存工具栏
 		supplierProducts.POST("/batch-stock", supplierProductHandler.BatchAdjustStock)
+		// REQ-20260510-0005: Excel 导入 — supplier 端 flat package 行（仅自家）
+		supplierProducts.GET("/packages-flat", supplierProductHandler.ListPackagesFlat)
 		supplierProducts.POST("/:id/submit", supplierProductHandler.SubmitForReview)
 		supplierProducts.POST("/:id/offline", supplierProductHandler.Offline)
 		supplierProducts.POST("/:id/online", supplierProductHandler.Online)
@@ -666,6 +668,8 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.POST("/products/batch-reject", adminHandler.BatchRejectProducts)
 		// REQ-20260509-0035 Phase 3b: 列表页批量库存工具栏
 		adminGroup.POST("/products/batch-stock", adminHandler.BatchAdjustStock)
+		// REQ-20260510-0005: Excel 导入 — flat package 行（模板 / 预览用）
+		adminGroup.GET("/products/packages-flat", adminHandler.ListPackagesFlat)
 		adminGroup.GET("/dashboard/pending-counts", adminHandler.GetPendingCounts)
 
 		// REQ-20260509-0004: ZH→EN translation status / retry / regenerate.
