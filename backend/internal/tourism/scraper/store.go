@@ -32,18 +32,43 @@ func (s *Store) GetJob(ctx context.Context, id string) (*Job, error) {
 	return &j, nil
 }
 
+// StaleJobThreshold — runs older than this with status=running are treated
+// as orphaned (process crashed mid-run, or HTTP request context cancelled
+// the goroutine). Lets a new admin click bypass the D4 mutex without manual
+// DB cleanup. 10 min is comfortably longer than a healthy 30-URL run
+// (~2 min) but short enough that an orphan doesn't permanently block the
+// source.
+const StaleJobThreshold = 10 * time.Minute
+
 // AnyRunningJob returns true if a job for the given source is currently
-// running. Used by the service layer's mutex check (D4).
+// running. Used by the service layer's mutex check (D4). Stale-running
+// jobs (started_at < now - StaleJobThreshold) are ignored — they're treated
+// as orphaned so a fresh click can proceed.
 func (s *Store) AnyRunningJob(ctx context.Context, source string) (bool, error) {
+	cutoff := time.Now().Add(-StaleJobThreshold)
 	var n int64
 	err := s.db.WithContext(ctx).
 		Model(&Job{}).
-		Where("source = ? AND status = ?", source, JobStatusRunning).
+		Where("source = ? AND status = ? AND started_at > ?", source, JobStatusRunning, cutoff).
 		Count(&n).Error
 	if err != nil {
 		return false, err
 	}
 	return n > 0, nil
+}
+
+// MarkStaleJobsFailed flips any source's running rows older than
+// StaleJobThreshold to failed. Called opportunistically by the service
+// before a new run so the staging page doesn't show eternal-running rows.
+func (s *Store) MarkStaleJobsFailed(ctx context.Context, source string) error {
+	cutoff := time.Now().Add(-StaleJobThreshold)
+	return s.db.WithContext(ctx).Model(&Job{}).
+		Where("source = ? AND status = ? AND started_at <= ?", source, JobStatusRunning, cutoff).
+		Updates(map[string]any{
+			"status":      JobStatusFailed,
+			"last_error":  "marked failed by stale-job sweeper (>10 min running)",
+			"finished_at": time.Now(),
+		}).Error
 }
 
 // UpdateJobProgress upserts the progress counters mid-run. Save() is fine

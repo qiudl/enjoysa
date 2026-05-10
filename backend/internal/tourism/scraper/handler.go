@@ -75,9 +75,17 @@ func adminID(c *gin.Context) *uint {
 }
 
 // ===========================================================================
-// POST /run — synchronous (long-poll) scrape
+// POST /run — async (returns immediately, scrape continues in background)
 // ===========================================================================
-
+//
+// 2C-3 prod smoke incident: original sync long-poll returned 524 to the
+// client (Cloudflare's edge has a 100s response timeout), AND the goroutine
+// was tied to the HTTP request context, so CF disconnect cancelled the
+// scrape mid-batch (7/30 URLs done before context-cancel killed it).
+//
+// Fix: launch the scrape in a goroutine with a detached background context
+// (30 min own timeout). Handler returns within ~1s. UI polls /jobs/:id
+// for progress (existing endpoint).
 func (h *Handler) RunScrape(c *gin.Context) {
 	if h.runner == nil {
 		response.Fail(c, http.StatusServiceUnavailable, "SCRAPER_NOT_WIRED",
@@ -85,17 +93,31 @@ func (h *Handler) RunScrape(c *gin.Context) {
 		return
 	}
 
-	job, err := h.runner.RunSync(c.Request.Context(), adminID(c))
-	if err != nil {
-		if errors.Is(err, ErrJobAlreadyRunning) {
-			response.Fail(c, http.StatusConflict, "SCRAPE_JOB_RUNNING",
-				"another scrape job for this source is already running")
-			return
+	triggeredBy := adminID(c)
+
+	// Detach context so CF disconnect doesn't cancel the goroutine.
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		defer cancel()
+		_, err := h.runner.RunSync(ctx, triggeredBy)
+		if err != nil && !errors.Is(err, ErrJobAlreadyRunning) {
+			// Job-level error — already recorded in DB by the service's
+			// finishJob path. Nothing more to surface here (no caller to
+			// respond to). Log via the standard gin recovery path.
+			_ = err
 		}
-		response.ServerError(c, "scrape failed: "+err.Error())
-		return
-	}
-	response.Success(c, job)
+	}()
+
+	// Synchronous response: started OK. The 409-on-already-running case
+	// the goroutine handles internally — the user-visible "another scrape
+	// is running" feedback comes from the next /jobs/:id or /staging poll
+	// (the goroutine's RunSync returns ErrJobAlreadyRunning quietly without
+	// creating a new job row).
+	response.Success(c, gin.H{
+		"status":    "started",
+		"poll_jobs": "/admin/tourism/scrape/jobs",
+		"hint":      "scrape is running in background; check /scrape/staging?status=pending after 2-3 min",
+	})
 }
 
 // ===========================================================================

@@ -208,6 +208,9 @@ func (s *fakeServiceStore) AnyRunningJob(_ context.Context, _ string) (bool, err
 	defer s.mu.Unlock()
 	return s.hasRunning, nil
 }
+func (s *fakeServiceStore) MarkStaleJobsFailed(_ context.Context, _ string) error {
+	return nil
+}
 func (s *fakeServiceStore) CreateJob(_ context.Context, j *Job) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
