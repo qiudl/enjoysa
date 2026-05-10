@@ -1,0 +1,284 @@
+.shell {
+  position: relative;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.toolbarLabel {
+  font-weight: 600;
+  color: #334155;
+  margin-right: 4px;
+}
+
+.fieldChip {
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #cbd5f5;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #1d4ed8;
+  cursor: pointer;
+}
+
+.fieldChip:hover {
+  background: #eff6ff;
+  border-color: #1d4ed8;
+}
+
+.fieldChipManual {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #92400e;
+}
+
+.fieldChipManual:hover {
+  background: #fde68a;
+}
+
+.banner {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bannerMultiTab {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.columnsContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 980px) {
+  .columnsContainer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.column {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.columnLabel {
+  font-weight: 600;
+}
+
+.columnBody {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: min(640px, calc(100% - 32px));
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: #666;
+}
+
+.modalCloseBtn:hover {
+  background: #f5f5f5;
+}
+
+.modalBody {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.modalGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .modalGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.flagPill {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.flagPillManual {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.fieldInput, .fieldTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.fieldTextarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.modalErrorBanner {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+.modalFooter {
+  padding: 12px 18px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.modalCancelBtn {
+  padding: 7px 14px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+}
+
+.modalSaveBtn {
+  padding: 7px 14px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modalSaveBtn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
