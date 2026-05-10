@@ -86,6 +86,7 @@ const RegionList = React.lazy(() => import('./pages/Admin/RegionList/RegionList'
 const CategoryList = React.lazy(() => import('./pages/Admin/CategoryList/CategoryList'));
 const HomepageCMS = React.lazy(() => import('./pages/Admin/HomepageCMS/HomepageCMS'));
 const AIChatTestPage = React.lazy(() => import('./pages/Admin/AIChatTestPage/AIChatTestPage'));
+const TourismKnowledge = React.lazy(() => import('./pages/Admin/TourismKnowledge'));
 
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
@@ -1194,6 +1195,15 @@ function AdminHomepageCMSWrapper() {
   );
 }
 
+// 包装组件：AdminTourismKnowledgeWrapper (REQ-20260510-0002 Phase 1 · 1D)
+function AdminTourismKnowledgeWrapper() {
+  return (
+    <AdminLayout>
+      <TourismKnowledge />
+    </AdminLayout>
+  );
+}
+
 // 404 Page
 function NotFoundPage() {
   const navigate = useNavigate();
@@ -1397,6 +1407,7 @@ function App() {
         <Route path="/admin/regions" element={<AdminAuthGuard><AdminRegionsWrapper /></AdminAuthGuard>} />
         <Route path="/admin/categories" element={<AdminAuthGuard><AdminCategoriesWrapper /></AdminAuthGuard>} />
         <Route path="/admin/homepage" element={<AdminAuthGuard><AdminHomepageCMSWrapper /></AdminAuthGuard>} />
+        <Route path="/admin/tourism" element={<AdminAuthGuard><AdminTourismKnowledgeWrapper /></AdminAuthGuard>} />
         <Route path="/admin/ai-chat" element={<AdminAuthGuard><AIChatPage role="admin" backPath="/admin" /></AdminAuthGuard>} />
         <Route path="/admin/ai-chat/sessions/:id" element={<AdminAuthGuard><AIChatPageWithRouteSession role="admin" backPath="/admin" /></AdminAuthGuard>} />
 

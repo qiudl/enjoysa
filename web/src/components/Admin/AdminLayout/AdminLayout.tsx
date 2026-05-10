@@ -22,6 +22,7 @@ import {
   Home,
   BarChart3,
   Bot,
+  Compass,
 } from 'lucide-react';
 import { LanguageSwitcher } from '../../Common';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
@@ -52,6 +53,8 @@ const menuItems: MenuItem[] = [
   { key: 'regions', path: '/admin/regions', icon: <MapPin size={20} />, labelKey: 'admin.menu.regions' },
   { key: 'categories', path: '/admin/categories', icon: <Tag size={20} />, labelKey: 'admin.menu.categories' },
   { key: 'homepage', path: '/admin/homepage', icon: <Home size={20} />, labelKey: 'admin.menu.homepage' },
+  // REQ-20260510-0002 · 1D: Tourism KB hub (super_admin guard enforced server-side).
+  { key: 'tourism', path: '/admin/tourism', icon: <Compass size={20} />, labelKey: 'admin.menu.tourism' },
   { key: 'settings', path: '/admin/settings', icon: <Settings size={20} />, labelKey: 'admin.menu.settings', permission: 'settings.view' },
   { key: 'ai-chat-test', path: '/admin/ai-chat-test', icon: <Bot size={20} />, labelKey: 'admin.menu.aiChatTest', permission: 'admins.view' },
 ];
