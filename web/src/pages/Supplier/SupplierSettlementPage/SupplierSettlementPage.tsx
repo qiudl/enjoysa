@@ -138,7 +138,7 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
                 <div className={styles.overviewInfo}>
                   <span className={styles.overviewLabel}>{t('supplier.settlement.pendingSettlement')}</span>
                   <span className={styles.overviewValue} style={{ color: '#f59e0b' }}>
-                    ¥{pendingAmount.toLocaleString()}
+                    A${pendingAmount.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
                 <div className={styles.overviewInfo}>
                   <span className={styles.overviewLabel}>{t('supplier.settlement.settledAmount')}</span>
                   <span className={styles.overviewValue} style={{ color: '#10b981' }}>
-                    ¥{settledAmount.toLocaleString()}
+                    A${settledAmount.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
                 <div className={styles.overviewInfo}>
                   <span className={styles.overviewLabel}>{t('supplier.settlement.monthSales')}</span>
                   <span className={styles.overviewValue} style={{ color: '#3b82f6' }}>
-                    ¥{monthSales.toLocaleString()}
+                    A${monthSales.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -244,18 +244,18 @@ export const SupplierSettlementPage: React.FC<SupplierSettlementPageProps> = () 
                         </div>
                         <div className={styles.settlementStat}>
                           <span className={styles.statLabel}>{t('supplier.settlement.totalAmount')}</span>
-                          <span className={styles.statValue}>¥{settlement.totalAmount.toLocaleString()}</span>
+                          <span className={styles.statValue}>A${settlement.totalAmount.toLocaleString()}</span>
                         </div>
                         <div className={styles.settlementStat}>
                           <span className={styles.statLabel}>{t('supplier.settlement.commission')}</span>
                           <span className={styles.statValue} style={{ color: '#ef4444' }}>
-                            -¥{settlement.commission.toLocaleString()}
+                            -A${settlement.commission.toLocaleString()}
                           </span>
                         </div>
                         <div className={styles.settlementStat}>
                           <span className={styles.statLabel}>{t('supplier.settlement.netAmount')}</span>
                           <span className={styles.statValue} style={{ color: '#10b981', fontWeight: 700 }}>
-                            ¥{settlement.netAmount.toLocaleString()}
+                            A${settlement.netAmount.toLocaleString()}
                           </span>
                         </div>
                       </div>

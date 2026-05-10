@@ -18,8 +18,6 @@ export interface ParticipantFormProps {
   maxParticipants?: number;
   /** 最小参与者数量 */
   minParticipants?: number;
-  /** 是否需要护照信息 */
-  requirePassport?: boolean;
   /** 是否只读 */
   readonly?: boolean;
   /** 各参与者字段错误信息 { [participantIndex]: { fieldName: errorMsg } } */
@@ -36,17 +34,13 @@ const defaultParticipant: Omit<ParticipantDetail, 'id'> = {
   lastName: '',
   email: '',
   phone: '',
-  dateOfBirth: '',
-  nationality: '',
-  passportNumber: '',
   specialRequirements: '',
 };
 
 /** Check if a participant has all required fields filled */
-const isParticipantComplete = (p: ParticipantDetail, requirePassport: boolean): boolean => {
+const isParticipantComplete = (p: ParticipantDetail): boolean => {
   if (!p.firstName.trim() || !p.lastName.trim()) return false;
   if (!p.email?.trim() || !p.phone?.trim()) return false;
-  if (requirePassport && !p.passportNumber?.trim()) return false;
   return true;
 };
 
@@ -60,7 +54,6 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   onChange,
   maxParticipants = 10,
   minParticipants = 1,
-  requirePassport = false,
   readonly = false,
   errors,
   onFieldChange,
@@ -109,8 +102,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
 
     const snapshot = JSON.stringify({
       first_name: p.firstName, last_name: p.lastName,
-      email: p.email, phone: p.phone, date_of_birth: p.dateOfBirth,
-      nationality: p.nationality, passport_number: p.passportNumber,
+      email: p.email, phone: p.phone,
       special_requirements: p.specialRequirements, default_type: p.type,
     });
 
@@ -124,9 +116,6 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
         last_name: p.lastName.trim(),
         email: p.email?.trim() || undefined,
         phone: p.phone?.trim() || undefined,
-        date_of_birth: p.dateOfBirth || undefined,
-        nationality: p.nationality?.trim() || undefined,
-        passport_number: p.passportNumber?.trim() || undefined,
         special_requirements: p.specialRequirements?.trim() || undefined,
         default_type: p.type || 'adult',
       }).then(() => {
@@ -158,7 +147,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
   const prevCompletionRef = useRef<string[]>([]);
   useEffect(() => {
     const completedIds = participants
-      .filter(p => isParticipantComplete(p, requirePassport))
+      .filter(p => isParticipantComplete(p))
       .map(p => p.id);
     const prevCompleted = prevCompletionRef.current;
 
@@ -169,7 +158,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
     if (newlyCompleted.length > 0) {
       // Find next incomplete participant
       const nextIncomplete = participants.find(
-        p => !isParticipantComplete(p, requirePassport) && !expandedIds.includes(p.id)
+        p => !isParticipantComplete(p) && !expandedIds.includes(p.id)
       );
       if (nextIncomplete) {
         setExpandedIds(prev => [...prev, nextIncomplete.id]);
@@ -178,7 +167,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
         }, 100);
       }
     }
-  }, [participants, requirePassport, expandedIds]);
+  }, [participants, expandedIds]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev =>
@@ -226,9 +215,6 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
           lastName: contact.last_name,
           email: contact.email || p.email,
           phone: contact.phone || p.phone,
-          dateOfBirth: contact.date_of_birth || p.dateOfBirth,
-          nationality: contact.nationality || p.nationality,
-          passportNumber: contact.passport_number || p.passportNumber,
           specialRequirements: contact.special_requirements || p.specialRequirements,
           type: contact.default_type || p.type,
         } : p
@@ -243,7 +229,7 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
     if (errors?.[index] && Object.keys(errors[index]).length > 0) {
       return { text: t('participant.incomplete', 'Incomplete'), className: styles.statusError };
     }
-    if (isParticipantComplete(p, requirePassport)) {
+    if (isParticipantComplete(p)) {
       return { text: t('participant.completed', 'Completed'), className: styles.statusDone };
     }
     if (hasAnyField(p)) {
@@ -260,14 +246,14 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
           {t('participant.title')}
         </h3>
         <span className={styles.count}>
-          {participants.filter(p => isParticipantComplete(p, requirePassport)).length} / {participants.length} {t('participant.completed', 'completed')}
+          {participants.filter(p => isParticipantComplete(p)).length} / {participants.length} {t('participant.completed', 'completed')}
         </span>
       </div>
 
       <div className={styles.list}>
         {participants.map((participant, index) => {
           const hasError = errors?.[index] && Object.keys(errors[index]).length > 0;
-          const completed = isParticipantComplete(participant, requirePassport);
+          const completed = isParticipantComplete(participant);
           const status = getStatusLabel(participant, index);
           const isChild = participant.type === 'child';
 
@@ -430,35 +416,6 @@ export const ParticipantForm: React.FC<ParticipantFormProps> = ({
                       error={errors?.[index]?.phone}
                     />
                   </div>
-
-                  <div className={styles.row}>
-                    <Input
-                      label={t('participant.dateOfBirth')}
-                      type="date"
-                      value={participant.dateOfBirth || ''}
-                      onChange={(e) => updateParticipant(participant.id, 'dateOfBirth', e.target.value)}
-                      disabled={readonly}
-                    />
-                    <Input
-                      label={t('participant.nationality')}
-                      value={participant.nationality || ''}
-                      onChange={(e) => updateParticipant(participant.id, 'nationality', e.target.value)}
-                      placeholder={t('participant.nationalityPlaceholder')}
-                      disabled={readonly}
-                    />
-                  </div>
-
-                  {requirePassport && (
-                    <Input
-                      label={t('participant.passportNumber')}
-                      value={participant.passportNumber || ''}
-                      onChange={(e) => updateParticipant(participant.id, 'passportNumber', e.target.value)}
-                      placeholder={t('participant.passportPlaceholder')}
-                      required
-                      disabled={readonly}
-                      error={errors?.[index]?.passportNumber}
-                    />
-                  )}
 
                   <Input
                     label={t('participant.specialRequirements')}

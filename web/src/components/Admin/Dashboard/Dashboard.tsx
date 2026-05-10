@@ -113,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const isZh = language ? language === 'zh' : (i18n.language === 'zh' || i18n.language === 'zh-CN');
 
   const formatCurrency = (amount: number) => {
-    return `¥${amount.toLocaleString()}`;
+    return `A$${amount.toLocaleString()}`;
   };
 
   const formatGrowth = (value: number) => {

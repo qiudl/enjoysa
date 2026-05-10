@@ -93,7 +93,7 @@ export const Success: Story = {
   args: {
     title: '成交金额',
     titleEn: 'Revenue',
-    value: '¥89,432',
+    value: 'A$89,432',
     icon: <DollarSign size={24} />,
     variant: 'success',
     trend: 'up',
@@ -243,7 +243,7 @@ export const StatCardsGrid: Story = {
       <StatCard
         title="成交金额"
         titleEn="Revenue"
-        value="¥89,432"
+        value="A$89,432"
         icon={<DollarSign size={24} />}
         variant="success"
         trend="up"

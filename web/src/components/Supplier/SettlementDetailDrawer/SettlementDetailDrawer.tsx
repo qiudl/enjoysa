@@ -93,15 +93,15 @@ export const SettlementDetailDrawer: React.FC<Props> = ({ settlement, onClose })
           </div>
           <div className={styles.summaryItem}>
             <span className={styles.summaryLabel}>{t('supplier.settlement.totalAmount')}</span>
-            <span className={styles.summaryValue}>¥{totalAmount.toLocaleString()}</span>
+            <span className={styles.summaryValue}>A${totalAmount.toLocaleString()}</span>
           </div>
           <div className={styles.summaryItem}>
             <span className={styles.summaryLabel}>{t('supplier.settlement.commission')}</span>
-            <span className={styles.summaryValue} style={{ color: '#ef4444' }}>-¥{totalCommission.toLocaleString()}</span>
+            <span className={styles.summaryValue} style={{ color: '#ef4444' }}>-A${totalCommission.toLocaleString()}</span>
           </div>
           <div className={styles.summaryItem}>
             <span className={styles.summaryLabel}>{t('supplier.settlement.netAmount')}</span>
-            <span className={styles.summaryValue} style={{ color: '#10b981' }}>¥{totalNet.toLocaleString()}</span>
+            <span className={styles.summaryValue} style={{ color: '#10b981' }}>A${totalNet.toLocaleString()}</span>
           </div>
         </div>
 
@@ -123,9 +123,9 @@ export const SettlementDetailDrawer: React.FC<Props> = ({ settlement, onClose })
                   <td>{d.orderNo}</td>
                   <td>{d.product}</td>
                   <td>{d.date}</td>
-                  <td>¥{d.amount.toLocaleString()}</td>
-                  <td className={styles.amountNegative}>-¥{d.commission.toLocaleString()}</td>
-                  <td className={styles.amountPositive}>¥{d.netAmount.toLocaleString()}</td>
+                  <td>A${d.amount.toLocaleString()}</td>
+                  <td className={styles.amountNegative}>-A${d.commission.toLocaleString()}</td>
+                  <td className={styles.amountPositive}>A${d.netAmount.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -135,15 +135,15 @@ export const SettlementDetailDrawer: React.FC<Props> = ({ settlement, onClose })
         <div className={styles.footer}>
           <div className={styles.footerItem}>
             <span className={styles.footerLabel}>{t('supplier.settlement.detail.total')}:</span>
-            <span className={styles.footerValue}>¥{totalAmount.toLocaleString()}</span>
+            <span className={styles.footerValue}>A${totalAmount.toLocaleString()}</span>
           </div>
           <div className={styles.footerItem}>
             <span className={styles.footerLabel}>{t('supplier.settlement.commission')}:</span>
-            <span className={styles.footerValue} style={{ color: '#ef4444' }}>-¥{totalCommission.toLocaleString()}</span>
+            <span className={styles.footerValue} style={{ color: '#ef4444' }}>-A${totalCommission.toLocaleString()}</span>
           </div>
           <div className={styles.footerItem}>
             <span className={styles.footerLabel}>{t('supplier.settlement.netAmount')}:</span>
-            <span className={styles.footerValue} style={{ color: '#10b981' }}>¥{totalNet.toLocaleString()}</span>
+            <span className={styles.footerValue} style={{ color: '#10b981' }}>A${totalNet.toLocaleString()}</span>
           </div>
         </div>
       </div>

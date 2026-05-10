@@ -316,8 +316,7 @@
       "lastNameRequired": "请输入姓氏",
       "emailRequired": "请输入邮箱",
       "emailInvalid": "邮箱格式不正确",
-      "phoneRequired": "请输入手机号",
-      "passportRequired": "请输入护照号码"
+      "phoneRequired": "请输入手机号"
     }
   },
   "order": {
@@ -432,11 +431,6 @@
     "emailPlaceholder": "请输入邮箱",
     "phone": "手机号",
     "phonePlaceholder": "请输入手机号",
-    "dateOfBirth": "出生日期",
-    "nationality": "国籍",
-    "nationalityPlaceholder": "请输入国籍",
-    "passportNumber": "护照号码",
-    "passportPlaceholder": "请输入护照号码",
     "specialRequirements": "特殊需求",
     "specialRequirementsPlaceholder": "如饮食禁忌、行动不便等",
     "adult": "成人",

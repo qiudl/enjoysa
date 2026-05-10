@@ -19,9 +19,6 @@ const filledParticipant: ParticipantDetail = {
   lastName: '邱',
   email: 'donglin@example.com',
   phone: '+61 400 123 456',
-  dateOfBirth: '1990-05-15',
-  nationality: '中国',
-  passportNumber: 'E12345678',
   specialRequirements: '素食',
 };
 
@@ -61,10 +58,6 @@ const meta: Meta<typeof ParticipantForm> = {
     minParticipants: {
       control: { type: 'number', min: 1, max: 5 },
       description: '最小参与者数量',
-    },
-    requirePassport: {
-      control: 'boolean',
-      description: '是否需要护照信息',
     },
     readonly: {
       control: 'boolean',
@@ -149,15 +142,6 @@ export const Interactive: Story = {
   },
 };
 
-/** 需要护照信息 */
-export const WithPassport: Story = {
-  args: {
-    participants: [emptyParticipant],
-    requirePassport: true,
-    onChange: (participants) => console.log('Participants:', participants),
-  },
-};
-
 /** 只读模式 */
 export const Readonly: Story = {
   args: {
@@ -189,8 +173,6 @@ export const EnglishVersion: Story = {
       lastName: 'Smith',
       email: 'john@example.com',
       phone: '+1 555 123 4567',
-      dateOfBirth: '1985-03-20',
-      nationality: 'USA',
     }],
     onChange: (participants) => console.log('Participants:', participants),
   },

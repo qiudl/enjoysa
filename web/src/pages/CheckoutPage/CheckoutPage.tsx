@@ -16,6 +16,7 @@ import type { CartItem } from '../../contexts/CartContext';
 import { createOrder } from '../../services/orderService';
 import { post, ApiError } from '../../services/api';
 import { productService, transformApiProduct, type ApiProductPackage } from '../../services/productService';
+import { formatPrice } from '../../utils/formatPrice';
 import styles from './CheckoutPage.module.css';
 
 export interface CheckoutPageProps {
@@ -76,11 +77,10 @@ const createDefaultParticipant = (): ParticipantDetail => ({
   lastName: '',
   email: '',
   phone: '',
-  dateOfBirth: '',
-  nationality: '',
-  passportNumber: '',
   specialRequirements: '',
 });
+
+const ALLOWED_PAYMENT_METHODS: PaymentMethod[] = ['credit_card'];
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   language,
@@ -133,7 +133,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
     const draft = loadDraft();
-    return draft?.paymentMethod || 'credit_card';
+    const restored = draft?.paymentMethod;
+    return restored && ALLOWED_PAYMENT_METHODS.includes(restored) ? restored : 'credit_card';
   });
   const [agreed, setAgreed] = useState(() => {
     const draft = loadDraft();
@@ -221,7 +222,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         fieldErrs.email = t('checkout.errors.emailInvalid');
       }
       if (!p.phone?.trim()) fieldErrs.phone = t('checkout.errors.phoneRequired');
-      if (!p.passportNumber?.trim()) fieldErrs.passportNumber = t('checkout.errors.passportRequired');
       if (Object.keys(fieldErrs).length > 0) {
         errs[i] = fieldErrs;
         valid = false;
@@ -434,7 +434,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onChange={handleParticipantsChange}
                   maxParticipants={isCartMode ? 1 : adultCount}
                   minParticipants={1}
-                  requirePassport
                   errors={participantErrors}
                   onFieldChange={handleFieldChange}
                   isAuthenticated={isLoggedIn}
@@ -446,8 +445,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h2 className={styles.sectionTitle}>{t('order.paymentMethod')}</h2>
                 <PaymentMethodSelector
                   selectedMethod={paymentMethod}
-                  availableMethods={['credit_card', 'wechat', 'alipay']}
-                  comingSoon={['wechat', 'alipay']}
+                  availableMethods={ALLOWED_PAYMENT_METHODS}
                   onSelect={handlePaymentSelect}
                 />
               </section>
@@ -476,10 +474,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                             <h4 className={styles.cartSummaryTitle}>{itemTitle}</h4>
                             <p className={styles.cartSummaryMeta}>
                               {item.selectedDate && <span>{item.selectedDate}</span>}
-                              <span>{item.quantity} x ¥{item.product.price}</span>
+                              <span>{item.quantity} x {formatPrice(item.product.price, item.product.currency)}</span>
                             </p>
                             <span className={styles.cartSummaryPrice}>
-                              ¥{(item.product.price * item.quantity).toFixed(2)}
+                              {formatPrice(item.product.price * item.quantity, item.product.currency)}
                             </span>
                           </div>
                         </div>
@@ -487,7 +485,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     })}
                     <div className={styles.cartSummaryTotal}>
                       <span>{t('order.total')}</span>
-                      <span className={styles.cartSummaryTotalPrice}>¥{cartTotal.toFixed(2)}</span>
+                      <span className={styles.cartSummaryTotalPrice}>{formatPrice(cartTotal, cartItems[0]?.product.currency)}</span>
                     </div>
                   </div>
                 ) : product ? (
@@ -522,7 +520,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {unitPriceProp && (
                           <div className={styles.bookingDetailRow}>
                             <span className={styles.bookingDetailLabel}>{t('product.unitPrice')}</span>
-                            <span className={styles.bookingDetailValue}>¥{unitPriceProp}</span>
+                            <span className={styles.bookingDetailValue}>{formatPrice(unitPriceProp, product?.currency)}</span>
                           </div>
                         )}
                       </div>

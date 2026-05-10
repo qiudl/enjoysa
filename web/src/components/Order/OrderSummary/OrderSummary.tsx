@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { Calendar, Users, MapPin, Clock, Tag, Shield, Check } from 'lucide-react';
 import styles from './OrderSummary.module.css';
 import type { Product, CartItem } from '../../../types';
+import { formatPrice } from '../../../utils/formatPrice';
 
 export interface OrderSummaryProps {
   /** 产品信息 */
@@ -121,7 +122,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             {t('order.adultPrice')} x {actualAdultCount}
           </span>
           <span className={styles.priceValue}>
-            ¥{adultPrice.toFixed(2)}
+            {formatPrice(adultPrice, product.currency)}
           </span>
         </div>
 
@@ -131,14 +132,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               {t('order.childPrice')} x {actualChildCount}
             </span>
             <span className={styles.priceValue}>
-              ¥{childPrice.toFixed(2)}
+              {formatPrice(childPrice, product.currency)}
             </span>
           </div>
         )}
 
         <div className={styles.priceRow}>
           <span className={styles.priceLabel}>{t('order.subtotal')}</span>
-          <span className={styles.priceValue}>¥{subtotal.toFixed(2)}</span>
+          <span className={styles.priceValue}>{formatPrice(subtotal, product.currency)}</span>
         </div>
 
         {discountAmount > 0 && (
@@ -148,15 +149,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               {t('order.couponDiscount')}
               {couponCode && <span className={styles.couponCode}>({couponCode})</span>}
             </span>
-            <span className={styles.priceValue}>-¥{discountAmount.toFixed(2)}</span>
+            <span className={styles.priceValue}>-{formatPrice(discountAmount, product.currency)}</span>
           </div>
         )}
 
         <div className={clsx(styles.priceRow, styles.total)}>
           <span className={styles.priceLabel}>{t('order.total')}</span>
           <span className={styles.totalValue}>
-            <span className={styles.currency}>¥</span>
-            {total.toFixed(2)}
+            {formatPrice(total, product.currency)}
           </span>
         </div>
       </div>
