@@ -76,7 +76,13 @@ type PricingResponse struct {
 	InsufficientData bool     `json:"insufficient_data,omitempty"`
 }
 
-const defaultMaxIterations = 3
+// defaultMaxIterations caps tool-loop turns. 5 gives the LLM enough
+// headroom to do an initial search, an optional refinement, and a
+// fallback compose — without burning unbounded LLM cost on sparse KB.
+// Below 5 we hit ErrMaxIterations whenever DeepSeek's thinking-mode
+// LLM does broaden-keyword searches against a thin knowledge base
+// (1F prod smoke incident — 1 active row + LLM tried 3 broader keywords).
+const defaultMaxIterations = 5
 
 // Agent runs the tool loop. Construct via New.
 type Agent struct {
