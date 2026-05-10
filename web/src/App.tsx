@@ -30,7 +30,6 @@ const TermsPage = React.lazy(() => import('./pages/TermsPage/TermsPage'));
 const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage/PrivacyPage'));
 const HotelSearchPage = React.lazy(() => import('./pages/HotelSearchPage/HotelSearchPage'));
 const RegionPage = React.lazy(() => import('./pages/RegionPage/RegionPage'));
-const AttractionDetailPage = React.lazy(() => import('./pages/AttractionDetailPage/AttractionDetailPage'));
 // B端供应商页面
 const SupplierDashboardPage = React.lazy(() => import('./pages/Supplier/SupplierDashboardPage/SupplierDashboardPage'));
 const SupplierProductListPage = React.lazy(() => import('./pages/Supplier/SupplierProductListPage/SupplierProductListPage'));
@@ -218,26 +217,6 @@ function RegionPageWrapper() {
       onNavClick={(path) => navigate(path)}
       onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
       onBack={() => navigate(-1)}
-    />
-  );
-}
-
-// 包装组件：AttractionDetailPage
-function AttractionDetailPageWrapper() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const { getCartCount } = useCart();
-
-  return (
-    <AttractionDetailPage
-      attractionId={id}
-      cartCount={getCartCount()}
-      onLoginClick={() => navigate('/login')}
-      onRegisterClick={() => navigate('/register')}
-      onNavClick={(path) => navigate(path)}
-      onSearch={(keyword) => navigate(`/search?q=${encodeURIComponent(keyword)}`)}
-      onBack={() => navigate(-1)}
-      onRegionClick={(regionId) => navigate(`/regions/${regionId}`)}
     />
   );
 }
@@ -1324,7 +1303,9 @@ function App() {
 
         {/* 区域与景点页面 */}
         <Route path="/regions/:id" element={<RegionPageWrapper />} />
-        <Route path="/attractions/:id" element={<AttractionDetailPageWrapper />} />
+        {/* REQ-20260510-0013: /attractions/:id 复用 ProductDetailPageWrapper（共享 products 表 +
+            完整下单流程）；旧 AttractionDetailPage 已删除（半成品，无套餐选择 / 无 Book Now onClick） */}
+        <Route path="/attractions/:id" element={<ProductDetailPageWrapper />} />
 
         {/* 酒店搜索 */}
         <Route path="/hotels" element={<HotelSearchPageWrapper />} />
