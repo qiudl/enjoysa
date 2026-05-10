@@ -124,6 +124,25 @@ func (s *ProductStore) ListPublic(filter ProductFilter) ([]model.Product, int64,
 	return s.list(filter)
 }
 
+// ListCarouselBanners (REQ-20260511-0006) returns the active homepage hero
+// carousel: approved + is_featured=true products that have uploaded a
+// banner_image, ordered by carousel_rank ASC NULLS LAST then id DESC.
+// limit caps the carousel size (5 by default per product spec).
+func (s *ProductStore) ListCarouselBanners(limit int) ([]model.Product, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 5
+	}
+	var products []model.Product
+	err := s.db.
+		Where("status = ?", string(model.ProductStatusApproved)).
+		Where("is_featured = ?", true).
+		Where("banner_image <> ''").
+		Order("carousel_rank ASC NULLS LAST, id DESC").
+		Limit(limit).
+		Find(&products).Error
+	return products, err
+}
+
 func (s *ProductStore) ListBySupplier(supplierID uint, filter ProductFilter) ([]model.Product, int64, error) {
 	filter.SupplierID = supplierID
 	return s.list(filter)

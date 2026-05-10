@@ -54,6 +54,14 @@ type Product struct {
 	IsFeatured  bool           `gorm:"default:false" json:"is_featured"`
 	SortOrder   int    `gorm:"default:0" json:"sort_order"`
 
+	// REQ-20260511-0006: Hero-banner carousel sourced from is_featured products.
+	// BannerImage = the dedicated banner image URL (3:1, e.g. 1920×640) admins
+	// upload separately from the product gallery. CarouselRank orders the
+	// active carousel (NULLS LAST). A product appears in the homepage carousel
+	// iff is_featured=true AND banner_image IS NOT NULL.
+	BannerImage  string `gorm:"size:500" json:"banner_image,omitempty"`
+	CarouselRank *int   `json:"carousel_rank,omitempty"`
+
 	// 评分
 	Rating      float64 `gorm:"type:decimal(3,2);default:0" json:"rating"`
 	ReviewCount int     `gorm:"default:0" json:"review_count"`

@@ -270,12 +270,17 @@ export interface ApiAdminProduct {
   status: string;
   created_at: string;
   updated_at: string;
+  // REQ-20260511-0006: surfaces the recommended-product flag + carousel state
+  // so /admin/banners can render the curation table without a second fetch.
+  is_featured?: boolean;
+  banner_image?: string;
+  carousel_rank?: number | null;
   supplier?: { id: number; name: string; type: string };
   category?: { id: number; slug: string; name_zh: string; name_en: string };
   images?: { id: number; url: string; is_cover: boolean }[];
 }
 
-function buildParams(params: Record<string, string | number | undefined>): string {
+function buildParams(params: Record<string, string | number | boolean | undefined>): string {
   const sp = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== '') sp.append(k, String(v));
@@ -394,7 +399,14 @@ export const adminService = {
   },
 
   // === Products ===
-  async listProducts(params: { page?: number; page_size?: number; status?: string } = {}) {
+  // REQ-20260511-0006: is_featured filter added so /admin/banners can fetch
+  // exactly the recommended-products subset for inline carousel curation.
+  async listProducts(params: {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    is_featured?: boolean;
+  } = {}) {
     return get<PaginatedResponse<ApiAdminProduct>>(
       `/admin/products${buildParams(params)}`,
       'admin',
@@ -439,15 +451,47 @@ export const adminService = {
   // 后端走 status=approved + 双 audit + supplier 收到 "已上架" 通知。
   // 不传 / false 时是常规代录（默认 status=pending），supplier 收到代录待审通知。
   async createProduct(
-    data: ProductPayload & { supplier_id: number; status?: string; is_featured?: boolean },
+    data: ProductPayload & {
+      supplier_id: number;
+      status?: string;
+      is_featured?: boolean;
+      banner_image?: string;
+      carousel_rank?: number | null;
+    },
     opts: { autoApprove?: boolean } = {},
   ) {
     const qs = opts.autoApprove ? '?auto_approve=true' : '';
     return post<ApiProduct>(`/admin/products${qs}`, data, 'admin');
   },
 
-  async updateProduct(id: number, data: ProductPayload & { supplier_id: number; status?: string; is_featured?: boolean }) {
+  async updateProduct(
+    id: number,
+    data: ProductPayload & {
+      supplier_id: number;
+      status?: string;
+      is_featured?: boolean;
+      banner_image?: string;
+      carousel_rank?: number | null;
+    },
+  ) {
     return put<ApiProduct>(`/admin/products/${id}`, data, 'admin');
+  },
+
+  /**
+   * REQ-20260511-0006: lightweight inline edit for /admin/banners — only
+   * touches banner_image + carousel_rank, skips the heavy delete-recreate
+   * UpdateProduct flow. Send banner_image="" to clear (= remove from
+   * carousel); send carousel_rank=null to unrank.
+   */
+  async updateProductBanner(
+    id: number,
+    data: { banner_image?: string; carousel_rank?: number | null },
+  ) {
+    return patch<{ updated: Record<string, unknown> }>(
+      `/admin/products/${id}/banner`,
+      data,
+      'admin',
+    );
   },
 
   async deleteProduct(id: number) {

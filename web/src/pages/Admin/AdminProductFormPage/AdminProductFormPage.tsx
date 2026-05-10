@@ -62,6 +62,9 @@ interface FormData {
   supplier_id: number;
   status: string;
   is_featured: boolean;
+  // REQ-20260511-0006: 推荐产品独立 banner 图（3:1, 建议 1920×640）。
+  // 配合 is_featured + carousel_rank（在 /admin/banners 编排）出现在首页 hero。
+  banner_image: string;
 }
 
 export interface AdminProductFormPageProps {
@@ -175,6 +178,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
     supplier_id: 0,
     status: 'approved',
     is_featured: false,
+    banner_image: '',
   });
 
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -234,6 +238,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
           supplier_id: p.supplier_id || 0,
           status: p.status || 'approved',
           is_featured: p.is_featured || false,
+          banner_image: p.banner_image || '',
         });
         // REQ-20260510-0001 dev-4: pull manual_override flags so the
         // inline-edit chips render the right color from first paint.
@@ -310,6 +315,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
       supplier_id: form.supplier_id,
       status: form.status,
       is_featured: form.is_featured,
+      banner_image: form.banner_image,
       images: images.map((img, i) => ({
         url: img.url,
         sort_order: i,
@@ -565,6 +571,78 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
           onChange={(e) => updateField('is_featured', e.target.checked)}
         />
         <label htmlFor="is_featured">{t('admin.products.form.isFeatured')}</label>
+      </div>
+
+      {/* REQ-20260511-0006: per-product banner image. Standalone field
+          (not part of the gallery) — used by the homepage hero carousel.
+          Carousel placement controlled separately in /admin/banners. */}
+      <div className={styles.formRow}>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>
+            {t('admin.products.form.bannerImage', isZh ? '首页 Banner 图（推荐 1920×640，3:1）' : 'Hero Banner Image (recommended 1920×640, 3:1)')}
+          </label>
+          {form.banner_image ? (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <img
+                src={form.banner_image}
+                alt="banner preview"
+                style={{ width: 240, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label className={styles.input} style={{ cursor: 'pointer', textAlign: 'center', padding: '6px 12px', fontSize: 13 }}>
+                  {isZh ? '替换' : 'Replace'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const url = await adminService.uploadFile(file);
+                        updateField('banner_image', url);
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : 'Upload failed');
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className={styles.input}
+                  style={{ padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#dc2626' }}
+                  onClick={() => updateField('banner_image', '')}
+                >
+                  {isZh ? '清除' : 'Clear'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className={styles.input} style={{ cursor: 'pointer', display: 'inline-block', padding: '8px 16px', fontSize: 14 }}>
+              {isZh ? '上传 Banner 图' : 'Upload Banner Image'}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const url = await adminService.uploadFile(file);
+                    updateField('banner_image', url);
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : 'Upload failed');
+                  }
+                }}
+              />
+            </label>
+          )}
+          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 6 }}>
+            {isZh
+              ? '配合「推荐产品」勾选 + /admin/banners 排序，决定是否在首页 hero carousel 出现。'
+              : 'Combined with the "Featured" checkbox above and ranking in /admin/banners, determines homepage hero carousel placement.'}
+          </p>
+        </div>
       </div>
 
       {/* Standard fields (same as supplier form) */}

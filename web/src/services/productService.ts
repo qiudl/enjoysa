@@ -85,6 +85,12 @@ export interface ApiProduct {
   group_size: string;
   tags: string;
   is_featured: boolean;
+  // REQ-20260511-0006: dedicated hero-banner image (3:1 ratio recommended).
+  // Together with is_featured controls homepage carousel inclusion.
+  banner_image?: string;
+  // REQ-20260511-0006: ordering within homepage carousel; null = unranked
+  // (sorts last). Admin-only field.
+  carousel_rank?: number | null;
   rating: number;
   review_count: number;
   // REQ-20260509-0015 + REQ-20260510-0001 dev-4: bilateral "human edit lock"
@@ -212,6 +218,18 @@ export function transformApiProduct(p: ApiProduct): Product {
   };
 }
 
+// REQ-20260511-0006: lean shape returned by GET /banners/carousel —
+// only what HeroBanner renders. Distinct from ApiProduct to avoid leaking
+// full product payload to a public unauthenticated endpoint.
+export interface ApiCarouselBanner {
+  id: number;
+  banner_image: string;
+  name_zh: string;
+  name_en: string;
+  summary_zh: string;
+  summary_en: string;
+}
+
 export const productService = {
   /** 产品列表（分页） */
   async list(filter: ProductFilter = {}): Promise<PaginatedProductResponse> {
@@ -221,6 +239,14 @@ export const productService = {
   /** 推荐产品 */
   async featured(): Promise<ApiProduct[]> {
     return get<ApiProduct[]>('/products/featured');
+  },
+
+  /**
+   * REQ-20260511-0006: 首页 hero carousel 数据源。
+   * 只返回 is_featured=true 且 banner_image 已上传的产品，按 carousel_rank 排序，最多 5 条。
+   */
+  async carouselBanners(): Promise<ApiCarouselBanner[]> {
+    return get<ApiCarouselBanner[]>('/banners/carousel');
   },
 
   /** 产品详情 */

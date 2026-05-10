@@ -981,11 +981,18 @@ func (h *AdminHandler) ListProducts(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	status := c.Query("status")
 
-	products, total, err := h.productStore.ListAll(productstore.ProductFilter{
+	filter := productstore.ProductFilter{
 		Status:   status,
 		Page:     page,
 		PageSize: pageSize,
-	})
+	}
+	// REQ-20260511-0006: /admin/banners 用 ?is_featured=true 拉推荐产品列表。
+	if v := c.Query("is_featured"); v != "" {
+		featured := v == "true" || v == "1"
+		filter.IsFeatured = &featured
+	}
+
+	products, total, err := h.productStore.ListAll(filter)
 	if err != nil {
 		response.ServerError(c, "Failed to list products")
 		return
@@ -1279,6 +1286,11 @@ type AdminCreateProductRequest struct {
 	SupplierID uint   `json:"supplier_id" binding:"required"`
 	Status     string `json:"status"`
 	IsFeatured *bool  `json:"is_featured"`
+
+	// REQ-20260511-0006: admin 控 carousel rank（supplier 不可设）。
+	// BannerImage 已在嵌入的 CreateProductRequest 里。CarouselRank 用 *int
+	// 区分"不传"（保留原值）和"传 null"（清出 carousel）。
+	CarouselRank *int `json:"carousel_rank,omitempty"`
 }
 
 func (h *AdminHandler) CreateProduct(c *gin.Context) {
@@ -1352,6 +1364,13 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 
 	if req.IsFeatured != nil {
 		product.IsFeatured = *req.IsFeatured
+	}
+	// REQ-20260511-0006
+	if req.BannerImage != nil {
+		product.BannerImage = *req.BannerImage
+	}
+	if req.CarouselRank != nil {
+		product.CarouselRank = req.CarouselRank
 	}
 
 	for _, img := range req.Images {
@@ -1499,6 +1518,13 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	}
 	if req.IsFeatured != nil {
 		product.IsFeatured = *req.IsFeatured
+	}
+	// REQ-20260511-0006
+	if req.BannerImage != nil {
+		product.BannerImage = *req.BannerImage
+	}
+	if req.CarouselRank != nil {
+		product.CarouselRank = req.CarouselRank
 	}
 
 	// REQ-20260509-0035: snapshot stock_sold by (name_zh, name_en) fingerprint
@@ -1883,6 +1909,65 @@ func (h *AdminHandler) RecomputeStockSold(c *gin.Context) {
 		"stock_sold_after":  realSold,
 		"diff":              realSold - pkg.StockSold,
 	})
+}
+
+// REQ-20260511-0006: lightweight inline-edit endpoint for /admin/banners.
+// Avoids the heavy delete-recreate UpdateProduct flow which would re-enqueue
+// AI translation and reset packages — admin just wants to set/clear the
+// banner image and tweak carousel rank.
+//
+// Both fields are optional (pointer types). Send {"banner_image": ""} to
+// clear the image (= remove from carousel); send {"carousel_rank": null}
+// to clear the rank (= product still in carousel if image set, just at the
+// bottom NULLS LAST).
+type updateProductBannerRequest struct {
+	BannerImage  *string `json:"banner_image,omitempty"`
+	CarouselRank *int    `json:"carousel_rank,omitempty"`
+}
+
+func (h *AdminHandler) UpdateProductBanner(c *gin.Context) {
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	var req updateProductBannerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.BannerImage != nil {
+		updates["banner_image"] = *req.BannerImage
+	}
+	if req.CarouselRank != nil {
+		updates["carousel_rank"] = *req.CarouselRank
+	}
+	if len(updates) == 0 {
+		response.BadRequest(c, "No fields to update")
+		return
+	}
+
+	res := h.db.Model(&productmodel.Product{}).
+		Where("id = ?", productID).
+		Updates(updates)
+	if res.Error != nil {
+		response.ServerError(c, "Failed to update product banner")
+		return
+	}
+	if res.RowsAffected == 0 {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	if h.audit != nil {
+		h.audit.Log(c, "update_product_banner", "product", uint(productID),
+			fmt.Sprintf("product %d banner updated: %+v", productID, updates))
+	}
+
+	response.Success(c, gin.H{"updated": updates})
 }
 
 // REQ-20260510-0005: flat package listing for the Excel-import template.

@@ -116,6 +116,10 @@ type CreateProductRequest struct {
 	GroupSize     string  `json:"group_size"`
 	Tags          string  `json:"tags"`
 
+	// REQ-20260511-0006: supplier 可上传 banner 图作为资产准备。
+	// 是否真出现在首页 carousel 由 admin 控（is_featured + carousel_rank）。
+	BannerImage *string `json:"banner_image,omitempty"`
+
 	Images     []CreateImageRequest     `json:"images"`
 	Packages   []CreatePackageRequest   `json:"packages"`
 	Highlights []CreateHighlightRequest `json:"highlights"`
@@ -213,6 +217,9 @@ func (h *SupplierProductHandler) CreateProduct(c *gin.Context) {
 		GroupSize:     req.GroupSize,
 		Tags:          req.Tags,
 		Status:        model.ProductStatusDraft,
+	}
+	if req.BannerImage != nil {
+		product.BannerImage = *req.BannerImage
 	}
 
 	for _, img := range req.Images {
@@ -336,6 +343,11 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 	product.GroupSize = req.GroupSize
 	if req.Tags != "" {
 		product.Tags = req.Tags
+	}
+	// REQ-20260511-0006: supplier 可改 banner_image（含清空），但不能动 carousel_rank。
+	// 用 *string 区分"不传"（保留原值）和"传空串"（清除）。
+	if req.BannerImage != nil {
+		product.BannerImage = *req.BannerImage
 	}
 
 	// REQ-20260509-0035: snapshot stock_sold by (name_zh, name_en) fingerprint
