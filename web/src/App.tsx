@@ -3,60 +3,61 @@ import { BrowserRouter, Routes, Route, useNavigate, useParams, useSearchParams, 
 import { useTranslation } from 'react-i18next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { RegionProvider } from './contexts/RegionContext';
+import { lazyWithSelfHeal } from './chunkSelfHeal';
 // 首页同步加载（首屏性能）
 import { HomePage } from './pages/HomePage';
 // 所有其他页面懒加载
-const LoginPage = React.lazy(() => import('./pages/LoginPage/LoginPage'));
-const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage/ForgotPasswordPage'));
-const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage/ResetPasswordPage'));
-const ProductListPage = React.lazy(() => import('./pages/ProductListPage/ProductListPage'));
-const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage/ProductDetailPage'));
-const PlanPage = React.lazy(() => import('./pages/PlanPage/PlanPage'));
-const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage/CheckoutPage'));
-const MyOrdersPage = React.lazy(() => import('./pages/MyOrdersPage/MyOrdersPage'));
-const OrderDetailPage = React.lazy(() => import('./pages/OrderDetailPage/OrderDetailPage'));
-const OrderConfirmationPage = React.lazy(() => import('./pages/OrderConfirmationPage/OrderConfirmationPage'));
-const UserProfilePage = React.lazy(() => import('./pages/UserProfilePage/UserProfilePage'));
-const UserProfileEditPage = React.lazy(() => import('./pages/UserProfileEditPage/UserProfileEditPage'));
-const DestinationsPage = React.lazy(() => import('./pages/DestinationsPage/DestinationsPage'));
-const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage/CategoriesPage'));
-const AboutPage = React.lazy(() => import('./pages/AboutPage/AboutPage'));
-const ContactPage = React.lazy(() => import('./pages/ContactPage/ContactPage'));
-const CartPage = React.lazy(() => import('./pages/CartPage/CartPage'));
-const FavoritesPage = React.lazy(() => import('./pages/FavoritesPage/FavoritesPage'));
-const SupplierShopPage = React.lazy(() => import('./pages/SupplierShopPage/SupplierShopPage'));
-const FaqPage = React.lazy(() => import('./pages/FaqPage/FaqPage'));
-const TermsPage = React.lazy(() => import('./pages/TermsPage/TermsPage'));
-const PrivacyPage = React.lazy(() => import('./pages/PrivacyPage/PrivacyPage'));
-const HotelSearchPage = React.lazy(() => import('./pages/HotelSearchPage/HotelSearchPage'));
-const RegionPage = React.lazy(() => import('./pages/RegionPage/RegionPage'));
+const LoginPage = lazyWithSelfHeal(() => import('./pages/LoginPage/LoginPage'));
+const ForgotPasswordPage = lazyWithSelfHeal(() => import('./pages/ForgotPasswordPage/ForgotPasswordPage'));
+const ResetPasswordPage = lazyWithSelfHeal(() => import('./pages/ResetPasswordPage/ResetPasswordPage'));
+const ProductListPage = lazyWithSelfHeal(() => import('./pages/ProductListPage/ProductListPage'));
+const ProductDetailPage = lazyWithSelfHeal(() => import('./pages/ProductDetailPage/ProductDetailPage'));
+const PlanPage = lazyWithSelfHeal(() => import('./pages/PlanPage/PlanPage'));
+const CheckoutPage = lazyWithSelfHeal(() => import('./pages/CheckoutPage/CheckoutPage'));
+const MyOrdersPage = lazyWithSelfHeal(() => import('./pages/MyOrdersPage/MyOrdersPage'));
+const OrderDetailPage = lazyWithSelfHeal(() => import('./pages/OrderDetailPage/OrderDetailPage'));
+const OrderConfirmationPage = lazyWithSelfHeal(() => import('./pages/OrderConfirmationPage/OrderConfirmationPage'));
+const UserProfilePage = lazyWithSelfHeal(() => import('./pages/UserProfilePage/UserProfilePage'));
+const UserProfileEditPage = lazyWithSelfHeal(() => import('./pages/UserProfileEditPage/UserProfileEditPage'));
+const DestinationsPage = lazyWithSelfHeal(() => import('./pages/DestinationsPage/DestinationsPage'));
+const CategoriesPage = lazyWithSelfHeal(() => import('./pages/CategoriesPage/CategoriesPage'));
+const AboutPage = lazyWithSelfHeal(() => import('./pages/AboutPage/AboutPage'));
+const ContactPage = lazyWithSelfHeal(() => import('./pages/ContactPage/ContactPage'));
+const CartPage = lazyWithSelfHeal(() => import('./pages/CartPage/CartPage'));
+const FavoritesPage = lazyWithSelfHeal(() => import('./pages/FavoritesPage/FavoritesPage'));
+const SupplierShopPage = lazyWithSelfHeal(() => import('./pages/SupplierShopPage/SupplierShopPage'));
+const FaqPage = lazyWithSelfHeal(() => import('./pages/FaqPage/FaqPage'));
+const TermsPage = lazyWithSelfHeal(() => import('./pages/TermsPage/TermsPage'));
+const PrivacyPage = lazyWithSelfHeal(() => import('./pages/PrivacyPage/PrivacyPage'));
+const HotelSearchPage = lazyWithSelfHeal(() => import('./pages/HotelSearchPage/HotelSearchPage'));
+const RegionPage = lazyWithSelfHeal(() => import('./pages/RegionPage/RegionPage'));
 // B端供应商页面
-const SupplierDashboardPage = React.lazy(() => import('./pages/Supplier/SupplierDashboardPage/SupplierDashboardPage'));
-const SupplierProductListPage = React.lazy(() => import('./pages/Supplier/SupplierProductListPage/SupplierProductListPage'));
-const SupplierProductFormPage = React.lazy(() => import('./pages/Supplier/SupplierProductFormPage/SupplierProductFormPage'));
-const SupplierSchedulePage = React.lazy(() => import('./pages/Supplier/SupplierSchedulePage/SupplierSchedulePage'));
-const SupplierOrderListPage = React.lazy(() => import('./pages/Supplier/SupplierOrderListPage/SupplierOrderListPage'));
-const SupplierReviewsPage = React.lazy(() => import('./pages/Supplier/SupplierReviewsPage/SupplierReviewsPage'));
-const SupplierSettlementPage = React.lazy(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
-const SupplierExportPage = React.lazy(() => import('./pages/Supplier/SupplierExportPage/SupplierExportPage'));
-const SupplierTeamPage = React.lazy(() => import('./pages/Supplier/SupplierTeamPage/SupplierTeamPage'));
-const SupplierNotificationsPage = React.lazy(() => import('./pages/Supplier/SupplierNotificationsPage/SupplierNotificationsPage'));
-const SupplierAfterSalesPage = React.lazy(() => import('./pages/Supplier/SupplierAfterSalesPage/SupplierAfterSalesPage'));
-const SupplierCreateTicketPage = React.lazy(() => import('./pages/Supplier/SupplierCreateTicketPage/SupplierCreateTicketPage'));
-const SupplierReportsPage = React.lazy(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
-const SupplierAuditLogPage = React.lazy(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
-const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
-const SupplierTicketDetailPage = React.lazy(() => import('./pages/Supplier/SupplierTicketDetailPage/SupplierTicketDetailPage'));
-const SupplierOrderDetailPage = React.lazy(() => import('./pages/Supplier/SupplierOrderDetailPage/SupplierOrderDetailPage'));
-const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewPage/SupplierProductPreviewPage'));
+const SupplierDashboardPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierDashboardPage/SupplierDashboardPage'));
+const SupplierProductListPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierProductListPage/SupplierProductListPage'));
+const SupplierProductFormPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierProductFormPage/SupplierProductFormPage'));
+const SupplierSchedulePage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierSchedulePage/SupplierSchedulePage'));
+const SupplierOrderListPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierOrderListPage/SupplierOrderListPage'));
+const SupplierReviewsPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierReviewsPage/SupplierReviewsPage'));
+const SupplierSettlementPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierSettlementPage/SupplierSettlementPage'));
+const SupplierExportPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierExportPage/SupplierExportPage'));
+const SupplierTeamPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierTeamPage/SupplierTeamPage'));
+const SupplierNotificationsPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierNotificationsPage/SupplierNotificationsPage'));
+const SupplierAfterSalesPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierAfterSalesPage/SupplierAfterSalesPage'));
+const SupplierCreateTicketPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierCreateTicketPage/SupplierCreateTicketPage'));
+const SupplierReportsPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierReportsPage/SupplierReportsPage'));
+const SupplierAuditLogPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierAuditLogPage/SupplierAuditLogPage'));
+const SupplierSettingsPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierSettingsPage/SupplierSettingsPage'));
+const SupplierTicketDetailPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierTicketDetailPage/SupplierTicketDetailPage'));
+const SupplierOrderDetailPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierOrderDetailPage/SupplierOrderDetailPage'));
+const SupplierProductPreviewPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierProductPreviewPage/SupplierProductPreviewPage'));
 // REQ-20260510-0001 F2: 双语 C 端预览（区别于 SupplierProductPreviewPage 的单语预览）
-const SupplierProductPreviewBilingualPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewBilingualPage/SupplierProductPreviewBilingualPage'));
-const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
-const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
-const AIChatPage = React.lazy(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
+const SupplierProductPreviewBilingualPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierProductPreviewBilingualPage/SupplierProductPreviewBilingualPage'));
+const SupplierLoginPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
+const SupplierRegisterPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
+const AIChatPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
 // REQ-20260509-0037 dev-8: new 3-col group chat (workspace + channels + threads).
 // Coexists with the legacy /supplier/ai-chat until dev-9/10 land thread panel + create modal.
-const SupplierGroupChatPage = React.lazy(() => import('./pages/Supplier/SupplierGroupChatPage/SupplierGroupChatPage'));
+const SupplierGroupChatPage = lazyWithSelfHeal(() => import('./pages/Supplier/SupplierGroupChatPage/SupplierGroupChatPage'));
 
 // Wrapper that pulls the :id route param and forwards it to AIChatPage so
 // Feishu share-card links like /admin/ai-chat/sessions/9 auto-load that
@@ -67,25 +68,25 @@ function AIChatPageWithRouteSession({ role, backPath }: { role: 'supplier' | 'ad
   return <AIChatPage role={role} backPath={backPath} sessionIdFromRoute={sessionId} />;
 }
 // 用户中心
-const ContactsPage = React.lazy(() => import('./pages/ContactsPage/ContactsPage'));
+const ContactsPage = lazyWithSelfHeal(() => import('./pages/ContactsPage/ContactsPage'));
 // 平台管理端页面
-const AdminLoginPage = React.lazy(() => import('./pages/Admin/AdminLoginPage/AdminLoginPage'));
-const DashboardPage = React.lazy(() => import('./pages/Admin/DashboardPage/DashboardPage'));
-const SupplierList = React.lazy(() => import('./pages/Admin/SupplierList/SupplierList'));
-const SupplierDetailPage = React.lazy(() => import('./pages/Admin/SupplierDetailPage/SupplierDetailPage'));
-const ProductReviewList = React.lazy(() => import('./pages/Admin/ProductReviewList/ProductReviewList'));
-const AdminProductFormPage = React.lazy(() => import('./pages/Admin/AdminProductFormPage/AdminProductFormPage'));
-const OrderList = React.lazy(() => import('./pages/Admin/OrderList/OrderList'));
-const UserList = React.lazy(() => import('./pages/Admin/UserList/UserList'));
-const FinanceList = React.lazy(() => import('./pages/Admin/FinanceList/FinanceList'));
-const AdminList = React.lazy(() => import('./pages/Admin/AdminList/AdminList'));
-const SettingsPage = React.lazy(() => import('./pages/Admin/SettingsPage/SettingsPage'));
-const BannerList = React.lazy(() => import('./pages/Admin/BannerList/BannerList'));
-const RegionList = React.lazy(() => import('./pages/Admin/RegionList/RegionList'));
-const CategoryList = React.lazy(() => import('./pages/Admin/CategoryList/CategoryList'));
-const HomepageCMS = React.lazy(() => import('./pages/Admin/HomepageCMS/HomepageCMS'));
-const AIChatTestPage = React.lazy(() => import('./pages/Admin/AIChatTestPage/AIChatTestPage'));
-const TourismKnowledge = React.lazy(() => import('./pages/Admin/TourismKnowledge'));
+const AdminLoginPage = lazyWithSelfHeal(() => import('./pages/Admin/AdminLoginPage/AdminLoginPage'));
+const DashboardPage = lazyWithSelfHeal(() => import('./pages/Admin/DashboardPage/DashboardPage'));
+const SupplierList = lazyWithSelfHeal(() => import('./pages/Admin/SupplierList/SupplierList'));
+const SupplierDetailPage = lazyWithSelfHeal(() => import('./pages/Admin/SupplierDetailPage/SupplierDetailPage'));
+const ProductReviewList = lazyWithSelfHeal(() => import('./pages/Admin/ProductReviewList/ProductReviewList'));
+const AdminProductFormPage = lazyWithSelfHeal(() => import('./pages/Admin/AdminProductFormPage/AdminProductFormPage'));
+const OrderList = lazyWithSelfHeal(() => import('./pages/Admin/OrderList/OrderList'));
+const UserList = lazyWithSelfHeal(() => import('./pages/Admin/UserList/UserList'));
+const FinanceList = lazyWithSelfHeal(() => import('./pages/Admin/FinanceList/FinanceList'));
+const AdminList = lazyWithSelfHeal(() => import('./pages/Admin/AdminList/AdminList'));
+const SettingsPage = lazyWithSelfHeal(() => import('./pages/Admin/SettingsPage/SettingsPage'));
+const BannerList = lazyWithSelfHeal(() => import('./pages/Admin/BannerList/BannerList'));
+const RegionList = lazyWithSelfHeal(() => import('./pages/Admin/RegionList/RegionList'));
+const CategoryList = lazyWithSelfHeal(() => import('./pages/Admin/CategoryList/CategoryList'));
+const HomepageCMS = lazyWithSelfHeal(() => import('./pages/Admin/HomepageCMS/HomepageCMS'));
+const AIChatTestPage = lazyWithSelfHeal(() => import('./pages/Admin/AIChatTestPage/AIChatTestPage'));
+const TourismKnowledge = lazyWithSelfHeal(() => import('./pages/Admin/TourismKnowledge'));
 
 import { CartProvider, useCart, UserAuthProvider, useUserAuth, SupplierAuthProvider, useSupplierAuth, AdminAuthProvider, useAdminAuth } from './contexts';
 import { ChatProvider } from './contexts/ChatContext';
