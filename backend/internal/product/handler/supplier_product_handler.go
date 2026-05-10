@@ -1001,25 +1001,48 @@ func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
 		return
 	}
 
-	if req.StockTotal != -1 && req.StockTotal < pkg.StockSold {
+	// REQ-20260510-0003: unlimited→limited transition recomputes stock_sold
+	// from orders so the new finite cap reflects real occupancy (Phase 1's
+	// asymmetric -1 accounting can leave stored stock_sold inflated).
+	transitioning := pkg.StockTotal == -1 && req.StockTotal != -1
+	finalSold := pkg.StockSold
+	if transitioning {
+		realSold, err := h.productStore.RecomputeStockSoldFromOrders(uint(pkgID), nil)
+		if err != nil {
+			response.ServerError(c, "Failed to recompute stock_sold from orders")
+			return
+		}
+		finalSold = realSold
+	}
+
+	if req.StockTotal != -1 && req.StockTotal < finalSold {
 		response.Fail(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
-			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, pkg.StockSold))
+			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, finalSold))
 		return
 	}
 
+	updates := map[string]interface{}{"stock_total": req.StockTotal}
+	if transitioning {
+		updates["stock_sold"] = finalSold
+	}
 	if err := h.productStore.DB().Model(&model.ProductPackage{}).
 		Where("id = ?", pkgID).
-		Update("stock_total", req.StockTotal).Error; err != nil {
+		Updates(updates).Error; err != nil {
 		response.ServerError(c, "Failed to update package stock")
 		return
 	}
 
-	logger.Infof("supplier %d set product %d package %d stock_total %d → %d", supplierID, productID, pkgID, pkg.StockTotal, req.StockTotal)
+	if transitioning {
+		logger.Infof("supplier %d set product %d package %d stock_total %d → %d | unlimited→limited transition: stock_sold %d → %d (recomputed)",
+			supplierID, productID, pkgID, pkg.StockTotal, req.StockTotal, pkg.StockSold, finalSold)
+	} else {
+		logger.Infof("supplier %d set product %d package %d stock_total %d → %d", supplierID, productID, pkgID, pkg.StockTotal, req.StockTotal)
+	}
 
 	response.Success(c, gin.H{
 		"id":          pkgID,
 		"stock_total": req.StockTotal,
-		"stock_sold":  pkg.StockSold,
+		"stock_sold":  finalSold,
 	})
 }
 

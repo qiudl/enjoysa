@@ -648,6 +648,8 @@ func Setup(cfg Config) *gin.Engine {
 		// delete-recreate 重型流程（不触发翻译/审核重置）。让运营在列表页
 		// 一键调整 stock_total。
 		adminGroup.PATCH("/products/:id/packages/:pkgId/stock", adminHandler.UpdatePackageStock)
+		// REQ-20260510-0003: admin 数据 hygiene — 重算 stock_sold = SUM(orders) excl. cancelled/refunded
+		adminGroup.POST("/products/:id/packages/:pkgId/recompute-stock-sold", adminHandler.RecomputeStockSold)
 
 		// REQ-20260509-0019: 批量审核 + 待审计数。Cap 50 / 请求；返回 per-item
 		// status 让前端能显示哪些跳过、哪些成功。pending-counts 给 admin 主页
