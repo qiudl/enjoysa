@@ -592,6 +592,22 @@ func TestNewRateLimiter(t *testing.T) {
 	}
 }
 
+// REQ-20260510-0011 · 2P-1: C-end limiter is a separate bucket so the
+// /c/* sub-group's 6/min rate never starves the supplier-edit /tourism
+// path. The constructor returns a real limiter, not nil.
+func TestNewCEndRateLimiter(t *testing.T) {
+	if NewCEndRateLimiter() == nil {
+		t.Fatal("NewCEndRateLimiter returned nil")
+	}
+	// Sanity check the constants: 6 r/min = 0.1 r/s, burst 2.
+	if cEndRateLimitRPS != 0.1 {
+		t.Errorf("cEndRateLimitRPS = %v; want 0.1 (6 per minute)", cEndRateLimitRPS)
+	}
+	if cEndRateLimitBurst != 2 {
+		t.Errorf("cEndRateLimitBurst = %d; want 2 (tolerate quick double-click)", cEndRateLimitBurst)
+	}
+}
+
 func TestExecuteSimilarProductsHappyPath(t *testing.T) {
 	store := &fakeStore{
 		similar: []SimilarProductSkeleton{
