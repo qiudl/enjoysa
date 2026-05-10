@@ -1,7 +1,10 @@
 package router
 
 import (
+	"context"
 	"net/http"
+	"strings"
+	"time"
 
 	"enjoysa-backend/internal/admin/handler"
 	"enjoysa-backend/internal/auth"
@@ -473,18 +476,39 @@ func Setup(cfg Config) *gin.Engine {
 		// chatty supplier doesn't starve the other /api/v1/ai/* scenes that
 		// share the global 2/s burst-5 limiter.
 		tourismAgentLimiter := tourismagent.NewRateLimiter()
+		tourismAgentInst := tourismagent.New(
+			llmRegistry.Default(),
+			tourismagent.NewGORMStore(cfg.DB),
+			cfg.AIConfig.Model,
+		)
+		tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst)
+
+		// REQ-20260510-0011 · Phase 2 · 2A: wire C-end ProductLookup adapter
+		// + per-product cache so /tourism/c/explain can short-circuit repeat
+		// requests. Adapter is a thin closure around productStore.GetByID;
+		// kept in the router so tourism_agent doesn't pull product as a dep.
+		tourismAgentHandler.SetProductLookup(buildTourismProductLookup(pStore))
+		// 6h TTL ± 30min jitter (D1) — see tourism_agent/cache.go for rationale.
+		tourismAgentHandler.SetExplainCache(tourismagent.NewTTLCache(6*time.Hour, 0.083))
+
 		tourGroup := aiGroup.Group("/tourism")
 		tourGroup.Use(tourismAgentLimiter.Middleware())
 		tourGroup.Use(middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB))
 		{
-			tourismAgentInst := tourismagent.New(
-				llmRegistry.Default(),
-				tourismagent.NewGORMStore(cfg.DB),
-				cfg.AIConfig.Model,
-			)
-			tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst)
 			tourGroup.POST("/generate-content", tourismAgentHandler.GenerateContent)
 			tourGroup.POST("/pricing-suggest", tourismAgentHandler.PricingSuggest)
+		}
+
+		// REQ-20260510-0011 · Phase 2 · 2A: C-end embedded buttons on
+		// ProductDetailPage. Separate sub-group with its own 6 r/min/IP
+		// limiter (R1 decision) — supplier path above stays unaffected
+		// (D6 zero-regression for 1F).
+		tourismCEndLimiter := tourismagent.NewCEndRateLimiter()
+		tourCGroup := aiGroup.Group("/tourism/c")
+		tourCGroup.Use(tourismCEndLimiter.Middleware())
+		// No auth gate — anonymous browsers can use C-end AI features.
+		{
+			tourCGroup.POST("/explain", tourismAgentHandler.ExplainContent)
 		}
 	}
 
@@ -925,4 +949,113 @@ func Setup(cfg Config) *gin.Engine {
 	}
 
 	return r
+}
+
+// REQ-20260510-0011 · Phase 2 · 2A: thin adapter from product.ProductStore
+// → tourismagent.ProductLookup. Defined here so tourism_agent doesn't pull
+// product/store as a transitive dep.
+//
+// Duration parsing mirrors the supplier-form helper + tourism/etl heuristic
+// so the same product surfaces the same skeleton on every code path.
+func buildTourismProductLookup(ps *productstore.ProductStore) tourismagent.ProductLookup {
+	return tourismProductLookupAdapter{ps: ps}
+}
+
+type tourismProductLookupAdapter struct {
+	ps *productstore.ProductStore
+}
+
+func (a tourismProductLookupAdapter) LookupForAgent(_ context.Context, productID uint) (*tourismagent.ProductSeed, error) {
+	p, err := a.ps.GetByID(productID)
+	if err != nil {
+		return nil, err
+	}
+	council := ""
+	if p.Region != nil {
+		council = p.Region.NameEn
+	}
+	category := ""
+	if p.Category != nil {
+		category = p.Category.Slug
+	}
+	return &tourismagent.ProductSeed{
+		NameZh:          p.NameZh,
+		NameEn:          p.NameEn,
+		Council:         council,
+		Category:        category,
+		DurationMinutes: parseDurationMinutesShallow(p.Duration),
+		Tags:            splitTags(p.Tags),
+		Status:          string(p.Status),
+	}, nil
+}
+
+// parseDurationMinutesShallow mirrors the supplier-form / etl helpers so an
+// inconsistent answer can never leak into the agent skeleton from C-end vs
+// supplier-form code paths.
+func parseDurationMinutesShallow(raw string) int {
+	s := strings.ToLower(strings.TrimSpace(raw))
+	if s == "" {
+		return 0
+	}
+	if strings.Contains(s, "half") {
+		return 4 * 60
+	}
+	if strings.Contains(s, "full day") || strings.Contains(s, "all day") ||
+		strings.Contains(s, "whole day") || strings.Contains(s, "1 day") ||
+		strings.Contains(s, "one day") {
+		return 8 * 60
+	}
+	// Find leading digit run, then check for "h" suffix anywhere after.
+	digitsStart, digitsEnd := -1, -1
+	for i := 0; i < len(s); i++ {
+		if s[i] >= '0' && s[i] <= '9' {
+			if digitsStart == -1 {
+				digitsStart = i
+			}
+			digitsEnd = i + 1
+		} else if digitsStart != -1 {
+			break
+		}
+	}
+	if digitsStart < 0 {
+		return 0
+	}
+	val := 0
+	for i := digitsStart; i < digitsEnd; i++ {
+		val = val*10 + int(s[i]-'0')
+	}
+	if val <= 0 {
+		return 0
+	}
+	if strings.Contains(s[digitsEnd:], "h") {
+		return val * 60
+	}
+	return 0
+}
+
+// splitTags handles product.Tags which is stored as a JSON string of an
+// array OR a comma-joined string depending on age. We accept both shapes
+// without forcing the C-end caller to care.
+func splitTags(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "[]" {
+		return nil
+	}
+	// JSON array shape: ["tag1","tag2"] — naive split on commas is wrong
+	// when a tag contains a comma, but in practice product tags are single
+	// words. Strip brackets + quotes then split.
+	if strings.HasPrefix(raw, "[") && strings.HasSuffix(raw, "]") {
+		inner := strings.Trim(raw[1:len(raw)-1], " ")
+		inner = strings.ReplaceAll(inner, `"`, "")
+		raw = inner
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

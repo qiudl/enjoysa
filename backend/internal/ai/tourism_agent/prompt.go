@@ -42,12 +42,18 @@ const (
 	FieldDescription FieldType = "description"
 	FieldHighlights  FieldType = "highlights"
 	FieldItinerary   FieldType = "itinerary"
+
+	// REQ-20260510-0011 · 2A: C-end "💡 给你讲讲" embedded button on
+	// ProductDetailPage. Same Agent / tools, different prompt — tone is
+	// for-traveler (vs supplier-listing) and the answer should mention
+	// 适合人群 + 周边推荐 hints to add depth above what the supplier wrote.
+	FieldExplainForUser FieldType = "explain_for_user"
 )
 
 // IsValidField reports whether f is one of the supported FieldTypes.
 func IsValidField(f FieldType) bool {
 	switch f {
-	case FieldTitle, FieldDescription, FieldHighlights, FieldItinerary:
+	case FieldTitle, FieldDescription, FieldHighlights, FieldItinerary, FieldExplainForUser:
 		return true
 	}
 	return false
@@ -96,6 +102,17 @@ func BuildUserPrompt(field FieldType, language string, sk Skeleton) string {
 		sb.WriteString("- 3-8 steps, each \"<duration> · <activity at place>\".\n")
 		sb.WriteString("- Plain text, one step per line, prefix the line with the step number.\n")
 		sb.WriteString("- Use real council / attraction names from search_knowledge.\n")
+	case FieldExplainForUser:
+		// REQ-20260510-0011 · 2A: C-end traveler intro on ProductDetailPage.
+		// Tone differs from supplier-listing — write as if recommending to a
+		// friend deciding whether to book. Length is tighter (200-300 字)
+		// because the page already shows supplier description; this is depth-add.
+		sb.WriteString("Write a SHORT TRAVELER INTRO for someone deciding whether to book this product.\n")
+		sb.WriteString("- Length: strictly 200-300 Chinese characters.\n")
+		sb.WriteString("- 2 short paragraphs, no markdown, no headings.\n")
+		sb.WriteString("- Para 1: what makes the council/area distinctive (cite a real attraction returned by search_knowledge).\n")
+		sb.WriteString("- Para 2: who this fits (家庭/情侣/独行/摄影爱好者...) + 1 nearby attraction worth pairing.\n")
+		sb.WriteString("- Tone: warm peer recommendation, no marketing fluff, no \"unmissable\" / \"world-class\" filler.\n")
 	default:
 		sb.WriteString("Generate the requested field.\n")
 	}

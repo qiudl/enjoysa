@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"enjoysa-backend/internal/llmprovider"
 	tourismmodel "enjoysa-backend/internal/tourism/model"
@@ -317,3 +318,183 @@ func TestHasEditorIdentity(t *testing.T) {
 
 // silence unused warning when context isn't used in a particular case.
 var _ = context.Background
+
+// ============================================================================
+// REQ-20260510-0011 · Phase 2 · 2A — ExplainContent
+// ============================================================================
+
+// fakeProductLookup is a tiny in-memory ProductLookup for handler tests.
+// `seedByID` lets per-test tables pre-load specific product IDs; missing
+// IDs return ErrProductNotFound which the handler should map to 404.
+type fakeProductLookup struct {
+	seedByID map[uint]*ProductSeed
+	err      error // injected error overrides table lookup
+}
+
+func (f *fakeProductLookup) LookupForAgent(_ context.Context, id uint) (*ProductSeed, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if s, ok := f.seedByID[id]; ok {
+		return s, nil
+	}
+	return nil, errors.New("not found")
+}
+
+// newExplainHandler wires a Handler with cache + product lookup configured
+// (the supplier-side endpoints don't need them so the default constructor
+// leaves them nil).
+func newExplainHandler(turns []llmTurn, hits []SearchHit, lookup *fakeProductLookup) *Handler {
+	h := NewHandler(newAgentWithFakes(turns, hits))
+	h.SetExplainCache(NewTTLCache(1*time.Hour, 0))
+	h.SetProductLookup(lookup)
+	return h
+}
+
+func TestExplainContent_NotWiredReturns503(t *testing.T) {
+	h := NewHandler(newAgentWithFakes(nil, nil))
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":1}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("got %d want 503", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "EXPLAIN_NOT_WIRED") {
+		t.Errorf("error code missing from body: %s", w.Body.String())
+	}
+}
+
+func TestExplainContent_RejectsMissingProductID(t *testing.T) {
+	h := newExplainHandler(nil, nil, &fakeProductLookup{})
+	c, w := newCtx(http.MethodPost, "/", []byte(`{}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("got %d want 400", w.Code)
+	}
+}
+
+func TestExplainContent_RejectsMalformedBody(t *testing.T) {
+	h := newExplainHandler(nil, nil, &fakeProductLookup{})
+	c, w := newCtx(http.MethodPost, "/", []byte("not json"))
+	h.ExplainContent(c)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("got %d want 400", w.Code)
+	}
+}
+
+func TestExplainContent_NotFoundMaps404(t *testing.T) {
+	h := newExplainHandler(nil, nil, &fakeProductLookup{seedByID: map[uint]*ProductSeed{}})
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":99}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("got %d want 404", w.Code)
+	}
+}
+
+func TestExplainContent_DraftProductRejected(t *testing.T) {
+	// Status="draft" → 403 PRODUCT_NOT_PUBLIC; we don't expose AI on
+	// non-public products to avoid leaking unreleased content.
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		7: {NameZh: "X", Council: "Adelaide", Category: "wine", Status: "draft"},
+	}}
+	h := newExplainHandler(nil, nil, lookup)
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":7}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("got %d want 403", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "PRODUCT_NOT_PUBLIC") {
+		t.Errorf("error code missing: %s", w.Body.String())
+	}
+}
+
+func TestExplainContent_HappyPathReturns200AndCaches(t *testing.T) {
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		10: {NameZh: "大鸭号", Council: "Fleurieu Peninsula", Category: "attractions", Status: "approved"},
+	}}
+	h := newExplainHandler(
+		[]llmTurn{{content: "Big Duck 是袋鼠岛附近的海上观光项目..."}},
+		nil,
+		lookup,
+	)
+
+	// First call — miss, hits LLM.
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":10}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
+	}
+	if w.Header().Get("X-Cache") != "MISS" {
+		t.Errorf("first call should be MISS, got %q", w.Header().Get("X-Cache"))
+	}
+	if !strings.Contains(w.Body.String(), "Big Duck") {
+		t.Errorf("body should contain LLM content: %s", w.Body.String())
+	}
+
+	// Second call — hit, no LLM.
+	c2, w2 := newCtx(http.MethodPost, "/", []byte(`{"product_id":10}`))
+	h.ExplainContent(c2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("second call: got %d want 200", w2.Code)
+	}
+	if w2.Header().Get("X-Cache") != "HIT" {
+		t.Errorf("second call should be HIT, got %q", w2.Header().Get("X-Cache"))
+	}
+	if w2.Body.String() != w.Body.String() {
+		t.Errorf("cached body should byte-match first response\nfirst:  %s\nsecond: %s", w.Body.String(), w2.Body.String())
+	}
+}
+
+func TestExplainContent_MaxIterationsMaps503(t *testing.T) {
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		1: {NameZh: "X", Council: "Adelaide", Category: "wine", Status: "approved"},
+	}}
+	// LLM keeps requesting tools — 3 turns of tool calls past the cap.
+	turns := make([]llmTurn, 4)
+	for i := range turns {
+		turns[i] = llmTurn{toolCalls: []llmprovider.ToolCall{{
+			ID:   "t",
+			Type: "function",
+			Function: llmprovider.FunctionCall{Name: "search_knowledge", Arguments: `{}`},
+		}}}
+	}
+	h := newExplainHandler(turns, nil, lookup)
+
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":1}`))
+	h.ExplainContent(c)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("got %d want 503", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "AGENT_MAX_ITERATIONS") {
+		t.Errorf("error code missing: %s", w.Body.String())
+	}
+}
+
+// ---- json-string helper ---------------------------------------------------
+
+func TestJSONString_EscapesQuotesAndControlChars(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{`hello`, `"hello"`},
+		{`he"llo`, `"he\"llo"`},
+		{"a\nb", `"a\nb"`},
+		{"x\tz", `"x\tz"`},
+		{"中文", `"中文"`}, // CJK passes through unchanged
+	}
+	for _, tc := range cases {
+		got := jsonString(tc.in)
+		if got != tc.want {
+			t.Errorf("jsonString(%q) = %q; want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestJSONRefsList_EmptyAndPopulated(t *testing.T) {
+	if got := jsonRefsList(nil); got != "[]" {
+		t.Errorf("nil refs → %q; want []", got)
+	}
+	refs := []KnowledgeRef{{Type: "experience", ID: 10, Name: "大鸭号"}}
+	got := jsonRefsList(refs)
+	want := `[{"type":"experience","id":10,"name":"大鸭号"}]`
+	if got != want {
+		t.Errorf("got %s\nwant %s", got, want)
+	}
+}
