@@ -16,13 +16,20 @@ import AccommodationList from './AccommodationList';
 import FoodList from './FoodList';
 import ExperienceList from './ExperienceList';
 import PricingBenchmarkList from './PricingBenchmarkList';
+import ScrapeStagingList from './ScrapeStagingList';
 import {
   tourismKnowledgeService,
   type EtlSummary,
 } from '../../../services/tourismKnowledgeService';
 import styles from './TourismKnowledge.module.css';
 
-type TabKey = 'attractions' | 'accommodations' | 'food' | 'experiences' | 'pricing';
+type TabKey =
+  | 'attractions'
+  | 'accommodations'
+  | 'food'
+  | 'experiences'
+  | 'pricing'
+  | 'scrape';
 
 const TABS: Array<{ key: TabKey; labelKey: string; fallback: string }> = [
   { key: 'attractions', labelKey: 'admin.tourism.tabs.attractions', fallback: '景点' },
@@ -30,6 +37,8 @@ const TABS: Array<{ key: TabKey; labelKey: string; fallback: string }> = [
   { key: 'food', labelKey: 'admin.tourism.tabs.food', fallback: '美食' },
   { key: 'experiences', labelKey: 'admin.tourism.tabs.experiences', fallback: '体验' },
   { key: 'pricing', labelKey: 'admin.tourism.tabs.pricing', fallback: '价格行情' },
+  // REQ-20260510-0011 · 2C: scrape pipeline tab.
+  { key: 'scrape', labelKey: 'admin.tourism.tabs.scrape', fallback: '知识抓取' },
 ];
 
 export const TourismKnowledge: React.FC = () => {
@@ -146,6 +155,7 @@ export const TourismKnowledge: React.FC = () => {
       {activeTab === 'food' && <FoodList />}
       {activeTab === 'experiences' && <ExperienceList />}
       {activeTab === 'pricing' && <PricingBenchmarkList />}
+      {activeTab === 'scrape' && <ScrapeStagingList />}
     </div>
   );
 };

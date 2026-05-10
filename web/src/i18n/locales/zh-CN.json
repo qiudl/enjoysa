@@ -1091,7 +1091,8 @@
         "accommodations": "酒店",
         "food": "美食",
         "experiences": "体验",
-        "pricing": "价格行情"
+        "pricing": "价格行情",
+        "scrape": "知识抓取"
       },
       "filter": {
         "council": "Council",
@@ -1181,6 +1182,25 @@
         "summaryTitle": "ETL 完成",
         "summary": "扫描 {{scanned}} 个商品，写入 {{exp}} 条 experiences，{{bench}} 条 pricing benchmarks，跳过 {{skip}} 条。",
         "errorsLabel": "{{n}} 条错误"
+      },
+      "scrape": {
+        "run": "运行抓取",
+        "running": "正在抓取...",
+        "confirm": "将抓取南澳旅游局公开页面，调 LLM 抽结构化数据写入 staging。\n约 1-2 分钟。继续？",
+        "all": "全部",
+        "pending": "待审核",
+        "promoted": "已采用",
+        "rejected": "已拒",
+        "empty": "暂无 staging 数据",
+        "promote": "采用",
+        "reject": "拒绝",
+        "confirmReject": "确认拒绝",
+        "rejectReasonPlaceholder": "拒绝原因（可选）",
+        "promotedTo": "已写入 attraction id={{id}}",
+        "rejectedFor": "已拒：{{reason}}",
+        "jobDone": "抓取任务结束",
+        "jobSummary": "状态 {{status}}，扫描 {{total}} URL，新增 staging {{exp}}，跳过 {{skip}}，错误 {{err}}",
+        "lastError": "最后一条错误"
       }
     },
     "tourismAgent": {
