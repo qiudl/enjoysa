@@ -135,6 +135,7 @@ var ErrJobAlreadyRunning = errors.New("scraper: another job for this source is a
 // Production code passes *Store; tests pass a fake without touching DB.
 type ServiceStore interface {
 	AnyRunningJob(ctx context.Context, source string) (bool, error)
+	MarkStaleJobsFailed(ctx context.Context, source string) error
 	CreateJob(ctx context.Context, j *Job) error
 	UpdateJobProgress(ctx context.Context, j *Job) error
 	StagingExists(ctx context.Context, source, url string) (bool, error)
@@ -195,6 +196,10 @@ func (s *Service) RunSync(ctx context.Context, triggeredBy *uint) (*Job, error) 
 		return nil, ErrJobAlreadyRunning
 	}
 	defer s.release(s.source)
+
+	// Sweep orphaned jobs (running > 10 min — process crashed mid-run)
+	// before the DB-side check so a stuck row doesn't block forever.
+	_ = s.store.MarkStaleJobsFailed(ctx, s.source)
 
 	// Also DB-side check — the in-process mutex doesn't help if we have
 	// multiple server replicas. Future-proofing.
