@@ -21,6 +21,8 @@ import { TourismAgentButton, TourismPricingButton } from '../../../components/AI
 import { EnglishPreview } from '../../../components/Admin/EnglishPreview';
 import { ChinesePreview } from '../../../components/Admin/ChinesePreview';
 import { FormBatchStockBar } from '../../../components/Common/FormBatchStockBar';
+import { AdminBilingualPreview } from '../../../components/Admin/AdminBilingualPreview';
+import type { Product as PreviewProduct, ProductTag } from '../../../types';
 import styles from './AdminProductFormPage.module.css';
 
 // ────────────────────────────── Types ──────────────────────────────
@@ -65,6 +67,12 @@ interface FormData {
 export interface AdminProductFormPageProps {
   productId?: string;
   onNavigate?: (path: string) => void;
+  /** REQ-20260510-0001 dev-3: Form / Bilingual Preview tab mode (driven by
+   *  ?mode=preview in the URL via the AdminProductEditWrapper). Defaults
+   *  to 'form' so the create page (no productId) keeps its current
+   *  behavior. */
+  mode?: 'form' | 'preview';
+  onModeChange?: (next: 'form' | 'preview') => void;
 }
 
 const STEPS = ['basic', 'images', 'packages', 'extras', 'preview'] as const;
@@ -141,6 +149,8 @@ function SortableImage({
 export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
   productId,
   onNavigate,
+  mode = 'form',
+  onModeChange,
 }) => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language === 'zh' || i18n.language === 'zh-CN';
@@ -1128,9 +1138,30 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
 
   // ────────────────────────────── Main Render ──────────────────────────────
 
+  // REQ-20260510-0001 dev-3: build a Product preview snapshot from current
+  // form state (NOT from the saved product on the server) so the admin
+  // sees their unsaved edits in the bilingual preview. Mirrors the shape
+  // productService.transformApiProduct produces, but reads from form/local
+  // state directly. Only relevant in edit mode + preview tab.
+  const previewProduct: PreviewProduct | null = isEditMode ? buildPreviewProduct(
+    productId ?? 'draft',
+    form,
+    images,
+    highlights,
+    regions,
+    categories,
+    suppliers,
+  ) : null;
+
   if (loading) {
     return <div className={styles.loadingOverlay}>{t('supplier.productForm.loadingProduct')}</div>;
   }
+
+  // Bilingual preview Tab — only available on existing products (need an ID
+  // for the BroadcastChannel guard, and the preview rendering depends on
+  // the product having been saved at least once for stable image URLs).
+  const showPreviewTab = isEditMode;
+  const inPreviewMode = showPreviewTab && mode === 'preview';
 
   return (
     <div className={styles.container}>
@@ -1147,7 +1178,52 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
         {isEditMode ? t('admin.products.form.editTitle') : t('admin.products.form.createTitle')}
       </h1>
 
-      {/* Step Indicator */}
+      {/* REQ-20260510-0001 dev-3: Form / Bilingual Preview tabs */}
+      {showPreviewTab && (
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={() => onModeChange?.('form')}
+            style={{
+              padding: '10px 16px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mode === 'form' ? '2px solid #1d4ed8' : '2px solid transparent',
+              color: mode === 'form' ? '#1d4ed8' : '#64748b',
+              fontWeight: mode === 'form' ? 600 : 400,
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            {t('admin.products.form.tabForm', { defaultValue: 'Form' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange?.('preview')}
+            style={{
+              padding: '10px 16px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: mode === 'preview' ? '2px solid #1d4ed8' : '2px solid transparent',
+              color: mode === 'preview' ? '#1d4ed8' : '#64748b',
+              fontWeight: mode === 'preview' ? 600 : 400,
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            {t('admin.products.form.tabPreview', { defaultValue: '🌐 Bilingual Preview' })}
+          </button>
+        </div>
+      )}
+
+      {/* Preview mode body */}
+      {inPreviewMode && previewProduct && (
+        <AdminBilingualPreview previewData={previewProduct} productId={productId} />
+      )}
+
+      {/* Step Indicator (form mode) */}
+      {!inPreviewMode && (
+      <>
       <div className={styles.stepper}>
         {STEPS.map((key, i) => (
           <React.Fragment key={key}>
@@ -1259,8 +1335,78 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };
+
+// REQ-20260510-0001 dev-3: form-state → Product snapshot used by the
+// in-form bilingual preview Tab. Mirrors transformApiProduct's output
+// shape so the same ProductDetailPage component renders identically
+// whether fed by the public API (production C-end) or by an admin
+// editing draft (this preview Tab).
+function buildPreviewProduct(
+  id: string,
+  form: FormData,
+  imageItems: Array<{ url: string; sort_order: number; is_cover: boolean }>,
+  highlightItems: Array<{ title_zh: string; title_en: string }>,
+  regions: Array<{ id: number; slug: string; name_zh: string; name_en: string }>,
+  categories: Array<{ id: number; slug: string; name_zh: string; name_en: string }>,
+  suppliers: Array<{ id: number }>,
+): PreviewProduct {
+  const sortedImages = [...imageItems].sort((a, b) => {
+    if (a.is_cover !== b.is_cover) return a.is_cover ? -1 : 1;
+    return a.sort_order - b.sort_order;
+  });
+  const region = regions.find((r) => r.id === form.region_id);
+  const category = categories.find((c) => c.id === form.category_id);
+  const supplier = suppliers.find((s) => s.id === form.supplier_id);
+  let parsedTags: ProductTag[] = [];
+  try {
+    const raw = JSON.parse(form.tags || '[]');
+    if (Array.isArray(raw)) parsedTags = raw as ProductTag[];
+  } catch {
+    /* ignore — tag string is admin-edited and may be free text in transit */
+  }
+  return {
+    id,
+    title: form.name_zh,
+    titleEn: form.name_en,
+    description: form.description_zh || form.summary_zh,
+    descriptionEn: form.description_en || form.summary_en,
+    images: sortedImages.map((img) => img.url).filter((u) => !!u),
+    price: parseFloat(form.price_from) || 0,
+    currency: 'AUD',
+    rating: 0,
+    reviewCount: 0,
+    location: form.address_zh,
+    locationEn: form.address_en,
+    duration: form.duration,
+    highlights: highlightItems.map((h) => h.title_zh).filter((s) => !!s),
+    highlightsEn: highlightItems.map((h) => h.title_en).filter((s) => !!s),
+    inclusions: [],
+    exclusions: [],
+    category: category
+      ? { id: category.slug, name: category.name_zh, nameEn: category.name_en }
+      : { id: '', name: '', nameEn: '' },
+    destination: region
+      ? {
+        id: region.slug,
+        name: region.name_zh,
+        nameEn: region.name_en,
+        region: '南澳大利亚',
+        regionEn: 'South Australia',
+      }
+      : { id: '', name: '', nameEn: '', region: '', regionEn: '' },
+    tags: parsedTags,
+    availability: 'available',
+    instantConfirmation: true,
+    freeCancellation: true,
+    supplierId: String(supplier?.id ?? form.supplier_id),
+    createdAt: '',
+    updatedAt: '',
+  };
+}
 
 export default AdminProductFormPage;

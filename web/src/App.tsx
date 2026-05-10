@@ -1095,12 +1095,26 @@ function AdminProductNewWrapper() {
 }
 
 // 包装组件：AdminProductEditWrapper
+// REQ-20260510-0001 dev-3: ?mode=preview 切到双语 Preview Tab；mode=form 走表单视图。
 function AdminProductEditWrapper() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mode = searchParams.get('mode') === 'preview' ? 'preview' : 'form';
+  const setMode = (next: 'form' | 'preview') => {
+    const sp = new URLSearchParams(searchParams);
+    if (next === 'preview') sp.set('mode', 'preview');
+    else sp.delete('mode');
+    setSearchParams(sp, { replace: false });
+  };
   return (
     <AdminLayout>
-      <AdminProductFormPage productId={id} onNavigate={(path) => navigate(path)} />
+      <AdminProductFormPage
+        productId={id}
+        onNavigate={(path) => navigate(path)}
+        mode={mode}
+        onModeChange={setMode}
+      />
     </AdminLayout>
   );
 }
