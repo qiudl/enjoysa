@@ -53,6 +53,8 @@ import (
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	teamhandler "enjoysa-backend/internal/team/handler"
 	teamstore "enjoysa-backend/internal/team/store"
+	tourismhandler "enjoysa-backend/internal/tourism/handler"
+	tourismstore "enjoysa-backend/internal/tourism/store"
 	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
 	aftersalesstore "enjoysa-backend/internal/aftersales/store"
 	"enjoysa-backend/internal/ai/translate"
@@ -781,6 +783,46 @@ func Setup(cfg Config) *gin.Engine {
 			superAdmin.DELETE("/admins/:id", adminHandler.DeleteAdmin)
 			superAdmin.POST("/admins/:id/status", adminHandler.ToggleAdminStatus)
 			superAdmin.POST("/admins/:id/reset-password", adminHandler.ResetAdminPassword)
+
+			// REQ-20260510-0002 · 1C: Tourism knowledge-base CRUD.
+			// Mounted under super_admin because the RBAC matrix has no
+			// `tourism.manage` authority yet — when we split that out in a
+			// follow-up, the route can move to a regular permissioned group
+			// without changing the handler shape.
+			tourismAdminStore := tourismstore.NewAdminStore(cfg.DB)
+			tourismAdminHandler := tourismhandler.NewAdminHandler(tourismAdminStore)
+			tour := superAdmin.Group("/tourism")
+			{
+				tour.GET("/attractions", tourismAdminHandler.ListAttractions)
+				tour.POST("/attractions", tourismAdminHandler.CreateAttraction)
+				tour.GET("/attractions/:id", tourismAdminHandler.GetAttraction)
+				tour.PUT("/attractions/:id", tourismAdminHandler.UpdateAttraction)
+				tour.DELETE("/attractions/:id", tourismAdminHandler.DeleteAttraction)
+
+				tour.GET("/accommodations", tourismAdminHandler.ListAccommodations)
+				tour.POST("/accommodations", tourismAdminHandler.CreateAccommodation)
+				tour.GET("/accommodations/:id", tourismAdminHandler.GetAccommodation)
+				tour.PUT("/accommodations/:id", tourismAdminHandler.UpdateAccommodation)
+				tour.DELETE("/accommodations/:id", tourismAdminHandler.DeleteAccommodation)
+
+				tour.GET("/food", tourismAdminHandler.ListFood)
+				tour.POST("/food", tourismAdminHandler.CreateFood)
+				tour.GET("/food/:id", tourismAdminHandler.GetFood)
+				tour.PUT("/food/:id", tourismAdminHandler.UpdateFood)
+				tour.DELETE("/food/:id", tourismAdminHandler.DeleteFood)
+
+				tour.GET("/experiences", tourismAdminHandler.ListExperiences)
+				tour.POST("/experiences", tourismAdminHandler.CreateExperience)
+				tour.GET("/experiences/:id", tourismAdminHandler.GetExperience)
+				tour.PUT("/experiences/:id", tourismAdminHandler.UpdateExperience)
+				tour.DELETE("/experiences/:id", tourismAdminHandler.DeleteExperience)
+
+				tour.GET("/pricing-benchmarks", tourismAdminHandler.ListPricingBenchmarks)
+				tour.POST("/pricing-benchmarks", tourismAdminHandler.CreatePricingBenchmark)
+				tour.GET("/pricing-benchmarks/:id", tourismAdminHandler.GetPricingBenchmark)
+				tour.PUT("/pricing-benchmarks/:id", tourismAdminHandler.UpdatePricingBenchmark)
+				tour.DELETE("/pricing-benchmarks/:id", tourismAdminHandler.DeletePricingBenchmark)
+			}
 		}
 	}
 
