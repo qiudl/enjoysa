@@ -432,15 +432,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     const name = isZh ? pkg.name_zh : (pkg.name_en || pkg.name_zh);
                     const desc = isZh ? pkg.desc_zh : (pkg.desc_en || pkg.desc_zh);
                     const isSelected = pkg.id === selectedPackageId;
-                    // REQ-20260509-0035: stock_total = -1 → 无限量；
-                    // remaining > 10 → 不显示（避免压力）；2-10 → "仅剩 X 份"警示色；
-                    // 0 → 整个套餐 disable + "已售罄"。
+                    // REQ-20260509-0035: stock_total = -1 → 无限量；0 → 已售罄。
+                    // REQ-20260511-0002: 警示阈值改读 pkg.low_stock_threshold（默认 5），
+                    // 与 supplier/admin「剩余 ≤ N 时通知补货」字段一致；
+                    // threshold = 0（supplier 已关闭预警）→ C 端也不显示「仅剩」徽章。
                     const total = pkg.stock_total;
                     const sold = pkg.stock_sold ?? 0;
                     const isLimited = typeof total === 'number' && total >= 0;
                     const remaining = isLimited ? Math.max(0, (total ?? 0) - sold) : Infinity;
                     const isSoldOut = isLimited && remaining === 0;
-                    const showWarning = isLimited && remaining > 0 && remaining <= 10;
+                    const threshold = pkg.low_stock_threshold ?? 5;
+                    const showWarning = isLimited && remaining > 0 && threshold > 0 && remaining <= threshold;
                     return (
                       <button key={pkg.id}
                         className={`${styles.packageCard} ${isSelected ? styles.packageCardSelected : ''} ${isSoldOut ? styles.packageCardDisabled : ''}`}
