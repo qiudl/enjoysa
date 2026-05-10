@@ -44,6 +44,7 @@ function transformOrder(o: ApiOrder): Order {
       quantity: o.quantity || o.guest_count,
       unitPrice: o.unit_price,
       subtotal: o.total_price,
+      totalPrice: o.total_price,
       travelDate: o.booking_date,
       participants: [{ type: 'adult' as const, count: o.guest_count || o.quantity }],
     }],
