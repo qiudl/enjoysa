@@ -27,6 +27,8 @@ export interface ApiProductPackage {
   // REQ-20260509-0035: -1 = 无限量；前端按 (stock_total - stock_sold) 算 remaining。
   stock_total?: number;
   stock_sold?: number;
+  // REQ-20260510-0004: 0 = 关闭；>0 触发 inventory_low 通知阈值。
+  low_stock_threshold?: number;
 }
 
 // 后端产品亮点

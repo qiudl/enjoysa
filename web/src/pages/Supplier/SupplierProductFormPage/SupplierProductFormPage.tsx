@@ -210,6 +210,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
             // REQ-20260509-0035
             stock_total: pkg.stock_total ?? -1,
             stock_sold: pkg.stock_sold ?? 0,
+            // REQ-20260510-0004
+            low_stock_threshold: pkg.low_stock_threshold ?? 5,
           })),
         );
         setHighlights(
@@ -271,6 +273,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
         sort_order: i,
         // REQ-20260509-0035
         stock_total: pkg.stock_total ?? -1,
+        // REQ-20260510-0004
+        low_stock_threshold: pkg.low_stock_threshold ?? 5,
       })),
       highlights: highlights.map((h, i) => ({
         title_zh: h.title_zh,
@@ -403,6 +407,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       _id: uid(), name_zh: '', name_en: '', desc_zh: '', desc_en: '', price: 0,
       // REQ-20260509-0035
       stock_total: -1, stock_sold: 0,
+      // REQ-20260510-0004: 默认 5 阈值
+      low_stock_threshold: 5,
     }]);
   };
 
@@ -743,6 +749,27 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
                   </div>
                 )}
               </div>
+              {/* REQ-20260510-0004: 低库存阈值。0 = 关闭预警，>0 触发 inventory_low。-1 套餐隐藏（无意义）。 */}
+              {pkg.stock_total !== -1 && (
+                <div className={styles.formGroup} style={{ maxWidth: 180 }}>
+                  <label className={styles.label}>
+                    {t('supplier.productForm.lowStockThreshold', '低库存阈值')}
+                  </label>
+                  <input type="number" className={styles.input}
+                    value={pkg.low_stock_threshold ?? 5}
+                    placeholder="5"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      updatePackage(pkg._id, 'low_stock_threshold', v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0));
+                    }}
+                    min="0" step="1" />
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                    {(pkg.low_stock_threshold ?? 5) === 0
+                      ? t('supplier.productForm.lowStockThresholdOff', '已关闭预警')
+                      : t('supplier.productForm.lowStockThresholdHint', '剩余 ≤ {{n}} 时通知补货', { n: pkg.low_stock_threshold ?? 5 })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))

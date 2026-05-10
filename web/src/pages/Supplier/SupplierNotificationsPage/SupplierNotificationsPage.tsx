@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, ShoppingCart, Settings, DollarSign, Check, Star, Trash2, Loader2 } from 'lucide-react';
+import { Bell, ShoppingCart, Settings, DollarSign, Check, Star, Trash2, Loader2, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { supplierNotificationService, type ApiNotification } from '../../../services/supplierNotificationService';
 import styles from './SupplierNotificationsPage.module.css';
 
@@ -16,6 +16,9 @@ const typeIcons: Record<string, React.ReactNode> = {
   new_review: <Star size={16} />,
   settlement: <DollarSign size={16} />,
   system: <Settings size={16} />,
+  // REQ-20260510-0004
+  inventory_low: <AlertTriangle size={16} />,
+  inventory_out: <AlertOctagon size={16} />,
 };
 
 const typeColors: Record<string, string> = {
@@ -26,6 +29,9 @@ const typeColors: Record<string, string> = {
   new_review: '#8b5cf6',
   settlement: '#10b981',
   system: '#6b7280',
+  // REQ-20260510-0004
+  inventory_low: '#f59e0b',
+  inventory_out: '#dc2626',
 };
 
 function formatTime(dateStr: string): string {

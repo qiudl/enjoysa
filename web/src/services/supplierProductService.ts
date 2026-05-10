@@ -57,6 +57,9 @@ export interface PackagePayload {
   // stock_sold 由后端维护，编辑表单会把它当作只读展示。
   stock_total?: number;
   stock_sold?: number;
+  // REQ-20260510-0004: per-package alert threshold. 0 = alerts off; >0 fires
+  // an inventory_low notification when remaining drops to/below this.
+  low_stock_threshold?: number;
 }
 
 export interface HighlightPayload {
