@@ -1,8 +1,10 @@
 package tourism_agent
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"enjoysa-backend/pkg/response"
 
@@ -28,10 +30,26 @@ import (
 // Handler exposes the agent over HTTP. Construct via NewHandler.
 type Handler struct {
 	agent *Agent
+	// REQ-20260510-0011 dev-2A: optional cache + store for the C-end
+	// embedded buttons. Pre-2A handlers (generate-content, pricing-suggest)
+	// don't use these — they keep working when the new fields are nil so
+	// existing tests don't need to be updated.
+	cache *Cache
+	store Store
 }
 
 func NewHandler(agent *Agent) *Handler {
 	return &Handler{agent: agent}
+}
+
+// WithCEndCacheStore plumbs in the cache + store for the C-end endpoints
+// (Explain / FitCheck / Nearby). Returns the same handler so callers can
+// chain on NewHandler. nil store is allowed for tests that only exercise
+// the older endpoints.
+func (h *Handler) WithCEndCacheStore(cache *Cache, store Store) *Handler {
+	h.cache = cache
+	h.store = store
+	return h
 }
 
 // generateContentRequest is the wire-format. The skeleton fields are all
@@ -154,4 +172,122 @@ func hasEditorIdentity(c *gin.Context) bool {
 	// Plain consumer-side user_id intentionally not accepted here — those
 	// users don't have a product-edit page to embed this in.
 	return false
+}
+
+// REQ-20260510-0011 Phase 2 dev-2A — C-end "📍 周边还有什么" button.
+//
+// No LLM call: we just query the KB by (council, category) and return up
+// to 5 active entries. Cached 24h because KB content changes slowly and
+// the entry list is shared across all users viewing the same product.
+//
+// Why we accept (council, category) in the body rather than (product_id):
+//   - keeps the agent package decoupled from product store internals
+//   - the frontend already has the loaded Product so passing the dims
+//     adds no extra round-trip
+//   - lets future supplier-side use (preview "what's nearby this draft")
+//     reuse the endpoint without a saved product
+
+type nearbyRequest struct {
+	Category       string `json:"category"`
+	Council        string `json:"council"`
+	ExcludeProduct uint   `json:"exclude_product_id,omitempty"`
+	Limit          int    `json:"limit,omitempty"`
+}
+
+type nearbyResponse struct {
+	Items  []nearbyItem `json:"items"`
+	Cached bool         `json:"cached"`
+}
+
+type nearbyItem struct {
+	Type    string `json:"type"`
+	ID      uint   `json:"id"`
+	NameZh  string `json:"name_zh"`
+	NameEn  string `json:"name_en,omitempty"`
+	Council string `json:"council,omitempty"`
+}
+
+const (
+	nearbyDefaultLimit = 5
+	nearbyMaxLimit     = 5
+	nearbyTTL          = 24 * time.Hour
+)
+
+// Nearby handles POST /api/v1/ai/tourism/nearby.
+//
+// Anonymous callers are allowed — this is a pure C-end browsing aid and
+// the per-IP rate limiter (cendRateLimiter) on the route group already
+// rejects abusive callers without needing auth.
+func (h *Handler) Nearby(c *gin.Context) {
+	if h.cache == nil || h.store == nil {
+		response.ServerError(c, "C-end cache/store not wired")
+		return
+	}
+
+	var req nearbyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.Category == "" || req.Council == "" {
+		response.BadRequest(c, "category and council are required")
+		return
+	}
+	limit := req.Limit
+	if limit <= 0 || limit > nearbyMaxLimit {
+		limit = nearbyDefaultLimit
+	}
+
+	cacheKey := "nearby:" + req.Category + ":" + req.Council
+	var items []nearbyItem
+	cached, err := h.cache.GetOrCompute(c.Request.Context(), cacheKey, nearbyTTL, &items,
+		func(ctx context.Context) (any, error) {
+			return h.lookupNearby(ctx, req.Category, req.Council, req.ExcludeProduct, limit)
+		})
+	if err != nil {
+		response.ServerError(c, "Failed to fetch nearby: "+err.Error())
+		return
+	}
+
+	response.Success(c, nearbyResponse{Items: items, Cached: cached})
+}
+
+// lookupNearby is the cache-miss path. Returns up to `limit` KB entries
+// matching (council, category), excluding the source product if it
+// happens to be in the KB itself (rare, but Phase 1 ETL can sync product
+// experiences into tourism_experiences). The exclusion is best-effort
+// since matching by ID across two tables (products vs tourism_*) doesn't
+// have a strict FK; we just filter post-fetch by ID equality.
+func (h *Handler) lookupNearby(
+	ctx context.Context,
+	category string,
+	council string,
+	excludeProductID uint,
+	limit int,
+) ([]nearbyItem, error) {
+	hits, err := h.store.SearchKnowledge(ctx, SearchParams{
+		Category: category,
+		Council:  council,
+		Limit:    limit + 1, // pull one extra in case we filter out the source product
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]nearbyItem, 0, limit)
+	for _, h := range hits {
+		if excludeProductID > 0 && h.ID == excludeProductID && h.Type == "experience" {
+			continue
+		}
+		out = append(out, nearbyItem{
+			Type:    h.Type,
+			ID:      h.ID,
+			NameZh:  h.NameZh,
+			NameEn:  h.NameEn,
+			Council: h.Council,
+		})
+		if len(out) >= limit {
+			break
+		}
+	}
+	return out, nil
 }

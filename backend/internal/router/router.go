@@ -477,14 +477,33 @@ func Setup(cfg Config) *gin.Engine {
 		tourGroup.Use(tourismAgentLimiter.Middleware())
 		tourGroup.Use(middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB))
 		{
+			tourismAgentStore := tourismagent.NewGORMStore(cfg.DB)
 			tourismAgentInst := tourismagent.New(
 				llmRegistry.Default(),
-				tourismagent.NewGORMStore(cfg.DB),
+				tourismAgentStore,
 				cfg.AIConfig.Model,
 			)
-			tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst)
+			// REQ-20260510-0011 dev-2A: handler also needs the cache + store
+			// for the C-end Nearby endpoint (cached 24h, no LLM).
+			tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst).
+				WithCEndCacheStore(tourismagent.NewCache(cfg.DB), tourismAgentStore)
 			tourGroup.POST("/generate-content", tourismAgentHandler.GenerateContent)
 			tourGroup.POST("/pricing-suggest", tourismAgentHandler.PricingSuggest)
+		}
+
+		// REQ-20260510-0011 Phase 2 dev-2A: C-end embedded buttons (Nearby
+		// only in this PR; Explain + FitCheck land in 2A-ext). Mounts on a
+		// fresh sub-group with its own 6 r/min IP limiter so anonymous
+		// visitors can't starve the supplier/admin tourism path. No auth
+		// requirement — these are public browsing aids cached 24h.
+		cendTourismLimiter := aichatmw.NewIPRateLimiter(6.0/60.0, 6) // 6 req/min, burst 6
+		cendTourGroup := aiGroup.Group("/tourism")
+		cendTourGroup.Use(cendTourismLimiter.Middleware())
+		{
+			cendTourismStore := tourismagent.NewGORMStore(cfg.DB)
+			cendTourismHandler := tourismagent.NewHandler(nil).
+				WithCEndCacheStore(tourismagent.NewCache(cfg.DB), cendTourismStore)
+			cendTourGroup.POST("/nearby", cendTourismHandler.Nearby)
 		}
 	}
 

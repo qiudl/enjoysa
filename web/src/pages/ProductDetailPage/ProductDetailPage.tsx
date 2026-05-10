@@ -5,6 +5,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const SmartFAQ = lazy(() => import('../../components/AI/SmartFAQ/SmartFAQ'));
 const FitCheck = lazy(() => import('../../components/AI/FitCheck/FitCheck'));
 const ReviewSummary = lazy(() => import('../../components/AI/ReviewSummary/ReviewSummary'));
+// REQ-20260510-0011 dev-2A: lazy-loaded so the C-end button + service code
+// only ship when the user actually scrolls to a product detail page.
+const TourismNearbyButton = lazy(() => import('../../components/AI/TourismNearbyButton/TourismNearbyButton').then((m) => ({ default: m.TourismNearbyButton })));
 import {
   Header,
   Footer,
@@ -325,6 +328,21 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {product.freeCancellation && <span className={styles.badge}>✓ {t('product.freeCancellation')}</span>}
               </div>
               <p className={styles.description}>{product.description}</p>
+              {/* REQ-20260510-0011 dev-2A: C-end "📍 周边还有什么" KB browsing
+                  aid. Hidden in previewMode (admin/supplier draft preview)
+                  to avoid firing C-end traffic + caching wrong dimensions.
+                  Skipped when category/destination dims are missing — the
+                  server would 400 anyway. */}
+              {!previewMode && product.category.id && product.destination.nameEn && (
+                <Suspense fallback={null}>
+                  <TourismNearbyButton
+                    category={product.category.id}
+                    council={product.destination.nameEn}
+                    excludeProductId={Number(product.id)}
+                    language={currentLang}
+                  />
+                </Suspense>
+              )}
               <div className={styles.infoGrid}>
                 <div className={styles.infoItem}>
                   <span className={styles.infoLabel}>⏱ {t('product.duration')}</span>

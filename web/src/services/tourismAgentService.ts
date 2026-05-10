@@ -90,6 +90,30 @@ export interface TourismPricingResponse {
 
 type EditorRole = 'supplier' | 'admin';
 
+// REQ-20260510-0011 Phase 2 dev-2A — C-end browsing aids ("📍 周边还有什么").
+// Mounted under a separate /api/v1/ai/tourism/* sub-group with a 6 r/min/IP
+// limiter, no auth requirement. Cached server-side 24h since KB content
+// changes slowly and the result is the same for every visitor on a product.
+export interface TourismNearbyRequest {
+  category: string;
+  council: string;
+  exclude_product_id?: number;
+  limit?: number; // server caps at 5
+}
+
+export interface TourismNearbyItem {
+  type: string; // attraction | accommodation | food | experience
+  id: number;
+  name_zh: string;
+  name_en?: string;
+  council?: string;
+}
+
+export interface TourismNearbyResponse {
+  items: TourismNearbyItem[];
+  cached: boolean;
+}
+
 export const tourismAgentService = {
   generateContent(req: TourismGenerateRequest, role: EditorRole) {
     return post<TourismGenerateResponse>(
@@ -104,5 +128,12 @@ export const tourismAgentService = {
       req,
       role,
     );
+  },
+  /**
+   * REQ-20260510-0011 dev-2A: fetch nearby KB entries for the C-end
+   * "📍 周边还有什么" button. No auth (public endpoint), no role param.
+   */
+  nearby(req: TourismNearbyRequest) {
+    return post<TourismNearbyResponse>('/ai/tourism/nearby', req);
   },
 };
