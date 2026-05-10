@@ -212,6 +212,44 @@ func (s *ProductStore) UpdateStatus(id uint, status model.ProductStatus) error {
 	return s.db.Model(&model.Product{}).Where("id = ?", id).Update("status", status).Error
 }
 
+// PackageFlat is the row shape for the packages-flat endpoint (REQ-20260510-0005,
+// Excel import template + preview). One row per (product, package) — joining
+// products.name_zh in so the template / preview UI can render package context
+// without an extra round-trip.
+type PackageFlat struct {
+	ProductID         uint   `json:"product_id" gorm:"column:product_id"`
+	ProductNameZh     string `json:"product_name_zh" gorm:"column:product_name_zh"`
+	PackageID         uint   `json:"package_id" gorm:"column:package_id"`
+	PackageNameZh     string `json:"package_name_zh" gorm:"column:package_name_zh"`
+	StockTotal        int    `json:"stock_total" gorm:"column:stock_total"`
+	StockSold         int    `json:"stock_sold" gorm:"column:stock_sold"`
+	LowStockThreshold int    `json:"low_stock_threshold" gorm:"column:low_stock_threshold"`
+}
+
+// ListPackagesFlat returns flat package rows for Excel-import template
+// generation (REQ-20260510-0005). supplierID > 0 narrows to that supplier
+// (used by the supplier-side endpoint); productIDs narrows further to the
+// caller's current page (cap aligns with batch-stock 50 cap on the handler
+// side, this layer doesn't impose its own).
+func (s *ProductStore) ListPackagesFlat(supplierID uint, productIDs []uint) ([]PackageFlat, error) {
+	var rows []PackageFlat
+	tx := s.db.Table("product_packages AS pp").
+		Joins("JOIN products p ON p.id = pp.product_id AND p.deleted_at IS NULL").
+		Where("pp.deleted_at IS NULL").
+		Select("pp.product_id AS product_id, p.name_zh AS product_name_zh, pp.id AS package_id, pp.name_zh AS package_name_zh, pp.stock_total AS stock_total, pp.stock_sold AS stock_sold, pp.low_stock_threshold AS low_stock_threshold").
+		Order("pp.product_id ASC, pp.sort_order ASC, pp.id ASC")
+	if supplierID > 0 {
+		tx = tx.Where("p.supplier_id = ?", supplierID)
+	}
+	if len(productIDs) > 0 {
+		tx = tx.Where("pp.product_id IN ?", productIDs)
+	}
+	if err := tx.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // DB exposes the underlying connection so callers can compose multi-table
 // transactions (e.g. submit-for-review enqueues a translation task in the
 // same commit as the product status flip).

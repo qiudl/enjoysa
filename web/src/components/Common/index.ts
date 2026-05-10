@@ -40,3 +40,6 @@ export type { RegionCardProps } from './RegionCard';
 
 export { GoogleMap } from './GoogleMap';
 export type { GoogleMapProps } from './GoogleMap';
+
+export { ExcelImport } from './ExcelImport';
+export type { ExcelImportProps, ApplyRow } from './ExcelImport';

@@ -1725,8 +1725,13 @@ func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 // heavy UpdateProduct delete-recreate flow (which would reset translation
 // state, audit, and re-trigger AI work). Lets ops set stock_total directly
 // from the product list. stock_sold stays untouched — server-maintained.
+//
+// REQ-20260510-0005: low_stock_threshold optional companion field — Excel
+// import path lets ops set per-package alert threshold in one go. Pointer so
+// "not in body" stays distinguishable from "set to 0" (0 = alerts off).
 type updatePackageStockRequest struct {
-	StockTotal int `json:"stock_total"` // -1 = unlimited; >= 0 = explicit cap
+	StockTotal        int  `json:"stock_total"` // -1 = unlimited; >= 0 = explicit cap
+	LowStockThreshold *int `json:"low_stock_threshold,omitempty"`
 }
 
 func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
@@ -1748,6 +1753,10 @@ func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
 	}
 	if req.StockTotal < -1 {
 		response.BadRequest(c, "stock_total must be >= -1 (-1 = unlimited)")
+		return
+	}
+	if req.LowStockThreshold != nil && *req.LowStockThreshold < 0 {
+		response.BadRequest(c, "low_stock_threshold must be >= 0 (0 = alerts off)")
 		return
 	}
 
@@ -1791,6 +1800,9 @@ func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
 	if transitioning {
 		updates["stock_sold"] = finalSold
 	}
+	if req.LowStockThreshold != nil {
+		updates["low_stock_threshold"] = *req.LowStockThreshold
+	}
 	if err := h.db.Model(&productmodel.ProductPackage{}).
 		Where("id = ?", pkgID).
 		Updates(updates).Error; err != nil {
@@ -1804,14 +1816,21 @@ func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
 		if transitioning {
 			msg += fmt.Sprintf(" | unlimited→limited transition: stock_sold %d → %d (recomputed from orders excl. cancelled/refunded)", pkg.StockSold, finalSold)
 		}
+		if req.LowStockThreshold != nil {
+			msg += fmt.Sprintf(" | low_stock_threshold: %d → %d", pkg.LowStockThreshold, *req.LowStockThreshold)
+		}
 		h.audit.Log(c, "stock_update", "product_package", uint(pkgID), msg)
 	}
 
-	response.Success(c, gin.H{
+	resp := gin.H{
 		"id":          pkgID,
 		"stock_total": req.StockTotal,
 		"stock_sold":  finalSold,
-	})
+	}
+	if req.LowStockThreshold != nil {
+		resp["low_stock_threshold"] = *req.LowStockThreshold
+	}
+	response.Success(c, resp)
 }
 
 // REQ-20260510-0003: admin hygiene tool — force-recompute stock_sold for
@@ -1864,6 +1883,53 @@ func (h *AdminHandler) RecomputeStockSold(c *gin.Context) {
 		"stock_sold_after":  realSold,
 		"diff":              realSold - pkg.StockSold,
 	})
+}
+
+// REQ-20260510-0005: flat package listing for the Excel-import template.
+// Admin variant — no supplier scoping; accepts product_ids=1,2,3 to scope
+// to the caller's current page (cap stays at frontend, server tolerates up
+// to 200 IDs to leave headroom). Reuses the same store helper supplier uses,
+// just with supplierID=0 (no filter).
+func (h *AdminHandler) ListPackagesFlat(c *gin.Context) {
+	productIDs, err := parseProductIDsParam(c.Query("product_ids"))
+	if err != nil {
+		response.BadRequest(c, "Invalid product_ids: "+err.Error())
+		return
+	}
+
+	rows, err := h.productStore.ListPackagesFlat(0, productIDs)
+	if err != nil {
+		response.ServerError(c, "Failed to list packages")
+		return
+	}
+	response.Success(c, rows)
+}
+
+// parseProductIDsParam parses a comma-separated `product_ids=1,2,3` query
+// param into a []uint. Empty input returns (nil, nil) meaning "no filter".
+// Caps at 200 to keep the SQL IN clause reasonable.
+func parseProductIDsParam(raw string) ([]uint, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	parts := strings.Split(raw, ",")
+	if len(parts) > 200 {
+		return nil, fmt.Errorf("too many product_ids (max 200)")
+	}
+	ids := make([]uint, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.ParseUint(p, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid product_id %q", p)
+		}
+		ids = append(ids, uint(n))
+	}
+	return ids, nil
 }
 
 // REQ-20260509-0035 Phase 3b: list-page batch toolbar — adjust stock for

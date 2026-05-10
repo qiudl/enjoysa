@@ -1426,6 +1426,7 @@
       "title": "Product Review",
       "search": "Search products...",
       "export": "Export",
+      "excelImport": "Excel Import",
       "empty": "No products found",
       "showing": "Showing {{from}}-{{to}} of {{total}} products",
       "stats": {
@@ -1934,6 +1935,7 @@
       "batchOffline": "Batch Deactivate",
       "batchDelete": "Batch Delete",
       "batchStock": "Batch Adjust Stock",
+      "excelImport": "Excel Import",
       "batchConfirm": "Are you sure you want to {{action}} {{count}} products?",
       "statusLabels": {
         "active": "Active",

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"enjoysa-backend/internal/core/logger"
@@ -948,8 +949,11 @@ func (h *SupplierProductHandler) ScheduleCalendar(c *gin.Context) {
 // PATCH 端点 (admin_handler.go UpdatePackageStock)，但加 supplier_id ownership
 // 校验避免 supplier 改别家产品的库存。stock_sold 服务端维护，请求里只传
 // stock_total。绕开 UpdateProduct 的 delete-recreate 重型流程。
+//
+// REQ-20260510-0005: low_stock_threshold optional companion (mirror admin).
 type updatePackageStockRequest struct {
-	StockTotal int `json:"stock_total"`
+	StockTotal        int  `json:"stock_total"`
+	LowStockThreshold *int `json:"low_stock_threshold,omitempty"`
 }
 
 func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
@@ -972,6 +976,10 @@ func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
 	}
 	if req.StockTotal < -1 {
 		response.BadRequest(c, "stock_total must be >= -1 (-1 = unlimited)")
+		return
+	}
+	if req.LowStockThreshold != nil && *req.LowStockThreshold < 0 {
+		response.BadRequest(c, "low_stock_threshold must be >= 0 (0 = alerts off)")
 		return
 	}
 
@@ -1025,6 +1033,9 @@ func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
 	if transitioning {
 		updates["stock_sold"] = finalSold
 	}
+	if req.LowStockThreshold != nil {
+		updates["low_stock_threshold"] = *req.LowStockThreshold
+	}
 	if err := h.productStore.DB().Model(&model.ProductPackage{}).
 		Where("id = ?", pkgID).
 		Updates(updates).Error; err != nil {
@@ -1038,12 +1049,19 @@ func (h *SupplierProductHandler) UpdatePackageStock(c *gin.Context) {
 	} else {
 		logger.Infof("supplier %d set product %d package %d stock_total %d → %d", supplierID, productID, pkgID, pkg.StockTotal, req.StockTotal)
 	}
+	if req.LowStockThreshold != nil {
+		logger.Infof("supplier %d set product %d package %d low_stock_threshold %d → %d", supplierID, productID, pkgID, pkg.LowStockThreshold, *req.LowStockThreshold)
+	}
 
-	response.Success(c, gin.H{
+	resp := gin.H{
 		"id":          pkgID,
 		"stock_total": req.StockTotal,
 		"stock_sold":  finalSold,
-	})
+	}
+	if req.LowStockThreshold != nil {
+		resp["low_stock_threshold"] = *req.LowStockThreshold
+	}
+	response.Success(c, resp)
 }
 
 // REQ-20260509-0035 Phase 3b: supplier mirror of admin batch-stock. Ownership
@@ -1123,6 +1141,59 @@ func (h *SupplierProductHandler) BatchAdjustStock(c *gin.Context) {
 		result.UpdatedProducts, result.UpdatedPackages, result.SkippedUnlimited)
 
 	response.Success(c, result)
+}
+
+// REQ-20260510-0005: supplier-side flat package listing for the Excel-import
+// template. Same shape as admin variant (admin_handler.ListPackagesFlat) but
+// scoped to the calling supplier — store layer enforces supplier_id, so a
+// supplier never sees another supplier's packages even if they pass arbitrary
+// product_ids.
+func (h *SupplierProductHandler) ListPackagesFlat(c *gin.Context) {
+	supplierID := h.getSupplierID(c)
+	if supplierID == 0 {
+		response.Forbidden(c, "Access denied")
+		return
+	}
+
+	productIDs, err := parseProductIDsParamSupplier(c.Query("product_ids"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_PRODUCT_IDS", "Invalid product_ids: "+err.Error())
+		return
+	}
+
+	rows, err := h.productStore.ListPackagesFlat(supplierID, productIDs)
+	if err != nil {
+		response.ServerError(c, "Failed to list packages")
+		return
+	}
+	response.Success(c, rows)
+}
+
+// parseProductIDsParamSupplier mirrors the admin handler's helper. Kept
+// inline (not extracted to a shared package) to avoid pulling supplier code
+// into the admin import graph just for one parser. Caps at 200 IDs.
+func parseProductIDsParamSupplier(raw string) ([]uint, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	parts := strings.Split(raw, ",")
+	if len(parts) > 200 {
+		return nil, fmt.Errorf("too many product_ids (max 200)")
+	}
+	ids := make([]uint, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.ParseUint(p, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid product_id %q", p)
+		}
+		ids = append(ids, uint(n))
+	}
+	return ids, nil
 }
 
 // ScheduleAlerts 库存预警

@@ -200,6 +200,19 @@ export interface BatchStockResponse {
   affected_product_ids: number[];
 }
 
+// REQ-20260510-0005: Excel 导入模板行 — 一行一 package。后端
+// /products/packages-flat 端点返回。stock_sold 给前端做"不可低于已售"
+// 校验用，模板里隐藏导出。
+export interface PackageFlat {
+  product_id: number;
+  product_name_zh: string;
+  package_id: number;
+  package_name_zh: string;
+  stock_total: number;
+  stock_sold: number;
+  low_stock_threshold: number;
+}
+
 export interface PendingCountsResponse {
   products: number;
   suppliers: number;
@@ -443,10 +456,18 @@ export const adminService = {
 
   // REQ-20260509-0035 Phase 2: 列表页快速调整库存。绕开 updateProduct 重型
   // 流程（不触发翻译/审核 reset）。stock_total = -1 表示无限量。
-  async updatePackageStock(productId: number, packageId: number, stockTotal: number) {
-    return patch<{ id: number; stock_total: number; stock_sold: number }>(
+  // REQ-20260510-0005: lowStockThreshold 可选 — Excel 导入时一并下发。
+  async updatePackageStock(
+    productId: number,
+    packageId: number,
+    stockTotal: number,
+    lowStockThreshold?: number,
+  ) {
+    const body: { stock_total: number; low_stock_threshold?: number } = { stock_total: stockTotal };
+    if (lowStockThreshold !== undefined) body.low_stock_threshold = lowStockThreshold;
+    return patch<{ id: number; stock_total: number; stock_sold: number; low_stock_threshold?: number }>(
       `/admin/products/${productId}/packages/${packageId}/stock`,
-      { stock_total: stockTotal },
+      body,
       'admin',
     );
   },
@@ -455,6 +476,16 @@ export const adminService = {
   // 套餐 stock_total。op=add/sub 跳过 unlimited(-1)；op=set/zero 覆写含 -1。
   async batchAdjustStock(req: BatchStockRequest) {
     return post<BatchStockResponse>('/admin/products/batch-stock', req, 'admin');
+  },
+
+  // REQ-20260510-0005: Excel 导入用 — flat 套餐行（一行一 package）。
+  // productIds 可选，传入时按当前列表页范围裁剪（cap 200，由后端验证）；
+  // 不传则返回全量（admin 跨 supplier）。
+  async listPackagesFlat(productIds?: number[]) {
+    const qs = productIds && productIds.length > 0
+      ? `?product_ids=${productIds.join(',')}`
+      : '';
+    return get<PackageFlat[]>(`/admin/products/packages-flat${qs}`, 'admin');
   },
 
   // REQ-20260509-0004: ZH→EN translation for admin-edited products. The

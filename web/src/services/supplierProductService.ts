@@ -5,7 +5,7 @@
 
 import { get, post, put, patch, del, getAccessToken } from './api';
 import type { ApiProduct, ApiProductSchedule } from './productService';
-import type { BatchStockRequest, BatchStockResponse } from './adminService';
+import type { BatchStockRequest, BatchStockResponse, PackageFlat } from './adminService';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
@@ -132,11 +132,19 @@ export const supplierProductService = {
    * REQ-20260509-0035 Phase 3a: 列表页快速调整库存。绕开 update() 重型流程
    * （不触发翻译重置 / 不重新走审核）。stock_total = -1 表示无限量。
    * 后端镜像 admin 的同名端点，加 supplier ownership 校验。
+   * REQ-20260510-0005: lowStockThreshold 可选 — Excel 导入时一并下发。
    */
-  async updatePackageStock(productId: number, packageId: number, stockTotal: number) {
-    return patch<{ id: number; stock_total: number; stock_sold: number }>(
+  async updatePackageStock(
+    productId: number,
+    packageId: number,
+    stockTotal: number,
+    lowStockThreshold?: number,
+  ) {
+    const body: { stock_total: number; low_stock_threshold?: number } = { stock_total: stockTotal };
+    if (lowStockThreshold !== undefined) body.low_stock_threshold = lowStockThreshold;
+    return patch<{ id: number; stock_total: number; stock_sold: number; low_stock_threshold?: number }>(
       `/supplier/products/${productId}/packages/${packageId}/stock`,
-      { stock_total: stockTotal },
+      body,
       'supplier',
     );
   },
@@ -148,6 +156,17 @@ export const supplierProductService = {
    */
   async batchAdjustStock(req: BatchStockRequest) {
     return post<BatchStockResponse>('/supplier/products/batch-stock', req, 'supplier');
+  },
+
+  /**
+   * REQ-20260510-0005: Excel 导入用 — supplier 端 flat 套餐行（仅自家产品）。
+   * 后端按 ctx supplier_id 强制 scope，前端无需传 supplier_id。
+   */
+  async listPackagesFlat(productIds?: number[]) {
+    const qs = productIds && productIds.length > 0
+      ? `?product_ids=${productIds.join(',')}`
+      : '';
+    return get<PackageFlat[]>(`/supplier/products/packages-flat${qs}`, 'supplier');
   },
 
   /** 提交审核 */
