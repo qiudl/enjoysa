@@ -53,6 +53,7 @@ import (
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	teamhandler "enjoysa-backend/internal/team/handler"
 	teamstore "enjoysa-backend/internal/team/store"
+	tourismagent "enjoysa-backend/internal/ai/tourism_agent"
 	tourismetl "enjoysa-backend/internal/tourism/etl"
 	tourismhandler "enjoysa-backend/internal/tourism/handler"
 	tourismstore "enjoysa-backend/internal/tourism/store"
@@ -456,6 +457,26 @@ func Setup(cfg Config) *gin.Engine {
 		if imageUploadHandler != nil {
 			// FIX #15: Use OptionalAnyAuth so both supplier and admin can upload
 		aiGroup.POST("/upload-image", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), imageUploadHandler.Upload)
+		}
+
+		// REQ-20260510-0002 · Phase 1 · 1F: tourism agent (supplier/admin
+		// embedded "✨ AI 生成" + "💰 AI 建议价格" buttons). Mounted as a
+		// sub-group with its own 1/s burst-3 limiter from rate_limit.go so a
+		// chatty supplier doesn't starve the other /api/v1/ai/* scenes that
+		// share the global 2/s burst-5 limiter.
+		tourismAgentLimiter := tourismagent.NewRateLimiter()
+		tourGroup := aiGroup.Group("/tourism")
+		tourGroup.Use(tourismAgentLimiter.Middleware())
+		tourGroup.Use(middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB))
+		{
+			tourismAgentInst := tourismagent.New(
+				llmRegistry.Default(),
+				tourismagent.NewGORMStore(cfg.DB),
+				cfg.AIConfig.Model,
+			)
+			tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst)
+			tourGroup.POST("/generate-content", tourismAgentHandler.GenerateContent)
+			tourGroup.POST("/pricing-suggest", tourismAgentHandler.PricingSuggest)
 		}
 	}
 

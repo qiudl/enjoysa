@@ -1183,6 +1183,24 @@
         "errorsLabel": "{{n}} errors"
       }
     },
+    "tourismAgent": {
+      "button": "✨ AI Generate",
+      "busy": "Generating...",
+      "tooltip": "Grounded in the South Australia tourism knowledge base",
+      "disabledHint": "Pick a council and category before using AI Generate",
+      "refsCount": "based on {{n}} entries",
+      "refsTooltip": "How many KB entries this generation referenced",
+      "pricing": {
+        "button": "💰 AI Suggest Price",
+        "busy": "Looking up...",
+        "tooltip": "Suggested price based on the benchmark library",
+        "disabledHint": "Set council, category and a duration before asking for a price",
+        "suggestion": "Suggested",
+        "samples": "{{n}} samples",
+        "apply": "Apply suggested",
+        "insufficient": "Not enough samples (only {{n}} similar products) — no suggestion yet."
+      }
+    },
     "aiChatTest": {
       "title": "AI Chat Regression Console",
       "subtitle": "Run preset scenarios against the supplier AI chat to detect drift in the three-layer guard (prompt + tool desc + handler single-turn dedupe). Each scenario costs one LLM call and writes real chat_messages.",

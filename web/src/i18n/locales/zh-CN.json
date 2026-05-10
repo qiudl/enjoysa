@@ -1183,6 +1183,24 @@
         "errorsLabel": "{{n}} 条错误"
       }
     },
+    "tourismAgent": {
+      "button": "✨ AI 生成",
+      "busy": "生成中...",
+      "tooltip": "基于南澳旅游知识库生成",
+      "disabledHint": "请先填写区域 (Council) 和品类后再用 AI 生成",
+      "refsCount": "基于 {{n}} 条知识",
+      "refsTooltip": "本次生成引用了多少条知识库条目",
+      "pricing": {
+        "button": "💰 AI 建议价格",
+        "busy": "查询中...",
+        "tooltip": "基于行情库给出价格建议",
+        "disabledHint": "请先填写区域 (Council)、品类、典型时长后再用 AI 建议价格",
+        "suggestion": "建议价",
+        "samples": "样本 {{n}}",
+        "apply": "采用建议价",
+        "insufficient": "样本不足（仅 {{n}} 个相似产品），暂不给出价格建议。"
+      }
+    },
     "aiChatTest": {
       "title": "AI Chat 回归测试控制台",
       "subtitle": "用预设场景跑供应商 AI Chat，校验三层防护（prompt + tool desc + handler 单轮去重）行为是否退化。每条场景一次 LLM 调用，会真实写 chat_messages。",
