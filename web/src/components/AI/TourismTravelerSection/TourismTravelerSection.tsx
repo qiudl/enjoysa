@@ -36,7 +36,11 @@ type PanelState<T> =
 const FIT_QUERY_MAX = 200;
 
 export const TourismTravelerSection: React.FC<TourismTravelerSectionProps> = ({ productId }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // REQ-20260510-0014: pass current locale to tourism agent so EN users
+  // get English AI output. Backend defaults to zh-CN when omitted.
+  const aiLang: 'zh-CN' | 'en-US' =
+    i18n.language === 'en' || i18n.language.startsWith('en-') ? 'en-US' : 'zh-CN';
 
   const [explainOpen, setExplainOpen] = useState(false);
   const [explainState, setExplainState] = useState<PanelState<TourismExplainResponse>>({ kind: 'idle' });
@@ -54,7 +58,7 @@ export const TourismTravelerSection: React.FC<TourismTravelerSectionProps> = ({ 
     if (explainState.kind === 'ok' || explainState.kind === 'loading') return;
     setExplainState({ kind: 'loading' });
     try {
-      const data = await tourismCEndService.explain(productId);
+      const data = await tourismCEndService.explain(productId, aiLang);
       setExplainState({ kind: 'ok', data });
     } catch (err) {
       setExplainState({
@@ -70,7 +74,7 @@ export const TourismTravelerSection: React.FC<TourismTravelerSectionProps> = ({ 
     if (q.length === 0) return;
     setFitState({ kind: 'loading' });
     try {
-      const data = await tourismCEndService.fitCheck(productId, q);
+      const data = await tourismCEndService.fitCheck(productId, q, aiLang);
       setFitState({ kind: 'ok', data });
     } catch (err) {
       setFitState({

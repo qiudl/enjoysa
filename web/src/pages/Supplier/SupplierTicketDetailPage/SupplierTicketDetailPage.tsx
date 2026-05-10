@@ -247,7 +247,10 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
     setAiDrafting(true);
     setAiDraftError(null);
     try {
-      const resp = await tourismSupplierService.draftReply(numericTicketId, 'supplier');
+      // REQ-20260510-0014: pass current locale so EN suppliers get English drafts.
+      const aiLang: 'zh-CN' | 'en-US' =
+        i18n.language === 'en' || i18n.language.startsWith('en-') ? 'en-US' : 'zh-CN';
+      const resp = await tourismSupplierService.draftReply(numericTicketId, 'supplier', aiLang);
       // Replace whatever was in the textarea — admin edits from there.
       setReplyText(resp.content);
     } catch (err) {

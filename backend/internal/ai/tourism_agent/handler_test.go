@@ -1057,3 +1057,162 @@ func TestCapRunes(t *testing.T) {
 		}
 	}
 }
+
+// ============================================================================
+// REQ-20260510-0014 · i18n language passthrough
+// ============================================================================
+
+func TestNormaliseLang(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"", "zh-CN"},
+		{"zh-CN", "zh-CN"},
+		{"zh-cn", "zh-CN"},
+		{"zh", "zh-CN"},
+		{"en", "en-US"},
+		{"EN", "en-US"},
+		{"en-US", "en-US"},
+		{"EN-us", "en-US"},
+		{"de", "zh-CN"},
+		{"garbage", "zh-CN"},
+	}
+	for _, tc := range cases {
+		if got := normaliseLang(tc.in); got != tc.want {
+			t.Errorf("normaliseLang(%q)=%q want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestExplainContent_LangSegregatesCache(t *testing.T) {
+	// Cache key must include language so EN/CN don't share entries.
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		10: {NameZh: "大鸭号", NameEn: "Big Duck",
+			Council: "Fleurieu Peninsula", Category: "attractions", Status: "approved"},
+	}}
+	h := newExplainHandler(
+		[]llmTurn{{content: "中文回答"}, {content: "English answer"}},
+		nil, lookup,
+	)
+
+	c1, w1 := newCtx(http.MethodPost, "/", []byte(`{"product_id":10,"language":"zh-CN"}`))
+	h.ExplainContent(c1)
+	if w1.Header().Get("X-Cache") != "MISS" || w1.Code != 200 {
+		t.Fatalf("cn first: code=%d cache=%s body=%s", w1.Code, w1.Header().Get("X-Cache"), w1.Body.String())
+	}
+	if !strings.Contains(w1.Body.String(), "中文回答") {
+		t.Errorf("cn first body missing zh content: %s", w1.Body.String())
+	}
+
+	c2, w2 := newCtx(http.MethodPost, "/", []byte(`{"product_id":10,"language":"en-US"}`))
+	h.ExplainContent(c2)
+	if w2.Header().Get("X-Cache") != "MISS" || w2.Code != 200 {
+		t.Fatalf("en first: code=%d cache=%s body=%s", w2.Code, w2.Header().Get("X-Cache"), w2.Body.String())
+	}
+	if !strings.Contains(w2.Body.String(), "English answer") {
+		t.Errorf("en first body missing en content: %s", w2.Body.String())
+	}
+	if w1.Body.String() == w2.Body.String() {
+		t.Errorf("CN and EN cache entries should produce different bodies")
+	}
+
+	c3, w3 := newCtx(http.MethodPost, "/", []byte(`{"product_id":10,"language":"zh-CN"}`))
+	h.ExplainContent(c3)
+	if w3.Header().Get("X-Cache") != "HIT" {
+		t.Errorf("cn repeat should HIT, got %s", w3.Header().Get("X-Cache"))
+	}
+	if w3.Body.String() != w1.Body.String() {
+		t.Errorf("cn HIT body must match cn MISS body byte-for-byte")
+	}
+}
+
+func TestExplainContent_DefaultsToZhWhenLangOmitted(t *testing.T) {
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		1: {NameZh: "X", NameEn: "X-en", Council: "Adelaide",
+			Category: "wine", Status: "approved"},
+	}}
+	llm := &scriptedLLM{turns: []llmTurn{{content: "ok"}}}
+	agent := New(llm, &fakeStore{}, "x").WithMaxIterations(2)
+	h := NewHandler(agent)
+	h.SetExplainCache(NewTTLCache(1*time.Hour, 0))
+	h.SetProductLookup(lookup)
+
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":1}`))
+	h.ExplainContent(c)
+	if w.Code != 200 {
+		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
+	}
+	userMsg := llm.got[0].Messages[1].Content
+	if !strings.Contains(userMsg, "Output language: zh-CN") {
+		t.Errorf("missing zh-CN language directive in prompt:\n%s", userMsg)
+	}
+}
+
+func TestExplainContent_EnglishUsesEnglishAnchor(t *testing.T) {
+	// language=en-US → highlights anchor should be NameEn, not NameZh.
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		10: {NameZh: "大鸭号", NameEn: "Big Duck",
+			Council: "Fleurieu Peninsula", Category: "attractions", Status: "approved"},
+	}}
+	llm := &scriptedLLM{turns: []llmTurn{{content: "ok"}}}
+	agent := New(llm, &fakeStore{}, "x").WithMaxIterations(2)
+	h := NewHandler(agent)
+	h.SetExplainCache(NewTTLCache(1*time.Hour, 0))
+	h.SetProductLookup(lookup)
+
+	c, w := newCtx(http.MethodPost, "/", []byte(`{"product_id":10,"language":"en-US"}`))
+	h.ExplainContent(c)
+	if w.Code != 200 {
+		t.Fatalf("got %d want 200", w.Code)
+	}
+	userMsg := llm.got[0].Messages[1].Content
+	if !strings.Contains(userMsg, "Big Duck") {
+		t.Errorf("EN call should anchor on NameEn 'Big Duck':\n%s", userMsg)
+	}
+	if strings.Contains(userMsg, "highlights hints: 大鸭号") {
+		t.Errorf("EN call leaked Chinese name into highlights anchor:\n%s", userMsg)
+	}
+}
+
+func TestFitCheck_LanguagePassthrough(t *testing.T) {
+	lookup := &fakeProductLookup{seedByID: map[uint]*ProductSeed{
+		10: {NameZh: "X", Council: "Adelaide", Category: "wine", Status: "approved"},
+	}}
+	llm := &scriptedLLM{turns: []llmTurn{{content: "ok"}}}
+	agent := New(llm, &fakeStore{}, "x").WithMaxIterations(2)
+	h := NewHandler(agent)
+	h.SetProductLookup(lookup)
+
+	body := []byte(`{"product_id":10,"user_query":"with a 5-year-old","language":"en-US"}`)
+	c, w := newCtx(http.MethodPost, "/", body)
+	h.FitCheck(c)
+	if w.Code != 200 {
+		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
+	}
+	userMsg := llm.got[0].Messages[1].Content
+	if !strings.Contains(userMsg, "Output language: en-US") {
+		t.Errorf("EN call should pass en-US to BuildUserPrompt:\n%s", userMsg)
+	}
+}
+
+func TestDraftReply_LanguagePassthrough(t *testing.T) {
+	tl := &fakeTicketLookup{seedByID: map[uint]*TicketSeed{
+		1: {Subject: "refund?", LastCustomerMsg: "I want a refund."},
+	}}
+	llm := &scriptedLLM{turns: []llmTurn{{content: "ok"}}}
+	agent := New(llm, &fakeStore{}, "x").WithMaxIterations(2)
+	h := NewHandler(agent)
+	h.SetTicketLookup(tl)
+
+	body := []byte(`{"ticket_id":1,"language":"en-US"}`)
+	c, w := newCtx(http.MethodPost, "/", body)
+	c.Set("admin_id", uint(1))
+	h.DraftReply(c)
+	if w.Code != 200 {
+		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
+	}
+	userMsg := llm.got[0].Messages[1].Content
+	if !strings.Contains(userMsg, "Output language: en-US") {
+		t.Errorf("EN draft should pass en-US to prompt:\n%s", userMsg)
+	}
+}

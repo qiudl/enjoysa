@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"enjoysa-backend/pkg/response"
 
@@ -234,8 +235,25 @@ func hasEditorIdentity(c *gin.Context) bool {
 // Only product_id is required — the server does the product lookup and
 // builds the Agent skeleton internally so anonymous C-end callers never
 // have to know the product's council / category internals.
+//
+// Language (REQ-20260510-0014): optional — frontend passes the user's
+// current i18n locale ("zh-CN" or "en-US"). Falls back to zh-CN when
+// omitted so old clients keep working unchanged.
 type explainRequest struct {
-	ProductID uint `json:"product_id" binding:"required,min=1"`
+	ProductID uint   `json:"product_id" binding:"required,min=1"`
+	Language  string `json:"language"`
+}
+
+// normaliseLang collapses any input to one of the two supported codes,
+// defaulting to zh-CN. Defensive against frontend sending uppercase /
+// alternative forms ("EN", "en", "zh-cn"). REQ-20260510-0014.
+func normaliseLang(lang string) string {
+	switch strings.ToLower(lang) {
+	case "en-us", "en":
+		return "en-US"
+	default:
+		return "zh-CN"
+	}
 }
 
 // ExplainContent handles POST /api/v1/ai/tourism/c/explain.
@@ -260,8 +278,11 @@ func (h *Handler) ExplainContent(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	lang := normaliseLang(req.Language)
 
-	cacheKey := "explain:" + strconv.FormatUint(uint64(req.ProductID), 10)
+	// REQ-20260510-0014 D1: cache key includes language so EN/CN don't
+	// pollute each other's results.
+	cacheKey := "explain:" + lang + ":" + strconv.FormatUint(uint64(req.ProductID), 10)
 	if cached, ok := h.explainCache.Get(cacheKey); ok {
 		// Cache stores the full JSON response so a hit short-circuits all the
 		// way to the wire format with no re-marshal cost.
@@ -285,14 +306,22 @@ func (h *Handler) ExplainContent(c *gin.Context) {
 		return
 	}
 
+	// Highlights anchor: prefer the EN name when generating English text so
+	// the LLM doesn't pivot the answer around a Chinese name in the wrong
+	// locale. Falls back to zh name if EN is missing.
+	anchorName := seed.NameZh
+	if lang == "en-US" && seed.NameEn != "" {
+		anchorName = seed.NameEn
+	}
+
 	resp, err := h.agent.Generate(c.Request.Context(), GenerateRequest{
 		Field:    FieldExplainForUser,
-		Language: "zh-CN",
+		Language: lang,
 		Skeleton: Skeleton{
 			Category:        seed.Category,
 			Council:         seed.Council,
 			DurationMinutes: seed.DurationMinutes,
-			Highlights:      []string{seed.NameZh}, // anchor on product's own name
+			Highlights:      []string{anchorName},
 			Tags:            seed.Tags,
 		},
 	})
@@ -326,6 +355,7 @@ func (h *Handler) ExplainContent(c *gin.Context) {
 type fitCheckRequest struct {
 	ProductID uint   `json:"product_id" binding:"required,min=1"`
 	UserQuery string `json:"user_query" binding:"required"`
+	Language  string `json:"language"`
 }
 
 // FitCheckMaxQueryLen caps user-supplied free text before it reaches the LLM
@@ -363,6 +393,7 @@ func (h *Handler) FitCheck(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+	lang := normaliseLang(req.Language)
 
 	clean, ok := sanitizeUserQuery(req.UserQuery)
 	if !ok {
@@ -383,7 +414,7 @@ func (h *Handler) FitCheck(c *gin.Context) {
 
 	resp, err := h.agent.Generate(c.Request.Context(), GenerateRequest{
 		Field:    FieldFitCheck,
-		Language: "zh-CN",
+		Language: lang,
 		Skeleton: Skeleton{
 			Category:        seed.Category,
 			Council:         seed.Council,
@@ -456,7 +487,8 @@ func sanitizeUserQuery(raw string) (string, bool) {
 // server fetches the ticket itself + linked product (if any) so the caller
 // doesn't have to thread internals.
 type draftReplyRequest struct {
-	TicketID uint `json:"ticket_id" binding:"required,min=1"`
+	TicketID uint   `json:"ticket_id" binding:"required,min=1"`
+	Language string `json:"language"`
 }
 
 // DraftReplyMaxCustomerMsgLen caps the customer message we feed the LLM.
@@ -513,7 +545,7 @@ func (h *Handler) DraftReply(c *gin.Context) {
 
 	resp, err := h.agent.Generate(c.Request.Context(), GenerateRequest{
 		Field:    FieldDraftReply,
-		Language: "zh-CN",
+		Language: normaliseLang(req.Language),
 		Skeleton: skeleton,
 	})
 	if err != nil {
