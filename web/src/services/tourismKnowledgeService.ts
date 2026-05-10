@@ -246,6 +246,19 @@ export interface PricingBenchmarkFilter extends PageQuery {
 }
 
 // ============================================================================
+// Cold-start ETL summary (POST /admin/tourism/etl/run)
+// REQ-20260510-0002 · 1E
+// ============================================================================
+
+export interface EtlSummary {
+  products_scanned: number;
+  experiences_upserted: number;
+  products_skipped: number;
+  benchmarks_upserted: number;
+  errors?: string[];
+}
+
+// ============================================================================
 // Service object — one CRUD set per entity, all under /admin/tourism/*.
 // Lists return PaginatedResponse<T>; getters and writers return the row.
 // ============================================================================
@@ -334,5 +347,13 @@ export const tourismKnowledgeService = {
   },
   deletePricingBenchmark(id: number) {
     return del<void>(`/admin/tourism/pricing-benchmarks/${id}`, 'admin');
+  },
+
+  // --- ETL (REQ-20260510-0002 · 1E) ---
+  // Synchronous trigger; backend walks every approved product, upserts
+  // experiences (preserving admin's IsActive overrides) and recomputes
+  // pricing benchmarks. Expect a few seconds at current data volumes.
+  runEtl() {
+    return post<EtlSummary>('/admin/tourism/etl/run', undefined, 'admin');
   },
 };

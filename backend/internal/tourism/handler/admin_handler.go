@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"enjoysa-backend/internal/tourism/etl"
 	tourismmodel "enjoysa-backend/internal/tourism/model"
 	tourismstore "enjoysa-backend/internal/tourism/store"
 	"enjoysa-backend/pkg/response"
@@ -66,14 +67,51 @@ type Store interface {
 	DeletePricingBenchmark(ctx context.Context, id uint) error
 }
 
+// EtlRunner is the narrow contract the admin "Run ETL" endpoint depends on.
+// Defined here (not imported as the concrete *etl.Service) so handler tests
+// can inject a fake — running the real ETL needs Postgres + product fixtures
+// and is integration-shaped, not unit.
+type EtlRunner interface {
+	Run(ctx context.Context) (*etl.Summary, error)
+}
+
 // AdminHandler holds the Store interface — all gin handlers are pure
 // functions of (req, store).
+//
+// The etlRunner is optional. Router wires *etl.Service when *gorm.DB is
+// available; tests that don't exercise the ETL endpoint can leave it nil
+// (the handler 503s in that case rather than panicking).
 type AdminHandler struct {
-	store Store
+	store     Store
+	etlRunner EtlRunner
 }
 
 func NewAdminHandler(store Store) *AdminHandler {
 	return &AdminHandler{store: store}
+}
+
+// SetEtlRunner is wire-level, called once at router setup.
+func (h *AdminHandler) SetEtlRunner(r EtlRunner) {
+	h.etlRunner = r
+}
+
+// RunEtl is the admin-triggered "rebuild knowledge from products" button.
+// Synchronous on purpose — the ETL is a few seconds at current data volume
+// and the admin needs to see the summary before deciding what to activate.
+// If the run grows past ~30s in a future phase, switch to a job-id +
+// polling pattern; we don't need that complexity yet.
+func (h *AdminHandler) RunEtl(c *gin.Context) {
+	if h.etlRunner == nil {
+		response.Fail(c, http.StatusServiceUnavailable, "ETL_NOT_WIRED",
+			"ETL runner not configured on this server")
+		return
+	}
+	summary, err := h.etlRunner.Run(c.Request.Context())
+	if err != nil {
+		response.ServerError(c, "ETL run failed: "+err.Error())
+		return
+	}
+	response.Success(c, summary)
 }
 
 // parseUintParam reads :id from the path and returns it as a uint. On error

@@ -1172,6 +1172,15 @@
         "sampleHelper": "<3 insufficient / 3-4 low / 5-11 normal / ≥12 high",
         "deleteMessage": "Delete benchmark for {{cat}} / {{council}} / {{bucket}} / {{season}}?",
         "duplicateError": "A benchmark already exists for this (category, council, duration_bucket, season)"
+      },
+      "etl": {
+        "button": "Run cold-start ETL",
+        "running": "ETL running...",
+        "tooltip": "Reverse-extract knowledge from approved products",
+        "confirm": "This will scan every approved product and write into experiences + pricing benchmarks.\nNew rows default to IsActive=false (admin must activate); existing rows keep their IsActive choice.\nContinue?",
+        "summaryTitle": "ETL complete",
+        "summary": "Scanned {{scanned}} products, upserted {{exp}} experiences, {{bench}} pricing benchmarks, skipped {{skip}}.",
+        "errorsLabel": "{{n}} errors"
       }
     },
     "aiChatTest": {

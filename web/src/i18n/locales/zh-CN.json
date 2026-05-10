@@ -1172,6 +1172,15 @@
         "sampleHelper": "<3 不足 / 3-4 低 / 5-11 正常 / ≥12 高",
         "deleteMessage": "确定要删除「{{cat}} / {{council}} / {{bucket}} / {{season}}」行情吗？",
         "duplicateError": "已存在同 (category, council, duration_bucket, season) 的行情记录"
+      },
+      "etl": {
+        "button": "运行冷启动 ETL",
+        "running": "正在跑 ETL...",
+        "tooltip": "从已上架商品反向沉淀知识库",
+        "confirm": "将扫描所有已上架商品并反向写入 experiences + pricing benchmarks。\n新行 IsActive=false（admin 审核后启用），已存在行的 IsActive 不会被覆盖。\n继续？",
+        "summaryTitle": "ETL 完成",
+        "summary": "扫描 {{scanned}} 个商品，写入 {{exp}} 条 experiences，{{bench}} 条 pricing benchmarks，跳过 {{skip}} 条。",
+        "errorsLabel": "{{n}} 条错误"
       }
     },
     "aiChatTest": {

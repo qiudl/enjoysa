@@ -53,6 +53,7 @@ import (
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	teamhandler "enjoysa-backend/internal/team/handler"
 	teamstore "enjoysa-backend/internal/team/store"
+	tourismetl "enjoysa-backend/internal/tourism/etl"
 	tourismhandler "enjoysa-backend/internal/tourism/handler"
 	tourismstore "enjoysa-backend/internal/tourism/store"
 	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
@@ -791,8 +792,15 @@ func Setup(cfg Config) *gin.Engine {
 			// without changing the handler shape.
 			tourismAdminStore := tourismstore.NewAdminStore(cfg.DB)
 			tourismAdminHandler := tourismhandler.NewAdminHandler(tourismAdminStore)
+			// REQ-20260510-0002 · 1E: cold-start ETL — admin clicks the
+			// "rebuild from products" button on the tourism KB hub and we
+			// reverse-extract approved products into experiences +
+			// pricing benchmarks. Synchronous; idempotent; preserves any
+			// admin IsActive overrides.
+			tourismAdminHandler.SetEtlRunner(tourismetl.New(cfg.DB))
 			tour := superAdmin.Group("/tourism")
 			{
+				tour.POST("/etl/run", tourismAdminHandler.RunEtl)
 				tour.GET("/attractions", tourismAdminHandler.ListAttractions)
 				tour.POST("/attractions", tourismAdminHandler.CreateAttraction)
 				tour.GET("/attractions/:id", tourismAdminHandler.GetAttraction)

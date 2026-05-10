@@ -29,6 +29,51 @@
   margin: 0;
 }
 
+/* ETL summary banner (REQ-20260510-0002 · 1E) */
+.etlSummary {
+  margin: 0 0 1rem 0;
+  padding: 0.75rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  color: #14532d;
+  font-size: 0.875rem;
+}
+
+.etlSummary strong {
+  color: #166534;
+  margin-right: 0.5rem;
+}
+
+.etlErrors {
+  margin-top: 0.5rem;
+}
+
+.etlErrors summary {
+  cursor: pointer;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.etlErrors ul {
+  margin: 0.5rem 0 0 1rem;
+  padding: 0;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 0.75rem;
+  color: #6b7280;
+  list-style: disc;
+}
+
+.etlError {
+  margin: 0 0 1rem 0;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
 /* Tab nav */
 .tabs {
   display: flex;

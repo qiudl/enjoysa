@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"enjoysa-backend/internal/tourism/etl"
 	tourismmodel "enjoysa-backend/internal/tourism/model"
 	tourismstore "enjoysa-backend/internal/tourism/store"
 
@@ -1037,6 +1038,71 @@ func TestFoodCRUDFlow(t *testing.T) {
 	h.DeleteFood(c)
 	if w.Code != http.StatusOK {
 		t.Errorf("delete: got %d want 200", w.Code)
+	}
+}
+
+// ===========================================================================
+// ETL endpoint tests — fake EtlRunner so we don't need real Postgres.
+// ===========================================================================
+
+type fakeEtlRunner struct {
+	summary *etl.Summary
+	err     error
+	called  int
+}
+
+func (f *fakeEtlRunner) Run(_ context.Context) (*etl.Summary, error) {
+	f.called++
+	return f.summary, f.err
+}
+
+func TestRunEtl_NotWiredReturns503(t *testing.T) {
+	h := NewAdminHandler(&fakeStore{})
+	c, w := newCtx(http.MethodPost, "/", nil)
+	h.RunEtl(c)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("got %d want 503", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "ETL_NOT_WIRED") {
+		t.Errorf("error code missing from body: %s", w.Body.String())
+	}
+}
+
+func TestRunEtl_OKReturnsSummary(t *testing.T) {
+	h := NewAdminHandler(&fakeStore{})
+	runner := &fakeEtlRunner{
+		summary: &etl.Summary{
+			ProductsScanned:     10,
+			ExperiencesUpserted: 8,
+			ProductsSkipped:     2,
+			BenchmarksUpserted:  3,
+		},
+	}
+	h.SetEtlRunner(runner)
+
+	c, w := newCtx(http.MethodPost, "/", nil)
+	h.RunEtl(c)
+	if w.Code != http.StatusOK {
+		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
+	}
+	if runner.called != 1 {
+		t.Errorf("runner should be called exactly once, got %d", runner.called)
+	}
+	if !strings.Contains(w.Body.String(), `"experiences_upserted":8`) {
+		t.Errorf("summary fields missing from body: %s", w.Body.String())
+	}
+}
+
+func TestRunEtl_RunnerErrorMaps500(t *testing.T) {
+	h := NewAdminHandler(&fakeStore{})
+	h.SetEtlRunner(&fakeEtlRunner{err: errors.New("db timeout")})
+	c, w := newCtx(http.MethodPost, "/", nil)
+	h.RunEtl(c)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("got %d want 500", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "db timeout") {
+		t.Errorf("upstream error should bubble: %s", w.Body.String())
 	}
 }
 
