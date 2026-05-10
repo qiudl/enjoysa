@@ -181,6 +181,11 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [highlights, setHighlights] = useState<HighlightItem[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  // REQ-20260510-0001 dev-4: manual_override flags for the inline-edit
+  // toolbar. Loaded from the product when editing; updated optimistically
+  // on inline-edit save so the chip flips to amber without a refetch.
+  const [manualOverrideZh, setManualOverrideZh] = useState(false);
+  const [manualOverrideEn, setManualOverrideEn] = useState(false);
 
   // DnD sensors
   const sensors = useSensors(
@@ -230,6 +235,10 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
           status: p.status || 'approved',
           is_featured: p.is_featured || false,
         });
+        // REQ-20260510-0001 dev-4: pull manual_override flags so the
+        // inline-edit chips render the right color from first paint.
+        setManualOverrideZh(p.manual_override_zh ?? false);
+        setManualOverrideEn(p.manual_override_en ?? false);
         setImages(
           (p.images || []).map((img) => ({
             _id: uid(),
@@ -1218,7 +1227,67 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
 
       {/* Preview mode body */}
       {inPreviewMode && previewProduct && (
-        <AdminBilingualPreview previewData={previewProduct} productId={productId} />
+        <AdminBilingualPreview
+          previewData={previewProduct}
+          productId={productId}
+          values={{
+            // REQ-20260510-0001 dev-4: only the 3 fields whose backend
+            // columns currently support inline-edit are passed; the
+            // toolbar receives the full type but the backend whitelist
+            // (handler.IsManualOverrideField) gates writes.
+            title:        { zh: form.name_zh,        en: form.name_en },
+            subtitle:     { zh: form.summary_zh,     en: form.summary_en },
+            description:  { zh: form.description_zh, en: form.description_en },
+            highlights:   { zh: '', en: '' },
+            inclusions:   { zh: '', en: '' },
+            exclusions:   { zh: '', en: '' },
+            cancellation: { zh: '', en: '' },
+            itinerary:    { zh: '', en: '' },
+          }}
+          flags={{
+            // The product model carries one bilateral flag pair, not
+            // per-field — so every supported chip reflects the same
+            // ZH/EN lock state. Acceptable for v1; per-field locks are
+            // a schema follow-up.
+            title:        { zh: manualOverrideZh, en: manualOverrideEn },
+            subtitle:     { zh: manualOverrideZh, en: manualOverrideEn },
+            description:  { zh: manualOverrideZh, en: manualOverrideEn },
+            highlights:   { zh: false, en: false },
+            inclusions:   { zh: false, en: false },
+            exclusions:   { zh: false, en: false },
+            cancellation: { zh: false, en: false },
+            itinerary:    { zh: false, en: false },
+          }}
+          onFieldSave={async (field, next, sides) => {
+            if (!productId) return;
+            if (field !== 'title' && field !== 'subtitle' && field !== 'description') {
+              throw new Error(`Inline-edit not yet supported for field "${field}". Edit it via Form mode for now.`);
+            }
+            const payload: { zh?: string; en?: string } = {};
+            if (sides.zh) payload.zh = next.zh;
+            if (sides.en) payload.en = next.en;
+            await adminService.patchManualOverride(Number(productId), field, payload);
+            // Reflect the saved values + flag flips into form state so
+            // the bilingual preview re-renders with the new copy and
+            // the chip color updates without a refetch.
+            setForm((prev) => {
+              const update = { ...prev };
+              if (field === 'title') {
+                if (sides.zh) update.name_zh = next.zh;
+                if (sides.en) update.name_en = next.en;
+              } else if (field === 'subtitle') {
+                if (sides.zh) update.summary_zh = next.zh;
+                if (sides.en) update.summary_en = next.en;
+              } else {
+                if (sides.zh) update.description_zh = next.zh;
+                if (sides.en) update.description_en = next.en;
+              }
+              return update;
+            });
+            if (sides.zh) setManualOverrideZh(true);
+            if (sides.en) setManualOverrideEn(true);
+          }}
+        />
       )}
 
       {/* Step Indicator (form mode) */}

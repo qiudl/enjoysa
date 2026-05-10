@@ -87,6 +87,13 @@ export interface ApiProduct {
   is_featured: boolean;
   rating: number;
   review_count: number;
+  // REQ-20260509-0015 + REQ-20260510-0001 dev-4: bilateral "human edit lock"
+  // flags. When either side is true, the AI auto-fill / re-translate path
+  // skips that side so it can't clobber the manual entry. Backend writes
+  // them via the inline-edit PATCH (manual-override) endpoint and the
+  // 0015 Re-translate flow.
+  manual_override_zh?: boolean;
+  manual_override_en?: boolean;
   supplier?: {
     id: number;
     name: string;

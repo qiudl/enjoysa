@@ -2862,3 +2862,127 @@ func (h *AdminHandler) DeleteCategory(c *gin.Context) {
 
 	response.SuccessMessage(c, "Category deleted")
 }
+
+// REQ-20260510-0001 dev-4 — inline-edit endpoint for the bilingual preview
+// Tab. Receives a single (field, zh?, en?) tuple and writes ONLY the
+// columns that side carries plus flips the corresponding manual_override_*
+// flag, so 0015's flag invariant stays intact: any human ZH/EN edit "locks"
+// that side from being re-translated by the AI auto-fill paths.
+//
+// Why a dedicated handler rather than reusing PUT /admin/products/:id:
+// the existing UpdateProduct does delete-recreate of associations
+// (images / packages / highlights / faqs), which would clobber unsaved
+// admin work and reset every related child row just to nudge a single
+// title or description. Inline-edit is the one path where we want a
+// surgical column write + flag flip; everything else stays untouched.
+//
+// Field whitelist is small on purpose. The product model only has
+// ZH/EN doublets for name (title), summary (subtitle), and description.
+// inclusions/exclusions/cancellation/itinerary surfaces in the design
+// doc but lack DB columns today — they need a schema follow-up before
+// they can be inline-editable.
+type manualOverrideRequest struct {
+	Field string  `json:"field" binding:"required"`
+	Zh    *string `json:"zh,omitempty"`
+	En    *string `json:"en,omitempty"`
+}
+
+// manualOverrideField names the ZH/EN column pair on products that
+// inline-edit can currently write. Anyone adding to this map MUST
+// also add the column pair on productmodel.Product (or this PATCH
+// will silently be a no-op for that field).
+var manualOverrideFieldColumns = map[string]struct{ zh, en string }{
+	"title":       {zh: "name_zh", en: "name_en"},
+	"subtitle":    {zh: "summary_zh", en: "summary_en"},
+	"description": {zh: "description_zh", en: "description_en"},
+}
+
+func (h *AdminHandler) UpdateProductManualOverride(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+
+	var req manualOverrideRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.Zh == nil && req.En == nil {
+		response.BadRequest(c, "at least one of zh or en is required")
+		return
+	}
+	cols, ok := manualOverrideFieldColumns[req.Field]
+	if !ok {
+		response.BadRequest(c, "field not supported for inline-edit (allowed: title, subtitle, description)")
+		return
+	}
+
+	// Confirm product exists (and is not soft-deleted) before writing.
+	var existing productmodel.Product
+	if err := h.db.Select("id, name_zh, name_en").
+		Where("id = ?", uint(id)).
+		Take(&existing).Error; err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+
+	// Build the update map. Each side is independent: edit only ZH →
+	// only manual_override_zh flips; edit only EN → only
+	// manual_override_en flips; edit both (rare) → both flip.
+	updates := map[string]interface{}{}
+	if req.Zh != nil {
+		updates[cols.zh] = *req.Zh
+		updates["manual_override_zh"] = true
+	}
+	if req.En != nil {
+		updates[cols.en] = *req.En
+		updates["manual_override_en"] = true
+	}
+
+	if err := h.db.Model(&productmodel.Product{}).
+		Where("id = ?", uint(id)).
+		Updates(updates).Error; err != nil {
+		response.ServerError(c, "Failed to update product")
+		return
+	}
+
+	if h.audit != nil {
+		h.audit.Log(c, "manual_override", "product", uint(id),
+			manualOverrideAuditMessage(req.Field, req.Zh != nil, req.En != nil))
+	}
+
+	response.Success(c, gin.H{
+		"id":                  id,
+		"field":               req.Field,
+		"manual_override_zh":  req.Zh != nil,
+		"manual_override_en":  req.En != nil,
+	})
+}
+
+// manualOverrideAuditMessage builds the audit-log line for an inline-edit
+// write. Extracted as a pure helper so the audit-message format is locked
+// down by unit test (any change risks breaking the audit-log search tools
+// that admins use to retrace a specific edit).
+func manualOverrideAuditMessage(field string, zhTouched, enTouched bool) string {
+	sides := ""
+	if zhTouched {
+		sides = "zh"
+	}
+	if enTouched {
+		if sides != "" {
+			sides += "+"
+		}
+		sides += "en"
+	}
+	return fmt.Sprintf("inline-edit field=%s sides=%s", field, sides)
+}
+
+// IsManualOverrideField reports whether the given field name is currently
+// supported by the inline-edit endpoint. Exported so the frontend wiring
+// (and future tests) can stay in lockstep with the column whitelist.
+func IsManualOverrideField(field string) bool {
+	_, ok := manualOverrideFieldColumns[field]
+	return ok
+}
