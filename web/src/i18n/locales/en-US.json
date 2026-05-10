@@ -1091,7 +1091,8 @@
         "accommodations": "Accommodations",
         "food": "Food",
         "experiences": "Experiences",
-        "pricing": "Pricing"
+        "pricing": "Pricing",
+        "scrape": "Scrape"
       },
       "filter": {
         "council": "Council",
@@ -1181,6 +1182,25 @@
         "summaryTitle": "ETL complete",
         "summary": "Scanned {{scanned}} products, upserted {{exp}} experiences, {{bench}} pricing benchmarks, skipped {{skip}}.",
         "errorsLabel": "{{n}} errors"
+      },
+      "scrape": {
+        "run": "Run scrape",
+        "running": "Scraping...",
+        "confirm": "This will fetch SA Tourism public pages, run LLM extraction and write into staging.\n~1-2 minutes. Continue?",
+        "all": "All",
+        "pending": "Pending",
+        "promoted": "Promoted",
+        "rejected": "Rejected",
+        "empty": "No staging rows yet",
+        "promote": "Promote",
+        "reject": "Reject",
+        "confirmReject": "Confirm reject",
+        "rejectReasonPlaceholder": "Reason (optional)",
+        "promotedTo": "Promoted to attraction id={{id}}",
+        "rejectedFor": "Rejected: {{reason}}",
+        "jobDone": "Scrape job finished",
+        "jobSummary": "status={{status}}, scanned {{total}} URLs, +{{exp}} staging, skipped {{skip}}, errors {{err}}",
+        "lastError": "Last error"
       }
     },
     "tourismAgent": {
