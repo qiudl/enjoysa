@@ -385,6 +385,41 @@ func (s *ProductStore) IncrementPackageStock(tx *gorm.DB, packageID uint, qty in
 		Update("stock_sold", gorm.Expr("GREATEST(stock_sold - ?, 0)", qty)).Error
 }
 
+// stockSoldOccupyingStatuses — orders that count as "occupying inventory"
+// for stock_sold accounting (REQ-20260510-0003). Mirrors the live
+// DecrementPackageStock semantics: stock is held from the moment an order
+// is created (status=pending), and only released by IncrementPackageStock
+// when the order moves to cancelled or refunded.
+var stockSoldOccupyingStatusesNot = []string{"cancelled", "refunded"}
+
+// RecomputeStockSoldFromOrders returns the authoritative stock_sold count
+// for a package by SUMming order quantities directly from the orders table
+// (REQ-20260510-0003). Used by:
+//   - unlimited→limited transition path: the package's stored stock_sold
+//     for unlimited rows can drift from reality (Phase 1 asymmetry: cancels
+//     don't decrement when stock_total=-1); transitioning to a finite cap
+//     needs the truth source so the new cap reflects real occupancy.
+//   - admin recompute endpoint: hygiene tool to re-sync any package.
+//   - cmd/stock-backfill: scans + repairs limited packages whose stored
+//     stock_sold drifted (e.g. from an earlier unlimited period).
+//
+// Pass tx != nil when calling from within an existing transaction so the
+// SUM and any subsequent UPDATE see a consistent snapshot.
+func (s *ProductStore) RecomputeStockSoldFromOrders(packageID uint, tx *gorm.DB) (int, error) {
+	if tx == nil {
+		tx = s.db
+	}
+	var sum int64
+	err := tx.Table("orders").
+		Where("package_id = ? AND status NOT IN ?", packageID, stockSoldOccupyingStatusesNot).
+		Select("COALESCE(SUM(quantity), 0)").
+		Scan(&sum).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(sum), nil
+}
+
 // BatchAdjustStock applies a batch stock operation to all packages of the
 // given product IDs in a single transaction (REQ-20260509-0035 Phase 3b).
 //
@@ -464,19 +499,40 @@ func (s *ProductStore) BatchAdjustStock(productIDs []uint, op BatchAdjustStockOp
 			return err
 		}
 
-		// 3) For set/zero, pre-collect ALL below-sold conflicts so the
-		// frontend gets the full picture in one shot.
+		// 3) For set/zero, recompute stock_sold from orders for any package
+		// that's currently unlimited (REQ-20260510-0003): the stored
+		// stock_sold for unlimited rows can drift (cancels don't decrement
+		// when stock_total=-1), so the truth-source SUM(orders) is what
+		// the new finite cap must respect. Build a sold-source map so the
+		// below-sold check + final UPDATE both see the same value.
+		soldSource := make(map[uint]int, len(pkgs))
+		for _, p := range pkgs {
+			soldSource[p.ID] = p.StockSold
+		}
 		if op == BatchAdjustStockSet || op == BatchAdjustStockZero {
+			for _, p := range pkgs {
+				if p.StockTotal == -1 {
+					realSold, err := s.RecomputeStockSoldFromOrders(p.ID, tx)
+					if err != nil {
+						return err
+					}
+					soldSource[p.ID] = realSold
+				}
+			}
+
+			// Pre-collect ALL below-sold conflicts so the frontend gets
+			// the full picture in one shot.
 			target := value
 			if op == BatchAdjustStockZero {
 				target = 0
 			}
 			for _, p := range pkgs {
-				if target < p.StockSold {
+				realSold := soldSource[p.ID]
+				if target < realSold {
 					result.ConflictingPackages = append(result.ConflictingPackages, BatchAdjustStockConflict{
 						ProductID:      p.ProductID,
 						PackageID:      p.ID,
-						StockSold:      p.StockSold,
+						StockSold:      realSold,
 						RequestedTotal: target,
 					})
 				}
@@ -487,7 +543,8 @@ func (s *ProductStore) BatchAdjustStock(productIDs []uint, op BatchAdjustStockOp
 		}
 
 		// 4) Apply per package. Skip unchanged rows so the change list
-		// reflects actual writes.
+		// reflects actual writes. For unlimited→limited transitions on
+		// set/zero, write the recomputed stock_sold alongside stock_total.
 		affected := make(map[uint]struct{})
 		for _, p := range pkgs {
 			var newTotal int
@@ -517,9 +574,15 @@ func (s *ProductStore) BatchAdjustStock(productIDs []uint, op BatchAdjustStockOp
 			if newTotal == p.StockTotal {
 				continue
 			}
+			updates := map[string]interface{}{"stock_total": newTotal}
+			// On unlimited→limited transition, also set stock_sold to the
+			// authoritative recomputed value so the new cap is meaningful.
+			if p.StockTotal == -1 && newTotal != -1 {
+				updates["stock_sold"] = soldSource[p.ID]
+			}
 			if err := tx.Model(&model.ProductPackage{}).
 				Where("id = ?", p.ID).
-				Update("stock_total", newTotal).Error; err != nil {
+				Updates(updates).Error; err != nil {
 				return err
 			}
 			result.Changes = append(result.Changes, BatchAdjustStockChange{

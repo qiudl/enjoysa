@@ -1763,31 +1763,106 @@ func (h *AdminHandler) UpdatePackageStock(c *gin.Context) {
 		return
 	}
 
+	// REQ-20260510-0003: unlimited→limited transition. The stored
+	// stock_sold for unlimited rows can be inflated (Phase 1 asymmetry —
+	// cancels skip -1 packages) so trust SUM(orders) as the authoritative
+	// occupancy count and write it alongside the new finite stock_total.
+	transitioning := pkg.StockTotal == -1 && req.StockTotal != -1
+	finalSold := pkg.StockSold
+	if transitioning {
+		realSold, err := h.productStore.RecomputeStockSoldFromOrders(uint(pkgID), nil)
+		if err != nil {
+			response.ServerError(c, "Failed to recompute stock_sold from orders")
+			return
+		}
+		finalSold = realSold
+	}
+
 	// REQ-20260509-0035: 不允许把 stock_total 调到比 stock_sold 还低（会让
 	// 已售订单数大于库存，超卖语义颠倒）。运营要 force-下调，先取消订单回补。
-	if req.StockTotal != -1 && req.StockTotal < pkg.StockSold {
+	// 用 finalSold（含 transition 重算后的真实占用数）做比较。
+	if req.StockTotal != -1 && req.StockTotal < finalSold {
 		response.Fail(c, http.StatusUnprocessableEntity, "STOCK_BELOW_SOLD",
-			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, pkg.StockSold))
+			fmt.Sprintf("stock_total (%d) cannot be below already-sold (%d). Cancel orders first to free up sold count.", req.StockTotal, finalSold))
 		return
 	}
 
+	updates := map[string]interface{}{"stock_total": req.StockTotal}
+	if transitioning {
+		updates["stock_sold"] = finalSold
+	}
 	if err := h.db.Model(&productmodel.ProductPackage{}).
 		Where("id = ?", pkgID).
-		Update("stock_total", req.StockTotal).Error; err != nil {
+		Updates(updates).Error; err != nil {
 		response.ServerError(c, "Failed to update package stock")
 		return
 	}
 
-	// Audit
+	// Audit — note transition explicitly so the stock_sold jump is traceable.
 	if h.audit != nil {
-		h.audit.Log(c, "stock_update", "product_package", uint(pkgID),
-			fmt.Sprintf("product %d package %d stock_total: %d → %d", productID, pkgID, pkg.StockTotal, req.StockTotal))
+		msg := fmt.Sprintf("product %d package %d stock_total: %d → %d", productID, pkgID, pkg.StockTotal, req.StockTotal)
+		if transitioning {
+			msg += fmt.Sprintf(" | unlimited→limited transition: stock_sold %d → %d (recomputed from orders excl. cancelled/refunded)", pkg.StockSold, finalSold)
+		}
+		h.audit.Log(c, "stock_update", "product_package", uint(pkgID), msg)
 	}
 
 	response.Success(c, gin.H{
 		"id":          pkgID,
 		"stock_total": req.StockTotal,
-		"stock_sold":  pkg.StockSold,
+		"stock_sold":  finalSold,
+	})
+}
+
+// REQ-20260510-0003: admin hygiene tool — force-recompute stock_sold for
+// any package by SUMming orders directly. Useful when ops suspect drift
+// (e.g. an unlimited→limited transition done before this REQ shipped, or
+// any anomaly that left stored stock_sold ≠ truth source).
+func (h *AdminHandler) RecomputeStockSold(c *gin.Context) {
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid product ID")
+		return
+	}
+	pkgID, err := strconv.ParseUint(c.Param("pkgId"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid package ID")
+		return
+	}
+
+	var pkg productmodel.ProductPackage
+	if err := h.db.First(&pkg, pkgID).Error; err != nil {
+		response.NotFound(c, "Package not found")
+		return
+	}
+	if pkg.ProductID != uint(productID) {
+		response.BadRequest(c, "Package does not belong to product")
+		return
+	}
+
+	realSold, err := h.productStore.RecomputeStockSoldFromOrders(uint(pkgID), nil)
+	if err != nil {
+		response.ServerError(c, "Failed to recompute stock_sold from orders")
+		return
+	}
+
+	if err := h.db.Model(&productmodel.ProductPackage{}).
+		Where("id = ?", pkgID).
+		Update("stock_sold", realSold).Error; err != nil {
+		response.ServerError(c, "Failed to update package stock_sold")
+		return
+	}
+
+	if h.audit != nil {
+		h.audit.Log(c, "recompute_stock_sold", "product_package", uint(pkgID),
+			fmt.Sprintf("product %d package %d stock_sold: %d → %d (recomputed from orders excl. cancelled/refunded)", productID, pkgID, pkg.StockSold, realSold))
+	}
+
+	response.Success(c, gin.H{
+		"package_id":        pkgID,
+		"stock_sold_before": pkg.StockSold,
+		"stock_sold_after":  realSold,
+		"diff":              realSold - pkg.StockSold,
 	})
 }
 
