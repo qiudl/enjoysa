@@ -235,6 +235,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   // --- Early return for loading (after all hooks) ---
   const isLoading = loading || externalLoading || !product;
   if (isLoading) {
+    // REQ-20260510-0001 F2: previewMode 下不渲染 Header/Footer，让父容器（双语预览页）控制 chrome
+    if (previewMode) {
+      return <div className={styles.loadingContainer}><Loading size="lg" /></div>;
+    }
     return (
       <div className={styles.page}>
         <Header isLoggedIn={isLoggedIn} userName={userName} cartCount={cartCount}
@@ -278,8 +282,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   return (
     <div className={styles.page}>
-      <Header isLoggedIn={isLoggedIn} userName={userName} cartCount={cartCount}
-        onLoginClick={onLoginClick} onRegisterClick={onRegisterClick} onNavClick={onNavClick} />
+      {/* REQ-20260510-0001 F2: previewMode 下不渲染 Header/Footer，由父容器（双语预览页）提供 chrome */}
+      {!previewMode && (
+        <Header isLoggedIn={isLoggedIn} userName={userName} cartCount={cartCount}
+          onLoginClick={onLoginClick} onRegisterClick={onRegisterClick} onNavClick={onNavClick} />
+      )}
 
       <main className={styles.main}>
         <div className={styles.container}>
@@ -565,7 +572,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </div>
       </main>
 
-      <Footer />
+      {/* REQ-20260510-0001 F2: previewMode 下不渲染 Footer */}
+      {!previewMode && <Footer />}
     </div>
   );
 };

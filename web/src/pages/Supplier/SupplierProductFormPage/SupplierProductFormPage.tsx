@@ -307,6 +307,10 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
   };
 
   // ─── Save & submit ───
+  // REQ-20260510-0001 F2: save + submitForReview 行为不变（submit 触发翻译 worker），
+  // 但 navigate 目标从 /supplier/products 改为 /preview-bilingual —— 让 supplier 在
+  // 翻译跑完后能看 C 端中英双栏效果，缺陷 #11 修订: 此时 review_status=pending，
+  // Submit 按钮变为 "Already Submitted (pending review)" 灰按钮；要修改请 Back to Edit。
   const handleSaveAndSubmit = async () => {
     setSaving(true);
     try {
@@ -319,7 +323,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
         id = created.id;
       }
       await supplierProductService.submitForReview(id);
-      onNavigate?.('/supplier/products');
+      // 跳到双语预览页（不是列表）— 让 supplier 看到所见即所得效果
+      onNavigate?.(`/supplier/products/${id}/preview-bilingual`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Submit failed');
     }
