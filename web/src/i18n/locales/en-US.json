@@ -2955,5 +2955,26 @@
     "lastServerUpdate": "Last server update: {{time}}",
     "editFieldTitle": "Edit {{field}} ({{lang}})",
     "translationInProgressBadge": "Translating..."
+  },
+  "tourismC": {
+    "title": "AI insights for South Australia",
+    "subtitle": "Three angles on this product, grounded in our SA tourism knowledge base.",
+    "explain": {
+      "button": "💡 Tell me about it",
+      "loading": "Asking AI...",
+      "refs": "Based on {{n}} KB entries"
+    },
+    "fit": {
+      "button": "🤔 Will this suit me?",
+      "placeholder": "One line for the AI (e.g. \"with a 5-year-old\")",
+      "submit": "Ask AI",
+      "checking": "Checking...",
+      "privacy": "Used only for this single AI check; not stored."
+    },
+    "nearby": {
+      "button": "📍 What else is nearby",
+      "loading": "Looking up...",
+      "empty": "No more KB suggestions for this area yet"
+    }
   }
 }
