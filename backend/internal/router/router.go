@@ -684,6 +684,10 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.PATCH("/products/:id/packages/:pkgId/stock", adminHandler.UpdatePackageStock)
 		// REQ-20260510-0003: admin 数据 hygiene — 重算 stock_sold = SUM(orders) excl. cancelled/refunded
 		adminGroup.POST("/products/:id/packages/:pkgId/recompute-stock-sold", adminHandler.RecomputeStockSold)
+		// REQ-20260510-0001 dev-4: inline-edit endpoint for the bilingual preview Tab —
+		// surgical column write + manual_override flag flip; bypasses the heavy
+		// PUT delete-recreate flow.
+		adminGroup.PATCH("/products/:id/manual-override", adminHandler.UpdateProductManualOverride)
 
 		// REQ-20260509-0019: 批量审核 + 待审计数。Cap 50 / 请求；返回 per-item
 		// status 让前端能显示哪些跳过、哪些成功。pending-counts 给 admin 主页

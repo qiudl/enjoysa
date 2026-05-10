@@ -134,3 +134,57 @@ func TestParseProductIDsParam_RejectsOver200(t *testing.T) {
 		t.Errorf("expected error when more than 200 IDs supplied")
 	}
 }
+
+// REQ-20260510-0001 dev-4: inline-edit field whitelist + audit-message
+// format need to stay locked down because:
+//   - frontend chips render based on the same set; drift = stale UI
+//   - audit-log search tools key on the message format string
+//
+// The full handler depends on Postgres and an audit logger; these tests
+// cover the deterministic helper layer instead.
+
+func TestIsManualOverrideField_AllowedSet(t *testing.T) {
+	for _, want := range []string{"title", "subtitle", "description"} {
+		if !IsManualOverrideField(want) {
+			t.Errorf("expected %q to be allowed", want)
+		}
+	}
+}
+
+func TestIsManualOverrideField_RejectsUnknownAndDeferredFields(t *testing.T) {
+	// PRD R6 listed 8 fields; 5 are deferred until the schema follow-up
+	// adds the column pairs. Until then they MUST reject so the frontend
+	// can't lie that an edit was persisted.
+	for _, deferred := range []string{
+		"highlights", "inclusions", "exclusions", "cancellation", "itinerary",
+		"name_zh", "", "TITLE", "random",
+	} {
+		if IsManualOverrideField(deferred) {
+			t.Errorf("expected %q to be rejected", deferred)
+		}
+	}
+}
+
+func TestManualOverrideAuditMessage_ZhOnly(t *testing.T) {
+	got := manualOverrideAuditMessage("description", true, false)
+	want := "inline-edit field=description sides=zh"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestManualOverrideAuditMessage_EnOnly(t *testing.T) {
+	got := manualOverrideAuditMessage("title", false, true)
+	want := "inline-edit field=title sides=en"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestManualOverrideAuditMessage_BothSides(t *testing.T) {
+	got := manualOverrideAuditMessage("subtitle", true, true)
+	want := "inline-edit field=subtitle sides=zh+en"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

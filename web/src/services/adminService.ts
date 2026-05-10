@@ -478,6 +478,26 @@ export const adminService = {
     return post<BatchStockResponse>('/admin/products/batch-stock', req, 'admin');
   },
 
+  // REQ-20260510-0001 dev-4: inline-edit 写单字段 + 翻 manual_override 开关。
+  // 绕开 PUT product 的 delete-recreate 重型流程；仅 admin 可调（路由在
+  // adminGroup 下）。field 白名单 (title/subtitle/description) 必须与后端
+  // manualOverrideFieldColumns 同步。
+  async patchManualOverride(
+    productId: number,
+    field: 'title' | 'subtitle' | 'description',
+    sides: { zh?: string; en?: string },
+  ) {
+    const body: { field: string; zh?: string; en?: string } = { field };
+    if (sides.zh !== undefined) body.zh = sides.zh;
+    if (sides.en !== undefined) body.en = sides.en;
+    return patch<{
+      id: number;
+      field: string;
+      manual_override_zh: boolean;
+      manual_override_en: boolean;
+    }>(`/admin/products/${productId}/manual-override`, body, 'admin');
+  },
+
   // REQ-20260510-0005: Excel 导入用 — flat 套餐行（一行一 package）。
   // productIds 可选，传入时按当前列表页范围裁剪（cap 200，由后端验证）；
   // 不传则返回全量（admin 跨 supplier）。
