@@ -2950,5 +2950,26 @@
     "lastServerUpdate": "服务器最后更新：{{time}}",
     "editFieldTitle": "编辑 {{field}}（{{lang}}）",
     "translationInProgressBadge": "翻译中..."
+  },
+  "tourismC": {
+    "title": "南澳 AI 助你看看",
+    "subtitle": "基于平台南澳旅游知识库，给你三个角度看看这个产品",
+    "explain": {
+      "button": "💡 AI 讲讲这个",
+      "loading": "正在调用 AI ...",
+      "refs": "基于 {{n}} 条知识库条目"
+    },
+    "fit": {
+      "button": "🤔 适合我吗？",
+      "placeholder": "一句话告诉 AI（如 \"带 5 岁小孩\"）",
+      "submit": "让 AI 看看",
+      "checking": "判断中...",
+      "privacy": "仅用于本次 AI 判断，不会保存"
+    },
+    "nearby": {
+      "button": "📍 周边还有什么",
+      "loading": "查询中...",
+      "empty": "该区域暂无更多 KB 推荐"
+    }
   }
 }

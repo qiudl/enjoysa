@@ -5,6 +5,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const SmartFAQ = lazy(() => import('../../components/AI/SmartFAQ/SmartFAQ'));
 const FitCheck = lazy(() => import('../../components/AI/FitCheck/FitCheck'));
 const ReviewSummary = lazy(() => import('../../components/AI/ReviewSummary/ReviewSummary'));
+// REQ-20260510-0011 · 2A: 南澳 KB grounded 嵌入式 3 按钮（与上面的 FitCheck
+// 共存：FitCheck 是 profile-based（adults/children），TourismTravelerSection
+// 是 free-text + KB grounding，两者从不同角度覆盖访客判断需求）
+const TourismTravelerSection = lazy(() => import('../../components/AI/TourismTravelerSection'));
 import {
   Header,
   Footer,
@@ -377,6 +381,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <>
                 <Suspense fallback={null}>
                   <SmartFAQ productId={Number(productId)} language={isZh ? 'zh' : 'en'} />
+                </Suspense>
+
+                {/* REQ-20260510-0011 · 2A: 南澳 KB grounded 嵌入按钮组 */}
+                <Suspense fallback={null}>
+                  <TourismTravelerSection productId={Number(productId)} />
                 </Suspense>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

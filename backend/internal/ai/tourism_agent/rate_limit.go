@@ -1,24 +1,46 @@
 // Package tourism_agent orchestrates the tourism domain AI agent
-// (REQ-20260510-0002 · 南澳旅游 AI Agent · Phase 1).
-//
-// 1A 仅落地限流独立桶；后续 1B 引入 agent / tools / prompt / store / etl 等。
+// (REQ-20260510-0002 Phase 1 + REQ-20260510-0011 Phase 2).
 package tourism_agent
 
 import (
 	aichatmw "enjoysa-backend/internal/aichat/middleware"
 )
 
-// RateLimit constants (D1 决议)：tourism agent 单 IP 1/s burst 3。
-// 复用 aichatmw.IPRateLimiter，与 /api/v1/ai/* 总桶 (2/s, 5) 串联：
-// router.go 中先挂 aiGroup 的 limiter，再在 /tourism 子组挂本 limiter，
-// 双层并联让单 IP 实际吞吐不超 1/s，避免 LLM 成本被刷穿。
+// Supplier/admin limiter (Phase 1, REQ-0002 1A): 1/s burst 3.
+// Mounted on the existing /api/v1/ai/tourism/* group so a chatty
+// supplier hitting "✨ AI 生成" can't starve other AI scenes that
+// share the global 2/s burst-5 aiGroup limiter.
 const (
 	rateLimitRPS   = 1.0
 	rateLimitBurst = 3
 )
 
-// NewRateLimiter 返回 tourism agent 专用的 IP 限流器。
-// 1B+ 在 router.go 中实例化并挂到 /api/v1/ai/tourism/* 子组上。
+// NewRateLimiter returns the supplier/admin-side limiter (Phase 1
+// shape). Kept verbatim so REQ-0011 doesn't risk regressing the 1F
+// product-edit buttons.
 func NewRateLimiter() *aichatmw.IPRateLimiter {
 	return aichatmw.NewIPRateLimiter(rateLimitRPS, rateLimitBurst)
+}
+
+// C-end limiter (Phase 2, REQ-0011 R1 decision): 6 r/min/IP. Mounted
+// only on /api/v1/ai/tourism/c/* — the consumer-facing endpoints
+// (explain / fit-check / nearby) where PV is much higher than the
+// supplier editor and per-product cache absorbs the bulk of repeat
+// traffic. The cheaper rate (vs supplier 1/s = 60/min) reflects that
+// (a) C-end users don't need rapid-fire generations and (b) cache
+// hits dominate so the LLM-bound calls are sparse.
+//
+// Why not bursty: a burst would let a single user trigger N expensive
+// LLM calls in one tab refresh storm before the bucket drains. 6/min
+// flat keeps the worst case predictable.
+const (
+	cEndRateLimitRPS   = 0.1 // 6 per 60 seconds
+	cEndRateLimitBurst = 2   // tolerate a quick double-click but no more
+)
+
+// NewCEndRateLimiter returns the C-end consumer limiter for the new
+// /api/v1/ai/tourism/c/* sub-group introduced in Phase 2. Separate
+// from NewRateLimiter so the supplier/admin path is unaffected.
+func NewCEndRateLimiter() *aichatmw.IPRateLimiter {
+	return aichatmw.NewIPRateLimiter(cEndRateLimitRPS, cEndRateLimitBurst)
 }
