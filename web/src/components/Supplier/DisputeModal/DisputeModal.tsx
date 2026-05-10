@@ -54,7 +54,7 @@ export const DisputeModal: React.FC<Props> = ({ settlement, onClose, onSubmit })
                   className={styles.input}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder={`${t('supplier.settlement.netAmount')}: ¥${settlement.netAmount.toLocaleString()}`}
+                  placeholder={`${t('supplier.settlement.netAmount')}: A$${settlement.netAmount.toLocaleString()}`}
                 />
               </div>
               <div className={styles.field}>

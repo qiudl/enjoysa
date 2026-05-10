@@ -7,6 +7,7 @@ import {
   Button,
 } from '../../components/Common';
 import { useCart } from '../../contexts';
+import { formatPrice } from '../../utils/formatPrice';
 import styles from './CartPage.module.css';
 
 export interface CartPageProps {
@@ -129,8 +130,8 @@ export const CartPage: React.FC<CartPageProps> = ({
                         </div>
                       </div>
                       <div className={styles.itemPrice}>
-                        <span className={styles.unitPrice}>¥{item.product.price}{t('product.perPerson')}</span>
-                        <span className={styles.subtotal}>¥{subtotal}</span>
+                        <span className={styles.unitPrice}>{formatPrice(item.product.price, item.product.currency)}{t('product.perPerson')}</span>
+                        <span className={styles.subtotal}>{formatPrice(subtotal, item.product.currency)}</span>
                       </div>
                     </div>
                   );
@@ -149,7 +150,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                 </div>
                 <div className={styles.total}>
                   <span>{t('cart.totalAmount')}</span>
-                  <span className={styles.totalPrice}>¥{getCartTotal()}</span>
+                  <span className={styles.totalPrice}>{formatPrice(getCartTotal(), items[0]?.product.currency)}</span>
                 </div>
                 <Button variant="primary" size="lg" fullWidth onClick={onCheckout}>
                   {t('cart.checkout')}

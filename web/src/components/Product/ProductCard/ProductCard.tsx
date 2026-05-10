@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { Star, MapPin, Clock, Heart, Check, Zap } from 'lucide-react';
 import type { Product, ProductTag } from '../../../types';
+import { formatPrice } from '../../../utils/formatPrice';
 import styles from './ProductCard.module.css';
 
 export interface ProductCardProps {
@@ -187,15 +188,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* 价格 */}
         <div className={styles.priceRow}>
           <div className={styles.price}>
-            <span className={styles.currency}>
-              {product.currency === 'AUD' ? 'A$' : '¥'}
-            </span>
-            <span className={styles.amount}>{product.price}</span>
+            <span className={styles.amount}>{formatPrice(product.price, product.currency)}</span>
             <span className={styles.priceLabel}>{t('product.priceFrom')}</span>
           </div>
           {hasDiscount && (
             <span className={styles.originalPrice}>
-              {product.currency === 'AUD' ? 'A$' : '¥'}{product.originalPrice}
+              {formatPrice(product.originalPrice ?? 0, product.currency)}
             </span>
           )}
         </div>

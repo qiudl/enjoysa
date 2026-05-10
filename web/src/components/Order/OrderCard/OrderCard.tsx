@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { Calendar, Users, ChevronRight } from 'lucide-react';
 import styles from './OrderCard.module.css';
 import type { Order, OrderStatus } from '../../../types';
+import { formatPrice } from '../../../utils/formatPrice';
 
 export interface OrderCardProps {
   /** 订单数据 */
@@ -147,8 +148,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           <div className={styles.price}>
             <span className={styles.totalLabel}>{t('order.total')}:</span>
             <span className={styles.totalAmount}>
-              <span className={styles.currency}>¥</span>
-              {order.totalAmount.toFixed(2)}
+              {formatPrice(order.totalAmount)}
             </span>
           </div>
         </div>

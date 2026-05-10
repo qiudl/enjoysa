@@ -4,6 +4,7 @@ import { Calendar, Users, Phone, Mail, User, CreditCard, Clock, CheckCircle, XCi
 import clsx from 'clsx';
 import styles from './OrderDetail.module.css';
 import type { Order, OrderStatus } from '../../../types';
+import { formatPrice } from '../../../utils/formatPrice';
 
 export interface OrderDetailProps {
   /** 订单数据 */
@@ -236,8 +237,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                   </span>
                 </div>
                 <div className={styles.itemPrice}>
-                  <span className={styles.unitPrice}>¥{item.unitPrice} × {item.quantity}</span>
-                  <span className={styles.totalPrice}>¥{item.totalPrice}</span>
+                  <span className={styles.unitPrice}>{formatPrice(item.unitPrice)} × {item.quantity}</span>
+                  <span className={styles.totalPrice}>{formatPrice(item.totalPrice)}</span>
                 </div>
               </div>
             </div>
@@ -281,14 +282,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         <div className={styles.priceSummary}>
           <div className={styles.priceRow}>
             <span>{t('order.subtotal')}</span>
-            <span>¥{order.totalAmount.toFixed(2)}</span>
+            <span>{formatPrice(order.totalAmount)}</span>
           </div>
           {/* Add discount row if applicable */}
           <div className={clsx(styles.priceRow, styles.total)}>
             <span>{t('order.total')}</span>
             <span className={styles.totalAmount}>
-              <span className={styles.currency}>¥</span>
-              {order.totalAmount.toFixed(2)}
+              {formatPrice(order.totalAmount)}
             </span>
           </div>
         </div>

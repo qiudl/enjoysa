@@ -316,8 +316,7 @@
       "lastNameRequired": "Last name is required",
       "emailRequired": "Email is required",
       "emailInvalid": "Please enter a valid email address",
-      "phoneRequired": "Phone number is required",
-      "passportRequired": "Passport number is required"
+      "phoneRequired": "Phone number is required"
     }
   },
   "order": {
@@ -432,11 +431,6 @@
     "emailPlaceholder": "Enter email address",
     "phone": "Phone",
     "phonePlaceholder": "Enter phone number",
-    "dateOfBirth": "Date of Birth",
-    "nationality": "Nationality",
-    "nationalityPlaceholder": "Enter nationality",
-    "passportNumber": "Passport Number",
-    "passportPlaceholder": "Enter passport number",
     "specialRequirements": "Special Requirements",
     "specialRequirementsPlaceholder": "e.g., dietary restrictions, mobility needs",
     "adult": "Adult",

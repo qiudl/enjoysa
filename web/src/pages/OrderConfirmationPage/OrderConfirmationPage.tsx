@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Printer, CheckCircle } from 'lucide-react';
 import { getOrder, type Order } from '../../services/orderService';
+import { formatPrice } from '../../utils/formatPrice';
 import styles from './OrderConfirmationPage.module.css';
 
 export interface OrderConfirmationPageProps {
@@ -143,7 +144,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ or
               <tr>
                 <td className={styles.label}>{t('order.confirmation.totalAmount', isZh ? '总金额' : 'Total Amount')}</td>
                 <td className={`${styles.value} ${styles.amount}`}>
-                  {order.currency === 'AUD' ? 'A$' : '¥'}{order.total_price.toFixed(2)}
+                  {formatPrice(order.total_price, order.currency)}
                 </td>
               </tr>
               {order.payment_method && (

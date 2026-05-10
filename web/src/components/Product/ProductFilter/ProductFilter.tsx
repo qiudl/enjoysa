@@ -24,10 +24,10 @@ export interface ProductFilterProps {
 
 const priceRanges = [
   { label: '全部价格', min: undefined, max: undefined },
-  { label: '¥0 - ¥200', min: 0, max: 200 },
-  { label: '¥200 - ¥500', min: 200, max: 500 },
-  { label: '¥500 - ¥1000', min: 500, max: 1000 },
-  { label: '¥1000+', min: 1000, max: undefined },
+  { label: 'A$0 - A$200', min: 0, max: 200 },
+  { label: 'A$200 - A$500', min: 200, max: 500 },
+  { label: 'A$500 - A$1000', min: 500, max: 1000 },
+  { label: 'A$1000+', min: 1000, max: undefined },
 ];
 
 const ratingOptions = [
