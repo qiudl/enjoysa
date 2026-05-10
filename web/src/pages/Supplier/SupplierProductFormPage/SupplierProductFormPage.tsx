@@ -21,6 +21,7 @@ import { ChinesePreview } from '../../../components/Supplier/ChinesePreview';
 import { FormBatchStockBar } from '../../../components/Common/FormBatchStockBar';
 import { regionService } from '../../../services/regionService';
 import type { ApiRegion, ApiCategory } from '../../../services/regionService';
+import { TourismAgentButton, TourismPricingButton } from '../../../components/AI/TourismAgentButton';
 import styles from './SupplierProductFormPage.module.css';
 
 // ────────────────────────────── Types ──────────────────────────────
@@ -68,6 +69,23 @@ const STEPS = ['basic', 'images', 'packages', 'extras', 'preview'] as const;
 let _idCounter = 0;
 function uid() {
   return `_${++_idCounter}_${Date.now()}`;
+}
+
+// REQ-20260510-0002 · 1F: Lightweight duration parser shared by the tourism
+// agent buttons. Mirrors the backend etl.DurationMinutesFromText heuristic so
+// the agent gets the same bucket the supplier sees in their form.
+function parseDurationMinutesShallow(raw: string): number | undefined {
+  const s = raw.toLowerCase().trim();
+  if (!s) return undefined;
+  if (s.includes('half')) return 4 * 60;
+  if (s.includes('full day') || s.includes('all day') || s.includes('whole day') ||
+      s.includes('1 day') || s.includes('one day')) return 8 * 60;
+  const match = s.match(/(\d+)\s*h/);
+  if (match) {
+    const h = Number(match[1]);
+    if (h > 0) return h * 60;
+  }
+  return undefined;
 }
 
 // ────────────────────────────── Sortable Image Card ──────────────────────────────
@@ -463,6 +481,29 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
 
   // ────────────────────────────── Render Steps ──────────────────────────────
 
+  // ─── Tourism Agent skeleton (REQ-20260510-0002 · 1F) ───
+  // Derived from the form so the embedded "✨ AI 生成 (南澳 KB)" + "💰 AI 建议价格"
+  // buttons can ground their LLM/benchmark lookups in the supplier's actual
+  // editing state. Recomputed on every render — cheap, always fresh.
+  const selectedRegion = regions.find((r) => r.id === form.region_id);
+  const selectedCategory = categories.find((c) => c.id === form.category_id);
+  const tourismCouncil = selectedRegion?.name_en;
+  const tourismCategory = selectedCategory?.slug;
+  const tourismDurationMin = parseDurationMinutesShallow(form.duration);
+  const tourismSkeleton = {
+    council: tourismCouncil,
+    category: tourismCategory,
+    duration_minutes: tourismDurationMin,
+    highlights: highlights.map((h) => h.title_zh).filter((s) => !!s),
+    tags: form.tags
+      ? form.tags
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
+      : [],
+  };
+  const tourismSkeletonReady = !!(tourismCouncil && tourismCategory);
+
   const renderStepBasic = () => (
     <div className={styles.section}>
       <h3 className={styles.sectionTitle}>{t('supplier.productForm.basicInfo')}</h3>
@@ -481,7 +522,17 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
 
       <div className={styles.formRow}>
         <div className={styles.formGroup}>
-          <label className={styles.label}>{t('supplier.productForm.titleZh')} *</label>
+          <label className={styles.label}>
+            {t('supplier.productForm.titleZh')} *
+            {' '}
+            <TourismAgentButton
+              field="title"
+              role="supplier"
+              skeleton={tourismSkeleton}
+              disabled={!tourismSkeletonReady}
+              onApply={(content) => updateField('name_zh', content.trim())}
+            />
+          </label>
           <input type="text" className={styles.input} value={form.name_zh}
             onChange={(e) => updateField('name_zh', e.target.value)}
             placeholder={t('supplier.productForm.titleZhPlaceholder')} />
@@ -510,7 +561,17 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       </div>
 
       <div className={styles.formGroup}>
-        <label className={styles.label}>{t('supplier.productForm.descriptionZh')}</label>
+        <label className={styles.label}>
+          {t('supplier.productForm.descriptionZh')}
+          {' '}
+          <TourismAgentButton
+            field="description"
+            role="supplier"
+            skeleton={tourismSkeleton}
+            disabled={!tourismSkeletonReady}
+            onApply={(content) => updateField('description_zh', content.trim())}
+          />
+        </label>
         <textarea className={styles.textarea} rows={4} value={form.description_zh}
           onChange={(e) => updateField('description_zh', e.target.value)}
           placeholder={t('supplier.productForm.descriptionPlaceholder')} />
@@ -548,7 +609,17 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
 
       <div className={styles.formRow3}>
         <div className={styles.formGroup}>
-          <label className={styles.label}>{t('supplier.productForm.price')}</label>
+          <label className={styles.label}>
+            {t('supplier.productForm.price')}
+            {' '}
+            <TourismPricingButton
+              role="supplier"
+              category={tourismCategory}
+              council={tourismCouncil}
+              durationMinutes={tourismDurationMin}
+              onApply={(price) => updateField('price_from', String(price))}
+            />
+          </label>
           <input type="number" className={styles.input} value={form.price_from}
             onChange={(e) => updateField('price_from', e.target.value)}
             placeholder={t('supplier.productForm.pricePlaceholder')} min="0" step="0.01" />

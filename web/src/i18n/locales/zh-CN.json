@@ -1080,7 +1080,126 @@
       "categories": "分类管理",
       "homepage": "首页管理",
       "settings": "系统设置",
-      "aiChatTest": "AI Chat 回归测试"
+      "aiChatTest": "AI Chat 回归测试",
+      "tourism": "旅游知识库"
+    },
+    "tourism": {
+      "title": "南澳旅游知识库",
+      "description": "维护景点 / 酒店 / 美食 / 体验 / 价格行情数据，作为 AI Agent 的事实依据",
+      "tabs": {
+        "attractions": "景点",
+        "accommodations": "酒店",
+        "food": "美食",
+        "experiences": "体验",
+        "pricing": "价格行情"
+      },
+      "filter": {
+        "council": "Council",
+        "category": "Category",
+        "keywords": "关键词",
+        "keywordsPlaceholder": "名称 / 描述",
+        "status": "状态",
+        "all": "全部",
+        "active": "已启用",
+        "inactive": "草稿"
+      },
+      "col": {
+        "nameZh": "中文名",
+        "nameEn": "英文名",
+        "council": "Council",
+        "category": "Category",
+        "tags": "标签",
+        "priceRange": "价格区间",
+        "priceMin": "价格下限 (AUD)",
+        "priceMax": "价格上限 (AUD)",
+        "status": "状态",
+        "actions": "操作",
+        "duration": "典型时长（分钟）",
+        "bestSeasons": "最佳季节",
+        "description": "描述",
+        "starRating": "星级",
+        "roomTypes": "房型",
+        "features": "特色",
+        "address": "地址",
+        "cuisine": "菜系",
+        "signatureDishes": "招牌菜"
+      },
+      "status": {
+        "active": "已启用",
+        "inactive": "草稿"
+      },
+      "form": {
+        "isActive": "启用（AI Agent 可见）"
+      },
+      "tagsHelper": "逗号分隔",
+      "empty": "暂无数据",
+      "deleteTitle": "确认删除",
+      "deleteMessage": "确定要删除「{{name}}」吗？",
+      "errors": {
+        "nameZhRequired": "中文名为必填",
+        "categoryCouncilRequired": "Category 和 Council 为必填"
+      },
+      "pagination": {
+        "summary": "共 {{total}} 条"
+      },
+      "attractions": {
+        "add": "新增景点",
+        "createTitle": "新增景点",
+        "editTitle": "编辑景点"
+      },
+      "accommodations": {
+        "add": "新增酒店",
+        "createTitle": "新增酒店",
+        "editTitle": "编辑酒店"
+      },
+      "food": {
+        "add": "新增餐厅",
+        "createTitle": "新增餐厅",
+        "editTitle": "编辑餐厅"
+      },
+      "experiences": {
+        "add": "新增体验",
+        "createTitle": "新增体验",
+        "editTitle": "编辑体验"
+      },
+      "pricing": {
+        "add": "新增行情",
+        "createTitle": "新增行情",
+        "editTitle": "编辑行情",
+        "median": "中位价",
+        "samples": "样本数",
+        "confidence": "置信度",
+        "sampleHelper": "<3 不足 / 3-4 低 / 5-11 正常 / ≥12 高",
+        "deleteMessage": "确定要删除「{{cat}} / {{council}} / {{bucket}} / {{season}}」行情吗？",
+        "duplicateError": "已存在同 (category, council, duration_bucket, season) 的行情记录"
+      },
+      "etl": {
+        "button": "运行冷启动 ETL",
+        "running": "正在跑 ETL...",
+        "tooltip": "从已上架商品反向沉淀知识库",
+        "confirm": "将扫描所有已上架商品并反向写入 experiences + pricing benchmarks。\n新行 IsActive=false（admin 审核后启用），已存在行的 IsActive 不会被覆盖。\n继续？",
+        "summaryTitle": "ETL 完成",
+        "summary": "扫描 {{scanned}} 个商品，写入 {{exp}} 条 experiences，{{bench}} 条 pricing benchmarks，跳过 {{skip}} 条。",
+        "errorsLabel": "{{n}} 条错误"
+      }
+    },
+    "tourismAgent": {
+      "button": "✨ AI 生成",
+      "busy": "生成中...",
+      "tooltip": "基于南澳旅游知识库生成",
+      "disabledHint": "请先填写区域 (Council) 和品类后再用 AI 生成",
+      "refsCount": "基于 {{n}} 条知识",
+      "refsTooltip": "本次生成引用了多少条知识库条目",
+      "pricing": {
+        "button": "💰 AI 建议价格",
+        "busy": "查询中...",
+        "tooltip": "基于行情库给出价格建议",
+        "disabledHint": "请先填写区域 (Council)、品类、典型时长后再用 AI 建议价格",
+        "suggestion": "建议价",
+        "samples": "样本 {{n}}",
+        "apply": "采用建议价",
+        "insufficient": "样本不足（仅 {{n}} 个相似产品），暂不给出价格建议。"
+      }
     },
     "aiChatTest": {
       "title": "AI Chat 回归测试控制台",

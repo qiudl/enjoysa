@@ -53,6 +53,10 @@ import (
 	supplierstore "enjoysa-backend/internal/supplier/store"
 	teamhandler "enjoysa-backend/internal/team/handler"
 	teamstore "enjoysa-backend/internal/team/store"
+	tourismagent "enjoysa-backend/internal/ai/tourism_agent"
+	tourismetl "enjoysa-backend/internal/tourism/etl"
+	tourismhandler "enjoysa-backend/internal/tourism/handler"
+	tourismstore "enjoysa-backend/internal/tourism/store"
 	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
 	aftersalesstore "enjoysa-backend/internal/aftersales/store"
 	"enjoysa-backend/internal/ai/translate"
@@ -462,6 +466,26 @@ func Setup(cfg Config) *gin.Engine {
 			// FIX #15: Use OptionalAnyAuth so both supplier and admin can upload
 		aiGroup.POST("/upload-image", middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB), imageUploadHandler.Upload)
 		}
+
+		// REQ-20260510-0002 · Phase 1 · 1F: tourism agent (supplier/admin
+		// embedded "✨ AI 生成" + "💰 AI 建议价格" buttons). Mounted as a
+		// sub-group with its own 1/s burst-3 limiter from rate_limit.go so a
+		// chatty supplier doesn't starve the other /api/v1/ai/* scenes that
+		// share the global 2/s burst-5 limiter.
+		tourismAgentLimiter := tourismagent.NewRateLimiter()
+		tourGroup := aiGroup.Group("/tourism")
+		tourGroup.Use(tourismAgentLimiter.Middleware())
+		tourGroup.Use(middleware.OptionalAnyAuth(cfg.JWTService, cfg.DB))
+		{
+			tourismAgentInst := tourismagent.New(
+				llmRegistry.Default(),
+				tourismagent.NewGORMStore(cfg.DB),
+				cfg.AIConfig.Model,
+			)
+			tourismAgentHandler := tourismagent.NewHandler(tourismAgentInst)
+			tourGroup.POST("/generate-content", tourismAgentHandler.GenerateContent)
+			tourGroup.POST("/pricing-suggest", tourismAgentHandler.PricingSuggest)
+		}
 	}
 
 	// ========================================
@@ -793,6 +817,53 @@ func Setup(cfg Config) *gin.Engine {
 			superAdmin.DELETE("/admins/:id", adminHandler.DeleteAdmin)
 			superAdmin.POST("/admins/:id/status", adminHandler.ToggleAdminStatus)
 			superAdmin.POST("/admins/:id/reset-password", adminHandler.ResetAdminPassword)
+
+			// REQ-20260510-0002 · 1C: Tourism knowledge-base CRUD.
+			// Mounted under super_admin because the RBAC matrix has no
+			// `tourism.manage` authority yet — when we split that out in a
+			// follow-up, the route can move to a regular permissioned group
+			// without changing the handler shape.
+			tourismAdminStore := tourismstore.NewAdminStore(cfg.DB)
+			tourismAdminHandler := tourismhandler.NewAdminHandler(tourismAdminStore)
+			// REQ-20260510-0002 · 1E: cold-start ETL — admin clicks the
+			// "rebuild from products" button on the tourism KB hub and we
+			// reverse-extract approved products into experiences +
+			// pricing benchmarks. Synchronous; idempotent; preserves any
+			// admin IsActive overrides.
+			tourismAdminHandler.SetEtlRunner(tourismetl.New(cfg.DB))
+			tour := superAdmin.Group("/tourism")
+			{
+				tour.POST("/etl/run", tourismAdminHandler.RunEtl)
+				tour.GET("/attractions", tourismAdminHandler.ListAttractions)
+				tour.POST("/attractions", tourismAdminHandler.CreateAttraction)
+				tour.GET("/attractions/:id", tourismAdminHandler.GetAttraction)
+				tour.PUT("/attractions/:id", tourismAdminHandler.UpdateAttraction)
+				tour.DELETE("/attractions/:id", tourismAdminHandler.DeleteAttraction)
+
+				tour.GET("/accommodations", tourismAdminHandler.ListAccommodations)
+				tour.POST("/accommodations", tourismAdminHandler.CreateAccommodation)
+				tour.GET("/accommodations/:id", tourismAdminHandler.GetAccommodation)
+				tour.PUT("/accommodations/:id", tourismAdminHandler.UpdateAccommodation)
+				tour.DELETE("/accommodations/:id", tourismAdminHandler.DeleteAccommodation)
+
+				tour.GET("/food", tourismAdminHandler.ListFood)
+				tour.POST("/food", tourismAdminHandler.CreateFood)
+				tour.GET("/food/:id", tourismAdminHandler.GetFood)
+				tour.PUT("/food/:id", tourismAdminHandler.UpdateFood)
+				tour.DELETE("/food/:id", tourismAdminHandler.DeleteFood)
+
+				tour.GET("/experiences", tourismAdminHandler.ListExperiences)
+				tour.POST("/experiences", tourismAdminHandler.CreateExperience)
+				tour.GET("/experiences/:id", tourismAdminHandler.GetExperience)
+				tour.PUT("/experiences/:id", tourismAdminHandler.UpdateExperience)
+				tour.DELETE("/experiences/:id", tourismAdminHandler.DeleteExperience)
+
+				tour.GET("/pricing-benchmarks", tourismAdminHandler.ListPricingBenchmarks)
+				tour.POST("/pricing-benchmarks", tourismAdminHandler.CreatePricingBenchmark)
+				tour.GET("/pricing-benchmarks/:id", tourismAdminHandler.GetPricingBenchmark)
+				tour.PUT("/pricing-benchmarks/:id", tourismAdminHandler.UpdatePricingBenchmark)
+				tour.DELETE("/pricing-benchmarks/:id", tourismAdminHandler.DeletePricingBenchmark)
+			}
 		}
 	}
 

@@ -1,0 +1,160 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.3125rem 0.625rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #065f46;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #059669;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: tourism-pricing-spin 1s linear infinite;
+}
+
+@keyframes tourism-pricing-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  width: 280px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 30;
+  font-size: 0.8125rem;
+  color: #374151;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.closeBtn:hover {
+  color: #374151;
+}
+
+.medianRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.medianLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.medianValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.rangeRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.confidence_high     { background: #d1fae5; color: #065f46; }
+.confidence_normal   { background: #dbeafe; color: #1e40af; }
+.confidence_low      { background: #fef3c7; color: #92400e; }
+.confidence_insufficient { background: #fee2e2; color: #991b1b; }
+
+.explanation {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.75rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.applyBtn {
+  width: 100%;
+  padding: 0.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.applyBtn:hover {
+  background: #1d4ed8;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+
+.insufficientBanner {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}

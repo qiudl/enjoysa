@@ -1080,7 +1080,126 @@
       "categories": "Categories",
       "homepage": "Homepage",
       "settings": "Settings",
-      "aiChatTest": "AI Chat Regression"
+      "aiChatTest": "AI Chat Regression",
+      "tourism": "Tourism KB"
+    },
+    "tourism": {
+      "title": "South Australia Tourism Knowledge Base",
+      "description": "Curate attractions, accommodations, food, experiences and pricing benchmarks — the ground truth for the AI agent.",
+      "tabs": {
+        "attractions": "Attractions",
+        "accommodations": "Accommodations",
+        "food": "Food",
+        "experiences": "Experiences",
+        "pricing": "Pricing"
+      },
+      "filter": {
+        "council": "Council",
+        "category": "Category",
+        "keywords": "Keywords",
+        "keywordsPlaceholder": "Name / description",
+        "status": "Status",
+        "all": "All",
+        "active": "Active",
+        "inactive": "Draft"
+      },
+      "col": {
+        "nameZh": "Name (ZH)",
+        "nameEn": "Name (EN)",
+        "council": "Council",
+        "category": "Category",
+        "tags": "Tags",
+        "priceRange": "Price range",
+        "priceMin": "Min price (AUD)",
+        "priceMax": "Max price (AUD)",
+        "status": "Status",
+        "actions": "Actions",
+        "duration": "Typical duration (min)",
+        "bestSeasons": "Best seasons",
+        "description": "Description",
+        "starRating": "Star rating",
+        "roomTypes": "Room types",
+        "features": "Features",
+        "address": "Address",
+        "cuisine": "Cuisine",
+        "signatureDishes": "Signature dishes"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Draft"
+      },
+      "form": {
+        "isActive": "Active (visible to AI Agent)"
+      },
+      "tagsHelper": "Comma-separated",
+      "empty": "No data",
+      "deleteTitle": "Confirm delete",
+      "deleteMessage": "Delete \"{{name}}\"?",
+      "errors": {
+        "nameZhRequired": "Chinese name is required",
+        "categoryCouncilRequired": "Category and Council are required"
+      },
+      "pagination": {
+        "summary": "{{total}} total"
+      },
+      "attractions": {
+        "add": "Add attraction",
+        "createTitle": "Add attraction",
+        "editTitle": "Edit attraction"
+      },
+      "accommodations": {
+        "add": "Add accommodation",
+        "createTitle": "Add accommodation",
+        "editTitle": "Edit accommodation"
+      },
+      "food": {
+        "add": "Add restaurant",
+        "createTitle": "Add restaurant",
+        "editTitle": "Edit restaurant"
+      },
+      "experiences": {
+        "add": "Add experience",
+        "createTitle": "Add experience",
+        "editTitle": "Edit experience"
+      },
+      "pricing": {
+        "add": "Add benchmark",
+        "createTitle": "Add benchmark",
+        "editTitle": "Edit benchmark",
+        "median": "Median",
+        "samples": "Samples",
+        "confidence": "Confidence",
+        "sampleHelper": "<3 insufficient / 3-4 low / 5-11 normal / ≥12 high",
+        "deleteMessage": "Delete benchmark for {{cat}} / {{council}} / {{bucket}} / {{season}}?",
+        "duplicateError": "A benchmark already exists for this (category, council, duration_bucket, season)"
+      },
+      "etl": {
+        "button": "Run cold-start ETL",
+        "running": "ETL running...",
+        "tooltip": "Reverse-extract knowledge from approved products",
+        "confirm": "This will scan every approved product and write into experiences + pricing benchmarks.\nNew rows default to IsActive=false (admin must activate); existing rows keep their IsActive choice.\nContinue?",
+        "summaryTitle": "ETL complete",
+        "summary": "Scanned {{scanned}} products, upserted {{exp}} experiences, {{bench}} pricing benchmarks, skipped {{skip}}.",
+        "errorsLabel": "{{n}} errors"
+      }
+    },
+    "tourismAgent": {
+      "button": "✨ AI Generate",
+      "busy": "Generating...",
+      "tooltip": "Grounded in the South Australia tourism knowledge base",
+      "disabledHint": "Pick a council and category before using AI Generate",
+      "refsCount": "based on {{n}} entries",
+      "refsTooltip": "How many KB entries this generation referenced",
+      "pricing": {
+        "button": "💰 AI Suggest Price",
+        "busy": "Looking up...",
+        "tooltip": "Suggested price based on the benchmark library",
+        "disabledHint": "Set council, category and a duration before asking for a price",
+        "suggestion": "Suggested",
+        "samples": "{{n}} samples",
+        "apply": "Apply suggested",
+        "insufficient": "Not enough samples (only {{n}} similar products) — no suggestion yet."
+      }
     },
     "aiChatTest": {
       "title": "AI Chat Regression Console",
