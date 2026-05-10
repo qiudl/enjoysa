@@ -29,6 +29,10 @@ type OrderHandler struct {
 	productStore  *productstore.ProductStore
 	scheduleStore *productstore.ScheduleStore
 	notifSvc      *notifservice.NotificationService
+	// REQ-20260510-0004: optional — when wired, the order create path
+	// asynchronously fires inventory_low / inventory_out notifications
+	// after the stock decrement commits.
+	stockAlertSvc *notifservice.StockAlertService
 }
 
 func NewOrderHandler(
@@ -43,6 +47,12 @@ func NewOrderHandler(
 		scheduleStore: scheduleStore,
 		notifSvc:      notifSvc,
 	}
+}
+
+// SetStockAlertService wires up REQ-20260510-0004 inventory alerts.
+// Optional so legacy wiring / tests still build without alerts.
+func (h *OrderHandler) SetStockAlertService(svc *notifservice.StockAlertService) {
+	h.stockAlertSvc = svc
 }
 
 type CreateOrderRequest struct {
@@ -205,6 +215,23 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 			"New Order Received",
 			fmt.Sprintf("Order #%s for %s — %d unit(s), AUD %.2f", order.OrderNo, order.ProductName, order.Quantity, order.TotalPrice),
 			"order", order.ID)
+	}
+
+	// REQ-20260510-0004: low-stock / sold-out alert. Fire-and-forget on a
+	// goroutine so a slow alert path can't delay the order response, and
+	// recover so any panic in the alert pipeline can't crash the server.
+	if h.stockAlertSvc != nil && order.PackageID > 0 {
+		pkgID := order.PackageID
+		productID := order.ProductID
+		productName := order.ProductName
+		packageName := order.PackageName
+		supplierID := order.SupplierID
+		go func() {
+			defer func() {
+				_ = recover()
+			}()
+			h.stockAlertSvc.MaybeFireAlert(pkgID, productID, productName, packageName, supplierID)
+		}()
 	}
 
 	response.Created(c, order)

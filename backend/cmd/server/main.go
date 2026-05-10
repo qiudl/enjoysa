@@ -242,6 +242,8 @@ func autoMigrate(db *gorm.DB) error {
 		&reviewmodel.Review{},
 		// Notifications
 		&notifmodel.Notification{},
+		// REQ-20260510-0004: low-stock / sold-out alert dedupe
+		&notifmodel.StockAlertCooldown{},
 		// Team invitations
 		&teammodel.SupplierInvitation{},
 		// After-sales

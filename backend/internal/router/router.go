@@ -175,6 +175,11 @@ func Setup(cfg Config) *gin.Engine {
 
 	// === Notification service ===
 	notifSvc := notifservice.NewNotificationService(nStore)
+	// REQ-20260510-0004: low-stock / sold-out alerts. Wired below into the
+	// order create path; runs on a goroutine so a slow alert path can't
+	// delay the order response.
+	stockAlertCooldownStore := notifstore.NewStockAlertCooldownStore(cfg.DB)
+	stockAlertSvc := notifservice.NewStockAlertService(cfg.DB, stockAlertCooldownStore, notifSvc)
 
 	// === Handlers ===
 	userAuthHandler := authhandler.NewUserAuthHandler(userStore, cfg.JWTService, passwordResetStore, emailService, cfg.FrontendURL)
@@ -204,6 +209,9 @@ func Setup(cfg Config) *gin.Engine {
 	adminTranslationHandler := handler.NewAdminTranslationHandler(cfg.DB, pStore, translationSvc)
 	uploadHandler := uploadhandler.NewUploadHandler(cfg.UploadConfig)
 	orderHandler := orderhandler.NewOrderHandler(oStore, pStore, scheduleStore, notifSvc)
+	// REQ-20260510-0004: stock alert wired post-construction so legacy code
+	// paths that build OrderHandler directly stay compatible.
+	orderHandler.SetStockAlertService(stockAlertSvc)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pStore, pg)
 	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)

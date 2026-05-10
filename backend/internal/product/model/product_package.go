@@ -24,6 +24,13 @@ type ProductPackage struct {
 	// 下单事务 SELECT FOR UPDATE 这一行避免超卖；cancel 回补 sold。
 	StockTotal int `gorm:"not null;default:-1" json:"stock_total"`
 	StockSold  int `gorm:"not null;default:0" json:"stock_sold"`
+
+	// REQ-20260510-0004: low-stock alert threshold per package. 0 = alerts off
+	// for this package; >0 fires inventory_low when stock_total - stock_sold
+	// drops to/below this value (and is still > 0). inventory_out fires on
+	// remaining == 0 regardless of threshold. Skipped entirely for unlimited
+	// (stock_total == -1) packages.
+	LowStockThreshold int `gorm:"not null;default:5" json:"low_stock_threshold"`
 }
 
 func (ProductPackage) TableName() string {
