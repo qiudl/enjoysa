@@ -644,6 +644,28 @@
 }
 
 /* ------------------------------------------------------------------ */
+/*  AI draft (REQ-20260510-0011 · 2B)                                  */
+/* ------------------------------------------------------------------ */
+
+.aiDraftSpin {
+  animation: ai-draft-spin 1s linear infinite;
+}
+
+@keyframes ai-draft-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.aiDraftError {
+  margin-top: 0.5rem;
+  padding: 0.4375rem 0.625rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Responsive                                                         */
 /* ------------------------------------------------------------------ */
 

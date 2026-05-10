@@ -179,6 +179,10 @@ func Setup(cfg Config) *gin.Engine {
 	rvStore := reviewstore.NewReviewStore(cfg.DB)
 	nStore := notifstore.NewNotificationStore(cfg.DB)
 	tStore := teamstore.NewTeamStore(cfg.DB)
+	// Aftersales ticket store hoisted up here from its old location below
+	// so REQ-20260510-0011 · 2B can wire it into the tourism agent handler
+	// at AI-group setup time without forward-referencing.
+	asStore := aftersalesstore.NewTicketStore(cfg.DB)
 
 	// === Notification service ===
 	notifSvc := notifservice.NewNotificationService(nStore)
@@ -512,12 +516,19 @@ func Setup(cfg Config) *gin.Engine {
 			tourCGroup.POST("/fit-check", tourismAgentHandler.FitCheck)
 			tourCGroup.GET("/nearby", tourismAgentHandler.Nearby)
 		}
+
+		// REQ-20260510-0011 · Phase 2 · 2B: customer-service ticket reply
+		// drafting. Mounted on the supplier/admin tourism group above
+		// (sharing its 1/s burst-3 limiter — drafting is a per-ticket
+		// action so the supplier rate is plenty). Auth check happens
+		// inside the handler via hasEditorIdentity.
+		tourismAgentHandler.SetTicketLookup(buildTourismTicketLookup(asStore))
+		tourGroup.POST("/draft-reply", tourismAgentHandler.DraftReply)
 	}
 
 	// ========================================
 	// After-sales handlers (shared between supplier portal + service-to-service)
 	// ========================================
-	asStore := aftersalesstore.NewTicketStore(cfg.DB)
 	asHandler := aftersaleshandler.NewAfterSalesHandler(asStore)
 
 	// ========================================
@@ -951,6 +962,35 @@ func Setup(cfg Config) *gin.Engine {
 	}
 
 	return r
+}
+
+// REQ-20260510-0011 · Phase 2 · 2B: thin adapter from aftersales.TicketStore
+// → tourismagent.TicketLookup. Defined here so tourism_agent doesn't pull
+// aftersales as a transitive dep.
+//
+// LinkedProductID is left nil in v1 — wiring requires order → order_items
+// → product_id chain that we'll add in 2B-2 when we also persist drafts /
+// finalize for the edit_distance metric (deferred until real ticket-send
+// backend exists; the current admin/supplier ticket pages are mock UIs).
+func buildTourismTicketLookup(ts *aftersalesstore.TicketStore) tourismagent.TicketLookup {
+	return tourismTicketLookupAdapter{ts: ts}
+}
+
+type tourismTicketLookupAdapter struct {
+	ts *aftersalesstore.TicketStore
+}
+
+func (a tourismTicketLookupAdapter) LookupForAgent(_ context.Context, ticketID uint) (*tourismagent.TicketSeed, error) {
+	t, err := a.ts.GetByID(ticketID)
+	if err != nil {
+		return nil, err
+	}
+	return &tourismagent.TicketSeed{
+		Subject:         t.Subject,
+		Type:            string(t.Type),
+		LastCustomerMsg: t.Description,
+		LinkedProductID: nil, // 2B-2 will wire order → product
+	}, nil
 }
 
 // REQ-20260510-0011 · Phase 2 · 2A: thin adapter from product.ProductStore

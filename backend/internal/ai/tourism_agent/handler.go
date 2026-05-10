@@ -51,6 +51,27 @@ type ProductLookup interface {
 	LookupForAgent(ctx context.Context, productID uint) (*ProductSeed, error)
 }
 
+// REQ-20260510-0011 · 2B
+//
+// TicketSeed is the slice of ticket data the DraftReply handler needs to
+// build a Skeleton. Defined here so tourism_agent doesn't pull aftersales
+// as a transitive dep — router-side adapter does the GORM work.
+//
+// LinkedProductID is optional: tickets without an order/product link still
+// get a draft, but the prompt skips the council/category grounding.
+type TicketSeed struct {
+	Subject         string
+	Type            string // refund | exchange | inquiry | complaint
+	LastCustomerMsg string
+	LinkedProductID *uint
+}
+
+// TicketLookup is the cross-package contract for looking up ticket details
+// by ID. Router injects an adapter that wraps aftersales.TicketStore.
+type TicketLookup interface {
+	LookupForAgent(ctx context.Context, ticketID uint) (*TicketSeed, error)
+}
+
 // Handler exposes the agent over HTTP. Construct via NewHandler.
 //
 // productLookup + cache are optional. Phase 1 (1F) endpoints (GenerateContent,
@@ -59,6 +80,7 @@ type ProductLookup interface {
 type Handler struct {
 	agent         *Agent
 	productLookup ProductLookup
+	ticketLookup  TicketLookup
 	explainCache  *TTLCache
 }
 
@@ -75,6 +97,11 @@ func (h *Handler) SetProductLookup(p ProductLookup) {
 // (REQ-20260510-0011 · 2A · D1 jitter applied at cache layer).
 func (h *Handler) SetExplainCache(c *TTLCache) {
 	h.explainCache = c
+}
+
+// SetTicketLookup wires the ticket lookup adapter (REQ-20260510-0011 · 2B).
+func (h *Handler) SetTicketLookup(t TicketLookup) {
+	h.ticketLookup = t
 }
 
 // generateContentRequest is the wire-format. The skeleton fields are all
@@ -419,6 +446,102 @@ func sanitizeUserQuery(raw string) (string, bool) {
 		return "", false
 	}
 	return string(out), true
+}
+
+// ============================================================================
+// REQ-20260510-0011 · 2B · DraftReply
+// ============================================================================
+
+// draftReplyRequest is the wire format. Only ticket_id is required — the
+// server fetches the ticket itself + linked product (if any) so the caller
+// doesn't have to thread internals.
+type draftReplyRequest struct {
+	TicketID uint `json:"ticket_id" binding:"required,min=1"`
+}
+
+// DraftReplyMaxCustomerMsgLen caps the customer message we feed the LLM.
+// Long customer rants don't need to all reach the LLM, and the cap also
+// gives a defensive bound on prompt-injection payload size.
+const DraftReplyMaxCustomerMsgLen = 1500
+
+// DraftReply handles POST /api/v1/ai/tourism/draft-reply.
+//
+// Auth: supplier OR admin (the only roles that respond to tickets). Cache:
+// none — every ticket message is unique. The handler wires the existing
+// agent loop with FieldDraftReply; product council/category gets attached
+// when the ticket has a linked product so the reply can anchor on real KB.
+//
+// 503 if the ticket lookup adapter wasn't wired (router setup bug, not user
+// error). 404 if the ticket id doesn't resolve.
+func (h *Handler) DraftReply(c *gin.Context) {
+	if !hasEditorIdentity(c) {
+		response.Unauthorized(c, "Login required")
+		return
+	}
+	if h.ticketLookup == nil {
+		response.Fail(c, http.StatusServiceUnavailable, "DRAFT_REPLY_NOT_WIRED",
+			"draft-reply endpoint not configured on this server")
+		return
+	}
+
+	var req draftReplyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	seed, err := h.ticketLookup.LookupForAgent(c.Request.Context(), req.TicketID)
+	if err != nil {
+		response.NotFound(c, "Ticket not found")
+		return
+	}
+
+	// Optional product context — when the ticket is linked to a product,
+	// the reply can mention the council and category so the customer
+	// doesn't get a generic boilerplate.
+	skeleton := Skeleton{
+		TicketSubject: seed.Subject,
+		TicketType:    seed.Type,
+		TicketLastMsg: capRunes(seed.LastCustomerMsg, DraftReplyMaxCustomerMsgLen),
+	}
+	if seed.LinkedProductID != nil && h.productLookup != nil {
+		if pSeed, perr := h.productLookup.LookupForAgent(c.Request.Context(), *seed.LinkedProductID); perr == nil {
+			skeleton.Council = pSeed.Council
+			skeleton.Category = pSeed.Category
+		}
+	}
+
+	resp, err := h.agent.Generate(c.Request.Context(), GenerateRequest{
+		Field:    FieldDraftReply,
+		Language: "zh-CN",
+		Skeleton: skeleton,
+	})
+	if err != nil {
+		if errors.Is(err, ErrMaxIterations) {
+			response.Fail(c, http.StatusServiceUnavailable, "AGENT_MAX_ITERATIONS",
+				"AI agent could not finish in the allowed number of tool calls")
+			return
+		}
+		response.ServerError(c, "AI draft failed: "+err.Error())
+		return
+	}
+
+	response.Success(c, resp)
+}
+
+// capRunes truncates a string to maxRunes runes (Unicode-safe). Used by
+// DraftReply to bound the LLM-bound payload — long customer rants don't
+// need to all reach the model and the cap is a defensive bound on
+// prompt-injection payload size.
+func capRunes(s string, maxRunes int) string {
+	if maxRunes <= 0 {
+		return ""
+	}
+	r := []rune(s)
+	if len(r) <= maxRunes {
+		return s
+	}
+	return string(r[:maxRunes])
 }
 
 // ============================================================================
