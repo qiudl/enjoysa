@@ -156,6 +156,44 @@ func (h *PublicProductHandler) ListFeatured(c *gin.Context) {
 	response.Success(c, h.attachStock(products))
 }
 
+// CarouselBannerItem is the lean shape returned by the homepage hero
+// carousel endpoint (REQ-20260511-0006). Includes only what HeroBanner
+// renders: id (link target), banner image, bilingual name + summary.
+// Avoids leaking full Product payload (packages, FAQs, etc.) to a
+// public unauthenticated endpoint hit by every homepage visitor.
+type CarouselBannerItem struct {
+	ID          uint   `json:"id"`
+	BannerImage string `json:"banner_image"`
+	NameZh      string `json:"name_zh"`
+	NameEn      string `json:"name_en"`
+	SummaryZh   string `json:"summary_zh"`
+	SummaryEn   string `json:"summary_en"`
+}
+
+// ListCarouselBanners (REQ-20260511-0006) — public homepage HeroBanner
+// data source. Replaces the static bannerSlides.ts the front-end was
+// previously reading. Returns up to 5 approved + is_featured products
+// that have an uploaded banner_image, ordered by carousel_rank.
+func (h *PublicProductHandler) ListCarouselBanners(c *gin.Context) {
+	products, err := h.productStore.ListCarouselBanners(5)
+	if err != nil {
+		response.ServerError(c, "Failed to list carousel banners")
+		return
+	}
+	items := make([]CarouselBannerItem, 0, len(products))
+	for _, p := range products {
+		items = append(items, CarouselBannerItem{
+			ID:          p.ID,
+			BannerImage: p.BannerImage,
+			NameZh:      p.NameZh,
+			NameEn:      p.NameEn,
+			SummaryZh:   p.SummaryZh,
+			SummaryEn:   p.SummaryEn,
+		})
+	}
+	response.Success(c, items)
+}
+
 func (h *PublicProductHandler) GetProduct(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {

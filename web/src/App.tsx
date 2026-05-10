@@ -1155,9 +1155,10 @@ function AdminAIChatTestWrapper() {
 
 // 包装组件：AdminBannersWrapper
 function AdminBannersWrapper() {
+  const navigate = useNavigate();
   return (
     <AdminLayout>
-      <BannerList />
+      <BannerList onNavigate={(path) => navigate(path)} />
     </AdminLayout>
   );
 }

@@ -6,6 +6,7 @@ import {
   CardSkeleton,
   RegionCard,
 } from '../../components/Common';
+import { HeroBanner, type BannerSlide } from '../../components/Common/HeroBanner/HeroBanner';
 import { ProductCard } from '../../components/Product';
 import { CategoryCard } from '../../components/Category';
 import type { Product, ProductCategory } from '../../types';
@@ -79,6 +80,9 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig | null>(null);
+  // REQ-20260511-0006: hero carousel slides driven by is_featured products
+  // with banner_image set. Empty array = no carousel render (HeroBanner null).
+  const [carouselSlides, setCarouselSlides] = useState<BannerSlide[]>([]);
 
   // Fetch homepage CMS config
   useEffect(() => {
@@ -128,6 +132,27 @@ export const HomePage: React.FC<HomePageProps> = ({
     });
   }, []);
 
+  // REQ-20260511-0006: hero carousel data from /banners/carousel.
+  // Maps the lean ApiCarouselBanner shape into HeroBanner's slide model.
+  // Empty array on failure → component renders nothing (no Page Crashed).
+  useEffect(() => {
+    productService.carouselBanners().then((items) => {
+      setCarouselSlides(
+        items.map((it) => ({
+          id: String(it.id),
+          image: it.banner_image,
+          title: it.name_zh,
+          titleEn: it.name_en,
+          tags: it.summary_zh ? [it.summary_zh] : [],
+          tagsEn: it.summary_en ? [it.summary_en] : [],
+          attractionId: String(it.id),
+        })),
+      );
+    }).catch(() => {
+      // API miss / empty — leave carousel hidden, don't crash homepage
+    });
+  }, []);
+
   return (
     <div className={styles.page}>
       <Header
@@ -148,6 +173,16 @@ export const HomePage: React.FC<HomePageProps> = ({
         后端 popular_products / popular module 数据保持，admin CMS 未来想
         重启用即可还原 import 与 JSX。
       */}
+
+      {/* REQ-20260511-0006: hero carousel sourced from is_featured products
+          with banner_image set, gated by HomepageCMS 'banner' module toggle.
+          Click → /products/{id}. Auto-hides when no eligible products. */}
+      {isModuleVisible('banner') && carouselSlides.length > 0 && (
+        <HeroBanner
+          slides={carouselSlides}
+          onSlideClick={(productId) => onNavClick?.(`/products/${productId}`)}
+        />
+      )}
 
       {/* Search Tabs */}
       <section className={styles.searchSection}>

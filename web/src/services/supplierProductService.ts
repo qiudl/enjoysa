@@ -34,6 +34,9 @@ export interface ProductPayload {
   duration?: string;
   group_size?: string;
   tags?: string;
+  // REQ-20260511-0006: supplier 可上传产品 banner 图作为资产准备。
+  // 是否真出现在首页 carousel 由 admin 控（is_featured + carousel_rank）。
+  banner_image?: string;
   images?: ImagePayload[];
   packages?: PackagePayload[];
   highlights?: HighlightPayload[];

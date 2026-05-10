@@ -351,6 +351,11 @@ func Setup(cfg Config) *gin.Engine {
 	v1.GET("/suppliers/:id", publicProductHandler.GetSupplier)
 	v1.GET("/suppliers/:id/products", publicProductHandler.GetSupplierProducts)
 	v1.GET("/banners", adminHandler.ListBanners)
+	// REQ-20260511-0006: new homepage hero carousel (driven by is_featured products
+	// with banner_image set). Coexists with the legacy /banners endpoint for one
+	// release window — old endpoint stays so the deprecated /admin/banners CRUD
+	// keeps working until next-REQ cleanup.
+	v1.GET("/banners/carousel", publicProductHandler.ListCarouselBanners)
 
 	// Hotel search (public)
 	v1.GET("/hotels/search", hotelHandler.Search)
@@ -722,6 +727,9 @@ func Setup(cfg Config) *gin.Engine {
 		adminGroup.PATCH("/products/:id/packages/:pkgId/stock", adminHandler.UpdatePackageStock)
 		// REQ-20260510-0003: admin 数据 hygiene — 重算 stock_sold = SUM(orders) excl. cancelled/refunded
 		adminGroup.POST("/products/:id/packages/:pkgId/recompute-stock-sold", adminHandler.RecomputeStockSold)
+		// REQ-20260511-0006: lightweight inline edit for /admin/banners — only
+		// touches banner_image + carousel_rank, skips delete-recreate flow.
+		adminGroup.PATCH("/products/:id/banner", adminHandler.UpdateProductBanner)
 		// REQ-20260510-0001 dev-4: inline-edit endpoint for the bilingual preview Tab —
 		// surgical column write + manual_override flag flip; bypasses the heavy
 		// PUT delete-recreate flow.

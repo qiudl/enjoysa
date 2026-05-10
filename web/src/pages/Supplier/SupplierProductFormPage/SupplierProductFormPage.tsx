@@ -58,6 +58,9 @@ interface FormData {
   address_zh: string;
   address_en: string;
   tags: string;
+  // REQ-20260511-0006: 供应商可上传 banner 图作为资产准备。
+  // 是否真出现在首页 carousel 由 admin 决定（is_featured + carousel_rank）。
+  banner_image: string;
 }
 
 export interface SupplierProductFormPageProps {
@@ -161,6 +164,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
     region_id: 0, category_id: 0,
     price_from: '', duration: '', group_size: '',
     address_zh: '', address_en: '', tags: '',
+    banner_image: '',
   });
 
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -208,6 +212,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
           address_zh: p.address_zh || '',
           address_en: p.address_en || '',
           tags: p.tags || '',
+          banner_image: p.banner_image || '',
         });
         setImages(
           (p.images || []).map((img) => ({
@@ -277,6 +282,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       address_zh: form.address_zh,
       address_en: form.address_en,
       tags: form.tags,
+      banner_image: form.banner_image,
       images: images.map((img, i) => ({
         url: img.url,
         sort_order: i,
@@ -722,6 +728,80 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       <p className={styles.hint} style={{ marginTop: '0.75rem' }}>
         {t('supplier.productForm.imageUploadHint')} · JPG/PNG/WebP/GIF · Max 10MB
       </p>
+
+      {/* REQ-20260511-0006: optional homepage hero banner image (3:1).
+          Independent of the gallery above. Whether it actually appears in the
+          carousel is decided by admin via /admin/banners (is_featured + rank). */}
+      <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
+        <div className={styles.sectionHeader}>
+          <h3>
+            {isZh ? '首页 Banner 图（可选）' : 'Hero Banner Image (optional)'}
+          </h3>
+          <span className={styles.hint}>
+            {isZh ? '推荐 1920×640，3:1' : 'Recommended 1920×640, 3:1'}
+          </span>
+        </div>
+        {form.banner_image ? (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: '0.75rem' }}>
+            <img
+              src={form.banner_image}
+              alt="banner preview"
+              style={{ width: 240, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ cursor: 'pointer', textAlign: 'center', padding: '6px 12px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 4 }}>
+                {isZh ? '替换' : 'Replace'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await supplierProductService.upload(file);
+                      updateField('banner_image', url);
+                    } catch (err) {
+                      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+                    }
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                style={{ padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#dc2626', border: '1px solid #d1d5db', borderRadius: 4, background: 'white' }}
+                onClick={() => updateField('banner_image', '')}
+              >
+                {isZh ? '清除' : 'Clear'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label style={{ cursor: 'pointer', display: 'inline-block', padding: '8px 16px', fontSize: 14, border: '1px dashed #d1d5db', borderRadius: 4, marginTop: '0.75rem' }}>
+            {isZh ? '上传 Banner 图' : 'Upload Banner Image'}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const url = await supplierProductService.upload(file);
+                  updateField('banner_image', url);
+                } catch (err) {
+                  setUploadError(err instanceof Error ? err.message : 'Upload failed');
+                }
+              }}
+            />
+          </label>
+        )}
+        <p className={styles.hint} style={{ marginTop: '0.5rem' }}>
+          {isZh
+            ? '上传后该产品有机会被加入首页 hero carousel（admin 决定是否出现）'
+            : 'Once uploaded, this product is eligible for homepage hero carousel (admin decides visibility).'}
+        </p>
+      </div>
     </div>
   );
 
