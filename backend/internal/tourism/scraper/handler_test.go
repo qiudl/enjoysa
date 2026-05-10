@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	tourismmodel "enjoysa-backend/internal/tourism/model"
 
@@ -44,12 +45,26 @@ func newCtx(method, target string, body []byte) (*gin.Context, *httptest.Respons
 // ---- fakes -----------------------------------------------------------------
 
 type fakeRunner struct {
-	job *Job
-	err error
+	mu     sync.Mutex
+	job    *Job
+	err    error
+	called int
+	done   chan struct{}
 }
 
 func (f *fakeRunner) RunSync(_ context.Context, triggeredBy *uint) (*Job, error) {
+	f.mu.Lock()
+	f.called++
+	f.mu.Unlock()
+	if f.done != nil {
+		defer close(f.done)
+	}
 	return f.job, f.err
+}
+func (f *fakeRunner) Called() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.called
 }
 
 type fakeHandlerStore struct {
@@ -138,40 +153,77 @@ func TestRunScrape_NotWiredReturns503(t *testing.T) {
 	}
 }
 
-func TestRunScrape_HappyPathReturnsJob(t *testing.T) {
-	job := &Job{ID: "uuid-1", Status: JobStatusCompleted, ExtractedRows: 5}
-	h := NewHandler(&fakeRunner{job: job}, &fakeHandlerStore{}, &fakeWriter{})
+func TestRunScrape_AsyncReturns200Started(t *testing.T) {
+	// Async behaviour: handler returns 200 + "started" within ms,
+	// goroutine launches in background. The actual job result lands in
+	// DB and is queried via /jobs/:id (existing endpoint).
+	done := make(chan struct{})
+	runner := &fakeRunner{
+		job:  &Job{ID: "uuid-1", Status: JobStatusCompleted},
+		done: done,
+	}
+	h := NewHandler(runner, &fakeHandlerStore{}, &fakeWriter{})
 	c, w := newCtx(http.MethodPost, "/", nil)
 	c.Set("admin_id", uint(1))
 	h.RunScrape(c)
 	if w.Code != http.StatusOK {
 		t.Fatalf("got %d want 200, body=%s", w.Code, w.Body.String())
 	}
-	if !strings.Contains(w.Body.String(), `"id":"uuid-1"`) {
-		t.Errorf("response missing job id: %s", w.Body.String())
+	if !strings.Contains(w.Body.String(), `"status":"started"`) {
+		t.Errorf("response missing async-started shape: %s", w.Body.String())
+	}
+	// Wait for the background goroutine to actually call RunSync (with a
+	// generous timeout so a slow CI box doesn't flake).
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("background goroutine did not call RunSync")
+	}
+	if runner.Called() != 1 {
+		t.Errorf("runner called %d times, want 1", runner.Called())
 	}
 }
 
-func TestRunScrape_AlreadyRunningMaps409(t *testing.T) {
-	h := NewHandler(&fakeRunner{err: ErrJobAlreadyRunning}, &fakeHandlerStore{}, &fakeWriter{})
+func TestRunScrape_AsyncSwallowsAlreadyRunningErr(t *testing.T) {
+	// When the goroutine's RunSync returns ErrJobAlreadyRunning (race
+	// against another runner replica), the handler doesn't have a caller
+	// to surface 409 to anymore — the error is swallowed silently. The
+	// next /jobs poll shows the existing running job. This test verifies
+	// the handler still returns 200 to the original caller and the
+	// goroutine completes without panicking.
+	done := make(chan struct{})
+	runner := &fakeRunner{err: ErrJobAlreadyRunning, done: done}
+	h := NewHandler(runner, &fakeHandlerStore{}, &fakeWriter{})
 	c, w := newCtx(http.MethodPost, "/", nil)
 	c.Set("admin_id", uint(1))
 	h.RunScrape(c)
-	if w.Code != http.StatusConflict {
-		t.Errorf("got %d want 409", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("got %d want 200 (async)", w.Code)
 	}
-	if !strings.Contains(w.Body.String(), "SCRAPE_JOB_RUNNING") {
-		t.Errorf("error code missing: %s", w.Body.String())
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("background goroutine never called RunSync")
 	}
 }
 
-func TestRunScrape_GenericErrorMaps500(t *testing.T) {
-	h := NewHandler(&fakeRunner{err: errors.New("boom")}, &fakeHandlerStore{}, &fakeWriter{})
+func TestRunScrape_AsyncSwallowsGenericError(t *testing.T) {
+	// Generic errors from RunSync are recorded in the DB job row by the
+	// service's finishJob path — the handler has no synchronous response
+	// to attach them to. Smoke that we don't crash on err.
+	done := make(chan struct{})
+	runner := &fakeRunner{err: errors.New("boom"), done: done}
+	h := NewHandler(runner, &fakeHandlerStore{}, &fakeWriter{})
 	c, w := newCtx(http.MethodPost, "/", nil)
 	c.Set("admin_id", uint(1))
 	h.RunScrape(c)
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("got %d want 500", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("got %d want 200 (async, errors swallowed)", w.Code)
+	}
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("background goroutine never called RunSync")
 	}
 }
 
