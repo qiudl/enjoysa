@@ -356,4 +356,88 @@ export const tourismKnowledgeService = {
   runEtl() {
     return post<EtlSummary>('/admin/tourism/etl/run', undefined, 'admin');
   },
+
+  // --- Scrape pipeline (REQ-20260510-0011 · 2C) ---
+  // Synchronous run — admin clicks once, waits ~1-2 minutes for batch of
+  // 30 URLs at 1 r/s pacing + ~3s LLM each. 409 if another scrape job is
+  // already running for this source (D4 mutex).
+  runScrape() {
+    return post<ScrapeJob>('/admin/tourism/scrape/run', undefined, 'admin');
+  },
+  getScrapeJob(id: string) {
+    return get<ScrapeJob>(`/admin/tourism/scrape/jobs/${encodeURIComponent(id)}`, 'admin');
+  },
+  listScrapeStaging(filter: ScrapeStagingFilter = {}) {
+    return get<PaginatedResponse<ScrapeStaging>>(
+      `/admin/tourism/scrape/staging${toQueryString(filter as Record<string, unknown>)}`,
+      'admin',
+    );
+  },
+  promoteScrapeStaging(id: number) {
+    return post<{ staging_id: number; attraction_id: number }>(
+      `/admin/tourism/scrape/staging/${id}/promote`,
+      undefined,
+      'admin',
+    );
+  },
+  rejectScrapeStaging(id: number, reason: string) {
+    return post<void>(
+      `/admin/tourism/scrape/staging/${id}/reject`,
+      { reason },
+      'admin',
+    );
+  },
 };
+
+// ============================================================================
+// Scrape pipeline types (REQ-20260510-0011 · 2C)
+// ============================================================================
+
+export interface ScrapeJob {
+  id: string;
+  source: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'partial';
+  total_urls: number;
+  scraped_urls: number;
+  extracted_rows: number;
+  skipped_rows: number;
+  error_count: number;
+  last_error?: string;
+  triggered_by?: number;
+  started_at?: string;
+  finished_at?: string;
+  created_at: string;
+}
+
+/** Staging row — what the LLM extracted before admin review. */
+export interface ScrapeExtractedPayload {
+  name_en?: string;
+  name_zh?: string;
+  council?: string;
+  category?: string;
+  description_zh?: string;
+  tags?: string[];
+  best_seasons?: string[];
+  extraction_confidence?: 'high' | 'medium' | 'low';
+}
+
+export interface ScrapeStaging {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  source: string;
+  source_url: string;
+  raw_html_excerpt?: string;
+  extracted_payload: ScrapeExtractedPayload;
+  extraction_confidence?: string;
+  status: 'pending' | 'promoted' | 'rejected';
+  reviewed_by?: number;
+  reviewed_at?: string;
+  reject_reason?: string;
+  promoted_to_id?: number;
+  scrape_job_id: string;
+}
+
+export interface ScrapeStagingFilter extends PageQuery {
+  status?: 'pending' | 'promoted' | 'rejected';
+}
