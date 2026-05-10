@@ -13,7 +13,10 @@ import {
   Lock,
   ThumbsUp,
   ThumbsDown,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
+import { tourismSupplierService } from '../../../services/tourismCEndService';
 import styles from './SupplierTicketDetailPage.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -191,6 +194,10 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  // REQ-20260510-0011 · 2B: AI 起草状态 — 仅 ticket 有数字 ID 时可用
+  // (mock 数据用 string id "t1"，实际后端 ticket id 为 uint)
+  const [aiDrafting, setAiDrafting] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState<string | null>(null);
 
   const timelineEndRef = useRef<HTMLDivElement>(null);
 
@@ -224,6 +231,29 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  // REQ-20260510-0011 · 2B: trigger AI draft. Only enabled when the ticket
+  // id resolves to a positive integer — the mock detail page uses "t1"
+  // so the button is disabled until a real ticket page is wired (the real
+  // backend lookup needs uint, see internal/ai/tourism_agent/handler.go).
+  const numericTicketId = (() => {
+    const n = Number(ticket.id);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+  const handleAiDraft = async () => {
+    if (!numericTicketId || aiDrafting) return;
+    setAiDrafting(true);
+    setAiDraftError(null);
+    try {
+      const resp = await tourismSupplierService.draftReply(numericTicketId, 'supplier');
+      // Replace whatever was in the textarea — admin edits from there.
+      setReplyText(resp.content);
+    } catch (err) {
+      setAiDraftError(err instanceof Error ? err.message : 'AI draft failed');
+    } finally {
+      setAiDrafting(false);
     }
   };
 
@@ -392,6 +422,24 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
                 <span>{t('supplier.ticket.internalNote')}</span>
               </label>
               <div className={styles.replyActions}>
+                {/* REQ-20260510-0011 · 2B: AI draft. Disabled when ticket
+                    id isn't numeric (mock data) or drafting is in flight. */}
+                <button
+                  className={styles.attachBtn}
+                  onClick={handleAiDraft}
+                  disabled={!numericTicketId || aiDrafting}
+                  title={
+                    !numericTicketId
+                      ? t('supplier.ticket.aiDraft.disabled', '此页用 mock 数据，AI 起草需真实 ticket')
+                      : t('supplier.ticket.aiDraft.tooltip', '基于工单内容生成回复草稿')
+                  }
+                >
+                  {aiDrafting ? (
+                    <Loader2 size={16} className={styles.aiDraftSpin} />
+                  ) : (
+                    <Sparkles size={16} />
+                  )}
+                </button>
                 <button className={styles.attachBtn} title={t('supplier.ticket.attachFile')}>
                   <Paperclip size={16} />
                 </button>
@@ -404,6 +452,11 @@ export const SupplierTicketDetailPage: React.FC<SupplierTicketDetailPageProps> =
                   {t('supplier.ticket.send')}
                 </button>
               </div>
+              {aiDraftError && (
+                <div className={styles.aiDraftError} role="alert">
+                  {aiDraftError}
+                </div>
+              )}
             </div>
           </div>
         </div>
