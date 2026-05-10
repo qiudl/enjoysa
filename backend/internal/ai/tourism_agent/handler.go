@@ -293,6 +293,134 @@ func (h *Handler) ExplainContent(c *gin.Context) {
 	c.String(http.StatusOK, body)
 }
 
+// fitCheckRequest is the wire-format for POST /api/v1/ai/tourism/c/fit-check.
+// User query is required but capped + sanitised inside the handler — the
+// binding layer just enforces presence.
+type fitCheckRequest struct {
+	ProductID uint   `json:"product_id" binding:"required,min=1"`
+	UserQuery string `json:"user_query" binding:"required"`
+}
+
+// FitCheckMaxQueryLen caps user-supplied free text before it reaches the LLM
+// (REQ-20260510-0011 · 2A · D2). 200 runes is enough for "带 5 岁小孩想拍照"
+// shapes the requirement called out, well below any plausible injection-length
+// payload. Exposed as const for tests and the rate-limit telemetry.
+const FitCheckMaxQueryLen = 200
+
+// FitCheck handles POST /api/v1/ai/tourism/c/fit-check.
+//
+// Anonymous-friendly. NO cache (input varies per request — caching would
+// leak one user's query into another user's response). LLM call is single-
+// shot and short — Agent budget cap covers worst case.
+//
+// D2 防护 chain:
+//   1. ShouldBindJSON enforces presence
+//   2. sanitizeUserQuery strips control chars + caps at FitCheckMaxQueryLen runes
+//   3. BuildUserPrompt wraps inside DATA-not-INSTRUCTIONS boundary
+//
+// D3 隐私 chain:
+//   1. We do NOT log or persist req.UserQuery anywhere — only pass to LLM
+//   2. Response prefixes with mandatory "AI 参考意见" disclaimer
+//
+// Note: user query is intentionally not echoed back in the response to
+// further reduce reflected-XSS / log-injection blast radius.
+func (h *Handler) FitCheck(c *gin.Context) {
+	if h.productLookup == nil {
+		response.Fail(c, http.StatusServiceUnavailable, "FIT_CHECK_NOT_WIRED",
+			"fit-check endpoint not configured on this server")
+		return
+	}
+
+	var req fitCheckRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	clean, ok := sanitizeUserQuery(req.UserQuery)
+	if !ok {
+		response.BadRequest(c, "user_query is empty after sanitisation")
+		return
+	}
+
+	seed, err := h.productLookup.LookupForAgent(c.Request.Context(), req.ProductID)
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+	if seed.Status != "approved" && seed.Status != "offline" {
+		response.Fail(c, http.StatusForbidden, "PRODUCT_NOT_PUBLIC",
+			"product is not publicly available")
+		return
+	}
+
+	resp, err := h.agent.Generate(c.Request.Context(), GenerateRequest{
+		Field:    FieldFitCheck,
+		Language: "zh-CN",
+		Skeleton: Skeleton{
+			Category:        seed.Category,
+			Council:         seed.Council,
+			DurationMinutes: seed.DurationMinutes,
+			Highlights:      []string{seed.NameZh},
+			Tags:            seed.Tags,
+			UserQuery:       clean,
+		},
+	})
+	if err != nil {
+		if errors.Is(err, ErrMaxIterations) {
+			response.Fail(c, http.StatusServiceUnavailable, "AGENT_MAX_ITERATIONS",
+				"AI agent could not finish in the allowed number of tool calls")
+			return
+		}
+		response.ServerError(c, "AI fit-check failed: "+err.Error())
+		return
+	}
+
+	response.Success(c, resp)
+}
+
+// sanitizeUserQuery strips control characters (other than space + Chinese
+// fullwidth space) and caps the result at FitCheckMaxQueryLen runes. Returns
+// (cleaned, false) when the input is empty after sanitisation so the handler
+// can 400 cleanly.
+//
+// Why not regex: the input is short and per-request, a one-pass rune scan
+// stays predictable on memory + cost. We deliberately allow newlines through
+// (a user might paste a multi-line description) but normalise CRLF → LF.
+func sanitizeUserQuery(raw string) (string, bool) {
+	out := make([]rune, 0, len(raw))
+	for _, r := range raw {
+		switch {
+		case r == '\r':
+			// Skip — \n on its own is fine.
+		case r == '\n', r == '\t':
+			out = append(out, r)
+		case r < 0x20:
+			// Other C0 control chars dropped silently.
+		default:
+			out = append(out, r)
+		}
+		if len(out) >= FitCheckMaxQueryLen {
+			break
+		}
+	}
+	// Trim leading/trailing whitespace.
+	for len(out) > 0 && (out[0] == ' ' || out[0] == '\n' || out[0] == '\t') {
+		out = out[1:]
+	}
+	for len(out) > 0 {
+		last := out[len(out)-1]
+		if last != ' ' && last != '\n' && last != '\t' {
+			break
+		}
+		out = out[:len(out)-1]
+	}
+	if len(out) == 0 {
+		return "", false
+	}
+	return string(out), true
+}
+
 // jsonString returns a JSON-encoded string literal (with surrounding quotes).
 // Inline for the cache pre-marshal path so we don't depend on encoding/json
 // for one-off escaping work — keeps allocations minimal in the cache-miss

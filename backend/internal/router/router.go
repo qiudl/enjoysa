@@ -509,6 +509,7 @@ func Setup(cfg Config) *gin.Engine {
 		// No auth gate — anonymous browsers can use C-end AI features.
 		{
 			tourCGroup.POST("/explain", tourismAgentHandler.ExplainContent)
+			tourCGroup.POST("/fit-check", tourismAgentHandler.FitCheck)
 		}
 	}
 
