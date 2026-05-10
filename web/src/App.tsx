@@ -50,6 +50,8 @@ const SupplierSettingsPage = React.lazy(() => import('./pages/Supplier/SupplierS
 const SupplierTicketDetailPage = React.lazy(() => import('./pages/Supplier/SupplierTicketDetailPage/SupplierTicketDetailPage'));
 const SupplierOrderDetailPage = React.lazy(() => import('./pages/Supplier/SupplierOrderDetailPage/SupplierOrderDetailPage'));
 const SupplierProductPreviewPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewPage/SupplierProductPreviewPage'));
+// REQ-20260510-0001 F2: 双语 C 端预览（区别于 SupplierProductPreviewPage 的单语预览）
+const SupplierProductPreviewBilingualPage = React.lazy(() => import('./pages/Supplier/SupplierProductPreviewBilingualPage/SupplierProductPreviewBilingualPage'));
 const SupplierLoginPage = React.lazy(() => import('./pages/Supplier/SupplierLoginPage/SupplierLoginPage'));
 const SupplierRegisterPage = React.lazy(() => import('./pages/Supplier/SupplierRegisterPage/SupplierRegisterPage'));
 const AIChatPage = React.lazy(() => import('./pages/Supplier/SupplierAIChatPage/SupplierAIChatPage'));
@@ -999,6 +1001,21 @@ function SupplierProductPreviewPageWrapper() {
   );
 }
 
+// REQ-20260510-0001 F2: 包装组件 — Supplier 双语 C 端预览
+function SupplierProductPreviewBilingualPageWrapper() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  return (
+    <SupplierLayout>
+      <SupplierProductPreviewBilingualPage
+        productId={id}
+        onNavigate={(path) => navigate(path)}
+      />
+    </SupplierLayout>
+  );
+}
+
 // =====================
 // 平台管理端页面包装组件
 // =====================
@@ -1351,6 +1368,8 @@ function App() {
         <Route path="/supplier/after-sales/:id" element={<SupplierAuthGuard><SupplierTicketDetailPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/orders/:id" element={<SupplierAuthGuard><SupplierOrderDetailPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/products/:id/preview" element={<SupplierAuthGuard><SupplierProductPreviewPageWrapper /></SupplierAuthGuard>} />
+        {/* REQ-20260510-0001 F2: 双语 C 端预览（提交评审前的所见即所得 gate）*/}
+        <Route path="/supplier/products/:id/preview-bilingual" element={<SupplierAuthGuard><SupplierProductPreviewBilingualPageWrapper /></SupplierAuthGuard>} />
         <Route path="/supplier/ai-chat" element={<SupplierAuthGuard><AIChatPage role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
         <Route path="/supplier/ai-chat/sessions/:id" element={<SupplierAuthGuard><AIChatPageWithRouteSession role="supplier" backPath="/supplier" /></SupplierAuthGuard>} />
         {/* REQ-20260509-0037 dev-8: new group-chat (workspace + channels). */}
