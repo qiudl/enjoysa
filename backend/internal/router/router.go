@@ -59,6 +59,7 @@ import (
 	tourismagent "enjoysa-backend/internal/ai/tourism_agent"
 	tourismetl "enjoysa-backend/internal/tourism/etl"
 	tourismhandler "enjoysa-backend/internal/tourism/handler"
+	tourismscraper "enjoysa-backend/internal/tourism/scraper"
 	tourismstore "enjoysa-backend/internal/tourism/store"
 	aftersaleshandler "enjoysa-backend/internal/aftersales/handler"
 	aftersalesstore "enjoysa-backend/internal/aftersales/store"
@@ -904,6 +905,25 @@ func Setup(cfg Config) *gin.Engine {
 				tour.GET("/pricing-benchmarks/:id", tourismAdminHandler.GetPricingBenchmark)
 				tour.PUT("/pricing-benchmarks/:id", tourismAdminHandler.UpdatePricingBenchmark)
 				tour.DELETE("/pricing-benchmarks/:id", tourismAdminHandler.DeletePricingBenchmark)
+
+				// REQ-20260510-0011 · 2C: scrape pipeline (admin-triggered).
+				// Same super_admin gating as the rest of /admin/tourism/*.
+				// Migration 012_tourism_scrape.sql must be applied manually
+				// per D7 (GORM AutoMigrate excluded for tourism_* tables).
+				scraperStore := tourismscraper.NewStore(cfg.DB)
+				scraperFetcher := tourismscraper.NewHTTPFetcher()
+				scraperSitemap := tourismscraper.NewSATourismSitemap(scraperFetcher)
+				scraperExtractor := tourismscraper.NewLLMExtractor(llmRegistry.Default(), cfg.AIConfig.Model)
+				scraperSvc := tourismscraper.NewService(scraperStore, scraperSitemap, scraperFetcher, scraperExtractor)
+				scraperHandler := tourismscraper.NewHandler(scraperSvc, scraperStore, tourismAdminStore)
+				scrape := tour.Group("/scrape")
+				{
+					scrape.POST("/run", scraperHandler.RunScrape)
+					scrape.GET("/jobs/:id", scraperHandler.GetJob)
+					scrape.GET("/staging", scraperHandler.ListStaging)
+					scrape.POST("/staging/:id/promote", scraperHandler.PromoteStaging)
+					scrape.POST("/staging/:id/reject", scraperHandler.RejectStaging)
+				}
 			}
 		}
 	}
