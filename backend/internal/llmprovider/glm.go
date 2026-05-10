@@ -32,3 +32,7 @@ func (p *GLMProvider) ChatStream(ctx context.Context, req Request, onEvent func(
 func (p *GLMProvider) ChatJSON(ctx context.Context, req Request) (string, []ToolCall, error) {
 	return p.c.chatJSON(ctx, req)
 }
+
+func (p *GLMProvider) ChatJSONMessage(ctx context.Context, req Request) (Message, error) {
+	return p.c.chatJSONMessage(ctx, req)
+}

@@ -68,17 +68,26 @@ type scriptedLLM struct {
 type llmTurn struct {
 	content   string
 	toolCalls []llmprovider.ToolCall
+	reasoning string
 	err       error
 }
 
-func (l *scriptedLLM) ChatJSON(_ context.Context, req llmprovider.Request) (string, []llmprovider.ToolCall, error) {
+func (l *scriptedLLM) ChatJSONMessage(_ context.Context, req llmprovider.Request) (llmprovider.Message, error) {
 	l.got = append(l.got, req)
 	if l.idx >= len(l.turns) {
-		return "", nil, nil
+		return llmprovider.Message{Role: "assistant"}, nil
 	}
 	t := l.turns[l.idx]
 	l.idx++
-	return t.content, t.toolCalls, t.err
+	if t.err != nil {
+		return llmprovider.Message{}, t.err
+	}
+	return llmprovider.Message{
+		Role:             "assistant",
+		Content:          t.content,
+		ReasoningContent: t.reasoning,
+		ToolCalls:        t.toolCalls,
+	}, nil
 }
 
 // ---------- tests ------------------------------------------------------------

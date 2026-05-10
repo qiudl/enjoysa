@@ -7,11 +7,17 @@
 package llmprovider
 
 // Message is a provider-agnostic chat message (OpenAI shape).
+//
+// ReasoningContent is DeepSeek's thinking-mode "scratchpad" output. When the
+// LLM returns it, callers MUST echo it back on the next turn or DeepSeek
+// rejects the request with HTTP 400 ("reasoning_content in thinking mode
+// must be passed back"). Other OpenAI-compatible providers ignore the field.
 type Message struct {
-	Role       string     `json:"role"`
-	Content    string     `json:"content,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role             string     `json:"role"`
+	Content          string     `json:"content,omitempty"`
+	ReasoningContent string     `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID       string     `json:"tool_call_id,omitempty"`
 }
 
 // ToolCall is an LLM-emitted function invocation.
