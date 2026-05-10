@@ -52,15 +52,18 @@ export interface ScheduleAlerts {
 }
 
 export async function getRevenueTrend(days = 30): Promise<RevenueTrendItem[]> {
-  return get<RevenueTrendItem[]>(`/supplier/dashboard/revenue-trend?days=${days}`, 'supplier');
+  const res = await get<RevenueTrendItem[] | null>(`/supplier/dashboard/revenue-trend?days=${days}`, 'supplier');
+  return res ?? [];
 }
 
 export async function getTopProducts(days = 30, limit = 5): Promise<TopProductItem[]> {
-  return get<TopProductItem[]>(`/supplier/dashboard/top-products?days=${days}&limit=${limit}`, 'supplier');
+  const res = await get<TopProductItem[] | null>(`/supplier/dashboard/top-products?days=${days}&limit=${limit}`, 'supplier');
+  return res ?? [];
 }
 
 export async function getChannelStats(days = 30): Promise<ChannelStatsItem[]> {
-  return get<ChannelStatsItem[]>(`/supplier/dashboard/channel-stats?days=${days}`, 'supplier');
+  const res = await get<ChannelStatsItem[] | null>(`/supplier/dashboard/channel-stats?days=${days}`, 'supplier');
+  return res ?? [];
 }
 
 export async function getEnhancedStats(): Promise<EnhancedStats> {
