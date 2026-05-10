@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { installChunkSelfHeal, __testing } from '../chunkSelfHeal';
+import { installChunkSelfHeal, lazyWithSelfHeal, __testing } from '../chunkSelfHeal';
 
 const { RELOADED_FLAG } = __testing;
 
@@ -80,6 +80,60 @@ describe('chunkSelfHeal', () => {
 
     window.dispatchEvent(new Event('vite:preloadError'));
     fireUnhandledRejection('Failed to fetch dynamically imported module');
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('clears the once-per-session flag on window load so a later deploy can self-heal again', () => {
+    makeReloadSpy();
+    sessionStorage.setItem(RELOADED_FLAG, 'true'); // simulate prior reload that succeeded
+    installChunkSelfHeal();
+
+    window.dispatchEvent(new Event('load'));
+    expect(sessionStorage.getItem(RELOADED_FLAG)).toBeNull();
+  });
+
+  it('lazyWithSelfHeal triggers reloadOnce when factory rejects with chunk-load error', async () => {
+    const reload = makeReloadSpy();
+    const factory = vi.fn(() =>
+      Promise.reject(
+        new Error('Failed to fetch dynamically imported module: https://example.com/assets/foo-XXXX.js'),
+      ),
+    );
+
+    // Calling the lazy component's `_payload` is internal — instead invoke the
+    // factory React would call (lazyWithSelfHeal returns a LazyExoticComponent
+    // whose internals call factory()). We exercise the wrapper by reaching
+    // into React.lazy's payload._init pattern.
+    const Lazy = lazyWithSelfHeal(factory as never);
+    // React's LazyExoticComponent has private `_payload._result`/`_init`
+    // fields; calling _init triggers the factory.
+    const payload = (Lazy as unknown as { _payload: { _status: number; _result: () => Promise<unknown> } })._payload;
+    const init = (Lazy as unknown as { _init: (p: typeof payload) => unknown })._init;
+    try {
+      init(payload);
+    } catch {
+      // _init throws the in-flight promise (Suspense pattern); ignore.
+    }
+    // Wait a microtask so the factory's .catch handler runs.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('lazyWithSelfHeal re-throws non-chunk errors so React still surfaces them', async () => {
+    const reload = makeReloadSpy();
+    const factory = vi.fn(() => Promise.reject(new Error('TypeError: something else')));
+
+    const Lazy = lazyWithSelfHeal(factory as never);
+    const payload = (Lazy as unknown as { _payload: unknown })._payload;
+    const init = (Lazy as unknown as { _init: (p: unknown) => unknown })._init;
+    try {
+      init(payload);
+    } catch {
+      // ignore Suspense throw
+    }
+    await new Promise((r) => setTimeout(r, 0));
+    expect(factory).toHaveBeenCalledTimes(1);
     expect(reload).not.toHaveBeenCalled();
   });
 });
