@@ -510,6 +510,7 @@ func Setup(cfg Config) *gin.Engine {
 		{
 			tourCGroup.POST("/explain", tourismAgentHandler.ExplainContent)
 			tourCGroup.POST("/fit-check", tourismAgentHandler.FitCheck)
+			tourCGroup.GET("/nearby", tourismAgentHandler.Nearby)
 		}
 	}
 

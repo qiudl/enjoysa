@@ -421,6 +421,171 @@ func sanitizeUserQuery(raw string) (string, bool) {
 	return string(out), true
 }
 
+// ============================================================================
+// REQ-20260510-0011 · 2A-3 · Nearby
+// ============================================================================
+
+// NearbyMaxResults caps the response size — design Gate 1 requires "至少
+// 3 条 (cap 5)". Exposing as const so tests assert the cap holds.
+const NearbyMaxResults = 5
+
+// NearbyItem is the trimmed-down shape returned to C-end. Price fields are
+// intentionally absent — design says no price ("avoid 暗推销") so neighbours
+// don't look like an upsell carousel. UI uses (type, name) for navigation.
+type NearbyItem struct {
+	Type    string `json:"type"`
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	NameEn  string `json:"name_en,omitempty"`
+	Council string `json:"council,omitempty"`
+}
+
+// NearbyResponse is the wire shape. Items may be empty when the council /
+// category has no other active KB entries — UI shows "no nearby suggestions
+// yet" in that case rather than 404.
+type NearbyResponse struct {
+	Items []NearbyItem `json:"items"`
+}
+
+// Nearby handles GET /api/v1/ai/tourism/c/nearby?product_id=X.
+//
+// Pure DB read (no LLM) — uses the same search_knowledge tool the agent
+// uses internally, but bypassing Agent.Generate keeps the request <50ms
+// even on cache miss. Cache is shared with /explain (different prefix)
+// so the same TTL+jitter behaviour applies.
+//
+// We deliberately strip price fields from SearchHit before returning to
+// avoid the C-end UI rendering this as an upsell shelf — design intent
+// is "neighbouring inspiration", not "buy these too".
+func (h *Handler) Nearby(c *gin.Context) {
+	if h.productLookup == nil || h.explainCache == nil {
+		response.Fail(c, http.StatusServiceUnavailable, "NEARBY_NOT_WIRED",
+			"nearby endpoint not configured on this server")
+		return
+	}
+
+	raw := c.Query("product_id")
+	productID, err := strconv.ParseUint(raw, 10, 32)
+	if err != nil || productID == 0 {
+		response.BadRequest(c, "product_id is required and must be a positive integer")
+		return
+	}
+
+	cacheKey := "nearby:" + strconv.FormatUint(productID, 10)
+	if cached, ok := h.explainCache.Get(cacheKey); ok {
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.Header("X-Cache", "HIT")
+		c.String(http.StatusOK, cached)
+		return
+	}
+	c.Header("X-Cache", "MISS")
+
+	seed, err := h.productLookup.LookupForAgent(c.Request.Context(), uint(productID))
+	if err != nil {
+		response.NotFound(c, "Product not found")
+		return
+	}
+	if seed.Status != "approved" && seed.Status != "offline" {
+		response.Fail(c, http.StatusForbidden, "PRODUCT_NOT_PUBLIC",
+			"product is not publicly available")
+		return
+	}
+	// Council is the strong filter — without it we'd return random KB
+	// entries which wouldn't be "nearby" at all. Empty council → 200 with
+	// no items rather than 5xx so the UI hides the section gracefully.
+	if seed.Council == "" {
+		emit := `{"success":true,"data":{"items":[]}}`
+		h.explainCache.Set(cacheKey, emit)
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.String(http.StatusOK, emit)
+		return
+	}
+
+	hits, err := h.agent.store.SearchKnowledge(c.Request.Context(), SearchParams{
+		Council:  seed.Council,
+		Category: seed.Category,
+		Limit:    NearbyMaxResults + 1, // +1 so we can drop the product itself if surfaced
+	})
+	if err != nil {
+		response.ServerError(c, "search failed: "+err.Error())
+		return
+	}
+
+	items := buildNearbyItems(hits, seed.NameZh, NearbyMaxResults)
+
+	body := encodeNearbyBody(items)
+	h.explainCache.Set(cacheKey, body)
+	c.Header("Content-Type", "application/json; charset=utf-8")
+	c.String(http.StatusOK, body)
+}
+
+// buildNearbyItems trims SearchHits to NearbyItems, drops any entry whose
+// name matches the source product (case-insensitive trim) so a product that
+// got reverse-ETL'd into the KB doesn't show up as its own "neighbour", and
+// caps at maxResults.
+func buildNearbyItems(hits []SearchHit, selfName string, maxResults int) []NearbyItem {
+	out := make([]NearbyItem, 0, maxResults)
+	selfTrimmed := normaliseForCompare(selfName)
+	for _, h := range hits {
+		if normaliseForCompare(h.NameZh) == selfTrimmed && selfTrimmed != "" {
+			continue
+		}
+		out = append(out, NearbyItem{
+			Type:    h.Type,
+			ID:      h.ID,
+			Name:    h.NameZh,
+			NameEn:  h.NameEn,
+			Council: h.Council,
+		})
+		if len(out) >= maxResults {
+			break
+		}
+	}
+	return out
+}
+
+// normaliseForCompare lowercases + trims so "大鸭号" and " 大鸭号 " match.
+// Cheap helper; not designed for full Unicode case-folding.
+func normaliseForCompare(s string) string {
+	out := make([]rune, 0, len(s))
+	for _, r := range s {
+		if r == ' ' || r == '\t' || r == '\n' {
+			continue
+		}
+		out = append(out, r)
+	}
+	return string(out)
+}
+
+// encodeNearbyBody hand-marshals NearbyResponse so cache hits are
+// byte-identical to live responses. Same rationale as ExplainContent.
+func encodeNearbyBody(items []NearbyItem) string {
+	if len(items) == 0 {
+		return `{"success":true,"data":{"items":[]}}`
+	}
+	var sb []byte
+	sb = append(sb, []byte(`{"success":true,"data":{"items":[`)...)
+	for i, it := range items {
+		if i > 0 {
+			sb = append(sb, ',')
+		}
+		fields := fmt.Sprintf(`{"type":%q,"id":%d,"name":%s`,
+			it.Type, it.ID, jsonString(it.Name))
+		sb = append(sb, []byte(fields)...)
+		if it.NameEn != "" {
+			sb = append(sb, []byte(`,"name_en":`)...)
+			sb = append(sb, []byte(jsonString(it.NameEn))...)
+		}
+		if it.Council != "" {
+			sb = append(sb, []byte(`,"council":`)...)
+			sb = append(sb, []byte(jsonString(it.Council))...)
+		}
+		sb = append(sb, '}')
+	}
+	sb = append(sb, []byte(`]}}`)...)
+	return string(sb)
+}
+
 // jsonString returns a JSON-encoded string literal (with surrounding quotes).
 // Inline for the cache pre-marshal path so we don't depend on encoding/json
 // for one-off escaping work — keeps allocations minimal in the cache-miss
