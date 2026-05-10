@@ -16,6 +16,9 @@ func (s *stubProvider) ChatStream(context.Context, Request, func(StreamEvent) bo
 func (s *stubProvider) ChatJSON(context.Context, Request) (string, []ToolCall, error) {
 	return "", nil, nil
 }
+func (s *stubProvider) ChatJSONMessage(context.Context, Request) (Message, error) {
+	return Message{Role: "assistant"}, nil
+}
 
 func TestRegistry_GetUnknown(t *testing.T) {
 	r := NewRegistry("x")

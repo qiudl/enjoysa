@@ -22,8 +22,13 @@ import (
 // LLM is the narrow chat interface tourism_agent needs. Defining it here
 // (rather than depending on llmprovider.Provider) lets tests pass a fake
 // without implementing Code() / DefaultModel() / ChatStream().
+//
+// ChatJSONMessage returns the full assistant Message — including
+// ReasoningContent for DeepSeek thinking-mode. Tool-loop callers MUST echo
+// the returned Message verbatim on the next request or DeepSeek 400s
+// (1F prod smoke caught this when only Content + ToolCalls were passed back).
 type LLM interface {
-	ChatJSON(ctx context.Context, req llmprovider.Request) (content string, toolCalls []llmprovider.ToolCall, err error)
+	ChatJSONMessage(ctx context.Context, req llmprovider.Request) (llmprovider.Message, error)
 }
 
 // KnowledgeRef is a tourism_* entity the agent actually visited via tools
@@ -117,7 +122,7 @@ func (a *Agent) Generate(ctx context.Context, req GenerateRequest) (*GenerateRes
 	var collectedRefs []KnowledgeRef
 
 	for i := 0; i < a.maxIterations; i++ {
-		content, toolCalls, err := a.llm.ChatJSON(ctx, llmprovider.Request{
+		assistant, err := a.llm.ChatJSONMessage(ctx, llmprovider.Request{
 			Model:    a.model,
 			Messages: messages,
 			Tools:    tools,
@@ -126,23 +131,23 @@ func (a *Agent) Generate(ctx context.Context, req GenerateRequest) (*GenerateRes
 			return nil, fmt.Errorf("tourism_agent: llm call: %w", err)
 		}
 
-		if len(toolCalls) == 0 {
+		if len(assistant.ToolCalls) == 0 {
 			// LLM returned a final answer.
 			return &GenerateResponse{
 				Field:         req.Field,
-				Content:       content,
+				Content:       assistant.Content,
 				KnowledgeRefs: dedupeRefs(collectedRefs),
 			}, nil
 		}
 
-		// Append the assistant turn (with tool_calls) to the conversation.
-		messages = append(messages, llmprovider.Message{
-			Role:      "assistant",
-			ToolCalls: toolCalls,
-		})
+		// Append the assistant turn verbatim — including ReasoningContent.
+		// DeepSeek's thinking-mode rejects subsequent requests if reasoning
+		// is dropped (1F prod smoke incident).
+		assistant.Role = "assistant"
+		messages = append(messages, assistant)
 
 		// Execute each tool, feed results back as tool-role messages.
-		for _, tc := range toolCalls {
+		for _, tc := range assistant.ToolCalls {
 			result, refs, err := a.executeTool(ctx, tc)
 			if err != nil {
 				// Surface the error to the LLM so it can recover (or stop)

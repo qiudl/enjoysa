@@ -23,3 +23,7 @@ func (p *DeepSeekProvider) ChatStream(ctx context.Context, req Request, onEvent 
 func (p *DeepSeekProvider) ChatJSON(ctx context.Context, req Request) (string, []ToolCall, error) {
 	return p.c.chatJSON(ctx, req)
 }
+
+func (p *DeepSeekProvider) ChatJSONMessage(ctx context.Context, req Request) (Message, error) {
+	return p.c.chatJSONMessage(ctx, req)
+}

@@ -18,4 +18,11 @@ type Provider interface {
 	// ChatJSON runs a non-streaming chat completion and returns the full
 	// assistant content + any tool calls in one shot.
 	ChatJSON(ctx context.Context, req Request) (content string, toolCalls []ToolCall, err error)
+
+	// ChatJSONMessage is like ChatJSON but returns the full assistant Message
+	// (including ReasoningContent for DeepSeek thinking-mode). Tool-loop
+	// callers MUST use this variant and echo the returned Message verbatim
+	// on the next turn — otherwise DeepSeek rejects with HTTP 400 (REQ-0002 1F
+	// prod smoke caught this when only Content + ToolCalls were echoed back).
+	ChatJSONMessage(ctx context.Context, req Request) (Message, error)
 }

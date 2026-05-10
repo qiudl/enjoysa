@@ -199,22 +199,78 @@ func (c *openAICompatClient) chatJSON(ctx context.Context, req Request) (string,
 		return "", nil, fmt.Errorf("%s returned %d: %s", c.code, resp.StatusCode, truncate(string(raw), 200))
 	}
 
+	msg, err := decodeChatJSONMessage(resp.Body, c.code)
+	if err != nil {
+		return "", nil, err
+	}
+	return msg.Content, msg.ToolCalls, nil
+}
+
+// chatJSONMessage is the same call but returns the full Message (incl
+// ReasoningContent). Used by tool-loop callers that must echo the assistant
+// turn verbatim on subsequent requests (DeepSeek thinking-mode requirement).
+func (c *openAICompatClient) chatJSONMessage(ctx context.Context, req Request) (Message, error) {
+	if err := c.limiter.Wait(ctx); err != nil {
+		return Message{}, fmt.Errorf("%s rate limited: %w", c.code, err)
+	}
+
+	model := req.Model
+	if model == "" {
+		model = c.model
+	}
+	body := map[string]any{
+		"model":    model,
+		"messages": req.Messages,
+		"stream":   false,
+	}
+	if len(req.Tools) > 0 {
+		body["tools"] = req.Tools
+	}
+
+	resp, err := c.do(ctx, body)
+	if err != nil {
+		return Message{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		raw, _ := io.ReadAll(resp.Body)
+		return Message{}, fmt.Errorf("%s returned %d: %s", c.code, resp.StatusCode, truncate(string(raw), 200))
+	}
+
+	return decodeChatJSONMessage(resp.Body, c.code)
+}
+
+// decodeChatJSONMessage parses the OpenAI-shape choices[0].message into our
+// Message type, capturing reasoning_content alongside content + tool_calls.
+func decodeChatJSONMessage(body io.Reader, code string) (Message, error) {
 	var result struct {
 		Choices []struct {
 			Message struct {
-				Content   string     `json:"content"`
-				ToolCalls []ToolCall `json:"tool_calls"`
+				Role             string     `json:"role"`
+				Content          string     `json:"content"`
+				ReasoningContent string     `json:"reasoning_content"`
+				ToolCalls        []ToolCall `json:"tool_calls"`
 			} `json:"message"`
 		} `json:"choices"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", nil, fmt.Errorf("%s decode: %w", c.code, err)
+	if err := json.NewDecoder(body).Decode(&result); err != nil {
+		return Message{}, fmt.Errorf("%s decode: %w", code, err)
 	}
 	if len(result.Choices) == 0 {
-		return "", nil, fmt.Errorf("%s empty choices", c.code)
+		return Message{}, fmt.Errorf("%s empty choices", code)
 	}
-	msg := result.Choices[0].Message
-	return msg.Content, msg.ToolCalls, nil
+	m := result.Choices[0].Message
+	role := m.Role
+	if role == "" {
+		role = "assistant"
+	}
+	return Message{
+		Role:             role,
+		Content:          m.Content,
+		ReasoningContent: m.ReasoningContent,
+		ToolCalls:        m.ToolCalls,
+	}, nil
 }
 
 func (c *openAICompatClient) do(ctx context.Context, body map[string]any) (*http.Response, error) {
