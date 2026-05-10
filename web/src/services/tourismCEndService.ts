@@ -85,3 +85,29 @@ export const tourismCEndService = {
     );
   },
 };
+
+// ---------------------------------------------------------------------------
+// 2B · /draft-reply (supplier or admin auth)
+// ---------------------------------------------------------------------------
+//
+// Lives in this file even though it's "supplier-side" — same tourism agent
+// stack, just gated by hasEditorIdentity on the server. Caller picks which
+// auth context to send via the role param.
+
+export interface TourismDraftReplyResponse {
+  field: string;
+  content: string;
+  knowledge_refs: TourismKnowledgeRef[];
+}
+
+type EditorRole = 'supplier' | 'admin';
+
+export const tourismSupplierService = {
+  draftReply(ticketId: number, role: EditorRole) {
+    return post<TourismDraftReplyResponse>(
+      '/ai/tourism/draft-reply',
+      { ticket_id: ticketId },
+      role,
+    );
+  },
+};
