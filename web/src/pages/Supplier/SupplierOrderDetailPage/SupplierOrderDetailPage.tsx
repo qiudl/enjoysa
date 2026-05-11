@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle, Clock, ShieldCheck, QrCode } from 'lucide-react';
 import styles from './SupplierOrderDetailPage.module.css';
+import {
+  getSupplierOrder,
+  verifySupplierOrder,
+  type Order as BackendOrder,
+} from '../../../services/orderService';
+import { ApiError } from '../../../services/api';
 
 /* ------------------------------------------------------------------ */
-/*  Data models                                                       */
+/*  Data models — view-model derived from backend Order               */
 /* ------------------------------------------------------------------ */
+
+// Display status drives the timeline progress bar and badge color.
+// `paid_unverified` and `paid_verified` are derived states for the page,
+// not stored on the backend (REQ-20260511-0011: status untouched, verify
+// modeled as an event via verified_at).
+type DisplayStatus =
+  | 'pending'
+  | 'paid_unverified'
+  | 'paid_verified'
+  | 'completed'
+  | 'cancelled';
 
 interface OrderTimeline {
   id: string;
@@ -14,19 +31,11 @@ interface OrderTimeline {
   detail?: string;
 }
 
-interface Traveler {
-  name: string;
-  phone?: string;
-  type: 'adult' | 'child';
-}
-
 interface OrderDetail {
-  id: string;
+  id: number;
   orderNo: string;
-  status: 'pending' | 'confirmed' | 'verified' | 'completed' | 'cancelled';
+  status: DisplayStatus;
   product: string;
-  productEn: string;
-  productImage: string;
   travelDate: string;
   quantity: number;
   unitPrice: number;
@@ -35,7 +44,6 @@ interface OrderDetail {
   customer: string;
   customerPhone: string;
   customerEmail: string;
-  travelers: Traveler[];
   paymentMethod: string;
   paidAt: string;
   verificationCode: string;
@@ -46,56 +54,82 @@ interface OrderDetail {
   remark?: string;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Mock data                                                         */
-/* ------------------------------------------------------------------ */
+function formatTime(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
-const MOCK_ORDER: OrderDetail = {
-  id: 'ord-001',
-  orderNo: 'ORD-20260320-001',
-  status: 'confirmed',
-  product: '袋鼠岛一日游',
-  productEn: 'Kangaroo Island Day Tour',
-  productImage: '',
-  travelDate: '2026-03-25',
-  quantity: 2,
-  unitPrice: 398,
-  totalAmount: 796,
-  currency: 'AUD',
-  customer: 'Alice Wang',
-  customerPhone: '+61 412 345 678',
-  customerEmail: 'alice.wang@example.com',
-  travelers: [
-    { name: 'Alice Wang', phone: '+61 412 345 678', type: 'adult' },
-    { name: 'Tom Wang', type: 'child' },
-  ],
-  paymentMethod: 'Credit Card',
-  paidAt: '2026-03-20 10:35',
-  verificationCode: 'VRF-8A3F2D',
-  channel: 'direct',
-  createdAt: '2026-03-20 10:30',
-  timeline: [
-    {
-      id: 'tl-1',
+function deriveStatus(order: BackendOrder): DisplayStatus {
+  if (order.status === 'cancelled' || order.status === 'refunded') return 'cancelled';
+  if (order.status === 'completed') return 'completed';
+  if (order.status === 'pending') return 'pending';
+  return order.verified_at ? 'paid_verified' : 'paid_unverified';
+}
+
+function mapBackendToView(order: BackendOrder): OrderDetail {
+  const timeline: OrderTimeline[] = [];
+  if (order.created_at) {
+    timeline.push({
+      id: 'tl-created',
       event: 'supplier.orderDetail.eventCreated',
-      time: '2026-03-20 10:30',
-      detail: 'Order placed by customer',
-    },
-    {
-      id: 'tl-2',
+      time: formatTime(order.created_at),
+    });
+  }
+  if (order.payment_time) {
+    timeline.push({
+      id: 'tl-paid',
       event: 'supplier.orderDetail.eventPaid',
-      time: '2026-03-20 10:35',
-      detail: 'Payment received via Credit Card',
-    },
-    {
-      id: 'tl-3',
+      time: formatTime(order.payment_time),
+    });
+  }
+  if (order.accepted_at) {
+    timeline.push({
+      id: 'tl-accepted',
       event: 'supplier.orderDetail.eventConfirmed',
-      time: '2026-03-20 11:00',
-      detail: 'Supplier confirmed the order',
-    },
-  ],
-  remark: 'Customer requests window seat on the bus.',
-};
+      time: formatTime(order.accepted_at),
+    });
+  }
+  if (order.verified_at) {
+    timeline.push({
+      id: 'tl-verified',
+      event: 'supplier.orderDetail.eventVerified',
+      time: formatTime(order.verified_at),
+    });
+  }
+  if (order.completed_at) {
+    timeline.push({
+      id: 'tl-completed',
+      event: 'supplier.orderDetail.eventCompleted',
+      time: formatTime(order.completed_at),
+    });
+  }
+
+  return {
+    id: order.id,
+    orderNo: order.order_no,
+    status: deriveStatus(order),
+    product: order.product_name,
+    travelDate: order.booking_date ? order.booking_date.slice(0, 10) : '',
+    quantity: order.quantity,
+    unitPrice: Number(order.unit_price) || 0,
+    totalAmount: Number(order.total_price) || 0,
+    currency: order.currency || 'AUD',
+    customer: order.contact_name || order.user_name || '',
+    customerPhone: order.contact_phone || order.user_phone || '',
+    customerEmail: order.contact_email || order.user_email || '',
+    paymentMethod: order.payment_method || '',
+    paidAt: formatTime(order.payment_time),
+    verificationCode: order.verification_code || '',
+    verifiedAt: formatTime(order.verified_at),
+    channel: order.channel || 'direct',
+    createdAt: formatTime(order.created_at),
+    timeline,
+    remark: order.user_remark || order.supplier_remark || '',
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Timeline step definitions                                         */
@@ -109,21 +143,21 @@ const TIMELINE_STEPS = [
   'supplier.orderDetail.eventCompleted',
 ] as const;
 
-const STATUS_ORDER: OrderDetail['status'][] = [
-  'pending',
-  'confirmed',
-  'verified',
-  'completed',
-];
-
-function getStepIndex(status: OrderDetail['status']): number {
-  const idx = STATUS_ORDER.indexOf(status);
-  if (status === 'cancelled') return -1;
-  // pending = 0 means only Created is past (index 0)
-  // confirmed = 1 means Created+Paid+Confirmed are past (index 2)
-  // Map: pending→0, confirmed→2, verified→3, completed→4
-  const map: Record<number, number> = { 0: 0, 1: 2, 2: 3, 3: 4 };
-  return map[idx] ?? 0;
+function getStepIndex(status: DisplayStatus): number {
+  // pending = 0 (only Created past), paid_unverified = 2 (Created+Paid+Confirmed),
+  // paid_verified = 3, completed = 4, cancelled = -1
+  switch (status) {
+    case 'pending':
+      return 0;
+    case 'paid_unverified':
+      return 2;
+    case 'paid_verified':
+      return 3;
+    case 'completed':
+      return 4;
+    case 'cancelled':
+      return -1;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -140,79 +174,137 @@ export interface SupplierOrderDetailPageProps {
 /* ------------------------------------------------------------------ */
 
 export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = ({
+  orderId,
   onNavigate,
 }) => {
-  const { t, i18n } = useTranslation();
-  const [order, setOrder] = useState<OrderDetail>(MOCK_ORDER);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { t } = useTranslation();
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const currentStepIdx = getStepIndex(order.status);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+
+  const numericId = orderId ? Number(orderId) : NaN;
+
+  const loadOrder = useCallback(async () => {
+    if (!Number.isFinite(numericId) || numericId <= 0) {
+      setLoadError(t('supplier.orderDetail.notFound'));
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await getSupplierOrder(numericId);
+      setOrder(mapBackendToView(data));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        setLoadError(t('supplier.orderDetail.notFound'));
+      } else if (err instanceof ApiError && err.status === 403) {
+        setLoadError(t('supplier.orderDetail.errForbidden'));
+      } else {
+        setLoadError(t('supplier.orderDetail.loadFailed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [numericId, t]);
+
+  useEffect(() => {
+    void loadOrder();
+  }, [loadOrder]);
+
+  const currentStepIdx = order ? getStepIndex(order.status) : 0;
 
   /* ------ helpers ------ */
 
-  const statusLabelKey = `supplier.orderDetail.status${
-    order.status.charAt(0).toUpperCase() + order.status.slice(1)
-  }`;
+  const statusLabelKey = order
+    ? `supplier.orderDetail.status${
+        order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+      }`
+    : '';
 
   const statusClass = (() => {
-    const map: Record<OrderDetail['status'], string> = {
+    if (!order) return '';
+    const map: Record<DisplayStatus, string> = {
       pending: styles.statusPending,
-      confirmed: styles.statusConfirmed,
-      verified: styles.statusVerified,
+      paid_unverified: styles.statusConfirmed,
+      paid_verified: styles.statusVerified,
       completed: styles.statusCompleted,
       cancelled: styles.statusCancelled,
     };
     return map[order.status] ?? '';
   })();
 
-  const productName =
-    i18n.language === 'en' ? order.productEn : order.product;
+  const productName = order?.product ?? '';
 
   /* ------ verify action ------ */
 
   const handleVerify = () => {
+    setCodeInput('');
+    setVerifyError(null);
     setShowConfirmModal(true);
   };
 
-  const confirmVerify = () => {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-      now.getDate()
-    )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const verifyErrorForCode = (code?: string): string => {
+    switch (code) {
+      case 'invalid_code':
+        return t('supplier.orderDetail.errInvalidCode');
+      case 'already_verified':
+        return t('supplier.orderDetail.errAlreadyVerified');
+      case 'invalid_status':
+        return t('supplier.orderDetail.errInvalidStatus');
+      case 'forbidden':
+        return t('supplier.orderDetail.errForbidden');
+      default:
+        return t('supplier.orderDetail.errGeneric');
+    }
+  };
 
-    setOrder((prev) => ({
-      ...prev,
-      status: 'verified',
-      verifiedAt: ts,
-      timeline: [
-        ...prev.timeline,
-        {
-          id: `tl-${prev.timeline.length + 1}`,
-          event: 'supplier.orderDetail.eventVerified',
-          time: ts,
-          detail: 'Verification completed by supplier',
-        },
-      ],
-    }));
-    setShowConfirmModal(false);
+  const confirmVerify = async () => {
+    if (!order) return;
+    const code = codeInput.trim();
+    if (!code) {
+      setVerifyError(t('supplier.orderDetail.errCodeRequired'));
+      return;
+    }
+    setVerifying(true);
+    setVerifyError(null);
+    try {
+      const updated = await verifySupplierOrder(order.id, code);
+      setOrder(mapBackendToView(updated));
+      setShowConfirmModal(false);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setVerifyError(verifyErrorForCode(err.code));
+      } else {
+        setVerifyError(t('supplier.orderDetail.errGeneric'));
+      }
+    } finally {
+      setVerifying(false);
+    }
   };
 
   /* ------ timeline item state helper ------ */
 
   const getItemState = (stepIdx: number) => {
-    if (order.status === 'cancelled') return 'future';
+    if (!order || order.status === 'cancelled') return 'future';
     if (stepIdx < currentStepIdx) return 'past';
     if (stepIdx === currentStepIdx) return 'current';
     return 'future';
   };
 
   const getTimeForStep = (eventKey: string): string => {
+    if (!order) return '';
     const entry = order.timeline.find((tl) => tl.event === eventKey);
     return entry?.time ?? '';
   };
 
   const getDetailForStep = (eventKey: string): string | undefined => {
+    if (!order) return undefined;
     const entry = order.timeline.find((tl) => tl.event === eventKey);
     return entry?.detail;
   };
@@ -220,6 +312,35 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
   /* ---------------------------------------------------------------- */
   /*  Render                                                          */
   /* ---------------------------------------------------------------- */
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>{t('supplier.orderDetail.loading')}</div>
+      </div>
+    );
+  }
+
+  if (loadError || !order) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <button
+            className={styles.backBtn}
+            onClick={() => onNavigate?.('/supplier/orders')}
+            aria-label={t('supplier.orderDetail.backToList')}
+          >
+            <ArrowLeft size={18} />
+          </button>
+        </div>
+        <div className={styles.errorState}>
+          {loadError ?? t('supplier.orderDetail.notFound')}
+        </div>
+      </div>
+    );
+  }
+
+  const canVerify = order.status === 'paid_unverified';
 
   return (
     <div className={styles.container}>
@@ -238,7 +359,7 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
         </div>
 
         <div className={styles.headerActions}>
-          {order.status === 'confirmed' && (
+          {canVerify && (
             <button className={styles.headerVerifyBtn} onClick={handleVerify}>
               <ShieldCheck size={16} />
               {t('supplier.orderDetail.verify')}
@@ -394,7 +515,7 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
             </div>
           </div>
 
-          {/* Travelers */}
+          {/* Customer contact */}
           <div className={styles.infoCard}>
             <div className={styles.infoCardHeader}>
               <h3 className={styles.infoCardTitle}>
@@ -402,34 +523,23 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
               </h3>
             </div>
             <div className={styles.infoCardBody}>
-              <div className={styles.travelerList}>
-                {order.travelers.map((traveler, idx) => (
-                  <div key={idx} className={styles.travelerItem}>
-                    <div className={styles.travelerInfo}>
-                      <span className={styles.travelerName}>
-                        {traveler.name}
-                      </span>
-                      {traveler.phone && (
-                        <span className={styles.travelerPhone}>
-                          {traveler.phone}
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      className={`${styles.travelerTypeBadge} ${
-                        traveler.type === 'adult'
-                          ? styles.travelerAdult
-                          : styles.travelerChild
-                      }`}
-                    >
-                      {t(
-                        traveler.type === 'adult'
-                          ? 'supplier.orderDetail.travelerAdult'
-                          : 'supplier.orderDetail.travelerChild'
-                      )}
-                    </span>
-                  </div>
-                ))}
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>
+                  {t('supplier.orderDetail.customerName')}
+                </span>
+                <span className={styles.infoValue}>{order.customer || '--'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>
+                  {t('supplier.orderDetail.customerPhone')}
+                </span>
+                <span className={styles.infoValue}>{order.customerPhone || '--'}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>
+                  {t('supplier.orderDetail.customerEmail')}
+                </span>
+                <span className={styles.infoValue}>{order.customerEmail || '--'}</span>
               </div>
             </div>
           </div>
@@ -470,7 +580,7 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
               )}
             </div>
 
-            {order.status === 'confirmed' && (
+            {canVerify && (
               <button className={styles.verifyBtn} onClick={handleVerify}>
                 <ShieldCheck size={18} />
                 {t('supplier.orderDetail.verify')}
@@ -485,30 +595,49 @@ export const SupplierOrderDetailPage: React.FC<SupplierOrderDetailPageProps> = (
         <div className={styles.confirmModal}>
           <div
             className={styles.confirmOverlay}
-            onClick={() => setShowConfirmModal(false)}
+            onClick={() => !verifying && setShowConfirmModal(false)}
           />
           <div className={styles.confirmBox}>
             <h3 className={styles.confirmTitle}>
               {t('supplier.orderDetail.verifyConfirm')}
             </h3>
             <p className={styles.confirmDesc}>
-              {t('supplier.orderDetail.verifyCode')}:
+              {t('supplier.orderDetail.verifyCodePrompt')}
             </p>
-            <div className={styles.confirmCode}>
-              {order.verificationCode}
-            </div>
+            <input
+              type="text"
+              className={styles.confirmInput}
+              value={codeInput}
+              autoFocus
+              placeholder="VRF-XXXXXX"
+              onChange={(e) => {
+                setCodeInput(e.target.value);
+                if (verifyError) setVerifyError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !verifying) void confirmVerify();
+              }}
+              disabled={verifying}
+            />
+            {verifyError && (
+              <div className={styles.confirmError}>{verifyError}</div>
+            )}
             <div className={styles.confirmActions}>
               <button
                 className={styles.confirmCancelBtn}
                 onClick={() => setShowConfirmModal(false)}
+                disabled={verifying}
               >
-                {t('supplier.orderDetail.backToList')}
+                {t('supplier.orderDetail.cancel')}
               </button>
               <button
                 className={styles.confirmOkBtn}
                 onClick={confirmVerify}
+                disabled={verifying || !codeInput.trim()}
               >
-                {t('supplier.orderDetail.verify')}
+                {verifying
+                  ? t('supplier.orderDetail.verifying')
+                  : t('supplier.orderDetail.verify')}
               </button>
             </div>
           </div>

@@ -597,6 +597,7 @@ func Setup(cfg Config) *gin.Engine {
 		supplierOrders.GET("/stats", supplierOrderHandler.GetStats)
 		supplierOrders.GET("/:id", supplierOrderHandler.GetOrder)
 		supplierOrders.POST("/:id/accept", supplierOrderHandler.AcceptOrder)
+		supplierOrders.POST("/:id/verify", supplierOrderHandler.VerifyOrder)
 		supplierOrders.POST("/:id/reject", supplierOrderHandler.RejectOrder)
 		supplierOrders.POST("/:id/complete", supplierOrderHandler.CompleteOrder)
 		supplierOrders.GET("/:id/history", supplierOrderHandler.GetHistory)

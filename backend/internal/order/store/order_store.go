@@ -48,6 +48,24 @@ func (s *OrderStore) UpdateWithStatus(order *model.Order, expectedStatus model.O
 	return nil
 }
 
+// MarkVerified atomically writes verified_at / verified_by only when not yet verified.
+// Returns gorm.ErrRecordNotFound when a concurrent request already verified the order.
+func (s *OrderStore) MarkVerified(orderID uint, verifiedAt time.Time, verifiedBy uint) error {
+	result := s.db.Model(&model.Order{}).
+		Where("id = ? AND verified_at IS NULL", orderID).
+		Updates(map[string]interface{}{
+			"verified_at": verifiedAt,
+			"verified_by": verifiedBy,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 func (s *OrderStore) GetByID(id uint) (*model.Order, error) {
 	var order model.Order
 	if err := s.db.Preload("User").Preload("Supplier").First(&order, id).Error; err != nil {

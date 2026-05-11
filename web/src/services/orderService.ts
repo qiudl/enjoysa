@@ -53,6 +53,10 @@ export interface Order {
   channel?: string;           // direct / trip_com
   channel_ref?: string;
   octo_booking_uuid?: string;
+  // REQ-20260511-0011: 核销字段
+  verification_code?: string;
+  verified_at?: string;
+  verified_by?: number;
   created_at: string;
   updated_at: string;
 }
@@ -172,6 +176,11 @@ export async function completeOrder(id: number): Promise<void> {
   await post<void>(`/supplier/orders/${id}/complete`, undefined, 'supplier');
 }
 
+// REQ-20260511-0011: 供应商对订单进行核销
+export async function verifySupplierOrder(id: number, verificationCode: string): Promise<Order> {
+  return post<Order>(`/supplier/orders/${id}/verify`, { verification_code: verificationCode }, 'supplier');
+}
+
 export async function refundOrder(id: number, data: { type: 'full' | 'partial'; reason: string; amount?: number }): Promise<void> {
   await post<void>(`/supplier/orders/${id}/refund`, data, 'supplier');
 }
@@ -197,6 +206,7 @@ export const orderService = {
     accept: acceptOrder,
     reject: rejectOrder,
     complete: completeOrder,
+    verify: verifySupplierOrder,
     refund: refundOrder,
     updateRemark: updateOrderRemark,
   },

@@ -608,6 +608,69 @@
   background: #16a34a;
 }
 
+.confirmOkBtn:disabled,
+.confirmCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirmInput {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  font-family: monospace;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text, #1a1a2e);
+  margin-bottom: 0.75rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.confirmInput:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.confirmInput:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.confirmError {
+  font-size: 0.8125rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.9375rem;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.9375rem;
+  padding: 2rem;
+  text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .content {

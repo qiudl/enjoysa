@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"crypto/subtle"
+	"errors"
 	"log"
 	"math"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,6 +16,7 @@ import (
 	"enjoysa-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type SupplierOrderHandler struct {
@@ -68,6 +72,11 @@ func (h *SupplierOrderHandler) GetOrder(c *gin.Context) {
 	if order.SupplierID != supplierID {
 		response.Forbidden(c, "Access denied")
 		return
+	}
+
+	// REQ-20260511-0011: 未付款订单不暴露核销码，防止收款前码被嗅探后冒充客人核销
+	if order.Status == ordermodel.OrderStatusPending {
+		order.VerificationCode = ""
 	}
 
 	response.Success(c, order)
@@ -373,6 +382,81 @@ func (h *SupplierOrderHandler) UpdateRemark(c *gin.Context) {
 		response.ServerError(c, "Failed to update remark")
 		return
 	}
+
+	response.Success(c, order)
+}
+
+// VerifyOrder REQ-20260511-0011: supplier scans verification code to mark order verified.
+// Event-style modeling: status is unchanged, only verified_at / verified_by are written.
+func (h *SupplierOrderHandler) VerifyOrder(c *gin.Context) {
+	supplierID := c.MustGet("supplier_id").(uint)
+	supplierUserID := c.MustGet("supplier_user_id").(uint)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.BadRequest(c, "Invalid order ID")
+		return
+	}
+
+	var req struct {
+		VerificationCode string `json:"verification_code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid_request", "Verification code is required")
+		return
+	}
+
+	order, err := h.orderStore.GetByID(uint(id))
+	if err != nil {
+		response.NotFound(c, "Order not found")
+		return
+	}
+	if order.SupplierID != supplierID {
+		response.Fail(c, http.StatusForbidden, "forbidden", "Not your order")
+		return
+	}
+
+	// 状态合法：paid / accepted / processing 才允许核销
+	switch order.Status {
+	case ordermodel.OrderStatusPaid, ordermodel.OrderStatusAccepted, ordermodel.OrderStatusProcessing:
+		// allowed
+	default:
+		response.Fail(c, http.StatusUnprocessableEntity, "invalid_status", "Order status does not allow verification")
+		return
+	}
+
+	if order.VerifiedAt != nil {
+		response.Fail(c, http.StatusConflict, "already_verified", "Order already verified")
+		return
+	}
+
+	// 常时比较防时序攻击
+	if subtle.ConstantTimeCompare([]byte(req.VerificationCode), []byte(order.VerificationCode)) != 1 {
+		response.Fail(c, http.StatusBadRequest, "invalid_code", "Verification code mismatch")
+		return
+	}
+
+	now := time.Now()
+	if err := h.orderStore.MarkVerified(order.ID, now, supplierUserID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.Fail(c, http.StatusConflict, "already_verified", "Order already verified")
+			return
+		}
+		log.Printf("[VerifyOrder] MarkVerified failed for order %d: %v", order.ID, err)
+		response.ServerError(c, "Failed to verify order")
+		return
+	}
+
+	order.VerifiedAt = &now
+	order.VerifiedBy = &supplierUserID
+
+	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
+		OrderID:      order.ID,
+		FromStatus:   order.Status,
+		ToStatus:     order.Status, // verify is an event, not a status transition
+		OperatorID:   &supplierUserID,
+		OperatorType: "supplier",
+		Remark:       "Order verified",
+	})
 
 	response.Success(c, order)
 }

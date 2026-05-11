@@ -79,6 +79,11 @@ type Order struct {
 	// 完成信息
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 
+	// 核销信息（VRF-XXXXXX，订单创建时生成；未付款时不应回前端）
+	VerificationCode string     `gorm:"size:16;index" json:"verification_code,omitempty"`
+	VerifiedAt       *time.Time `json:"verified_at,omitempty"`
+	VerifiedBy       *uint      `json:"verified_by,omitempty"`
+
 	// 取消/退款
 	CancelledAt  *time.Time `json:"cancelled_at,omitempty"`
 	CancelReason string     `gorm:"size:500" json:"cancel_reason,omitempty"`
@@ -120,12 +125,27 @@ func (o *Order) BeforeCreate(tx *gorm.DB) error {
 		expires := time.Now().Add(30 * time.Minute)
 		o.ExpiresAt = &expires
 	}
+	if o.VerificationCode == "" {
+		o.VerificationCode = GenerateVerificationCode()
+	}
 	return nil
 }
 
 func GenerateOrderNo() string {
 	now := time.Now()
 	return now.Format("ES20060102") + randomDigits(6)
+}
+
+// verificationCodeAlphabet 去掉容易混淆的 0/O/1/I/L
+const verificationCodeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+// GenerateVerificationCode 生成 VRF- 前缀 + 6 位字母数字的核销码
+func GenerateVerificationCode() string {
+	buf := make([]byte, 6)
+	for i := range buf {
+		buf[i] = verificationCodeAlphabet[rand.Intn(len(verificationCodeAlphabet))]
+	}
+	return "VRF-" + string(buf)
 }
 
 func randomDigits(n int) string {
