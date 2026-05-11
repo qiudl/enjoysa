@@ -480,7 +480,9 @@ func (h *Handler) CreateModule(c *gin.Context) {
 		cfg = "{}"
 	}
 
-	// Validate cta_link inside config (XSS defense)
+	// Validate cta_link and image_url inside config (XSS defense).
+	// Both fields are rendered without escaping (cta_link as <a href>,
+	// image_url as <img src>), so reject any non-http(s)/relative scheme.
 	var cfgMap map[string]interface{}
 	if err := json.Unmarshal([]byte(cfg), &cfgMap); err != nil {
 		response.BadRequest(c, "config is not valid JSON")
@@ -489,6 +491,12 @@ func (h *Handler) CreateModule(c *gin.Context) {
 	if cta, ok := cfgMap["cta_link"].(string); ok {
 		if !isSafeURL(cta) {
 			response.BadRequest(c, "cta_link must start with http(s):// or /")
+			return
+		}
+	}
+	if img, ok := cfgMap["image_url"].(string); ok {
+		if !isSafeURL(img) {
+			response.BadRequest(c, "image_url must start with http(s):// or /")
 			return
 		}
 	}

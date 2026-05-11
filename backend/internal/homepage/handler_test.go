@@ -139,6 +139,18 @@ func TestCreateModule_BadCtaLink_Rejected(t *testing.T) {
 	}
 }
 
+func TestCreateModule_BadImageUrl_Rejected(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	for _, scheme := range []string{"javascript:void(0)", "data:image/svg+xml;base64,PHN2Zz4=", "file:///etc/passwd"} {
+		cfg, _ := json.Marshal(map[string]string{"image_url": scheme})
+		body := ModuleCreateRequest{TitleZh: "x", TitleEn: "x", Config: string(cfg)}
+		w := doJSON(h, http.MethodPost, "/admin/homepage/modules", body, nil)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("image=%s status=%d, want 400", scheme, w.Code)
+		}
+	}
+}
+
 func TestCreateModule_GoodCtaLink_Accepted(t *testing.T) {
 	h, _ := setupTestHandler(t)
 	for _, link := range []string{"https://example.com/x", "http://a.test/y", "/products/123"} {
