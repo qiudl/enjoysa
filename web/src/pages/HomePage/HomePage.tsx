@@ -15,8 +15,8 @@ import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
 import { Search } from 'lucide-react';
 import SmartSearchDropdown from '../../components/AI/SmartSearch/SmartSearchDropdown';
-import { TestimonialSection, PartnerSection } from '../../components/Homepage';
-import { homepagePublicService, type HomepageConfig } from '../../services/homepageService';
+import { TestimonialSection, PartnerSection, CustomBlockSection } from '../../components/Homepage';
+import { homepagePublicService, type HomepageConfig, type CustomBlockConfig, CUSTOM_BLOCK_KEY_PREFIX } from '../../services/homepageService';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -367,6 +367,18 @@ export const HomePage: React.FC<HomePageProps> = ({
       {isModuleVisible('partners') && homepageConfig && homepageConfig.partners.length > 0 && (
         <PartnerSection partners={homepageConfig.partners} />
       )}
+
+      {/* CustomBlocks — admin-authored modules, ordered by sort_order, rendered after partners */}
+      {homepageConfig && homepageConfig.modules
+        .filter((m) => m.module_key.startsWith(CUSTOM_BLOCK_KEY_PREFIX) && m.is_visible)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((m) => (
+          <CustomBlockSection
+            key={m.module_key}
+            config={m.config as unknown as CustomBlockConfig}
+            language={isZh ? 'zh' : 'en'}
+          />
+        ))}
 
       <Footer />
     </div>

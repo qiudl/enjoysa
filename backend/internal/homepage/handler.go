@@ -1,8 +1,12 @@
 package homepage
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"enjoysa-backend/pkg/response"
 
@@ -10,6 +14,42 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+// CustomBlockKeyPrefix marks user-created modules. Keys starting with this
+// prefix bypass the fixed-module whitelist and are deletable.
+const CustomBlockKeyPrefix = "custom_block_"
+
+// FixedModuleKeys are the nine built-in modules seeded by InitHomepage.
+// They cannot be created via CreateModule nor deleted via DeleteModule.
+var FixedModuleKeys = map[string]bool{
+	"banner": true, "search": true, "regions": true, "featured": true,
+	"categories": true, "features": true, "testimonials": true,
+	"partners": true, "popular": true,
+}
+
+// isSafeURL returns true for http(s):// or absolute-path URLs.
+// Rejects javascript:, data:, file:, etc. — prevents XSS via cta_link.
+func isSafeURL(s string) bool {
+	if s == "" {
+		return true
+	}
+	if strings.HasPrefix(s, "/") {
+		return true
+	}
+	u, err := url.Parse(s)
+	if err != nil {
+		return false
+	}
+	return u.Scheme == "http" || u.Scheme == "https"
+}
+
+func randomHex8() string {
+	b := make([]byte, 4)
+	if _, err := rand.Read(b); err != nil {
+		return "00000000"
+	}
+	return hex.EncodeToString(b)
+}
 
 type Handler struct {
 	db *gorm.DB
@@ -401,27 +441,66 @@ func (h *Handler) ListModules(c *gin.Context) {
 }
 
 type ModuleCreateRequest struct {
-	ModuleKey string `json:"module_key" binding:"required"`
-	TitleZh   string `json:"title_zh"`
-	TitleEn   string `json:"title_en"`
+	ModuleKey string `json:"module_key"`
+	TitleZh   string `json:"title_zh" binding:"required"`
+	TitleEn   string `json:"title_en" binding:"required"`
 	SortOrder int    `json:"sort_order"`
-	IsVisible bool   `json:"is_visible"`
+	IsVisible *bool  `json:"is_visible"`
 	Config    string `json:"config"`
 }
 
+// CreateModule creates a new homepage module. Used for CustomBlock-type modules.
+//
+// module_key handling:
+//   - empty → server generates `custom_block_<hex8>`
+//   - explicit non-empty key MUST start with CustomBlockKeyPrefix
+//   - reusing a FixedModuleKey returns 400 (protects the 9 seeded modules)
+//
+// cta_link inside config is validated against javascript:/data:/file: schemes.
 func (h *Handler) CreateModule(c *gin.Context) {
 	var req ModuleCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
+
+	// Whitelist module_key
+	if req.ModuleKey == "" {
+		req.ModuleKey = CustomBlockKeyPrefix + randomHex8()
+	} else if FixedModuleKeys[req.ModuleKey] {
+		response.BadRequest(c, "module_key conflict: fixed module already exists")
+		return
+	} else if !strings.HasPrefix(req.ModuleKey, CustomBlockKeyPrefix) {
+		response.BadRequest(c, "module_key must start with "+CustomBlockKeyPrefix)
+		return
+	}
+
 	cfg := req.Config
 	if cfg == "" {
 		cfg = "{}"
 	}
+
+	// Validate cta_link inside config (XSS defense)
+	var cfgMap map[string]interface{}
+	if err := json.Unmarshal([]byte(cfg), &cfgMap); err != nil {
+		response.BadRequest(c, "config is not valid JSON")
+		return
+	}
+	if cta, ok := cfgMap["cta_link"].(string); ok {
+		if !isSafeURL(cta) {
+			response.BadRequest(c, "cta_link must start with http(s):// or /")
+			return
+		}
+	}
+
+	visible := true
+	if req.IsVisible != nil {
+		visible = *req.IsVisible
+	}
+
 	item := HomepageModule{
 		ModuleKey: req.ModuleKey, TitleZh: req.TitleZh, TitleEn: req.TitleEn,
-		SortOrder: req.SortOrder, IsVisible: req.IsVisible,
+		SortOrder: req.SortOrder, IsVisible: visible,
 		Config: datatypes.JSON([]byte(cfg)),
 	}
 	if err := h.db.Create(&item).Error; err != nil {
@@ -429,6 +508,25 @@ func (h *Handler) CreateModule(c *gin.Context) {
 		return
 	}
 	response.Created(c, item)
+}
+
+// DeleteModule removes a CustomBlock-type module. Fixed modules cannot be deleted.
+func (h *Handler) DeleteModule(c *gin.Context) {
+	key := c.Param("key")
+	if !strings.HasPrefix(key, CustomBlockKeyPrefix) {
+		response.BadRequest(c, "fixed modules cannot be deleted")
+		return
+	}
+	result := h.db.Where("module_key = ?", key).Delete(&HomepageModule{})
+	if result.Error != nil {
+		response.ServerError(c, "Failed to delete module")
+		return
+	}
+	if result.RowsAffected == 0 {
+		response.NotFound(c, "module not found")
+		return
+	}
+	response.Success(c, gin.H{"deleted": key})
 }
 
 func (h *Handler) UpdateModules(c *gin.Context) {

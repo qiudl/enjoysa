@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, RefreshCw, Save, Star, ExternalLink, GripVertical, Eye, Image, Info } from 'lucide-react';
+import { Plus, RefreshCw, Save, Star, ExternalLink, GripVertical, Eye, Image, Info, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
@@ -15,9 +15,11 @@ import { Modal, ConfirmModal, ToastContainer } from '../../../components/Common'
 import type { ToastItem } from '../../../components/Common/Toast/Toast';
 import {
   homepageAdminService,
+  CUSTOM_BLOCK_KEY_PREFIX,
   type HomepageFeature,
   type HomepageTestimonial,
   type HomepagePartner,
+  type CustomBlockConfig,
 } from '../../../services/homepageService';
 import styles from './HomepageCMS.module.css';
 
@@ -56,6 +58,8 @@ interface PartnerFormData {
   status: string;
 }
 
+type CustomBlockFormData = CustomBlockConfig;
+
 // ─── Empty form defaults ───
 const emptyFeatureForm: FeatureFormData = {
   icon: '',
@@ -78,6 +82,17 @@ const emptyTestimonialForm: TestimonialFormData = {
   product_name_en: '',
   sort_order: 0,
   status: 'active',
+};
+
+const emptyCustomBlockForm: CustomBlockFormData = {
+  title_zh: '',
+  title_en: '',
+  desc_zh: '',
+  desc_en: '',
+  image_url: '',
+  cta_text_zh: '',
+  cta_text_en: '',
+  cta_link: '',
 };
 
 const emptyPartnerForm: PartnerFormData = {
@@ -120,9 +135,11 @@ const MODULE_DESCRIPTIONS: Record<string, { zh: string; en: string }> = {
 function SortableModuleRow({
   mod,
   onFieldChange,
+  onDelete,
 }: {
   mod: ModuleEditState;
   onFieldChange: (id: number, field: keyof ModuleEditState, value: string | number | boolean) => void;
+  onDelete?: (mod: ModuleEditState) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
@@ -176,6 +193,19 @@ function SortableModuleRow({
           <span className={styles.switchThumb} />
         </button>
       </td>
+      <td style={{ width: 48, textAlign: 'center' }}>
+        {onDelete && mod.module_key.startsWith(CUSTOM_BLOCK_KEY_PREFIX) && (
+          <button
+            type="button"
+            className={styles.iconBtn}
+            onClick={() => onDelete(mod)}
+            title="Delete CustomBlock"
+            aria-label="Delete CustomBlock"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </td>
     </tr>
   );
 }
@@ -212,6 +242,13 @@ export const HomepageCMS: React.FC = () => {
   const [modules, setModules] = useState<ModuleEditState[]>([]);
   const [modulesLoading, setModulesLoading] = useState(false);
   const [modulesSaving, setModulesSaving] = useState(false);
+
+  // ─── CustomBlock state ───
+  const [customBlockFormOpen, setCustomBlockFormOpen] = useState(false);
+  const [customBlockForm, setCustomBlockForm] = useState<CustomBlockFormData>(emptyCustomBlockForm);
+  const [customBlockSaving, setCustomBlockSaving] = useState(false);
+  const [customBlockErrors, setCustomBlockErrors] = useState<ValidationErrors>({});
+  const [customBlockDeleteConfirm, setCustomBlockDeleteConfirm] = useState<ModuleEditState | null>(null);
 
   // ─── Status filter ───
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -293,6 +330,69 @@ export const HomepageCMS: React.FC = () => {
     const errors: ValidationErrors = {};
     if (!form.name.trim()) errors.name = t('admin.homepage.validation.required', 'Required');
     return errors;
+  };
+
+  const validateCustomBlockForm = (form: CustomBlockFormData): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    if (!form.title_zh.trim()) errors.title_zh = t('admin.homepage.validation.required', 'Required');
+    if (!form.title_en.trim()) errors.title_en = t('admin.homepage.validation.required', 'Required');
+    if (form.cta_link && form.cta_link.trim()) {
+      const link = form.cta_link.trim();
+      if (!link.startsWith('http://') && !link.startsWith('https://') && !link.startsWith('/')) {
+        errors.cta_link = t('admin.homepage.validation.urlScheme', 'Must start with http(s):// or /');
+      }
+    }
+    return errors;
+  };
+
+  // ════════════════════════════════════════
+  // CustomBlock create / delete
+  // ════════════════════════════════════════
+  const openCustomBlockForm = () => {
+    setCustomBlockForm(emptyCustomBlockForm);
+    setCustomBlockErrors({});
+    setCustomBlockFormOpen(true);
+  };
+
+  const handleCustomBlockSubmit = async () => {
+    const errors = validateCustomBlockForm(customBlockForm);
+    if (Object.keys(errors).length > 0) {
+      setCustomBlockErrors(errors);
+      return;
+    }
+    setCustomBlockSaving(true);
+    try {
+      const existingCustomBlocks = modules.filter((m) => m.module_key.startsWith(CUSTOM_BLOCK_KEY_PREFIX));
+      const maxSort = existingCustomBlocks.reduce((acc, m) => Math.max(acc, m.sort_order), 9000);
+      await homepageAdminService.createCustomBlock({
+        title_zh: customBlockForm.title_zh.trim(),
+        title_en: customBlockForm.title_en.trim(),
+        config: customBlockForm,
+        sort_order: maxSort + 10,
+        is_visible: true,
+      });
+      addToast('success', t('admin.homepage.customBlockCreated', 'CustomBlock created'));
+      setCustomBlockFormOpen(false);
+      await loadModules();
+    } catch (e) {
+      const err = e as { message?: string };
+      addToast('error', err?.message || t('common.error', 'Error'));
+    } finally {
+      setCustomBlockSaving(false);
+    }
+  };
+
+  const handleDeleteCustomBlock = async () => {
+    if (!customBlockDeleteConfirm) return;
+    try {
+      await homepageAdminService.deleteModule(customBlockDeleteConfirm.module_key);
+      addToast('success', t('admin.homepage.customBlockDeleted', 'CustomBlock deleted'));
+      setCustomBlockDeleteConfirm(null);
+      await loadModules();
+    } catch (e) {
+      const err = e as { message?: string };
+      addToast('error', err?.message || t('common.error', 'Error'));
+    }
   };
 
   // ════════════════════════════════════════
@@ -842,6 +942,16 @@ export const HomepageCMS: React.FC = () => {
         <button className={styles.iconBtn} onClick={loadModules} title={t('common.refresh', 'Refresh')}>
           <RefreshCw size={18} />
         </button>
+        <button className={styles.addBtn} onClick={openCustomBlockForm}>
+          <Plus size={16} />
+          {t('admin.homepage.addCustomBlock', '新增 CustomBlock')}
+        </button>
+        <span className={styles.toolbarHint}>
+          {t(
+            'admin.homepage.customBlockPositionHint',
+            'CustomBlock 固定显示在首页 partners 之后；sort_order 仅控制多个 CustomBlock 之间的相对顺序',
+          )}
+        </span>
       </div>
       <div className={styles.tableWrapper}>
         {modulesLoading ? (
@@ -859,6 +969,7 @@ export const HomepageCMS: React.FC = () => {
                     <th>{t('admin.homepage.titleZh', 'Title (ZH)')}</th>
                     <th>{t('admin.homepage.titleEn', 'Title (EN)')}</th>
                     <th>{t('admin.homepage.visible', 'Visible')}</th>
+                    <th style={{ width: 48 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -867,6 +978,7 @@ export const HomepageCMS: React.FC = () => {
                       key={mod.id}
                       mod={mod}
                       onFieldChange={handleModuleFieldChange}
+                      onDelete={setCustomBlockDeleteConfirm}
                     />
                   ))}
                 </tbody>
@@ -894,6 +1006,107 @@ export const HomepageCMS: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* CustomBlock Create Modal */}
+      <Modal
+        open={customBlockFormOpen}
+        title={t('admin.homepage.addCustomBlock', '新增 CustomBlock')}
+        titleEn="Add Custom Block"
+        size="lg"
+        confirmLoading={customBlockSaving}
+        onClose={() => setCustomBlockFormOpen(false)}
+        onOk={handleCustomBlockSubmit}
+      >
+        <div className={styles.form}>
+          <div className={styles.formGrid}>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.titleZh', '中文标题')} <span className={styles.required}>*</span></label>
+              <input
+                type="text"
+                value={customBlockForm.title_zh}
+                onChange={(e) => { setCustomBlockForm((p) => ({ ...p, title_zh: e.target.value })); setCustomBlockErrors((p) => ({ ...p, title_zh: '' })); }}
+                className={customBlockErrors.title_zh ? styles.inputError : ''}
+              />
+              {renderFieldError(customBlockErrors, 'title_zh')}
+            </div>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.titleEn', '英文标题')} <span className={styles.required}>*</span></label>
+              <input
+                type="text"
+                value={customBlockForm.title_en}
+                onChange={(e) => { setCustomBlockForm((p) => ({ ...p, title_en: e.target.value })); setCustomBlockErrors((p) => ({ ...p, title_en: '' })); }}
+                className={customBlockErrors.title_en ? styles.inputError : ''}
+              />
+              {renderFieldError(customBlockErrors, 'title_en')}
+            </div>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.descZh', '中文描述')}</label>
+              <textarea
+                value={customBlockForm.desc_zh}
+                onChange={(e) => setCustomBlockForm((p) => ({ ...p, desc_zh: e.target.value }))}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.descEn', '英文描述')}</label>
+              <textarea
+                value={customBlockForm.desc_en}
+                onChange={(e) => setCustomBlockForm((p) => ({ ...p, desc_en: e.target.value }))}
+              />
+            </div>
+            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+              <label>{t('admin.homepage.field.imageUrl', '图片 URL')}</label>
+              <input
+                type="text"
+                value={customBlockForm.image_url}
+                onChange={(e) => setCustomBlockForm((p) => ({ ...p, image_url: e.target.value }))}
+                placeholder="/uploads/2026/.../xxx.jpg"
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.ctaTextZh', '按钮中文')}</label>
+              <input
+                type="text"
+                value={customBlockForm.cta_text_zh}
+                onChange={(e) => setCustomBlockForm((p) => ({ ...p, cta_text_zh: e.target.value }))}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label>{t('admin.homepage.field.ctaTextEn', '按钮英文')}</label>
+              <input
+                type="text"
+                value={customBlockForm.cta_text_en}
+                onChange={(e) => setCustomBlockForm((p) => ({ ...p, cta_text_en: e.target.value }))}
+              />
+            </div>
+            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+              <label>{t('admin.homepage.field.ctaLink', '跳转链接')}</label>
+              <input
+                type="text"
+                value={customBlockForm.cta_link}
+                onChange={(e) => { setCustomBlockForm((p) => ({ ...p, cta_link: e.target.value })); setCustomBlockErrors((p) => ({ ...p, cta_link: '' })); }}
+                placeholder="https://... 或 /products/123"
+                className={customBlockErrors.cta_link ? styles.inputError : ''}
+              />
+              {renderFieldError(customBlockErrors, 'cta_link')}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* CustomBlock Delete Confirm */}
+      <ConfirmModal
+        open={!!customBlockDeleteConfirm}
+        type="danger"
+        title={t('admin.homepage.deleteCustomBlockTitle', '删除 CustomBlock')}
+        titleEn="Delete Custom Block"
+        message={t(
+          'admin.homepage.deleteCustomBlockConfirm',
+          `确定删除 "${customBlockDeleteConfirm?.title_zh}" 吗？此操作不可撤销。`,
+        )}
+        messageEn={`Delete "${customBlockDeleteConfirm?.title_en}"? This cannot be undone.`}
+        onConfirm={handleDeleteCustomBlock}
+        onCancel={() => setCustomBlockDeleteConfirm(null)}
+      />
     </>
   );
 
