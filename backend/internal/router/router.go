@@ -823,6 +823,7 @@ func Setup(cfg Config) *gin.Engine {
 			adminHomepage.GET("/modules", homepageHandler.ListModules)
 			adminHomepage.POST("/modules", homepageHandler.CreateModule)
 			adminHomepage.PUT("/modules", homepageHandler.UpdateModules)
+			adminHomepage.DELETE("/modules/:key", homepageHandler.DeleteModule)
 		}
 
 		// Settings

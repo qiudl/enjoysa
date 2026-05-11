@@ -2801,9 +2801,16 @@
     "deleteTestimonialConfirm": "确定要删除此评价吗？此操作不可撤销。",
     "deletePartnerTitle": "删除合作伙伴",
     "deletePartnerConfirm": "确定要删除此合作伙伴吗？此操作不可撤销。",
+    "addCustomBlock": "新增 CustomBlock",
+    "customBlockPositionHint": "CustomBlock 固定显示在首页 partners 之后；sort_order 仅控制多个 CustomBlock 之间的相对顺序",
+    "customBlockCreated": "CustomBlock 已创建",
+    "customBlockDeleted": "CustomBlock 已删除",
+    "deleteCustomBlockTitle": "删除 CustomBlock",
+    "deleteCustomBlockConfirm": "确定删除此 CustomBlock 吗？此操作不可撤销。",
     "validation": {
       "required": "必填",
-      "contentRequired": "中文和英文内容至少填写一项"
+      "contentRequired": "中文和英文内容至少填写一项",
+      "urlScheme": "必须以 http(s):// 或 / 开头"
     },
     "field": {
       "icon": "图标 (emoji 或 class)",
@@ -2823,7 +2830,11 @@
       "productEn": "产品 (英文)",
       "partnerName": "合作伙伴名称",
       "website": "网站 URL",
-      "logoUrl": "Logo URL"
+      "logoUrl": "Logo URL",
+      "imageUrl": "图片 URL",
+      "ctaTextZh": "按钮中文",
+      "ctaTextEn": "按钮英文",
+      "ctaLink": "跳转链接"
     }
   },
   "homepage": {

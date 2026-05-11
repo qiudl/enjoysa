@@ -3,6 +3,22 @@
  */
 import { get, post, put, del } from './api';
 
+// Modules created via the "Add CustomBlock" UI use this key prefix. The
+// backend (homepage.CustomBlockKeyPrefix) and the HomePage renderer both
+// gate on this constant — change it here AND in handler.go together.
+export const CUSTOM_BLOCK_KEY_PREFIX = 'custom_block_';
+
+export interface CustomBlockConfig {
+  title_zh: string;
+  title_en: string;
+  desc_zh?: string;
+  desc_en?: string;
+  image_url?: string;
+  cta_text_zh?: string;
+  cta_text_en?: string;
+  cta_link?: string;
+}
+
 // === Types ===
 
 export interface HomepageModule {
@@ -130,5 +146,23 @@ export const homepageAdminService = {
   },
   async updateModules(items: Array<{ id: number; title_zh: string; title_en: string; sort_order: number; is_visible: boolean }>): Promise<HomepageModule[]> {
     return put<HomepageModule[]>('/admin/homepage/modules', items);
+  },
+  async createCustomBlock(input: {
+    title_zh: string;
+    title_en: string;
+    config: CustomBlockConfig;
+    sort_order?: number;
+    is_visible?: boolean;
+  }): Promise<HomepageModule> {
+    return post<HomepageModule>('/admin/homepage/modules', {
+      title_zh: input.title_zh,
+      title_en: input.title_en,
+      sort_order: input.sort_order ?? 9000,
+      is_visible: input.is_visible ?? true,
+      config: JSON.stringify(input.config),
+    });
+  },
+  async deleteModule(moduleKey: string): Promise<void> {
+    return del(`/admin/homepage/modules/${encodeURIComponent(moduleKey)}`);
   },
 };
