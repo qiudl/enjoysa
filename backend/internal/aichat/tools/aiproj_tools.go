@@ -287,6 +287,17 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			},
 		},
 		Handler: func(ctx model.ToolContext, args map[string]interface{}) (interface{}, error) {
+			// REQ-20260506-0055: fail loud when the project filter is missing
+			// instead of silently sending `project_id=0` to ai-proj. The
+			// upstream then returns the global total (≈1985) with an empty
+			// rows array, which the LLM relays as "you have 1985 requirements
+			// but I can show 0 of them" — badly confusing suppliers. Most
+			// likely root cause is prod env var ENJOYSA_AI_AIPROJ_PROJ_ID
+			// being unset; memory `feedback_env_var_presence_check` warns
+			// that docker-compose mapping lines do not prove the value is set.
+			if client.projectID <= 0 {
+				return nil, fmt.Errorf("ai-proj 项目过滤未配置；请联系管理员检查 ENJOYSA_AI_AIPROJ_PROJ_ID")
+			}
 			// REQ-20260506-0014: build query string via url.Values so any
 			// Chinese / special characters in `search` or comma-separated
 			// `status` lists get properly percent-encoded — pre-fix this
@@ -362,10 +373,12 @@ func RegisterListRequirements(cfg config.AIConfig) model.ToolDef {
 			}
 
 			// Diagnostic warn on empty results so a future regression in
-			// the response shape leaves a breadcrumb.
+			// the response shape leaves a breadcrumb. REQ-20260506-0055:
+			// also log project_id and total so prod log grep can immediately
+			// distinguish "env unset (project_id=0)" from "real 0 matches".
 			if len(items) == 0 {
-				logger.Warnf("[ai-chat] list_requirements returned 0 items; raw_keys=%v top_keys=%v query=%s",
-					mapKeys(data), mapKeys(result), q.Encode())
+				logger.Warnf("[ai-chat] list_requirements returned 0 items; project_id=%d total=%d raw_keys=%v top_keys=%v query=%s",
+					client.projectID, total, mapKeys(data), mapKeys(result), q.Encode())
 			}
 
 			out := map[string]interface{}{
