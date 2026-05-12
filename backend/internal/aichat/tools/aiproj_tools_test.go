@@ -51,6 +51,38 @@ func runListRequirements(t *testing.T, srvURL string, args map[string]interface{
 	return tool.Handler(model.ToolContext{Language: "zh"}, args)
 }
 
+// REQ-20260506-0055: when ENJOYSA_AI_AIPROJ_PROJ_ID is unset / =0, the tool
+// must refuse to call ai-proj rather than send `project_id=0` (which the
+// upstream interprets as "no filter" and returns the global total). The
+// LLM then sees a clean error string and can apologize / suggest contacting
+// the admin instead of fabricating "you have 1985 requirements."
+func TestListRequirements_ZeroProjectID_ReturnsError(t *testing.T) {
+	tool := RegisterListRequirements(config.AIConfig{
+		AIProjBase:   "http://example.invalid", // would 502 if we even tried
+		AIProjToken:  "x",
+		AIProjProjID: 0,
+	})
+	_, err := tool.Handler(model.ToolContext{Language: "zh"}, map[string]interface{}{})
+	if err == nil {
+		t.Fatal("expected error when projectID is 0; got nil")
+	}
+	if !strings.Contains(err.Error(), "ENJOYSA_AI_AIPROJ_PROJ_ID") {
+		t.Errorf("error should name the env var so admin can locate it; got: %v", err)
+	}
+}
+
+func TestListRequirements_NegativeProjectID_ReturnsError(t *testing.T) {
+	tool := RegisterListRequirements(config.AIConfig{
+		AIProjBase:   "http://example.invalid",
+		AIProjToken:  "x",
+		AIProjProjID: -1, // corrupt config; guard should treat same as 0
+	})
+	_, err := tool.Handler(model.ToolContext{Language: "zh"}, map[string]interface{}{})
+	if err == nil {
+		t.Fatal("expected error when projectID is negative; got nil")
+	}
+}
+
 func TestListRequirements_URLEncodesChineseSearch(t *testing.T) {
 	srv, rec := setupAIProjServer(t, map[string]interface{}{
 		"success": true,

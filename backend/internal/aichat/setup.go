@@ -89,7 +89,14 @@ func Setup(db *gorm.DB, cfg config.AIConfig, ps *productstore.ProductStore, rs *
 		// existed, so the LLM had no way to fulfill those requests).
 		registry.Register(tools.RegisterUpdateRequirement(cfg))
 		registry.Register(tools.RegisterUploadImageToRequirement(cfg))
-		logger.Info("AI-Proj integration enabled: %s (project %d)", cfg.AIProjBase, cfg.AIProjProjID)
+		// REQ-20260506-0055: surface env-var mishap (likely ProjID unset)
+		// at startup so a deploy log grep catches it immediately rather
+		// than the supplier hitting "1985 requirements but 0 shown."
+		if cfg.AIProjProjID <= 0 {
+			logger.Errorf("AI-Proj registered but project ID is %d (env ENJOYSA_AI_AIPROJ_PROJ_ID likely missing); list_requirements will return a misconfig error to users", cfg.AIProjProjID)
+		} else {
+			logger.Info("AI-Proj integration enabled: %s (project %d)", cfg.AIProjBase, cfg.AIProjProjID)
+		}
 	}
 
 	// Auto-seed knowledge base if empty
