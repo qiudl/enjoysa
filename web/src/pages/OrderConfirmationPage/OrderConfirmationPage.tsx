@@ -160,8 +160,8 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({ or
         {/* Footer */}
         <div className={styles.footer}>
           <p>{t('order.confirmation.footerNote', isZh
-            ? '感谢您选择畅游南澳！如有问题请联系我们：tonylai@enjoysau.com.au'
-            : 'Thank you for choosing EnjoySA! Contact us: tonylai@enjoysau.com.au'
+            ? '感谢您选择畅游南澳！如有问题请联系我们：tonylai@enjoysau.com'
+            : 'Thank you for choosing EnjoySA! Contact us: tonylai@enjoysau.com'
           )}</p>
           <p className={styles.printDate}>
             {t('order.confirmation.printDate', isZh ? '打印时间' : 'Printed')}: {new Date().toLocaleString()}

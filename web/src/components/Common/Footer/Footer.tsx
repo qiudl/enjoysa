@@ -48,7 +48,7 @@ export const Footer: React.FC<FooterProps> = ({
   logo,
   description,
   phone = '+61 0406830901',
-  email = 'tonylai@enjoysau.com.au',
+  email = 'tonylai@enjoysau.com',
   address = 'Adelaide, South Australia',
   icp,
   onNavClick,
