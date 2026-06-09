@@ -10,7 +10,7 @@ const resources = {
   'zh-TW': { translation: zhTW },
 };
 
-const savedLng = localStorage.getItem('i18n-lang') || 'en';
+const savedLng = localStorage.getItem('i18n-lang') || 'zh-TW';
 
 i18n
   .use(initReactI18next)
