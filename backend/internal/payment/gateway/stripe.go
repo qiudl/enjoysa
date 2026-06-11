@@ -77,12 +77,17 @@ func (g *StripeGateway) VerifyWebhookSignature(payload []byte, signature string)
 	return we, nil
 }
 
-func (g *StripeGateway) Refund(paymentIntentID string, amount int64) error {
+func (g *StripeGateway) Refund(paymentIntentID string, amount int64, idempotencyKey string) error {
 	params := &stripe.RefundParams{
 		PaymentIntent: stripe.String(paymentIntentID),
 	}
 	if amount > 0 {
 		params.Amount = stripe.Int64(amount)
+	}
+	// Stripe-level idempotency: a retried/concurrent Refund with the same key
+	// returns the original refund instead of creating a second one.
+	if idempotencyKey != "" {
+		params.SetIdempotencyKey(idempotencyKey)
 	}
 
 	_, err := refund.New(params)

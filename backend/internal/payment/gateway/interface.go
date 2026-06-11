@@ -24,5 +24,8 @@ type WebhookEvent struct {
 type PaymentGateway interface {
 	CreateCheckoutSession(params CheckoutParams) (*CheckoutSession, error)
 	VerifyWebhookSignature(payload []byte, signature string) (*WebhookEvent, error)
-	Refund(paymentIntentID string, amount int64) error
+	// Refund issues a refund against the given PaymentIntent. idempotencyKey is
+	// forwarded to Stripe as its Idempotency-Key so a retried or concurrent call
+	// with the same key never results in a second (double) refund.
+	Refund(paymentIntentID string, amount int64, idempotencyKey string) error
 }

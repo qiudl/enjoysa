@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"math"
 	"strconv"
 	"time"
 
+	"enjoysa-backend/internal/integration/feishu"
 	ordermodel "enjoysa-backend/internal/order/model"
 	"enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
@@ -15,18 +18,31 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// codeRefundDuplicate is returned (HTTP 409) when a refund is already in
+// progress or completed for the order — i.e. a concurrent/duplicate refund
+// attempt was rejected. Follows the DOMAIN_CATEGORY_REASON convention.
+const codeRefundDuplicate = "ORDER_REFUND_DUPLICATE"
+
 type SupplierOrderHandler struct {
 	orderStore     *store.OrderStore
 	productStore   *productstore.ProductStore
 	paymentGateway gateway.PaymentGateway
+	feishuClient   *feishu.Client
 }
 
-func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *productstore.ProductStore, paymentGateway gateway.PaymentGateway) *SupplierOrderHandler {
+func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *productstore.ProductStore, paymentGateway gateway.PaymentGateway, feishuClient *feishu.Client) *SupplierOrderHandler {
 	return &SupplierOrderHandler{
 		orderStore:     orderStore,
 		productStore:   productStore,
 		paymentGateway: paymentGateway,
+		feishuClient:   feishuClient,
 	}
+}
+
+// refundIdempotencyKey derives a stable Stripe Idempotency-Key from the order
+// number so retried/concurrent refunds for the same order never double-refund.
+func refundIdempotencyKey(orderNo string) string {
+	return "refund-" + orderNo
 }
 
 func (h *SupplierOrderHandler) ListOrders(c *gin.Context) {
@@ -166,10 +182,10 @@ func (h *SupplierOrderHandler) RejectOrder(c *gin.Context) {
 	order.RejectedAt = &now
 	order.RejectReason = req.Reason
 
-	// Trigger refund
+	// Trigger refund (idempotency-keyed so a retried reject can't double-refund).
 	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
 		amountCents := int64(math.Round(order.TotalPrice * 100))
-		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err == nil {
+		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents, refundIdempotencyKey(order.OrderNo)); err == nil {
 			order.Status = ordermodel.OrderStatusRefunded
 			order.RefundedAt = &now
 			order.RefundAmount = order.TotalPrice
@@ -261,14 +277,17 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 		response.Forbidden(c, "Access denied")
 		return
 	}
-	if order.Status != ordermodel.OrderStatusPaid && order.Status != ordermodel.OrderStatusAccepted {
-		response.BadRequest(c, "Order can only be refunded when paid or accepted")
+	// Early UX validation (the authoritative re-check happens under the row
+	// lock in ClaimRefundIntent below, so this is only for friendly errors).
+	// Check the duplicate-refund case first: a completed refund leaves the
+	// order in status=Refunded, which would otherwise fall into the
+	// "not refundable" branch and mask the real reason (it's a duplicate).
+	if order.RefundStatus == "processing" || order.RefundStatus == "completed" {
+		response.Fail(c, 409, codeRefundDuplicate, "Refund already in progress or completed")
 		return
 	}
-
-	// Idempotency: reject if refund already in progress or completed
-	if order.RefundStatus == "processing" || order.RefundStatus == "completed" {
-		response.BadRequest(c, "Refund already in progress or completed")
+	if order.Status != ordermodel.OrderStatusPaid && order.Status != ordermodel.OrderStatusAccepted {
+		response.BadRequest(c, "Order can only be refunded when paid or accepted")
 		return
 	}
 
@@ -291,50 +310,69 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 		refundAmount = req.Amount
 	}
 
-	now := time.Now()
-	oldStatus := order.Status
-	order.RefundType = req.Type
-	order.RefundReason = req.Reason
-	order.RefundStatus = "processing"
-	order.RefundAmount = refundAmount
-
-	// Persist processing status before calling Stripe
-	if err := h.orderStore.Update(order); err != nil {
-		response.ServerError(c, "Failed to update order")
+	// LAYER 1 — prevention: atomically claim the refund under a row lock so two
+	// concurrent requests can never both proceed to call Stripe. The loser of
+	// the race (and any retry of an already-claimed refund) is rejected here,
+	// before any money moves.
+	locked, err := h.orderStore.ClaimRefundIntent(uint(id), req.Type, refundAmount)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.ErrRefundInProgress):
+			response.Fail(c, 409, codeRefundDuplicate, "Refund already in progress or completed")
+		case errors.Is(err, store.ErrOrderNotRefundable):
+			response.BadRequest(c, "Order can only be refunded when paid or accepted")
+		default:
+			log.Printf("[RefundOrder] ClaimRefundIntent failed for order %d: %v", id, err)
+			response.ServerError(c, "Failed to start refund")
+		}
 		return
 	}
 
-	if order.StripePaymentIntentID != "" && h.paymentGateway != nil {
+	now := time.Now()
+	oldStatus := locked.Status
+	locked.RefundReason = req.Reason
+
+	// Call Stripe with a stable idempotency key (LAYER 1, gateway side): a
+	// retried/concurrent Stripe call with the same key returns the original
+	// refund instead of issuing a second one.
+	if locked.StripePaymentIntentID != "" && h.paymentGateway != nil {
 		amountCents := int64(math.Round(refundAmount * 100))
-		if err := h.paymentGateway.Refund(order.StripePaymentIntentID, amountCents); err != nil {
-			log.Printf("[RefundOrder] Stripe refund failed for order %d: %v", order.ID, err)
-			order.RefundStatus = "failed"
-			if updateErr := h.orderStore.Update(order); updateErr != nil {
-				log.Printf("[RefundOrder] Failed to update refund_status=failed for order %d: %v", order.ID, updateErr)
+		if err := h.paymentGateway.Refund(locked.StripePaymentIntentID, amountCents, refundIdempotencyKey(locked.OrderNo)); err != nil {
+			log.Printf("[RefundOrder] Stripe refund failed for order %d: %v", locked.ID, err)
+			locked.RefundStatus = "failed"
+			if updateErr := h.orderStore.Update(locked); updateErr != nil {
+				log.Printf("[RefundOrder] Failed to update refund_status=failed for order %d: %v", locked.ID, updateErr)
 			}
 			response.ServerError(c, "Refund failed, please try again later")
 			return
 		}
 	}
 
-	order.RefundStatus = "completed"
-	order.RefundedAt = &now
-	order.Status = ordermodel.OrderStatusRefunded
+	locked.RefundStatus = "completed"
+	locked.RefundedAt = &now
+	locked.Status = ordermodel.OrderStatusRefunded
 
-	if err := h.orderStore.Update(order); err != nil {
-		log.Printf("[RefundOrder] Stripe refunded but DB update failed for order %d: %v", order.ID, err)
-		response.ServerError(c, "Failed to update order")
+	// LAYER 2 + 3 — the "Stripe succeeded but DB write failed" window. Money is
+	// already out of Stripe; if we cannot record it, leave RefundStatus at
+	// "processing" (NOT failed — a failed flag would invite a real double
+	// refund) so the reconciliation job/webhook can converge the terminal
+	// state, and fire the highest-severity alert for human reconciliation.
+	if err := h.orderStore.Update(locked); err != nil {
+		log.Printf("[RefundOrder] ORPHAN: Stripe refunded but DB update failed for order %d (%s): %v", locked.ID, locked.OrderNo, err)
+		h.feishuClient.AlertRefundOrphan(locked.OrderNo, refundAmount, err)
+		response.ServerError(c, "Refund issued but order state could not be saved; flagged for manual reconciliation")
 		return
 	}
 
 	h.orderStore.AddHistory(&ordermodel.OrderStatusHistory{
-		OrderID:      order.ID,
+		OrderID:      locked.ID,
 		FromStatus:   oldStatus,
-		ToStatus:     order.Status,
+		ToStatus:     locked.Status,
 		OperatorID:   &supplierUserID,
 		OperatorType: "supplier",
-		Remark:       "Refund (" + req.Type + "): " + req.Reason,
+		Remark:       fmt.Sprintf("Refund (%s): %s", req.Type, req.Reason),
 	})
+	order = locked
 
 	response.Success(c, order)
 }
