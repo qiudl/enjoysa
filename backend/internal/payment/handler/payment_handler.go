@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"enjoysa-backend/internal/core/logger"
+	"enjoysa-backend/internal/integration/feishu"
 	ordermodel "enjoysa-backend/internal/order/model"
 	orderstore "enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
@@ -29,17 +30,20 @@ type PaymentHandler struct {
 	orderStore     *orderstore.OrderStore
 	paymentGateway gateway.PaymentGateway
 	frontendURL    string
+	feishuClient   *feishu.Client
 }
 
 func NewPaymentHandler(
 	orderStore *orderstore.OrderStore,
 	paymentGateway gateway.PaymentGateway,
 	frontendURL string,
+	feishuClient *feishu.Client,
 ) *PaymentHandler {
 	return &PaymentHandler{
 		orderStore:     orderStore,
 		paymentGateway: paymentGateway,
 		frontendURL:    frontendURL,
+		feishuClient:   feishuClient,
 	}
 }
 
@@ -131,6 +135,7 @@ func (h *PaymentHandler) StripeWebhook(c *gin.Context) {
 	event, err := h.paymentGateway.VerifyWebhookSignature(payload, signature)
 	if err != nil {
 		logger.Errorf("Webhook signature failed: %v", err)
+		h.feishuClient.AlertStripeWebhookSigFail(c.ClientIP(), err)
 		response.BadRequest(c, "Invalid signature")
 		return
 	}
@@ -139,6 +144,7 @@ func (h *PaymentHandler) StripeWebhook(c *gin.Context) {
 		order, err := h.orderStore.GetByStripeSessionID(event.SessionID)
 		if err != nil {
 			logger.Errorf("Order not found for session %s", event.SessionID)
+			h.feishuClient.AlertStripeOrderMissing(event.SessionID)
 			response.NotFound(c, "Order not found")
 			return
 		}

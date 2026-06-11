@@ -225,7 +225,7 @@ func Setup(cfg Config) *gin.Engine {
 	// paths that build OrderHandler directly stay compatible.
 	orderHandler.SetStockAlertService(stockAlertSvc)
 	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pStore, pg)
-	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
+	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL, feishuClient)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc, aStore, rvStore, slStore, supplierAuditStore)
 	// REQ-20260509-0004: wire the same translation service so admin
