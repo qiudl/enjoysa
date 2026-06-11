@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"enjoysa-backend/internal/integration/feishu"
 	ordermodel "enjoysa-backend/internal/order/model"
 	"enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
@@ -23,20 +22,50 @@ import (
 // attempt was rejected. Follows the DOMAIN_CATEGORY_REASON convention.
 const codeRefundDuplicate = "ORDER_REFUND_DUPLICATE"
 
+// refundOrphanRetries is how many times the orphan path retries persisting the
+// terminal refunded state before giving up and alerting for human reconciliation.
+const refundOrphanRetries = 3
+
+// refundAlerter is the subset of the Feishu client the refund path needs. It is
+// an interface so the orphan-alert *timing* can be unit-tested with a mock
+// (*feishu.Client satisfies it).
+type refundAlerter interface {
+	AlertRefundOrphan(orderNo string, amountAUD float64, err error)
+}
+
 type SupplierOrderHandler struct {
 	orderStore     *store.OrderStore
 	productStore   *productstore.ProductStore
 	paymentGateway gateway.PaymentGateway
-	feishuClient   *feishu.Client
+	alerter        refundAlerter
+	// persistRefundResult records the terminal refunded state after Stripe
+	// succeeded, with reconciliation retries. Injectable so tests can drive the
+	// "self-healed" vs "could-not-heal" branches deterministically.
+	persistRefundResult func(*ordermodel.Order) error
 }
 
-func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *productstore.ProductStore, paymentGateway gateway.PaymentGateway, feishuClient *feishu.Client) *SupplierOrderHandler {
-	return &SupplierOrderHandler{
+func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *productstore.ProductStore, paymentGateway gateway.PaymentGateway, alerter refundAlerter) *SupplierOrderHandler {
+	h := &SupplierOrderHandler{
 		orderStore:     orderStore,
 		productStore:   productStore,
 		paymentGateway: paymentGateway,
-		feishuClient:   feishuClient,
+		alerter:        alerter,
 	}
+	h.persistRefundResult = h.persistRefundWithRetry
+	return h
+}
+
+// persistRefundWithRetry persists the terminal refunded order state, retrying a
+// few times to ride out a transient DB failure (the reconciliation "self-heal"
+// step). Returns the last error if it never succeeds.
+func (h *SupplierOrderHandler) persistRefundWithRetry(order *ordermodel.Order) error {
+	var err error
+	for i := 0; i < refundOrphanRetries; i++ {
+		if err = h.orderStore.Update(order); err == nil {
+			return nil
+		}
+	}
+	return err
 }
 
 // refundIdempotencyKey derives a stable Stripe Idempotency-Key from the order
@@ -353,13 +382,13 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 	locked.Status = ordermodel.OrderStatusRefunded
 
 	// LAYER 2 + 3 — the "Stripe succeeded but DB write failed" window. Money is
-	// already out of Stripe; if we cannot record it, leave RefundStatus at
+	// already out of Stripe; persistRefundResult retries to self-heal the
+	// terminal state. If it still cannot record it, leave RefundStatus at
 	// "processing" (NOT failed — a failed flag would invite a real double
-	// refund) so the reconciliation job/webhook can converge the terminal
-	// state, and fire the highest-severity alert for human reconciliation.
-	if err := h.orderStore.Update(locked); err != nil {
+	// refund) and fire the highest-severity alert for human reconciliation.
+	if err := h.persistRefundResult(locked); err != nil {
 		log.Printf("[RefundOrder] ORPHAN: Stripe refunded but DB update failed for order %d (%s): %v", locked.ID, locked.OrderNo, err)
-		h.feishuClient.AlertRefundOrphan(locked.OrderNo, refundAmount, err)
+		h.alerter.AlertRefundOrphan(locked.OrderNo, refundAmount, err)
 		response.ServerError(c, "Refund issued but order state could not be saved; flagged for manual reconciliation")
 		return
 	}

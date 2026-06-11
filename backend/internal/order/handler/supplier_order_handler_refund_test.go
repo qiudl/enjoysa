@@ -15,6 +15,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -30,6 +31,24 @@ import (
 	"enjoysa-backend/internal/order/store"
 	"enjoysa-backend/internal/payment/gateway"
 )
+
+// mockAlerter records how many times the refund-orphan alert was raised.
+type mockAlerter struct {
+	mu    sync.Mutex
+	calls int
+}
+
+func (m *mockAlerter) AlertRefundOrphan(orderNo string, amountAUD float64, err error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.calls++
+}
+
+func (m *mockAlerter) count() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.calls
+}
 
 // mockGateway implements gateway.PaymentGateway and records how many times
 // Refund was invoked and with what idempotency key.
@@ -55,7 +74,7 @@ func (m *mockGateway) Refund(paymentIntentID string, amount int64, idempotencyKe
 	return nil
 }
 
-func setupRefundTest(t *testing.T) (*SupplierOrderHandler, *store.OrderStore, *mockGateway) {
+func setupRefundTest(t *testing.T) (*SupplierOrderHandler, *store.OrderStore, *mockGateway, *mockAlerter) {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -71,10 +90,10 @@ func setupRefundTest(t *testing.T) (*SupplierOrderHandler, *store.OrderStore, *m
 	}
 	os := store.NewOrderStore(db)
 	mg := &mockGateway{}
-	// productStore is unused by the refund path; feishu client is nil (its
-	// methods are nil-safe, so the orphan-alert call is a no-op in tests).
-	h := NewSupplierOrderHandler(os, nil, mg, nil)
-	return h, os, mg
+	alerter := &mockAlerter{}
+	// productStore is unused by the refund path.
+	h := NewSupplierOrderHandler(os, nil, mg, alerter)
+	return h, os, mg, alerter
 }
 
 func seedPaidOrder(t *testing.T, os *store.OrderStore, supplierID, userID uint) *ordermodel.Order {
@@ -115,7 +134,7 @@ func doRefund(h *SupplierOrderHandler, orderID, supplierID, supplierUserID uint)
 }
 
 func TestRefundOrder_DuplicateRejected_StripeCalledOnce(t *testing.T) {
-	h, os, mg := setupRefundTest(t)
+	h, os, mg, _ := setupRefundTest(t)
 	const supplierID, supplierUserID = uint(7), uint(70)
 	o := seedPaidOrder(t, os, supplierID, supplierUserID)
 
@@ -150,7 +169,7 @@ func TestRefundOrder_DuplicateRejected_StripeCalledOnce(t *testing.T) {
 }
 
 func TestRefundOrder_ConcurrentRefunds_SingleStripeRefund(t *testing.T) {
-	h, os, mg := setupRefundTest(t)
+	h, os, mg, _ := setupRefundTest(t)
 	const supplierID, supplierUserID = uint(7), uint(70)
 	o := seedPaidOrder(t, os, supplierID, supplierUserID)
 
@@ -184,7 +203,7 @@ func TestRefundOrder_ConcurrentRefunds_SingleStripeRefund(t *testing.T) {
 }
 
 func TestClaimRefundIntent_SecondClaimRejected(t *testing.T) {
-	_, os, _ := setupRefundTest(t)
+	_, os, _, _ := setupRefundTest(t)
 	o := seedPaidOrder(t, os, 7, 70)
 
 	if _, err := os.ClaimRefundIntent(o.ID, "full", 100); err != nil {
@@ -192,5 +211,58 @@ func TestClaimRefundIntent_SecondClaimRejected(t *testing.T) {
 	}
 	if _, err := os.ClaimRefundIntent(o.ID, "full", 100); err != store.ErrRefundInProgress {
 		t.Fatalf("second claim: want ErrRefundInProgress, got %v", err)
+	}
+}
+
+// Orphan-alert timing: when Stripe has refunded but the terminal state can never
+// be persisted (reconciliation cannot self-heal), AlertRefundOrphan must fire
+// exactly once and the order must stay in processing (not failed).
+func TestRefundOrder_OrphanPath_AlertsWhenPersistFails(t *testing.T) {
+	h, os, mg, alerter := setupRefundTest(t)
+	const supplierID, supplierUserID = uint(7), uint(70)
+	o := seedPaidOrder(t, os, supplierID, supplierUserID)
+
+	h.persistRefundResult = func(*ordermodel.Order) error { return errors.New("db unreachable") }
+
+	w := doRefund(h, o.ID, supplierID, supplierUserID)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("orphan path: want 500, got %d (%s)", w.Code, w.Body.String())
+	}
+	if mg.refundCalls != 1 {
+		t.Fatalf("Stripe Refund called %d times, want 1 (money did leave Stripe)", mg.refundCalls)
+	}
+	if got := alerter.count(); got != 1 {
+		t.Fatalf("AlertRefundOrphan called %d times, want exactly 1", got)
+	}
+	// Order must remain in processing so the reconciliation job can converge it
+	// — NOT failed, which would invite a real double refund.
+	got, err := os.GetByID(o.ID)
+	if err != nil {
+		t.Fatalf("reload order: %v", err)
+	}
+	if got.RefundStatus != "processing" {
+		t.Fatalf("orphan order RefundStatus = %q, want processing", got.RefundStatus)
+	}
+}
+
+// Orphan-alert timing: when the terminal state is recorded (reconciliation
+// self-heals), NO alert should fire and the refund returns 200.
+func TestRefundOrder_OrphanPath_NoAlertWhenSelfHeals(t *testing.T) {
+	h, os, mg, alerter := setupRefundTest(t)
+	const supplierID, supplierUserID = uint(7), uint(70)
+	o := seedPaidOrder(t, os, supplierID, supplierUserID)
+
+	// Reconciliation persists the terminal state successfully (self-heal).
+	h.persistRefundResult = func(ord *ordermodel.Order) error { return os.Update(ord) }
+
+	w := doRefund(h, o.ID, supplierID, supplierUserID)
+	if w.Code != http.StatusOK {
+		t.Fatalf("self-heal path: want 200, got %d (%s)", w.Code, w.Body.String())
+	}
+	if mg.refundCalls != 1 {
+		t.Fatalf("Stripe Refund called %d times, want 1", mg.refundCalls)
+	}
+	if got := alerter.count(); got != 0 {
+		t.Fatalf("AlertRefundOrphan called %d times, want 0 when state recorded", got)
 	}
 }
