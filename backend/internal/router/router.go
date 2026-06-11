@@ -102,9 +102,15 @@ func Setup(cfg Config) *gin.Engine {
 	r.Use(middleware.Recovery())
 	r.Use(middleware.CORS(cfg.FrontendURL))
 
-	// Health check
+	// Health check — probes DB so the deploy healthcheck and load balancer
+	// get a real liveness signal, not a fake-green 200 while DB is down.
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		sqlDB, err := cfg.DB.DB()
+		if err != nil || sqlDB.PingContext(context.Background()) != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "degraded", "db": "unreachable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "db": "ok"})
 	})
 
 	// Static files for uploads
