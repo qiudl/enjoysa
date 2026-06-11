@@ -27,10 +27,16 @@ const codeRefundDuplicate = "ORDER_REFUND_DUPLICATE"
 const refundOrphanRetries = 3
 
 // refundAlerter is the subset of the Feishu client the refund path needs. It is
-// an interface so the orphan-alert *timing* can be unit-tested with a mock
+// an interface so the alert *timing* can be unit-tested with a mock
 // (*feishu.Client satisfies it).
+//   - AlertRefundOrphan: money left Stripe but the terminal state could not be
+//     recorded (orphan A — funds at risk).
+//   - AlertRefundStuck: Stripe refund failed AND the failure could not be
+//     recorded, so the order is stuck in processing (orphan B — no funds moved,
+//     but the refund lock blocks retries until a human releases it).
 type refundAlerter interface {
 	AlertRefundOrphan(orderNo string, amountAUD float64, err error)
+	AlertRefundStuck(orderNo string, err error)
 }
 
 type SupplierOrderHandler struct {
@@ -38,9 +44,13 @@ type SupplierOrderHandler struct {
 	productStore   *productstore.ProductStore
 	paymentGateway gateway.PaymentGateway
 	alerter        refundAlerter
-	// persistRefundResult records the terminal refunded state after Stripe
-	// succeeded, with reconciliation retries. Injectable so tests can drive the
-	// "self-healed" vs "could-not-heal" branches deterministically.
+	// persistRefundResult records the post-Stripe order state with a bounded
+	// in-request retry to self-heal a transient DB blip. There is intentionally
+	// NO background reconciliation job yet — for the soft launch the fallback is
+	// the AlertRefund* alerts + manual reconciliation; an automatic reconcile
+	// job that sweeps stuck "processing" orders is post-launch backlog.
+	// Injectable so tests can drive the "self-healed" vs "could-not-heal"
+	// branches deterministically.
 	persistRefundResult func(*ordermodel.Order) error
 }
 
@@ -368,9 +378,18 @@ func (h *SupplierOrderHandler) RefundOrder(c *gin.Context) {
 		amountCents := int64(math.Round(refundAmount * 100))
 		if err := h.paymentGateway.Refund(locked.StripePaymentIntentID, amountCents, refundIdempotencyKey(locked.OrderNo)); err != nil {
 			log.Printf("[RefundOrder] Stripe refund failed for order %d: %v", locked.ID, err)
+			// No money moved. Release the claim by recording "failed" (which
+			// ClaimRefundIntent does NOT block, so the customer can retry; the
+			// stable idempotency key keeps a later retry safe). Retry the write
+			// to ride out a transient DB blip.
 			locked.RefundStatus = "failed"
-			if updateErr := h.orderStore.Update(locked); updateErr != nil {
-				log.Printf("[RefundOrder] Failed to update refund_status=failed for order %d: %v", locked.ID, updateErr)
+			if perr := h.persistRefundResult(locked); perr != nil {
+				// Orphan B: Stripe didn't refund AND we couldn't record the
+				// failure, so the order is stuck in processing and the refund
+				// lock blocks retries. Funds are safe, but don't go silent —
+				// alert so a human can release it.
+				log.Printf("[RefundOrder] STUCK: Stripe refund failed and status write failed for order %d (%s): %v", locked.ID, locked.OrderNo, perr)
+				h.alerter.AlertRefundStuck(locked.OrderNo, perr)
 			}
 			response.ServerError(c, "Refund failed, please try again later")
 			return

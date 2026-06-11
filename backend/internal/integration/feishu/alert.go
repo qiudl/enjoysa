@@ -37,6 +37,19 @@ func (c *Client) AlertRefundOrphan(orderNo string, amountAUD float64, err error)
 	_ = c.SendAlert("退款孤兒 — 人工核對", msg)
 }
 
+// AlertRefundStuck is called when a refund could not be issued at Stripe AND the
+// "failed" status could not be recorded either, so the order is stuck in
+// processing (no money moved, but the refund lock blocks retries). Lower severity
+// than an orphan — no funds are at risk — but it must not stay silent because a
+// human has to release the order for a retry.
+func (c *Client) AlertRefundStuck(orderNo string, err error) {
+	msg := fmt.Sprintf(
+		"訂單 %s：Stripe 退款失敗且狀態回寫也失敗 → 卡在 processing（錢未退出）。退款鎖會擋住重試，需人工復位後重試。錯誤：%v",
+		orderNo, err,
+	)
+	_ = c.SendAlert("退款卡死 — 需人工復位", msg)
+}
+
 // AlertStripeWebhookSigFail is called when Stripe webhook signature verification
 // fails — could indicate a replay attack or misconfigured webhook secret.
 func (c *Client) AlertStripeWebhookSigFail(remoteAddr string, err error) {

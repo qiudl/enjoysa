@@ -32,22 +32,35 @@ import (
 	"enjoysa-backend/internal/payment/gateway"
 )
 
-// mockAlerter records how many times the refund-orphan alert was raised.
+// mockAlerter records how many times each refund alert was raised.
 type mockAlerter struct {
-	mu    sync.Mutex
-	calls int
+	mu          sync.Mutex
+	orphanCalls int // AlertRefundOrphan (orphan A: money out, state lost)
+	stuckCalls  int // AlertRefundStuck (orphan B: no money moved, lock stuck)
 }
 
 func (m *mockAlerter) AlertRefundOrphan(orderNo string, amountAUD float64, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.calls++
+	m.orphanCalls++
 }
 
-func (m *mockAlerter) count() int {
+func (m *mockAlerter) AlertRefundStuck(orderNo string, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.calls
+	m.stuckCalls++
+}
+
+func (m *mockAlerter) orphans() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.orphanCalls
+}
+
+func (m *mockAlerter) stucks() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.stuckCalls
 }
 
 // mockGateway implements gateway.PaymentGateway and records how many times
@@ -56,6 +69,7 @@ type mockGateway struct {
 	mu          sync.Mutex
 	refundCalls int
 	lastKey     string
+	refundErr   error // when set, Refund returns it (simulates Stripe failure)
 }
 
 func (m *mockGateway) CreateCheckoutSession(p gateway.CheckoutParams) (*gateway.CheckoutSession, error) {
@@ -71,7 +85,7 @@ func (m *mockGateway) Refund(paymentIntentID string, amount int64, idempotencyKe
 	defer m.mu.Unlock()
 	m.refundCalls++
 	m.lastKey = idempotencyKey
-	return nil
+	return m.refundErr
 }
 
 func setupRefundTest(t *testing.T) (*SupplierOrderHandler, *store.OrderStore, *mockGateway, *mockAlerter) {
@@ -231,11 +245,11 @@ func TestRefundOrder_OrphanPath_AlertsWhenPersistFails(t *testing.T) {
 	if mg.refundCalls != 1 {
 		t.Fatalf("Stripe Refund called %d times, want 1 (money did leave Stripe)", mg.refundCalls)
 	}
-	if got := alerter.count(); got != 1 {
+	if got := alerter.orphans(); got != 1 {
 		t.Fatalf("AlertRefundOrphan called %d times, want exactly 1", got)
 	}
-	// Order must remain in processing so the reconciliation job can converge it
-	// — NOT failed, which would invite a real double refund.
+	// Order must remain in processing (NOT failed, which would invite a real
+	// double refund) so manual / future-job reconciliation can converge it.
 	got, err := os.GetByID(o.ID)
 	if err != nil {
 		t.Fatalf("reload order: %v", err)
@@ -262,7 +276,41 @@ func TestRefundOrder_OrphanPath_NoAlertWhenSelfHeals(t *testing.T) {
 	if mg.refundCalls != 1 {
 		t.Fatalf("Stripe Refund called %d times, want 1", mg.refundCalls)
 	}
-	if got := alerter.count(); got != 0 {
+	if got := alerter.orphans(); got != 0 {
 		t.Fatalf("AlertRefundOrphan called %d times, want 0 when state recorded", got)
+	}
+}
+
+// Orphan B: Stripe refund FAILS and the "failed" status write also fails, so the
+// order is stuck in processing (no money moved, lock blocks retries). Must alert
+// via AlertRefundStuck (not the orphan/funds-at-risk alert) and not go silent.
+func TestRefundOrder_OrphanB_AlertsStuckWhenStripeAndPersistFail(t *testing.T) {
+	h, os, mg, alerter := setupRefundTest(t)
+	const supplierID, supplierUserID = uint(7), uint(70)
+	o := seedPaidOrder(t, os, supplierID, supplierUserID)
+
+	mg.refundErr = errors.New("stripe unavailable")                          // Stripe refund fails
+	h.persistRefundResult = func(*ordermodel.Order) error { return errors.New("db down") } // failure write fails too
+
+	w := doRefund(h, o.ID, supplierID, supplierUserID)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("orphan B: want 500, got %d (%s)", w.Code, w.Body.String())
+	}
+	if mg.refundCalls != 1 {
+		t.Fatalf("Stripe Refund attempted %d times, want 1", mg.refundCalls)
+	}
+	if got := alerter.stucks(); got != 1 {
+		t.Fatalf("AlertRefundStuck called %d times, want exactly 1", got)
+	}
+	if got := alerter.orphans(); got != 0 {
+		t.Fatalf("AlertRefundOrphan called %d times, want 0 (no money moved)", got)
+	}
+	// Order is stuck in processing (the failure write didn't land).
+	got, err := os.GetByID(o.ID)
+	if err != nil {
+		t.Fatalf("reload order: %v", err)
+	}
+	if got.RefundStatus != "processing" {
+		t.Fatalf("stuck order RefundStatus = %q, want processing", got.RefundStatus)
 	}
 }
