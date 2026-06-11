@@ -1,0 +1,41 @@
+name: Demo Server Admin
+
+# T4 support: SSH to demo server, inject STRIPE_SECRET_KEY_TEST, run arbitrary command.
+# Targets demo (13.239.207.90), NOT production.
+# ⚠️ HUMAN-ONLY per REQ-20260506-0056 — AI agents must NOT trigger this workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command to run on demo server (from /opt/enjoysa-backend)'
+        required: true
+        default: 'uptime && docker compose ps'
+        type: string
+
+env:
+  SERVER_IP: 13.239.207.90
+  SERVER_USER: ubuntu
+  BACKEND_DEPLOY: /opt/enjoysa-backend
+
+jobs:
+  run-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Host aws-demo
+            HostName ${{ env.SERVER_IP }}
+            User ${{ env.SERVER_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no" > ~/.ssh/config
+
+      - name: Run command
+        run: |
+          echo "Running on demo ${{ env.SERVER_IP }}: ${{ github.event.inputs.command }}"
+          ssh aws-demo "cd ${{ env.BACKEND_DEPLOY }} && \
+            export STRIPE_SECRET_KEY_TEST='${{ secrets.STRIPE_SECRET_KEY_TEST }}' && \
+            ${{ github.event.inputs.command }}"
