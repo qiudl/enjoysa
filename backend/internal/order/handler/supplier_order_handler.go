@@ -66,11 +66,18 @@ func NewSupplierOrderHandler(orderStore *store.OrderStore, productStore *product
 }
 
 // persistRefundWithRetry persists the terminal refunded order state, retrying a
-// few times to ride out a transient DB failure (the reconciliation "self-heal"
-// step). Returns the last error if it never succeeds.
+// few times with a short backoff to ride out a transient DB blip (the
+// reconciliation "self-heal" step). Returns the last error if it never
+// succeeds. The backoff is deliberately small and bounded (~50ms+100ms worst
+// case) because this runs synchronously in the refund request — long enough to
+// span a momentary blip, short enough not to hang the caller; a real outage
+// still fails fast and falls through to AlertRefundOrphan.
 func (h *SupplierOrderHandler) persistRefundWithRetry(order *ordermodel.Order) error {
 	var err error
 	for i := 0; i < refundOrphanRetries; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(i) * 50 * time.Millisecond)
+		}
 		if err = h.orderStore.Update(order); err == nil {
 			return nil
 		}
