@@ -395,14 +395,48 @@ func (s *ProductStore) RejectWithReason(id uint, reason string) error {
 	}).Error
 }
 
-// DeleteRelated deletes all related entities for a product
-func (s *ProductStore) DeleteRelated(productID uint) error {
-	s.db.Where("product_id = ?", productID).Delete(&model.ProductImage{})
-	s.db.Where("product_id = ?", productID).Delete(&model.ProductPackage{})
-	s.db.Where("product_id = ?", productID).Delete(&model.ProductHighlight{})
-	s.db.Where("product_id = ?", productID).Delete(&model.ProductFAQ{})
-	s.db.Where("product_id = ?", productID).Delete(&model.ProductSchedule{})
+// DeleteRelatedTx deletes all related child entities for a product on the given
+// tx, returning the first error instead of swallowing it. Lets callers make the
+// delete + recreate atomic.
+func (s *ProductStore) DeleteRelatedTx(tx *gorm.DB, productID uint) error {
+	for _, m := range []interface{}{
+		&model.ProductImage{}, &model.ProductPackage{},
+		&model.ProductHighlight{}, &model.ProductFAQ{}, &model.ProductSchedule{},
+	} {
+		if err := tx.Where("product_id = ?", productID).Delete(m).Error; err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// DeleteRelated deletes all related entities for a product. It now propagates
+// errors (previously they were silently dropped).
+func (s *ProductStore) DeleteRelated(productID uint) error {
+	return s.DeleteRelatedTx(s.db, productID)
+}
+
+// UpdateWithRelated atomically replaces a product's child entities and saves the
+// product in a SINGLE transaction: delete the old children, then upsert the
+// product together with its rebuilt HasMany children (Images/Packages/
+// Highlights/FAQs). It explicitly Omits the BelongsTo parents
+// (Supplier/Region/Category) so a stale preloaded association is never
+// re-written — re-writing them both mutates tables a product edit shouldn't
+// touch and can 500 the edit (e.g. when the admin changes supplier/region/
+// category, SupplierID changes but the loaded Supplier object does not).
+//
+// Being all-or-nothing also fixes the corruption bug: previously DeleteRelated
+// ran outside the Save's scope, so a failed Save left the product with its
+// children deleted but not rebuilt (and every retry deleted again).
+func (s *ProductStore) UpdateWithRelated(product *model.Product) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.DeleteRelatedTx(tx, product.ID); err != nil {
+			return err
+		}
+		return tx.Session(&gorm.Session{FullSaveAssociations: true}).
+			Omit("Supplier", "Region", "Category").
+			Save(product).Error
+	})
 }
 
 // DecrementPackageStock atomically reserves `qty` units from a package

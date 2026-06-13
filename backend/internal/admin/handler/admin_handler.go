@@ -2,8 +2,10 @@ package handler
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -1466,6 +1468,30 @@ func productDisplayName(p *productmodel.Product) string {
 	return p.NameZh
 }
 
+// normalizeTags coerces a tags input into a valid JSON-array string for the
+// jsonb `tags` column. Accepts an already-valid JSON array (passed through) or
+// comma-separated text (converted), so the admin UI's "comma-separated" hint
+// can't produce invalid jsonb that 500s the save.
+func normalizeTags(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "[]"
+	}
+	var arr []interface{}
+	if json.Unmarshal([]byte(raw), &arr) == nil {
+		return raw // already a valid JSON array
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
 func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -1511,7 +1537,10 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	product.Duration = req.Duration
 	product.GroupSize = req.GroupSize
 	if req.Tags != "" {
-		product.Tags = req.Tags
+		// tags is a jsonb column, but the admin UI hints "comma-separated", so a
+		// raw "beach,自然" would be invalid JSON and 500 the save. Normalize:
+		// pass through a valid JSON array, otherwise convert comma-separated text.
+		product.Tags = normalizeTags(req.Tags)
 	}
 	if req.Status != "" {
 		product.Status = productmodel.ProductStatus(req.Status)
@@ -1536,9 +1565,9 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		}
 	}
 
-	// Delete old related and re-create
-	h.productStore.DeleteRelated(product.ID)
-
+	// Re-create related children. The old children are deleted inside
+	// UpdateWithRelated's transaction (atomic with the save) — NOT here — so a
+	// failed save can never leave the product with its children wiped.
 	product.Images = nil
 	product.Packages = nil
 	product.Highlights = nil
@@ -1589,7 +1618,8 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		})
 	}
 
-	if err := h.productStore.Update(product); err != nil {
+	if err := h.productStore.UpdateWithRelated(product); err != nil {
+		log.Printf("[UpdateProduct] update failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to update product")
 		return
 	}
