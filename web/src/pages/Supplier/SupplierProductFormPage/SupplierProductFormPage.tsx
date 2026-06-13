@@ -74,6 +74,15 @@ function uid() {
   return `_${++_idCounter}_${Date.now()}`;
 }
 
+function normalizeTags(raw: string): string {
+  if (!raw.trim()) return '[]';
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return raw;
+  } catch {}
+  return JSON.stringify(raw.split(',').map((s) => s.trim()).filter(Boolean));
+}
+
 // REQ-20260510-0002 · 1F: Lightweight duration parser shared by the tourism
 // agent buttons. Mirrors the backend etl.DurationMinutesFromText heuristic so
 // the agent gets the same bucket the supplier sees in their form.
@@ -281,7 +290,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       group_size: form.group_size,
       address_zh: form.address_zh,
       address_en: form.address_en,
-      tags: form.tags,
+      tags: normalizeTags(form.tags),
       banner_image: form.banner_image,
       images: images.map((img, i) => ({
         url: img.url,

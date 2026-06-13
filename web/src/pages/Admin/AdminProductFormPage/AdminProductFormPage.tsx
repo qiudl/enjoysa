@@ -84,6 +84,20 @@ function uid() {
   return `_${++_idCounter}_${Date.now()}`;
 }
 
+// Normalizes tags to a valid JSON array string before sending to the backend
+// jsonb column. The form accepts comma-separated free text (per the hint
+// "用逗号分隔多个标签"), but PostgreSQL jsonb requires valid JSON. If the value
+// is already a valid JSON array it is passed through unchanged; otherwise it is
+// split on commas and serialized as a JSON array. Empty input → "[]".
+function normalizeTags(raw: string): string {
+  if (!raw.trim()) return '[]';
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return raw;
+  } catch {}
+  return JSON.stringify(raw.split(',').map((s) => s.trim()).filter(Boolean));
+}
+
 // REQ-20260510-0002 · 1F: matches the supplier form's parser so the agent
 // receives the same duration_minutes regardless of which editor opened it.
 function parseDurationMinutesShallow(raw: string): number | undefined {
@@ -311,7 +325,7 @@ export const AdminProductFormPage: React.FC<AdminProductFormPageProps> = ({
       group_size: form.group_size,
       address_zh: form.address_zh,
       address_en: form.address_en,
-      tags: form.tags,
+      tags: normalizeTags(form.tags),
       supplier_id: form.supplier_id,
       status: form.status,
       is_featured: form.is_featured,
