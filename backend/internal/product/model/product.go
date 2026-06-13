@@ -1,12 +1,45 @@
 package model
 
 import (
+	"encoding/json"
+	"strings"
 	"time"
 
 	"enjoysa-backend/internal/models"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+// NormalizeTags coerces a tags input into a valid JSON-array string for the
+// jsonb `tags` column. Accepts an already-valid JSON array (passed through) or
+// comma-separated text (converted), so a UI "comma-separated" hint can't
+// produce invalid jsonb that 500s the save.
+func NormalizeTags(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "[]"
+	}
+	var arr []interface{}
+	if json.Unmarshal([]byte(raw), &arr) == nil {
+		return raw // already a valid JSON array
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
+
+// BeforeSave normalizes Tags on every write path (admin / supplier / create /
+// update), so the jsonb column never receives invalid JSON regardless of caller.
+func (p *Product) BeforeSave(tx *gorm.DB) error {
+	p.Tags = NormalizeTags(p.Tags)
+	return nil
+}
 
 // ProductStatus 产品状态
 type ProductStatus string

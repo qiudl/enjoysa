@@ -439,6 +439,18 @@ func (s *ProductStore) UpdateWithRelated(product *model.Product) error {
 	})
 }
 
+// DeleteWithRelated atomically soft-deletes all child entities and then the
+// product itself in a single transaction — prevents the corruption window where
+// DeleteRelated succeeds but the product Delete fails, leaving orphaned children.
+func (s *ProductStore) DeleteWithRelated(id uint) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.DeleteRelatedTx(tx, id); err != nil {
+			return err
+		}
+		return tx.Delete(&model.Product{}, id).Error
+	})
+}
+
 // DecrementPackageStock atomically reserves `qty` units from a package
 // (REQ-20260509-0035). Uses conditional UPDATE WHERE stock_total = -1 OR
 // stock_sold + qty <= stock_total — concurrency-safe without an explicit

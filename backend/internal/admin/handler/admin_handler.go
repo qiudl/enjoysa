@@ -2,7 +2,6 @@ package handler
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -1468,30 +1467,6 @@ func productDisplayName(p *productmodel.Product) string {
 	return p.NameZh
 }
 
-// normalizeTags coerces a tags input into a valid JSON-array string for the
-// jsonb `tags` column. Accepts an already-valid JSON array (passed through) or
-// comma-separated text (converted), so the admin UI's "comma-separated" hint
-// can't produce invalid jsonb that 500s the save.
-func normalizeTags(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "[]"
-	}
-	var arr []interface{}
-	if json.Unmarshal([]byte(raw), &arr) == nil {
-		return raw // already a valid JSON array
-	}
-	parts := strings.Split(raw, ",")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if t := strings.TrimSpace(p); t != "" {
-			out = append(out, t)
-		}
-	}
-	b, _ := json.Marshal(out)
-	return string(b)
-}
-
 func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -1537,10 +1512,9 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	product.Duration = req.Duration
 	product.GroupSize = req.GroupSize
 	if req.Tags != "" {
-		// tags is a jsonb column, but the admin UI hints "comma-separated", so a
-		// raw "beach,自然" would be invalid JSON and 500 the save. Normalize:
-		// pass through a valid JSON array, otherwise convert comma-separated text.
-		product.Tags = normalizeTags(req.Tags)
+		// tags is a jsonb column; Product.BeforeSave normalizes it (the admin UI
+		// hints "comma-separated", which would otherwise be invalid jsonb → 500).
+		product.Tags = req.Tags
 	}
 	if req.Status != "" {
 		product.Status = productmodel.ProductStatus(req.Status)

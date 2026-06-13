@@ -1,4 +1,4 @@
-package handler
+package model
 
 import "testing"
 
@@ -16,8 +16,8 @@ func TestNormalizeTags(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got := normalizeTags(c.in); got != c.want {
-				t.Fatalf("normalizeTags(%q) = %q, want %q", c.in, got, c.want)
+			if got := NormalizeTags(c.in); got != c.want {
+				t.Fatalf("NormalizeTags(%q) = %q, want %q", c.in, got, c.want)
 			}
 		})
 	}
