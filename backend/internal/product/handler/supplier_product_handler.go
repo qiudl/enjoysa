@@ -445,8 +445,8 @@ func (h *SupplierProductHandler) DeleteProduct(c *gin.Context) {
 
 	regionID := product.RegionID
 
-	h.productStore.DeleteRelated(product.ID)
-	if err := h.productStore.Delete(product.ID); err != nil {
+	if err := h.productStore.DeleteWithRelated(product.ID); err != nil {
+		logger.Errorf("[supplier DeleteProduct] delete failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to delete product")
 		return
 	}
