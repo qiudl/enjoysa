@@ -23,9 +23,8 @@ export interface LanguageSwitcherProps {
 }
 
 const languages = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'zh', name: '简体中文', nativeName: '简体中文' },
   { code: 'zh-TW', name: '繁體中文', nativeName: '繁體中文' },
+  { code: 'en', name: 'English', nativeName: 'English' },
 ];
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
