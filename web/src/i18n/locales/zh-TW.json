@@ -32,7 +32,8 @@
     "cart": "購物車",
     "orders": "我的訂單",
     "favorites": "我的收藏",
-    "profile": "個人中心"
+    "profile": "個人中心",
+    "itinerary": "行程"
   },
   "brand": {
     "name": "暢遊南澳",
@@ -82,7 +83,31 @@
     "codeRequired": "請輸入驗證碼",
     "codeInvalid": "驗證碼不正確",
     "codeSent": "驗證碼已傳送",
-    "pleaseAgreeTerms": "請閱讀並同意服務條款"
+    "pleaseAgreeTerms": "請閱讀並同意服務條款",
+    "forgotPasswordTitle": "忘記密碼",
+    "forgotPasswordSubtitle": "輸入您的註冊電子郵件，我們將發送重置連結",
+    "sendResetLink": "發送重置連結",
+    "sendingResetLink": "發送中...",
+    "resetLinkSent": "重置連結已發送",
+    "resetLinkSentDesc": "重置連結已發送至 {{email}}，請查看您的收件匣（包含垃圾郵件資料夾）。",
+    "emailNotFound": "此電子郵件尚未註冊，請確認後重試",
+    "tooManyRequests": "請求過於頻繁，請稍後再試",
+    "backToLogin": "返回登入",
+    "resetPasswordTitle": "設定新密碼",
+    "resetPasswordSubtitle": "請輸入您的新密碼",
+    "newPassword": "新密碼",
+    "newPasswordPlaceholder": "請輸入新密碼（至少8位）",
+    "confirmNewPassword": "確認新密碼",
+    "confirmPasswordPlaceholder": "請再次輸入新密碼",
+    "passwordMismatch": "兩次輸入的密碼不一致",
+    "resetPassword": "重置密碼",
+    "resettingPassword": "重置中...",
+    "resetSuccess": "密碼重置成功",
+    "resetSuccessDesc": "您的密碼已成功重置，請使用新密碼登入。",
+    "invalidToken": "無效的重置連結",
+    "invalidTokenDesc": "此重置連結無效或已過期，請重新申請。",
+    "goToLogin": "前往登入",
+    "requestNewLink": "重新申請"
   },
   "user": {
     "profile": "個人資料",
@@ -193,7 +218,10 @@
     "selectTimeSlot": "選擇時段",
     "unitPrice": "單價",
     "slotsRemaining": "餘位",
-    "allDatesSoldOut": "該套餐所有日期已售罄"
+    "stock": {
+      "remaining": "僅剩 {{count}} 份",
+      "soldOut": "已售罄"
+    }
   },
   "tags": {
     "hot": "熱賣",
@@ -246,6 +274,14 @@
       "emailInvalid": "電子郵箱格式不正確",
       "phoneRequired": "請輸入手機號碼",
       "passportRequired": "請輸入護照號碼"
+    },
+    "orderFailed": "下單失敗：{{detail}}",
+    "orderError": {
+      "insufficientStock": "庫存不足，請減少購買數量或選擇其他套餐"
+    },
+    "payment": {
+      "disabled": "付款服務暫時無法使用，請稍後再試或聯繫客服",
+      "failed": "無法跳轉至付款頁面：{{detail}}"
     }
   },
   "order": {
@@ -322,7 +358,8 @@
       "credit_card": "信用卡/簽帳金融卡",
       "paypal": "PayPal",
       "bank_transfer": "銀行轉賬"
-    }
+    },
+    "cancelFailed": "取消訂單失敗：{{detail}}"
   },
   "payment": {
     "title": "支付",
@@ -790,7 +827,9 @@
     "partnerPortal": "合作伙伴",
     "supplierPortal": "供應商入口",
     "adminPortal": "平臺登入",
-    "copyright": "2026 暢遊南澳 EnjoySA. 保留所有權利。"
+    "copyright": "2026 暢遊南澳 EnjoySA. 保留所有權利。",
+    "qrCodeLabel": "微信公眾號",
+    "qrCodeHint": "掃碼關注獲取最新優惠"
   },
   "home": {
     "heroTitle": "探索南澳大利亞",
@@ -807,7 +846,9 @@
     "easyBooking": "便捷預訂",
     "easyBookingDesc": "支援多種支付方式，即時確認",
     "support247": "全天候服務",
-    "support247Desc": "中文客服團隊，隨時解答您的問題"
+    "support247Desc": "中文客服團隊，隨時解答您的問題",
+    "tabActivities": "體驗活動",
+    "tabHotels": "飯店住宿"
   },
   "region": {
     "attractionCount": "{{count}} 個景點",
