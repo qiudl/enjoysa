@@ -7,9 +7,8 @@ import { useUserAuth } from '../../../contexts/UserAuthContext';
 import styles from './ChatWidget.module.css';
 
 const LANGUAGES = [
-  { code: 'zh-CN', label: '简体中文' },
-  { code: 'en-US', label: 'English' },
   { code: 'zh-TW', label: '繁體中文' },
+  { code: 'en-US', label: 'English' },
 ];
 
 export const ChatWidget: React.FC = () => {
