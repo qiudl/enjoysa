@@ -37,7 +37,8 @@
   },
   "brand": {
     "name": "暢遊南澳",
-    "tagline": "Enjoy South Australia"
+    "tagline": "Enjoy South Australia",
+    "subtitle": "暢遊南澳"
   },
   "auth": {
     "login": "登入",
@@ -171,8 +172,29 @@
       "unsavedChanges": "有未儲存的修改",
       "emailReadonly": "信箱透過 Google 登入綁定，無法修改",
       "back": "返回個人中心",
-      "avatarNote": "頭像同步自 Google 帳號"
-    }
+      "avatarNote": "頭像同步自 Google 帳號",
+      "linkedAccounts": "關聯賬戶",
+      "googleBound": "已繫結",
+      "googleUnbound": "未繫結",
+      "unbindGoogle": "解綁",
+      "googleBindSuccess": "Google 賬戶繫結成功",
+      "googleBindFailed": "Google 賬戶繫結失敗",
+      "googleUnbindSuccess": "Google 賬戶已解綁",
+      "googleUnbindFailed": "解綁 Google 賬戶失敗",
+      "unbindGoogleTitle": "解綁 Google 賬戶",
+      "unbindGoogleConfirm": "解綁後將無法使用 Google 快速登入，需要使用郵箱密碼登入。確定解綁嗎？",
+      "changePassword": "修改密碼",
+      "oldPassword": "當前密碼",
+      "newPassword": "新密碼",
+      "confirmPassword": "確認新密碼",
+      "pwMinLength": "至少 8 個字元",
+      "pwRequired": "請填寫所有密碼欄位",
+      "pwTooShort": "新密碼至少 8 個字元",
+      "pwMismatch": "兩次輸入的新密碼不一致",
+      "pwSuccess": "密碼修改成功",
+      "pwFailed": "密碼修改失敗"
+    },
+    "googleLinked": "Google 已關聯"
   },
   "product": {
     "price": "價格",
@@ -376,7 +398,12 @@
     "scanToPay": "掃碼支付",
     "bankInfo": "銀行賬戶資訊",
     "uploadProof": "上傳轉賬憑證",
-    "securityNotice": "您的支付資訊已加密保護，請放心支付"
+    "securityNotice": "您的支付資訊已加密保護，請放心支付",
+    "comingSoon": "即將上線",
+    "paymentSuccessBanner": "支付成功！訂單已確認",
+    "paymentCancelled": "支付已取消",
+    "retryPayment": "重新支付",
+    "paymentCancelledHint": "您可以在訂單過期前重新支付"
   },
   "participant": {
     "title": "出行人資訊",
@@ -810,7 +837,8 @@
     "justNow": "剛剛",
     "minutesAgo": "{{n}}分鐘前",
     "hoursAgo": "{{n}}小時前",
-    "daysAgo": "{{n}}天前"
+    "daysAgo": "{{n}}天前",
+    "thinking": "AI 正在思考..."
   },
   "footer": {
     "about": "關於我們",
@@ -872,7 +900,13 @@
       "users": "使用者管理",
       "finance": "財務管理",
       "admins": "管理員",
-      "settings": "系統設定"
+      "settings": "系統設定",
+      "banners": "輪播管理",
+      "regions": "區域管理",
+      "categories": "分類管理",
+      "homepage": "首頁管理",
+      "aiChatTest": "AI Chat 迴歸測試",
+      "tourism": "旅遊知識庫"
     },
     "logout": "退出登入",
     "roles": {
@@ -942,7 +976,10 @@
         "orders": "訂單數",
         "status": "狀態",
         "joinDate": "入駐時間",
-        "actions": "操作"
+        "actions": "操作",
+        "revenue": "收入",
+        "rating": "評分",
+        "tier": "等級"
       },
       "status": {
         "pending": "待稽核",
@@ -962,7 +999,9 @@
         "tabs": {
           "info": "基本資訊",
           "products": "產品列表",
-          "orders": "訂單記錄"
+          "orders": "訂單記錄",
+          "overview": "運營概覽",
+          "finance": "財務結算"
         },
         "contactInfo": "聯絡資訊",
         "email": "郵箱",
@@ -972,7 +1011,137 @@
         "products": "產品",
         "orders": "訂單",
         "productsPlaceholder": "產品列表功能開發中...",
-        "ordersPlaceholder": "訂單記錄功能開發中..."
+        "ordersPlaceholder": "訂單記錄功能開發中...",
+        "back": "返回列表",
+        "edit": "編輯資料",
+        "editProfile": "編輯資料",
+        "loadError": "載入供應商詳情失敗",
+        "notFound": "供應商不存在",
+        "rejectReasonPrompt": "請輸入拒絕原因",
+        "stats": {
+          "totalRevenue": "總收入",
+          "totalOrders": "總訂單",
+          "avgRating": "平均評分",
+          "cancelRate": "取消率",
+          "activeProducts": "線上產品",
+          "pendingSettlement": "待結算",
+          "completedSettlement": "已結算",
+          "productCount": "產品數"
+        },
+        "revenueTrend": "近30天收入趨勢",
+        "noData": "暫無資料",
+        "auditLog": "審計日誌",
+        "auditLogs": "審計日誌",
+        "noLogs": "暫無審計日誌",
+        "noAuditLogs": "暫無審計日誌",
+        "filter": {
+          "all": "全部",
+          "pending": "待處理",
+          "paid": "已付款",
+          "accepted": "已接受",
+          "completed": "已完成",
+          "cancelled": "已取消",
+          "refunded": "已退款",
+          "approved": "已通過",
+          "rejected": "已拒絕",
+          "offline": "已下架"
+        },
+        "productTable": {
+          "name": "產品名稱",
+          "price": "價格",
+          "status": "狀態",
+          "createdAt": "建立時間",
+          "actions": "操作"
+        },
+        "noProducts": "暫無產品",
+        "forceOffline": "強制下架",
+        "forceOfflineTitle": "強制下架產品",
+        "forceOfflineReason": "請輸入下架原因",
+        "offlineReason": "下架原因",
+        "offlineReasonPlaceholder": "請輸入強制下架的原因...",
+        "confirmOffline": "確認下架",
+        "restore": "恢復上架",
+        "orderTable": {
+          "orderNo": "訂單號",
+          "product": "產品",
+          "customer": "客戶",
+          "amount": "金額",
+          "status": "狀態",
+          "date": "日期",
+          "actions": "操作"
+        },
+        "searchOrders": "搜尋訂單...",
+        "noOrders": "暫無訂單",
+        "refund": "退款",
+        "refundTitle": "管理員退款",
+        "refundAmount": "退款金額",
+        "refundReason": "退款原因",
+        "refundReasonPlaceholder": "請輸入退款原因...",
+        "refundType": "退款型別",
+        "refundFull": "全額退款",
+        "refundPartial": "部分退款",
+        "confirmRefund": "確認退款",
+        "finance": {
+          "pending": "待結算",
+          "completed": "已結算",
+          "total": "總計",
+          "records": "結算記錄",
+          "noRecords": "暫無結算記錄",
+          "id": "編號",
+          "orderId": "訂單號",
+          "grossAmount": "總金額",
+          "commission": "佣金",
+          "netAmount": "淨額",
+          "status": "狀態",
+          "date": "日期",
+          "statusLabel": {
+            "pending": "待結算",
+            "completed": "已結算",
+            "paid": "已支付",
+            "rejected": "已駁回"
+          }
+        },
+        "editTitle": "編輯供應商資料",
+        "editBasicInfo": "基本資訊",
+        "editBankInfo": "銀行資訊",
+        "editFields": {
+          "name": "名稱",
+          "namePlaceholder": "請輸入供應商名稱",
+          "type": "供應商類別",
+          "email": "聯絡郵箱",
+          "emailPlaceholder": "請輸入聯絡郵箱",
+          "description": "簡介",
+          "descriptionPlaceholder": "請輸入供應商簡介",
+          "phone": "電話",
+          "phonePlaceholder": "請輸入聯絡電話",
+          "website": "網站",
+          "websitePlaceholder": "請輸入網站地址",
+          "address": "地址",
+          "addressPlaceholder": "請輸入地址",
+          "city": "城市",
+          "cityPlaceholder": "請輸入城市",
+          "state": "州/省",
+          "statePlaceholder": "請輸入州/省",
+          "postalCode": "郵編",
+          "postalCodePlaceholder": "請輸入郵編",
+          "businessLicense": "營業執照號",
+          "businessLicensePlaceholder": "請輸入營業執照號",
+          "taxNumber": "稅號",
+          "taxNumberPlaceholder": "請輸入稅號",
+          "bankName": "銀行名稱",
+          "bankNamePlaceholder": "請輸入銀行名稱",
+          "bankAccount": "銀行賬號",
+          "bankAccountPlaceholder": "請輸入銀行賬號",
+          "bankBsb": "BSB",
+          "bankBsbPlaceholder": "請輸入BSB號碼",
+          "accountHolder": "賬戶持有人",
+          "accountHolderPlaceholder": "請輸入賬戶持有人姓名"
+        },
+        "editCredentials": "資質資訊",
+        "processSettlement": "處理結算",
+        "basicInfo": "基本資訊",
+        "bankInfo": "銀行資訊",
+        "saveSuccess": "儲存成功"
       },
       "reject": {
         "title": "拒絕供應商",
@@ -1017,7 +1186,8 @@
           "phoneRequired": "請輸入聯絡電話",
           "emailRequired": "請輸入聯絡郵箱",
           "emailInvalid": "郵箱格式不正確"
-        }
+        },
+        "createSuccess": "供應商建立成功！\n登入郵箱：{{email}}\n初始密碼：{{password}}\n請妥善儲存此密碼。"
       }
     },
     "products": {
@@ -1067,7 +1237,8 @@
         "reject": "駁回",
         "create": "新建產品",
         "edit": "編輯",
-        "delete": "刪除"
+        "delete": "刪除",
+        "adjustStock": "調整庫存"
       },
       "deleteConfirm": "確定要刪除產品「{{name}}」嗎？此操作不可撤銷。",
       "form": {
@@ -1117,7 +1288,8 @@
         "title": "駁回產品",
         "message": "請填寫駁回原因，將傳送給供應商",
         "placeholder": "請輸入駁回原因..."
-      }
+      },
+      "excelImport": "Excel 匯入"
     },
     "orders": {
       "title": "訂單管理",
@@ -1430,7 +1602,215 @@
         "ipWhitelistPlaceholder": "每行一個 IP 地址，留空允許所有",
         "ipWhitelistHint": "限制可訪問管理後臺的 IP 地址"
       }
-    }
+    },
+    "stockAdjust": {
+      "title": "調整庫存",
+      "noPackages": "該商品沒有套餐",
+      "sold": "已售 {{n}}",
+      "invalidNumber": "請輸入有效的數字",
+      "belowSold": "不能低於已售數量。先取消訂單釋放已售數。"
+    },
+    "tourism": {
+      "title": "南澳旅遊知識庫",
+      "description": "維護景點 / 酒店 / 美食 / 體驗 / 價格行情資料，作為 AI Agent 的事實依據",
+      "tabs": {
+        "attractions": "景點",
+        "accommodations": "酒店",
+        "food": "美食",
+        "experiences": "體驗",
+        "pricing": "價格行情",
+        "scrape": "知識抓取"
+      },
+      "filter": {
+        "council": "Council",
+        "category": "Category",
+        "keywords": "關鍵詞",
+        "keywordsPlaceholder": "名稱 / 描述",
+        "status": "狀態",
+        "all": "全部",
+        "active": "已啟用",
+        "inactive": "草稿"
+      },
+      "col": {
+        "nameZh": "中文名",
+        "nameEn": "英文名",
+        "council": "Council",
+        "category": "Category",
+        "tags": "標籤",
+        "priceRange": "價格區間",
+        "priceMin": "價格下限 (AUD)",
+        "priceMax": "價格上限 (AUD)",
+        "status": "狀態",
+        "actions": "操作",
+        "duration": "典型時長（分鐘）",
+        "bestSeasons": "最佳季節",
+        "description": "描述",
+        "starRating": "星級",
+        "roomTypes": "房型",
+        "features": "特色",
+        "address": "地址",
+        "cuisine": "菜系",
+        "signatureDishes": "招牌菜"
+      },
+      "status": {
+        "active": "已啟用",
+        "inactive": "草稿"
+      },
+      "form": {
+        "isActive": "啟用（AI Agent 可見）"
+      },
+      "tagsHelper": "逗號分隔",
+      "empty": "暫無資料",
+      "deleteTitle": "確認刪除",
+      "deleteMessage": "確定要刪除「{{name}}」嗎？",
+      "errors": {
+        "nameZhRequired": "中文名為必填",
+        "categoryCouncilRequired": "Category 和 Council 為必填"
+      },
+      "pagination": {
+        "summary": "共 {{total}} 條"
+      },
+      "attractions": {
+        "add": "新增景點",
+        "createTitle": "新增景點",
+        "editTitle": "編輯景點"
+      },
+      "accommodations": {
+        "add": "新增酒店",
+        "createTitle": "新增酒店",
+        "editTitle": "編輯酒店"
+      },
+      "food": {
+        "add": "新增餐廳",
+        "createTitle": "新增餐廳",
+        "editTitle": "編輯餐廳"
+      },
+      "experiences": {
+        "add": "新增體驗",
+        "createTitle": "新增體驗",
+        "editTitle": "編輯體驗"
+      },
+      "pricing": {
+        "add": "新增行情",
+        "createTitle": "新增行情",
+        "editTitle": "編輯行情",
+        "median": "中位價",
+        "samples": "樣本數",
+        "confidence": "置信度",
+        "sampleHelper": "<3 不足 / 3-4 低 / 5-11 正常 / ≥12 高",
+        "deleteMessage": "確定要刪除「{{cat}} / {{council}} / {{bucket}} / {{season}}」行情嗎？",
+        "duplicateError": "已存在同 (category, council, duration_bucket, season) 的行情記錄"
+      },
+      "etl": {
+        "button": "執行冷啟動 ETL",
+        "running": "正在跑 ETL...",
+        "tooltip": "從已上架商品反向沉澱知識庫",
+        "confirm": "將掃描所有已上架商品並反向寫入 experiences + pricing benchmarks。\n新行 IsActive=false（admin 稽核後啟用），已存在行的 IsActive 不會被覆蓋。\n繼續？",
+        "summaryTitle": "ETL 完成",
+        "summary": "掃描 {{scanned}} 個商品，寫入 {{exp}} 條 experiences，{{bench}} 條 pricing benchmarks，跳過 {{skip}} 條。",
+        "errorsLabel": "{{n}} 條錯誤"
+      },
+      "scrape": {
+        "run": "執行抓取",
+        "running": "正在抓取...",
+        "confirm": "將抓取南澳旅遊局公開頁面，調 LLM 抽結構化資料寫入 staging。\n約 1-2 分鐘。繼續？",
+        "all": "全部",
+        "pending": "待稽核",
+        "promoted": "已採用",
+        "rejected": "已拒",
+        "empty": "暫無 staging 資料",
+        "promote": "採用",
+        "reject": "拒絕",
+        "confirmReject": "確認拒絕",
+        "rejectReasonPlaceholder": "拒絕原因（可選）",
+        "promotedTo": "已寫入 attraction id={{id}}",
+        "rejectedFor": "已拒：{{reason}}",
+        "jobDone": "抓取任務結束",
+        "jobSummary": "狀態 {{status}}，掃描 {{total}} URL，新增 staging {{exp}}，跳過 {{skip}}，錯誤 {{err}}",
+        "lastError": "最後一條錯誤"
+      }
+    },
+    "tourismAgent": {
+      "button": "✨ AI 生成",
+      "busy": "生成中...",
+      "tooltip": "基於南澳旅遊知識庫生成",
+      "disabledHint": "請先填寫區域 (Council) 和品類後再用 AI 生成",
+      "refsCount": "基於 {{n}} 條知識",
+      "refsTooltip": "本次生成引用了多少條知識庫條目",
+      "pricing": {
+        "button": "💰 AI 建議價格",
+        "busy": "查詢中...",
+        "tooltip": "基於行情庫給出價格建議",
+        "disabledHint": "請先填寫區域 (Council)、品類、典型時長後再用 AI 建議價格",
+        "suggestion": "建議價",
+        "samples": "樣本 {{n}}",
+        "apply": "採用建議價",
+        "insufficient": "樣本不足（僅 {{n}} 個相似產品），暫不給出價格建議。"
+      }
+    },
+    "aiChatTest": {
+      "title": "AI Chat 迴歸測試控制台",
+      "subtitle": "用預設場景跑供應商 AI Chat，校驗三層防護（prompt + tool desc + handler 單輪去重）行為是否退化。每條場景一次 LLM 呼叫，會真實寫 chat_messages。",
+      "run": "執行",
+      "runAll": "全部執行",
+      "login": {
+        "title": "登入測試供應商",
+        "hint": "用當前部署環境實際存在的供應商賬號登入。本地開發可用 backend/cmd/seed 種子賬號；prod 上 seed 賬號不存在，必須用真實供應商賬號。每次跑場景會真實寫入該賬號的會話歷史，建議用專門的測試賬號。",
+        "email": "郵箱",
+        "emailPlaceholder": "supplier@example.com",
+        "password": "密碼",
+        "showPassword": "顯示密碼",
+        "hidePassword": "隱藏密碼",
+        "submit": "登入"
+      },
+      "errors": {
+        "credentialsRequired": "郵箱和密碼不能為空",
+        "unauthorized": "賬號或密碼錯誤。請確認：(1) 該供應商賬號在當前環境的資料庫裡存在；(2) 在 prod 上 seed 賬號（如 admin@kiodysseys.com.au）不存在，需用真實賬號；(3) 密碼大小寫一致（點選右側 👁 可顯示密碼核對）。"
+      },
+      "summary": {
+        "session": "已登入：{{email}}",
+        "toolCalls": "工具呼叫"
+      },
+      "status": {
+        "idle": "未執行",
+        "running": "執行中",
+        "passed": "通過",
+        "failed": "失敗"
+      },
+      "result": {
+        "toolCalls": "次工具呼叫",
+        "aiResponse": "AI 回覆"
+      },
+      "liveOutput": {
+        "title": "即時輸出",
+        "empty": "執行場景後此處顯示流式 SSE 輸出"
+      },
+      "scenarios": {
+        "simpleGreeting": {
+          "name": "Sanity：「你好」零副作用",
+          "description": "最簡招呼，AI 不應呼叫任何寫工具。"
+        },
+        "imageOnly": {
+          "name": "REQ-0003 主用例：「這個商品圖片有問題」",
+          "description": "供應商描述圖片問題但未明確要建立需求，AI 不應自動呼叫 create_requirement / upload_screenshot_requirement。"
+        },
+        "multiBug": {
+          "name": "REQ-0015：單輪誘導 3 個 bug 反饋",
+          "description": "強烈誘導 LLM 單輪多次呼叫 create_requirement，AI 應先文字徵求確認而不是直接落庫。"
+        },
+        "vagueProductIssue": {
+          "name": "REQ-0017：模糊「商品有問題」",
+          "description": "對供應商提的模糊問題，AI 不應直接調 confirm_order/offline_product 等寫操作。"
+        },
+        "orderMention": {
+          "name": "REQ-0017：僅查詢訂單狀態",
+          "description": "供應商詢問訂單狀態屬於查詢語義，AI 不應未經確認就調 confirm_order。"
+        }
+      }
+    },
+    "noPermission": "403 - 無訪問許可權",
+    "noPermissionDesc": "您沒有許可權訪問此頁面，請聯絡管理員。",
+    "backToDashboard": "返回儀表盤"
   },
   "supplier": {
     "types": {
@@ -1544,8 +1924,23 @@
         "pending": "待處理",
         "confirmed": "已確認",
         "completed": "已完成",
-        "cancelled": "已取消"
-      }
+        "cancelled": "已取消",
+        "paid": "已付款",
+        "accepted": "已接單"
+      },
+      "todayRevenue": "今日營收",
+      "weekRevenue": "本週營收",
+      "monthRevenue": "本月營收",
+      "avgOrderValue": "平均客單價",
+      "revenueTrend": "營收趨勢",
+      "channelDistribution": "渠道分佈",
+      "topProducts": "熱銷產品",
+      "stockAlerts": "庫存預警",
+      "soldOut": "已售罄",
+      "lowStock": "低庫存",
+      "remaining": "餘位",
+      "revenue": "營收",
+      "auditLogs": "操作日誌"
     },
     "products": {
       "title": "產品管理",
@@ -1583,7 +1978,15 @@
         "inactive": "已下架",
         "pending": "待稽核",
         "rejected": "已駁回"
-      }
+      },
+      "adjustStock": "調整庫存",
+      "selected": "已選擇 {{count}} 項",
+      "batchOnline": "批次上架",
+      "batchOffline": "批次下架",
+      "batchDelete": "批次刪除",
+      "batchStock": "批次調整庫存",
+      "excelImport": "Excel 匯入",
+      "batchConfirm": "確定要對 {{count}} 個產品執行「{{action}}」操作嗎？"
     },
     "orders": {
       "title": "訂單管理",
@@ -1625,6 +2028,21 @@
         "completed": "已完成",
         "cancelled": "已取消",
         "refunding": "退款中"
+      },
+      "refund": "退款",
+      "fullRefund": "全額退款",
+      "partialRefund": "部分退款",
+      "refundType": "退款型別",
+      "refundAmountLabel": "退款金額 (AUD)",
+      "refundReasonPlaceholder": "請輸入退款原因...",
+      "confirmRefund": "確認退款",
+      "addRemark": "備註",
+      "remarkPlaceholder": "請輸入備註資訊...",
+      "channelOrders": "筆訂單",
+      "channels": {
+        "all": "全部渠道",
+        "direct": "直銷",
+        "tripCom": "Trip.com"
       }
     },
     "settlement": {
@@ -1664,7 +2082,27 @@
       "viewDetail": "明細",
       "download": "下載",
       "noSettlements": "暫無結算記錄",
-      "noRecords": "暫無結算記錄"
+      "noRecords": "暫無結算記錄",
+      "detail": {
+        "title": "結算明細",
+        "orderNo": "訂單號",
+        "product": "產品",
+        "date": "日期",
+        "amount": "訂單金額",
+        "total": "合計",
+        "exportCsv": "匯出 CSV"
+      },
+      "dispute": {
+        "title": "發起爭議",
+        "raise": "發起爭議",
+        "amount": "爭議金額",
+        "reason": "爭議原因",
+        "reasonPlaceholder": "請詳細描述爭議原因...",
+        "submit": "提交爭議",
+        "submitted": "爭議已提交",
+        "submittedDesc": "我們將在 1-3 個工作日內處理您的爭議",
+        "status": "爭議中"
+      }
     },
     "settings": {
       "title": "店鋪設定",
@@ -1699,7 +2137,12 @@
       "orders": "訂單管理",
       "settlement": "財務結算",
       "auditLogs": "操作日誌",
-      "settings": "店鋪設定"
+      "settings": "店鋪設定",
+      "reviews": "評價管理",
+      "exports": "資料匯出",
+      "team": "團隊管理",
+      "afterSales": "售後管理",
+      "reports": "資料包表"
     },
     "pending": {
       "banner": "您的供應商帳號正在審核中，部分功能暫時受限。審核通過後將自動開放全部功能。",
@@ -1784,7 +2227,13 @@
       "submitting": "提交中...",
       "savedSuccess": "產品已儲存",
       "submittedSuccess": "產品已提交稽核",
-      "loadingProduct": "載入產品資料..."
+      "loadingProduct": "載入產品資料...",
+      "uploadErrorFormat": "僅支援 JPG、PNG、WebP、GIF 格式的圖片",
+      "uploadErrorSize": "圖片大小不能超過 10MB",
+      "uploadErrorGeneral": "上傳失敗，請重試",
+      "packageStock": "庫存",
+      "packageStockUnlimited": "無限量",
+      "packageStockSold": "已售 {{sold}} / 總 {{total}}"
     },
     "schedule": {
       "title": "排期管理",
@@ -1864,7 +2313,226 @@
       "statusApproved": "已批准",
       "statusRejected": "已拒絕",
       "statusExecuted": "已執行",
-      "messageSystem": "系統"
+      "messageSystem": "系統",
+      "status": "狀態",
+      "type": "型別",
+      "approver": "審批人",
+      "approvedAt": "審批時間",
+      "cancel": "取消",
+      "internal": "內部"
+    },
+    "auditLog": {
+      "title": "操作日誌",
+      "allActions": "全部操作",
+      "allResources": "全部資源",
+      "totalRecords": "共 {{count}} 條記錄",
+      "actions": {
+        "create": "建立",
+        "update": "更新",
+        "delete": "刪除",
+        "online": "上架",
+        "offline": "下架",
+        "refund": "退款"
+      },
+      "resources": {
+        "product": "產品",
+        "order": "訂單",
+        "schedule": "排期",
+        "profile": "店鋪"
+      }
+    },
+    "bookmarks": {
+      "title": "收藏夾",
+      "addCurrent": "收藏此頁",
+      "alreadyAdded": "已收藏",
+      "empty": "暫無收藏的頁面，點選「收藏此頁」快速儲存常用頁面"
+    },
+    "shopPreview": {
+      "title": "店鋪預覽",
+      "button": "預覽店鋪",
+      "rating": "評分",
+      "products": "產品",
+      "reviews": "評價",
+      "allProducts": "全部產品",
+      "noProducts": "暫無產品"
+    },
+    "reviews": {
+      "title": "評價管理",
+      "all": "全部",
+      "pendingReply": "待回覆",
+      "replied": "已回覆",
+      "avgRating": "平均評分",
+      "totalReviews": "評價總數",
+      "replyRate": "回覆率",
+      "reply": "回覆",
+      "supplierReply": "商家回覆",
+      "replyPlaceholder": "輸入回覆內容...",
+      "submitReply": "傳送回覆",
+      "noReviews": "暫無評價"
+    },
+    "exports": {
+      "title": "資料匯出",
+      "ordersTitle": "訂單匯出",
+      "ordersDesc": "匯出訂單資料，包含訂單詳情、客戶資訊和金額",
+      "settlementTitle": "結算匯出",
+      "settlementDesc": "匯出結算記錄，包含週期、金額和佣金明細",
+      "productsTitle": "產品匯出",
+      "productsDesc": "匯出產品列表，包含價格、庫存和銷量資料",
+      "dateRange": "日期範圍",
+      "format": "匯出格式",
+      "exportBtn": "匯出"
+    },
+    "notifications": {
+      "title": "訊息通知",
+      "unread": "條未讀",
+      "markAllRead": "全部已讀",
+      "empty": "暫無通知",
+      "ago": "前",
+      "newOrder": "新訂單",
+      "newOrderDesc": "您收到一筆新訂單，請及時處理",
+      "systemUpdate": "系統更新",
+      "systemUpdateDesc": "平臺功能已更新，新增資料匯出功能",
+      "paymentReceived": "到賬通知",
+      "paymentReceivedDesc": "您的結算款項 AUD 4,104.00 已到賬",
+      "orderCancelled": "訂單取消",
+      "orderCancelledDesc": "客戶取消了一筆訂單，已自動退款",
+      "maintenance": "系統維護",
+      "maintenanceDesc": "計劃於本週六 02:00-06:00 進行系統維護",
+      "all": "全部",
+      "unreadTab": "未讀",
+      "readTab": "已讀",
+      "viewAll": "檢視全部"
+    },
+    "team": {
+      "title": "團隊管理",
+      "invite": "邀請成員",
+      "totalMembers": "總成員數",
+      "activeMembers": "活躍成員",
+      "roles": "角色數",
+      "roleAdmin": "管理員",
+      "roleOperations": "運營",
+      "roleFinance": "財務",
+      "roleStaff": "員工",
+      "roleSupport": "客服",
+      "statusActive": "活躍",
+      "statusDisabled": "已停用",
+      "lastLogin": "最後登入",
+      "editRole": "編輯角色",
+      "disable": "停用",
+      "enable": "啟用",
+      "inviteMember": "邀請新成員",
+      "email": "郵箱地址",
+      "emailPlaceholder": "輸入成員郵箱",
+      "role": "選擇角色",
+      "sendInvite": "傳送邀請",
+      "tabMembers": "成員",
+      "tabPermissions": "許可權",
+      "tabInvitations": "邀請",
+      "resetPassword": "重置密碼",
+      "resetPasswordInfo": "將為 {{name}} 生成臨時密碼，使用者下次登入時需修改密碼。",
+      "tempPassword": "臨時密碼",
+      "permissionHint": "配置各角色對不同功能頁面的訪問許可權",
+      "page": "功能頁面",
+      "accessFull": "完全",
+      "accessReadonly": "只讀",
+      "accessNone": "無",
+      "noInvitations": "暫無邀請記錄",
+      "invPending": "待接受",
+      "invAccepted": "已接受",
+      "invExpired": "已過期",
+      "expires": "有效期至",
+      "resend": "重新發送",
+      "linkExpiry": "連結有效期",
+      "expiry1d": "1天",
+      "expiry3d": "3天",
+      "expiry7d": "7天",
+      "expiryNever": "永不過期"
+    },
+    "afterSales": {
+      "title": "售後工單管理",
+      "all": "全部",
+      "totalTickets": "總工單數",
+      "pendingTickets": "待處理",
+      "avgResponse": "平均響應",
+      "slaRate": "SLA達標率",
+      "statusPending": "待處理",
+      "statusProcessing": "處理中",
+      "statusResolved": "已解決",
+      "statusRejected": "已駁回",
+      "typeRefund": "退款",
+      "typeComplaint": "投訴",
+      "typeExchange": "改期",
+      "slaLeft": "剩餘",
+      "actionProcess": "開始處理",
+      "actionResolve": "標記解決",
+      "actionReject": "駁回",
+      "noTickets": "暫無工單，所有問題已處理完畢"
+    },
+    "reports": {
+      "title": "資料包表",
+      "range7d": "近7天",
+      "range30d": "近30天",
+      "range90d": "近90天",
+      "totalRevenue": "總收入",
+      "totalOrders": "總訂單",
+      "avgOrderValue": "平均客單價",
+      "conversionRate": "轉化率",
+      "revenueTrend": "收入趨勢",
+      "ordersChart": "訂單分析",
+      "productRanking": "產品排行榜",
+      "orderUnit": "單"
+    },
+    "orderDetail": {
+      "backToList": "返回列表",
+      "timeline": "時間線",
+      "remark": "備註",
+      "orderInfo": "訂單資訊",
+      "product": "產品",
+      "travelDate": "出行日期",
+      "quantity": "數量",
+      "unitPrice": "單價",
+      "totalAmount": "總金額",
+      "paymentMethod": "支付方式",
+      "paidAt": "支付時間",
+      "channel": "渠道",
+      "travelers": "出行人資訊",
+      "travelerAdult": "成人",
+      "travelerChild": "兒童",
+      "verification": "核銷驗證",
+      "verified": "已核銷",
+      "notVerified": "待核銷",
+      "verify": "核銷",
+      "verifyConfirm": "確認核銷",
+      "verifyCode": "核銷碼",
+      "statusPending": "待確認",
+      "statusConfirmed": "已確認",
+      "statusVerified": "已核銷",
+      "statusCompleted": "已完成",
+      "statusCancelled": "已取消",
+      "eventCreated": "訂單建立",
+      "eventPaid": "支付完成",
+      "eventConfirmed": "訂單確認",
+      "eventVerified": "已核銷",
+      "eventCompleted": "訂單完成"
+    },
+    "preview": {
+      "title": "產品預覽",
+      "customerView": "客戶視角",
+      "editProduct": "編輯產品",
+      "imagePlaceholder": "圖片",
+      "rating": "條評價",
+      "perPerson": "每人",
+      "selectDate": "選擇日期",
+      "highlights": "產品亮點",
+      "description": "產品介紹",
+      "schedule": "行程安排",
+      "includes": "費用包含",
+      "excludes": "費用不含",
+      "notices": "注意事項"
+    },
+    "product": {
+      "proxyCreatedBy": "由 {{name}} 於 {{date}} 代您錄入",
+      "formerAdmin": "已離職管理員"
     }
   },
   "contacts": {
@@ -1896,5 +2564,453 @@
     "selectContact": "選擇常用聯絡人",
     "saveAsContact": "保存為常用聯絡人",
     "self": "本人"
+  },
+  "formBatchStock": {
+    "label": "批次庫存：",
+    "opAdd": "+N",
+    "opSub": "-N",
+    "opSet": "設為 N",
+    "opZero": "一鍵歸零",
+    "value": "數值",
+    "apply": "應用",
+    "scope": "將作用於全部 {{n}} 個套餐（含未儲存修改）",
+    "unlimitedWarn": "⚠️ {{n}} 個無限量套餐將被覆寫",
+    "applied": "已更新 {{n}} 個套餐",
+    "skippedUnlimited": "跳過 {{n}} 個無限量套餐",
+    "belowSoldHint": "跳過 {{n}} 個含已售的套餐：{{names}}"
+  },
+  "aiPanel": {
+    "brand": "暢遊南澳AI",
+    "tab": {
+      "chat": "對話",
+      "feed": "動態",
+      "tools": "工具"
+    },
+    "layoutSwitcher": "面板佈局",
+    "layout": {
+      "right": "停靠右側",
+      "left": "停靠左側",
+      "bottom": "停靠底部",
+      "bubble": "氣泡浮動"
+    },
+    "expand": "展開暢遊南澳AI",
+    "collapse": "摺疊",
+    "fullscreen": "全屏對話",
+    "newChat": "新對話",
+    "you": "您",
+    "welcomeDesc": "有什麼可以幫您的嗎？",
+    "inputPlaceholder": "輸入訊息...",
+    "noNotifications": "暫無動態",
+    "viewAllNotifications": "檢視全部通知 →",
+    "searchTools": "🔍 搜尋工具...",
+    "noToolsFound": "未找到工具",
+    "describeScreenshot": "描述截圖內容...",
+    "maxImages": "最多上傳 9 張圖片",
+    "invalidImageType": "僅支援 JPG/PNG/WebP 格式",
+    "uploadFailed": "圖片上傳失敗，請重試",
+    "sessions": "會話列表",
+    "searchSessions": "搜尋會話...",
+    "backToPanel": "返回",
+    "identity": {
+      "activeAs": "當前對話身份",
+      "admin": "管理員",
+      "supplier": "供應商",
+      "guest": "訪客"
+    },
+    "share": {
+      "button": "分享到飛書",
+      "shareSession": "分享整會話",
+      "modalTitle": "分享到飛書運營群",
+      "selectMessages": "選擇訊息",
+      "preview": "飛書卡片預覽",
+      "question": "問題",
+      "answer": "AI 答覆",
+      "note": "備註",
+      "notePlaceholder": "給同事的簡短說明...",
+      "addToKB": "同步入平臺知識庫（admin 專屬）",
+      "send": "傳送到飛書",
+      "cancel": "取消",
+      "success": "已傳送到飛書運營群",
+      "failure": "傳送失敗，請重試",
+      "retry": "重試",
+      "empty": "暫無可分享訊息"
+    }
+  },
+  "groupChat": {
+    "brand": "暢遊南澳 AI 工作區",
+    "workspaceLabel": "工作區 #{{id}}",
+    "loading": "載入中...",
+    "sidebar": {
+      "aria": "頻道導航",
+      "channels": "頻道列表",
+      "channelsHeading": "頻道",
+      "newChannel": "新建頻道"
+    },
+    "empty": {
+      "noChannel": "請從左側選擇一個頻道開始對話",
+      "noMessages": "這個頻道還沒有訊息，開個話頭試試 👋"
+    },
+    "streaming": {
+      "responder": "AI 正在回覆"
+    },
+    "composer": {
+      "placeholder": "在 #{{channel}} 中發訊息（Enter 傳送，Shift+Enter 換行）",
+      "aria": "訊息輸入框",
+      "send": "傳送",
+      "sending": "傳送中..."
+    },
+    "thread": {
+      "title": "主題",
+      "aria": "主題面板",
+      "close": "關閉主題",
+      "replyAction": "在主題中回覆",
+      "replyCount": "{{count}} 條回覆",
+      "alsoInChannel": "同時傳送到頻道",
+      "composerPlaceholder": "在主題裡回覆...",
+      "composerAria": "主題回覆輸入框"
+    },
+    "createChannel": {
+      "title": "新建頻道",
+      "close": "關閉",
+      "nameLabel": "頻道名稱",
+      "namePlaceholder": "API-技術",
+      "descriptionLabel": "頻道描述",
+      "descriptionPlaceholder": "聊些什麼？(可選)",
+      "agentsLabel": "頻道成員",
+      "agentsHint": "至少選 1 個；首位為預設應答 agent",
+      "makeDefault": "設為預設",
+      "defaultBadge": "預設",
+      "keywordsLabel": "關鍵詞規則（可選）",
+      "keywordsPlaceholder": "api, bug, 報錯",
+      "keywordsHint": "用逗號分隔；命中後軟提示切到本頻道",
+      "submit": "建立",
+      "submitting": "建立中...",
+      "cancel": "取消"
+    },
+    "mention": {
+      "aria": "提及候選",
+      "nonMember": "非成員"
+    }
+  },
+  "shop": {
+    "rating": "評分",
+    "products": "產品",
+    "reviews": "評價",
+    "allProducts": "全部產品",
+    "items": "個產品",
+    "recentReviews": "最近評價",
+    "noProducts": "暫無產品",
+    "noReviews": "暫無評價"
+  },
+  "hotel": {
+    "searchTitle": "搜尋南澳酒店",
+    "destination": "目的地",
+    "allRegions": "所有區域",
+    "keyword": "關鍵詞",
+    "keywordPlaceholder": "酒店名稱或地址...",
+    "search": "搜尋",
+    "results": "搜尋結果",
+    "hotelsFound": "家酒店",
+    "sortBy": "排序",
+    "sortOptions": {
+      "recommend": "推薦",
+      "priceLow": "價格從低到高",
+      "priceHigh": "價格從高到低",
+      "rating": "評分最高"
+    },
+    "priceRange": "價格範圍",
+    "minPrice": "最低價",
+    "maxPrice": "最高價",
+    "starRating": "酒店星級",
+    "star": "星",
+    "accommodationType": "住宿型別",
+    "facilities": "酒店設施",
+    "clearFilters": "清除篩選",
+    "priceFrom": "起價",
+    "perNight": "晚",
+    "reviews": "條評價",
+    "distanceToCenter": "距市中心 {{km}}km",
+    "noResults": "未找到匹配的酒店",
+    "tryOther": "請嘗試調整搜尋條件"
+  },
+  "admin.homepage": {
+    "title": "首頁 CMS 管理",
+    "tabModules": "模組管理",
+    "tabFeatures": "特色亮點",
+    "tabTestimonials": "使用者評價",
+    "tabPartners": "合作伙伴",
+    "moduleKey": "模組標識",
+    "moduleName": "模組名稱",
+    "sortOrder": "排序",
+    "visible": "顯示",
+    "saveAll": "儲存全部",
+    "saved": "已儲存",
+    "addFeature": "新增亮點",
+    "editFeature": "編輯亮點",
+    "icon": "圖示",
+    "titleZh": "中文標題",
+    "titleEn": "英文標題",
+    "descZh": "中文描述",
+    "descEn": "英文描述",
+    "status": "狀態",
+    "active": "啟用",
+    "inactive": "停用",
+    "actions": "操作",
+    "addTestimonial": "新增評價",
+    "editTestimonial": "編輯評價",
+    "syncReviews": "同步評價",
+    "synced": "已同步 {{count}} 條評價",
+    "authorName": "評價者",
+    "content": "評價內容",
+    "rating": "評分",
+    "source": "來源",
+    "sourceManual": "手動錄入",
+    "sourceReview": "使用者評價",
+    "productName": "體驗產品",
+    "addPartner": "新增合作伙伴",
+    "editPartner": "編輯合作伙伴",
+    "partnerName": "名稱",
+    "logo": "Logo",
+    "website": "網站",
+    "deleteConfirm": "確定刪除此項嗎？",
+    "deleteConfirmDesc": "此操作不可撤銷",
+    "description": "管理首頁模組、特色亮點、使用者評價和合作夥伴",
+    "previewHomepage": "預覽首頁",
+    "noModules": "暫無模組",
+    "noFeatures": "暫無特色亮點",
+    "noTestimonials": "暫無使用者評價",
+    "noPartners": "暫無合作伙伴",
+    "noFilterResults": "沒有匹配的專案",
+    "filterAll": "全部狀態",
+    "loadFailed": "載入資料失敗",
+    "saveSuccess": "儲存成功",
+    "saveFailed": "儲存失敗",
+    "createSuccess": "建立成功",
+    "updateSuccess": "更新成功",
+    "deleteSuccess": "刪除成功",
+    "deleteFailed": "刪除失敗",
+    "operationFailed": "操作失敗",
+    "syncSuccess": "已同步 {{count}} 條評價",
+    "syncFailed": "同步失敗",
+    "syncing": "同步中...",
+    "statusToggled": "狀態已更新",
+    "clickToToggle": "點選切換狀態",
+    "selectedCount": "已選擇 {{count}} 項",
+    "batchToggleStatus": "切換狀態",
+    "batchDelete": "批次刪除",
+    "clearSelection": "取消選擇",
+    "batchDeleteTitle": "批次刪除",
+    "batchDeleteConfirm": "確定要刪除選中的 {{count}} 項嗎？此操作不可撤銷。",
+    "batchStatusSuccess": "已更新 {{count}} 項狀態",
+    "batchDeleteSuccess": "已刪除 {{count}} 項",
+    "unsavedWarning": "模組配置有未儲存的更改，是否放棄？",
+    "unsavedChanges": "有未儲存的更改",
+    "manageBanners": "橫幅管理",
+    "author": "評價者",
+    "product": "體驗產品",
+    "sourceGoogle": "Google",
+    "sourceTripadvisor": "TripAdvisor",
+    "sourceImport": "匯入",
+    "deleteFeatureTitle": "刪除特色亮點",
+    "deleteFeatureConfirm": "確定要刪除此特色亮點嗎？此操作不可撤銷。",
+    "deleteTestimonialTitle": "刪除評價",
+    "deleteTestimonialConfirm": "確定要刪除此評價嗎？此操作不可撤銷。",
+    "deletePartnerTitle": "刪除合作伙伴",
+    "deletePartnerConfirm": "確定要刪除此合作伙伴嗎？此操作不可撤銷。",
+    "addCustomBlock": "新增 CustomBlock",
+    "customBlockPositionHint": "CustomBlock 固定顯示在首頁 partners 之後；sort_order 僅控制多個 CustomBlock 之間的相對順序",
+    "customBlockCreated": "CustomBlock 已建立",
+    "customBlockDeleted": "CustomBlock 已刪除",
+    "deleteCustomBlockTitle": "刪除 CustomBlock",
+    "deleteCustomBlockConfirm": "確定刪除此 CustomBlock 嗎？此操作不可撤銷。",
+    "validation": {
+      "required": "必填",
+      "contentRequired": "中文和英文內容至少填寫一項",
+      "urlScheme": "必須以 http(s):// 或 / 開頭"
+    },
+    "field": {
+      "icon": "圖示 (emoji 或 class)",
+      "titleZh": "中文標題",
+      "titleEn": "英文標題",
+      "descZh": "中文描述",
+      "descEn": "英文描述",
+      "sortOrder": "排序",
+      "status": "狀態",
+      "authorName": "評價者姓名",
+      "authorAvatar": "評價者頭像 URL",
+      "source": "來源",
+      "contentZh": "中文內容",
+      "contentEn": "英文內容",
+      "rating": "評分",
+      "productZh": "產品 (中文)",
+      "productEn": "產品 (英文)",
+      "partnerName": "合作伙伴名稱",
+      "website": "網站 URL",
+      "logoUrl": "Logo URL",
+      "imageUrl": "圖片 URL",
+      "ctaTextZh": "按鈕中文",
+      "ctaTextEn": "按鈕英文",
+      "ctaLink": "跳轉連結"
+    }
+  },
+  "homepage": {
+    "testimonials": "使用者評價",
+    "testimonialsSubtitle": "聽聽他們怎麼說",
+    "partners": "探索南澳各地",
+    "partnersSubtitle": "按地區探索",
+    "popularActivities": "熱門活動",
+    "popularSubtitle": "大家都在玩",
+    "orderCount": "{{count}} 人已預訂",
+    "ranking": "第 {{rank}} 名"
+  },
+  "aiSearch": {
+    "badge": "AI 智慧搜尋",
+    "placeholder": "試試輸入\"帶小朋友的一日遊\"",
+    "thinking": "AI 正在理解你的需求...",
+    "noResults": "暫未找到匹配產品，試試其他描述"
+  },
+  "aiFilter": {
+    "placeholder": "告訴我你想要什麼，如\"浪漫雙人體驗，預算500以內\"",
+    "search": "搜尋",
+    "parsing": "解析中",
+    "clear": "清除"
+  },
+  "aiFaq": {
+    "title": "關於這個產品",
+    "badge": "AI 智慧問答",
+    "placeholder": "輸入你想了解的任何問題...",
+    "ask": "提問",
+    "thinking": "AI 正在思考...",
+    "helpful": "有幫助",
+    "notHelpful": "沒幫助",
+    "noAnswer": "抱歉，暫時無法回答這個問題，建議聯絡客服。",
+    "q1": "包含午餐嗎？",
+    "q2": "適合幾歲小朋友？",
+    "q3": "需要自駕嗎？",
+    "q4": "可以退款嗎？"
+  },
+  "aiFit": {
+    "title": "適合我嗎？",
+    "adults": "大人",
+    "childrenAges": "小孩年齡",
+    "yearsOld": "歲",
+    "edit": "修改",
+    "analyze": "分析",
+    "analyzing": "AI 分析中..."
+  },
+  "aiReview": {
+    "title": "評價摘要",
+    "badge": "AI 總結 {{count}} 條",
+    "reviews": "條評價",
+    "positive": "好評集中在",
+    "negative": "少數提到",
+    "bestFor": "最適合",
+    "summary": "總結",
+    "loading": "AI 正在分析評價..."
+  },
+  "plan": {
+    "title": "AI 行程規劃",
+    "subtitle": "告訴我們你的偏好，AI 為你量身定製南澳行程",
+    "adults": "大人",
+    "childrenAges": "小孩年齡（逗號分隔）",
+    "days": "天數",
+    "day": "天",
+    "budget": "總預算 (A$)",
+    "preferences": "偏好（可多選）",
+    "generate": "為我規劃行程",
+    "generating": "正在規劃...",
+    "yourItinerary": "你的專屬行程",
+    "regenerate": "重新生成",
+    "stop": "停止生成",
+    "thinking": "AI 正在規劃你的行程..."
+  },
+  "aiCart": {
+    "title": "AI 行程建議",
+    "loading": "AI 正在分析搭配建議...",
+    "add": "加入"
+  },
+  "aiReminder": {
+    "title": "出行提醒",
+    "weather": "天氣",
+    "clothing": "建議穿著",
+    "meetingPoint": "集合點",
+    "items": "建議攜帶",
+    "highlight": "今日亮點"
+  },
+  "aiWriter": {
+    "title": "AI 寫手",
+    "keywordsPlaceholder": "輸入關鍵詞，如\"考拉 海豹 含午餐 10小時\"",
+    "generate": "AI 生成",
+    "generated": "已生成",
+    "descZh": "中文描述",
+    "highlights": "亮點",
+    "apply": "採用並填充",
+    "regenerate": "重新生成",
+    "needName": "請先填寫產品中文名",
+    "needKeywords": "請輸入關鍵詞"
+  },
+  "aiBriefing": {
+    "title": "今日 AI 簡報"
+  },
+  "aiReply": {
+    "suggest": "AI 建議回覆",
+    "label": "AI 建議回覆",
+    "generating": "正在生成...",
+    "failed": "生成失敗，請重試",
+    "use": "採用"
+  },
+  "aiTicket": {
+    "title": "AI 分析",
+    "analyzing": "AI 正在分析...",
+    "solutions": "建議處理方案",
+    "recommended": "推薦",
+    "useSolution": "採用推薦方案並回復"
+  },
+  "aiInsights": {
+    "title": "{{period}}平臺洞察"
+  },
+  "preview": {
+    "previewOnly": "僅預覽",
+    "translationInProgress": "翻譯進行中，提交後會繼續",
+    "translationFailed": "翻譯失敗",
+    "translationTakingLonger": "翻譯時間超出預期。可以直接提交，系統會在後臺繼續翻譯。",
+    "refresh": "重新整理",
+    "backToEdit": "返回編輯",
+    "backToForm": "返回表單",
+    "submitForReview": "提交評審",
+    "alreadySubmitted": "已提交（待稽核）",
+    "retry": "重試",
+    "sectionOnlyAvailableIn": "此部分僅有{{lang}}",
+    "sourceLabel": {
+      "manual": "手動",
+      "autoGenerated": "AI 生成",
+      "outOfSync": "未同步"
+    },
+    "formDirtyBanner": "Form 有未儲存改動，儲存後才能在預覽看到",
+    "alreadyOpenInAnotherTab": "已在另一標籤頁開啟，併發編輯可能衝突",
+    "lastServerUpdate": "伺服器最後更新：{{time}}",
+    "editFieldTitle": "編輯 {{field}}（{{lang}}）",
+    "translationInProgressBadge": "翻譯中..."
+  },
+  "tourismC": {
+    "title": "南澳 AI 助你看看",
+    "subtitle": "基於平臺南澳旅遊知識庫，給你三個角度看看這個產品",
+    "explain": {
+      "button": "💡 AI 講講這個",
+      "loading": "正在呼叫 AI ...",
+      "refs": "基於 {{n}} 條知識庫條目"
+    },
+    "fit": {
+      "button": "🤔 適合我嗎？",
+      "placeholder": "一句話告訴 AI（如 \"帶 5 歲小孩\"）",
+      "submit": "讓 AI 看看",
+      "checking": "判斷中...",
+      "privacy": "僅用於本次 AI 判斷，不會儲存"
+    },
+    "nearby": {
+      "button": "📍 周邊還有什麼",
+      "loading": "查詢中...",
+      "empty": "該區域暫無更多 KB 推薦"
+    }
   }
 }
