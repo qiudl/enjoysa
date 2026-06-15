@@ -78,6 +78,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Chat language: default from i18n, can be overridden
   const [chatLanguage, setChatLanguageState] = useState(() => {
     const saved = localStorage.getItem(GUEST_LANG_KEY);
+    if (saved === 'zh-CN') { localStorage.setItem(GUEST_LANG_KEY, 'zh-TW'); return 'zh-TW'; }
     return saved || i18n.language;
   });
 
