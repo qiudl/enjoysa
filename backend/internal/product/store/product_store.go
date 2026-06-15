@@ -96,7 +96,15 @@ func (s *ProductStore) Update(product *model.Product) error {
 	// FullSaveAssociations 确保 HasMany 关联（Images / Packages / Highlights / FAQs / Schedules）
 	// 在 Save 时会被完整 upsert——不开启时新建子行（ID=0）有概率不被持久化，
 	// 表现为：管理员/供应商在编辑页上传图片后保存，刷新后图片消失。
-	return s.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(product).Error
+	//
+	// Omit the BelongsTo parents (Supplier/Region/Category): with
+	// FullSaveAssociations, GORM would otherwise re-upsert those rows whenever a
+	// caller passes a preloaded product (e.g. review_handler recomputing rating
+	// after a review), which mutates tables a product save must not touch and can
+	// 500 on their unique indexes (e.g. region slug). Same guard as UpdateWithRelated.
+	return s.db.Session(&gorm.Session{FullSaveAssociations: true}).
+		Omit("Supplier", "Region", "Category").
+		Save(product).Error
 }
 
 func (s *ProductStore) GetByID(id uint) (*model.Product, error) {
