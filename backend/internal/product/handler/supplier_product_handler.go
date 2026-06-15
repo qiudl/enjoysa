@@ -361,8 +361,9 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 		}
 	}
 
-	// Delete old related and re-create
-	h.productStore.DeleteRelated(product.ID)
+	// Re-create related children. Old children are deleted inside
+	// UpdateWithRelated's transaction (atomic with the save), so a failed save
+	// can never leave the product with its children wiped.
 
 	product.Images = nil
 	product.Packages = nil
@@ -414,7 +415,8 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 		})
 	}
 
-	if err := h.productStore.Update(product); err != nil {
+	if err := h.productStore.UpdateWithRelated(product); err != nil {
+		logger.Errorf("[supplier UpdateProduct] update failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to update product")
 		return
 	}
@@ -443,8 +445,8 @@ func (h *SupplierProductHandler) DeleteProduct(c *gin.Context) {
 
 	regionID := product.RegionID
 
-	h.productStore.DeleteRelated(product.ID)
-	if err := h.productStore.Delete(product.ID); err != nil {
+	if err := h.productStore.DeleteWithRelated(product.ID); err != nil {
+		logger.Errorf("[supplier DeleteProduct] delete failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to delete product")
 		return
 	}

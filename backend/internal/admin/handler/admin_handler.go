@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -1511,6 +1512,8 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	product.Duration = req.Duration
 	product.GroupSize = req.GroupSize
 	if req.Tags != "" {
+		// tags is a jsonb column; Product.BeforeSave normalizes it (the admin UI
+		// hints "comma-separated", which would otherwise be invalid jsonb → 500).
 		product.Tags = req.Tags
 	}
 	if req.Status != "" {
@@ -1536,9 +1539,9 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		}
 	}
 
-	// Delete old related and re-create
-	h.productStore.DeleteRelated(product.ID)
-
+	// Re-create related children. The old children are deleted inside
+	// UpdateWithRelated's transaction (atomic with the save) — NOT here — so a
+	// failed save can never leave the product with its children wiped.
 	product.Images = nil
 	product.Packages = nil
 	product.Highlights = nil
@@ -1589,7 +1592,8 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 		})
 	}
 
-	if err := h.productStore.Update(product); err != nil {
+	if err := h.productStore.UpdateWithRelated(product); err != nil {
+		log.Printf("[UpdateProduct] update failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to update product")
 		return
 	}
@@ -1734,8 +1738,8 @@ func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 
 	regionID := product.RegionID
 
-	h.productStore.DeleteRelated(product.ID)
-	if err := h.productStore.Delete(product.ID); err != nil {
+	if err := h.productStore.DeleteWithRelated(product.ID); err != nil {
+		log.Printf("[admin DeleteProduct] delete failed for product %d: %v", product.ID, err)
 		response.ServerError(c, "Failed to delete product")
 		return
 	}
