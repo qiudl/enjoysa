@@ -88,3 +88,22 @@ func TestUpdateWithRelated_DoesNotMutateBelongsTo(t *testing.T) {
 		t.Fatalf("supplier name = %q, want Original — BelongsTo must NOT be re-saved", sup.Name)
 	}
 }
+
+// Bare Update (used by e.g. review_handler recomputing rating) must also NOT
+// re-save the BelongsTo parents — same .Omit guard as UpdateWithRelated.
+func TestUpdate_DoesNotMutateBelongsTo(t *testing.T) {
+	s, db := setupProductStore(t)
+	p := seedProductWithPackages(t, db, model.ProductPackage{NameZh: "pkg", NameEn: "pkg", Price: 10})
+
+	p.Supplier = &models.Supplier{ID: 1, Name: "Mutated"} // stale preloaded parent
+	p.ReviewCount = 1                                      // a review_handler-style field change
+	if err := s.Update(p); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	var sup models.Supplier
+	db.First(&sup, 1)
+	if sup.Name != "Original" {
+		t.Fatalf("supplier name = %q, want Original — bare Update must NOT re-save BelongsTo", sup.Name)
+	}
+}
