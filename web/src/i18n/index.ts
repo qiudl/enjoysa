@@ -10,7 +10,10 @@ const resources = {
   'zh-TW': { translation: zhTW },
 };
 
-const savedLng = localStorage.getItem('i18n-lang') || 'en';
+const stored = localStorage.getItem('i18n-lang');
+// Migrate any stored 'zh' (Simplified Chinese) to 'zh-TW' (Traditional Chinese).
+if (stored === 'zh') localStorage.setItem('i18n-lang', 'zh-TW');
+const savedLng = (stored === 'zh' ? 'zh-TW' : stored) || 'zh-TW';
 
 i18n
   .use(initReactI18next)
