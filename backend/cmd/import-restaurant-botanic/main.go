@@ -55,23 +55,29 @@ type supplierSeed struct {
 }
 
 type productSeed struct {
-	ProductID     uint
-	NameZh        string
-	NameEn        string
-	PriceFrom     float64
-	SummaryZh     string
-	SummaryEn     string
-	DescriptionZh string
-	DescriptionEn string
-	Address       string
-	Duration      string
-	GroupSize     string
-	Tags          []string
-	Packages      []packageSeed
-	Highlights    []highlightSeed
-	FAQs          []faqSeed
-	Metadata      map[string]interface{}
-	ImageFile     string
+	ProductID      uint
+	NameZh         string
+	NameEn         string
+	PriceFrom      float64
+	SummaryZh      string
+	SummaryEn      string
+	DescriptionZh  string
+	DescriptionEn  string
+	Address        string
+	Duration       string
+	GroupSize      string
+	Tags           []string
+	Packages       []packageSeed
+	Highlights     []highlightSeed
+	FAQs           []faqSeed
+	Metadata       map[string]interface{}
+	ImageFile      string
+	OfficialImages []officialImageSeed
+}
+
+type officialImageSeed struct {
+	File      string
+	SourceURL string
 }
 
 type packageSeed struct {
@@ -190,15 +196,21 @@ func prepareCoverImages(assetDir string, uploadDir string) error {
 	}
 	for _, record := range fineDiningImports() {
 		for _, product := range record.Products {
-			if product.ImageFile == "" || filepath.Base(product.ImageFile) != product.ImageFile {
-				return fmt.Errorf("invalid cover image filename for %s", product.NameEn)
+			files := []string{product.ImageFile}
+			for _, image := range product.OfficialImages {
+				files = append(files, image.File)
 			}
-			contents, err := os.ReadFile(filepath.Join(assetDir, product.ImageFile))
-			if err != nil {
-				return fmt.Errorf("read cover image for %s: %w", product.NameEn, err)
-			}
-			if err := os.WriteFile(filepath.Join(targetDir, product.ImageFile), contents, 0o644); err != nil {
-				return fmt.Errorf("write cover image for %s: %w", product.NameEn, err)
+			for _, file := range files {
+				if file == "" || filepath.Base(file) != file {
+					return fmt.Errorf("invalid image filename for %s", product.NameEn)
+				}
+				contents, err := os.ReadFile(filepath.Join(assetDir, file))
+				if err != nil {
+					return fmt.Errorf("read image for %s: %w", product.NameEn, err)
+				}
+				if err := os.WriteFile(filepath.Join(targetDir, file), contents, 0o644); err != nil {
+					return fmt.Errorf("write image for %s: %w", product.NameEn, err)
+				}
 			}
 		}
 	}
@@ -335,6 +347,13 @@ func upsertProduct(tx *gorm.DB, seed productSeed, supplierID uint, regionID uint
 		SortOrder: 0,
 		IsCover:   true,
 	}}
+	for idx, image := range seed.OfficialImages {
+		product.Images = append(product.Images, productmodel.ProductImage{
+			URL:       "/uploads/fine-dining/" + image.File,
+			SortOrder: idx + 1,
+			IsCover:   false,
+		})
+	}
 	for idx, pkg := range seed.Packages {
 		product.Packages = append(product.Packages, productmodel.ProductPackage{
 			NameZh:     pkg.NameZh,
@@ -421,7 +440,19 @@ func productUpdates(seed productSeed, supplierID uint, regionID uint, categoryID
 	if err != nil {
 		return nil, fmt.Errorf("encode tags for %s: %w", seed.NameEn, err)
 	}
-	metadata, err := json.Marshal(seed.Metadata)
+	metadataSource := make(map[string]interface{}, len(seed.Metadata)+1)
+	for key, value := range seed.Metadata {
+		metadataSource[key] = value
+	}
+	officialImageSources := make([]map[string]string, 0, len(seed.OfficialImages))
+	for _, image := range seed.OfficialImages {
+		officialImageSources = append(officialImageSources, map[string]string{
+			"file":       image.File,
+			"source_url": image.SourceURL,
+		})
+	}
+	metadataSource["official_image_sources"] = officialImageSources
+	metadata, err := json.Marshal(metadataSource)
 	if err != nil {
 		return nil, fmt.Errorf("encode metadata for %s: %w", seed.NameEn, err)
 	}
@@ -493,8 +524,8 @@ func restaurantBotanic(collectedAt string) diningImport {
 			PriceFrom:     315,
 			SummaryZh:     "位于阿德莱德植物园内的现代澳大利亚精致餐饮，提供以原生食材和当季风味为核心的品鉴菜单体验。",
 			SummaryEn:     "A modern Australian fine dining experience in Adelaide Botanic Garden, centred on native ingredients, seasonality, and a degustation menu.",
-			DescriptionZh: "Restaurant Botanic 的 Dining Experience 以多道式品鉴菜单呈现澳大利亚原生食材、当季农产和植物园环境。官网公开菜单价为 AUD 315/人，可另选酒水或无酒精配餐。该记录为后台代录草稿，需运营复核营业时段、实时可订日期、图片授权和取消/转让细则后再上架。",
-			DescriptionEn: "Restaurant Botanic's Dining Experience presents Australian native ingredients, seasonal produce, and the Adelaide Botanic Garden setting through a degustation menu. The public menu price is AUD 315 per person, with optional beverage pairings. This is an admin-created draft and should be reviewed before publishing.",
+			DescriptionZh: "Restaurant Botanic 的 Dining Experience 以多道式品鉴菜单呈现澳大利亚原生食材、当季农产和植物园环境。菜单价为 AUD 315/人，可另选酒水或无酒精配餐。在宁静园景环绕的餐厅内，每道菜都结合季节风味、自然灵感与现代澳大利亚烹饪技法。",
+			DescriptionEn: "Restaurant Botanic's Dining Experience presents Australian native ingredients, seasonal produce, and the Adelaide Botanic Garden setting through a degustation menu. The menu is AUD 315 per person, with optional wine and non-alcoholic pairings. Each course brings together seasonal flavours, nature-led inspiration, and modern Australian technique in a tranquil garden setting.",
 			Address:       "Friends Gate, Plane Tree Drive, Adelaide SA 5000",
 			Duration:      "3.5 hours",
 			GroupSize:     "1-6",
@@ -526,6 +557,10 @@ func restaurantBotanic(collectedAt string) diningImport {
 				"transfer_allowed": true,
 			}, []string{"opening_hours", "live_availability", "final booking/cancellation wording"}),
 			ImageFile: "product-39-dining-experience.jpg",
+			OfficialImages: []officialImageSeed{
+				{File: "product-39-official-dish.jpg", SourceURL: "https://restaurantbotanic.com.au/wp-content/uploads/2025/06/Restaurant_Botanic_Food_Scaled_Home.jpg"},
+				{File: "product-39-official-course.jpg", SourceURL: "https://restaurantbotanic.com.au/wp-content/uploads/2025/05/Restaurant_Botanic_Plate4_Food_Dining_Scaled.jpg"},
+			},
 		}, restaurantBotanicChefTable(collectedAt)},
 	}
 }
@@ -548,8 +583,8 @@ func restaurantBotanicChefTable(collectedAt string) productSeed {
 		PriceFrom:     315,
 		SummaryZh:     "坐在开放式厨房旁的厨师桌，观看厨师团队完成多道式品鉴菜单。",
 		SummaryEn:     "A chef's table degustation seated around the open kitchen.",
-		DescriptionZh: "Chef's Table 是 Restaurant Botanic 的沉浸式品鉴体验，客人坐在开放厨房旁观看厨师团队出餐。官网当前展示整体菜单价 AUD 315/人，并列出多档酒水/无酒精配餐附加选项。该记录为草稿，需运营复核实时席位、是否与普通 Dining Experience 同价、图片授权与取消条款。",
-		DescriptionEn: "The Chef's Table is an immersive degustation experience at the open kitchen counter. The official site lists the menu price at AUD 315 per person with optional beverage pairings. This draft requires review of live seating, exact pricing parity, image permissions, and cancellation terms.",
+		DescriptionZh: "Chef's Table 是 Restaurant Botanic 的沉浸式品鉴体验，客人坐在环绕开放厨房的餐台旁，近距离观看厨师团队烹调和摆盘。菜单价为 AUD 315/人，并可选择多档酒水或无酒精配餐，在植物园景致与厨房剧场感之间享用完整品鉴菜单。",
+		DescriptionEn: "The Chef's Table is an immersive degustation experience seated at the counter surrounding the open kitchen, offering a close view of the team preparing and plating each course. The menu is AUD 315 per person, with optional wine and non-alcoholic pairings, combining kitchen theatre with the Adelaide Botanic Garden setting.",
 		Address:       "Friends Gate, Plane Tree Drive, Adelaide SA 5000",
 		Duration:      "3.5 hours",
 		GroupSize:     "1-6",
@@ -577,6 +612,10 @@ func restaurantBotanicChefTable(collectedAt string) productSeed {
 			"transfer_allowed": true,
 		}, []string{"live_availability", "chef_table_price_confirmation", "final booking/cancellation wording"}),
 		ImageFile: "product-42-chefs-table.jpg",
+		OfficialImages: []officialImageSeed{
+			{File: "product-42-official-dish.jpg", SourceURL: "https://restaurantbotanic.com.au/wp-content/uploads/2025/06/Restaurant_Botanic_Food_Scaled_Jan2.jpg"},
+			{File: "product-42-official-dessert.jpg", SourceURL: "https://restaurantbotanic.com.au/wp-content/uploads/2025/05/Restaurant_Botanic_Plate8_Food_Dining_Scaled.jpg"},
+		},
 	}
 }
 
@@ -633,8 +672,8 @@ func penfoldsMagillEstate(collectedAt string) diningImport {
 			PriceFrom:     295,
 			SummaryZh:     "Penfolds Magill Estate Restaurant 的 Signature Menu 精致餐饮体验，可选 Penfolds 葡萄酒搭配。",
 			SummaryEn:     "The Signature Menu fine dining experience at Penfolds Magill Estate Restaurant, with optional Penfolds wine pairings.",
-			DescriptionZh: "Magill Estate Restaurant 位于 Penfolds 的精神故乡，提供当代精致餐饮、酒窖藏酒和阿德莱德山麓景观。官网菜单区列出 Signature Menu AUD 295/人，并提供 Icon Wine Pairing AUD 350/人、Sommeliers Wine Pairing AUD 210/人。该记录为后台代录草稿，需运营复核实时可订日期、图片授权和取消政策后再上架。",
-			DescriptionEn: "Magill Estate Restaurant sits at the spiritual home of Penfolds, combining contemporary dining, cellar wines, and Adelaide foothills views. The official menu section lists the Signature Menu at AUD 295 per person, with Icon Wine Pairing at AUD 350 and Sommeliers Wine Pairing at AUD 210. This admin-created draft requires review before publishing.",
+			DescriptionZh: "Magill Estate Restaurant 位于 Penfolds 的精神故乡，将当代精致餐饮、酒窖藏酒与阿德莱德山麓葡萄园景观融为一体。Signature Menu 为 AUD 295/人，可选 Icon Wine Pairing AUD 350/人或 Sommeliers Wine Pairing AUD 210/人。",
+			DescriptionEn: "Magill Estate Restaurant sits at the spiritual home of Penfolds, bringing together contemporary fine dining, cellar wines, and views across the estate's vines and Adelaide foothills. The Signature Menu is AUD 295 per person, with an optional Icon Wine Pairing at AUD 350 or Sommeliers Wine Pairing at AUD 210.",
 			Address:       "78 Penfold Road, Magill SA 5072",
 			Duration:      "",
 			GroupSize:     "",
@@ -664,6 +703,10 @@ func penfoldsMagillEstate(collectedAt string) diningImport {
 				},
 			}, []string{"duration", "group_size", "live_availability", "booking/cancellation terms"}),
 			ImageFile: "product-40-signature-menu.jpg",
+			OfficialImages: []officialImageSeed{
+				{File: "product-40-official-vineyard-view.png", SourceURL: "https://www.penfolds.com/dw/image/v2/BDBN_PRD/on/demandware.static/-/Library-Sites-PenfoldsSharedLibrary/default/dwb94a2502/1-Images/Banner/1920x560-Desktop-Banner/1920x560-Penfolds-Magill-Estate-Restaurant-View.png?sfrm=png"},
+				{File: "product-40-official-chef.png", SourceURL: "https://www.penfolds.com/dw/image/v2/BDBN_PRD/on/demandware.static/-/Library-Sites-PenfoldsSharedLibrary/default/dwcdeb8732/1-Images/Square/840x840/840x840-Magill-Estate-Restaurant-Chef-Scott.png?sfrm=png"},
+			},
 		}, penfoldsLunchTasting(collectedAt)},
 	}
 }
@@ -676,8 +719,8 @@ func penfoldsLunchTasting(collectedAt string) productSeed {
 		PriceFrom:     230,
 		SummaryZh:     "周末午餐供应的 Lunch Tasting Menu，可选 Penfolds 葡萄酒搭配。",
 		SummaryEn:     "A weekend lunch tasting menu at Magill Estate Restaurant, with optional Penfolds wine pairings.",
-		DescriptionZh: "官网菜单区列出 Lunch Tasting Menu AUD 230/人，并说明餐厅午餐为周六和周日 12:00 起。可选 Icon Wine Pairing AUD 350/人和 Sommeliers Wine Pairing AUD 210/人。该记录为草稿，需运营复核实时可订日期、图片授权和取消政策后上架。",
-		DescriptionEn: "The official menu section lists the Lunch Tasting Menu at AUD 230 per person, with lunch from 12:00 on Saturday and Sunday. Optional Icon and Sommeliers wine pairings are listed. This draft requires operational review before publishing.",
+		DescriptionZh: "Lunch Tasting Menu 为 AUD 230/人，于周六和周日 12:00 起供应。午间品鉴体验以当季菜品搭配 Penfolds 酒款，可选 Icon Wine Pairing AUD 350/人或 Sommeliers Wine Pairing AUD 210/人。",
+		DescriptionEn: "The Lunch Tasting Menu is AUD 230 per person and is served from 12:00 on Saturday and Sunday. This seasonal daytime dining experience can be paired with Penfolds wines, with an optional Icon Wine Pairing at AUD 350 or Sommeliers Wine Pairing at AUD 210.",
 		Address:       "78 Penfold Road, Magill SA 5072",
 		Tags:          []string{"午餐", "品鉴菜单", "Penfolds", "葡萄酒配餐", "Magill Estate"},
 		Packages: []packageSeed{
@@ -694,6 +737,10 @@ func penfoldsLunchTasting(collectedAt string) productSeed {
 			"surcharges":    "Official site notes 12.5% public holiday surcharge and 10% Sunday surcharge.",
 		}, []string{"duration", "group_size", "live_availability", "booking/cancellation terms"}),
 		ImageFile: "product-45-lunch-tasting.jpg",
+		OfficialImages: []officialImageSeed{
+			{File: "product-45-official-entrance.png", SourceURL: "https://www.penfolds.com/dw/image/v2/BDBN_PRD/on/demandware.static/-/Library-Sites-PenfoldsSharedLibrary/default/dw3aedbed1/1-Images/Landscape/840x450/840x450-Magill-Estate-Restaurant-Entrance.png?sfrm=png"},
+			{File: "product-45-official-wine-cellar.png", SourceURL: "https://www.penfolds.com/dw/image/v2/BDBN_PRD/on/demandware.static/-/Library-Sites-PenfoldsSharedLibrary/default/dw56fe01fb/1-Images/Landscape/840x450/840x450-Magill-Estate-Restaurant-Wine-Fridge.png?sfrm=png"},
+		},
 	}
 }
 
@@ -749,8 +796,8 @@ func ozinChefsSelection(collectedAt string) productSeed {
 		PriceFrom:     80,
 		SummaryZh:     "由餐厅从菜单中代选多道菜品的品鉴菜单，甜点包含在内。",
 		SummaryEn:     "A chef-selected tasting menu chosen from across OZIN's menu, including dessert.",
-		DescriptionZh: "OZIN 官网食物菜单图片列出 Chef's Selection Tasting Menu AUD 80/人，餐厅会从菜单中代选多道菜品，并包含甜点；6 人及以上预订需选择该菜单。海鲜选项 AUD 20/人附加。该记录为草稿，需运营复核实时菜单、可订日期、图片授权和取消政策后上架。",
-		DescriptionEn: "OZIN's official food menu image lists the Chef's Selection Tasting Menu at AUD 80 per person, with dessert included and chef-selected dishes from across the menu. It is required for bookings of 6 or more. A seafood option is available at AUD 20 per person. This draft requires operational review before publishing.",
+		DescriptionZh: "Chef's Selection Tasting Menu 为 AUD 80/人，由 OZIN 团队从菜单中代选多道菜品并包含甜点，让客人轻松分享炭火烹调与国际风味。6 人及以上预订需选择该菜单，另可加 AUD 20/人升级海鲜选项。",
+		DescriptionEn: "The Chef's Selection Tasting Menu is AUD 80 per person, with the OZIN team choosing a selection of dishes from across the menu, including dessert, for an easy shared experience of coal-fired cooking and international flavours. It is required for bookings of 6 or more, with a seafood option available for an additional AUD 20 per person.",
 		Address:       "6 East Terrace, Adelaide SA 5000",
 		Tags:          []string{"品鉴菜单", "炭烤", "南澳本地食材", "多人预订", "East End"},
 		Packages: []packageSeed{
@@ -767,6 +814,10 @@ func ozinChefsSelection(collectedAt string) productSeed {
 			"allergy_note": "Official menu notes dietary requirements should be discussed and complete allergen separation cannot be guaranteed.",
 		}, []string{"duration", "live_availability", "booking/cancellation terms"}),
 		ImageFile: "product-47-chefs-selection.jpg",
+		OfficialImages: []officialImageSeed{
+			{File: "product-47-official-dining-room.jpg", SourceURL: "https://www.ozinrestaurant.com.au/assets/new-img/new-gallery/img-1.jpg"},
+			{File: "product-47-official-food.jpg", SourceURL: "https://www.ozinrestaurant.com.au/assets/new-img/new-gallery/img-20.jpg"},
+		},
 	}
 }
 
@@ -830,13 +881,14 @@ func printDryRun() error {
 				packages = append(packages, pkg.NameEn)
 			}
 			products = append(products, map[string]interface{}{
-				"name_zh":     product.NameZh,
-				"name_en":     product.NameEn,
-				"status":      "draft",
-				"price_from":  product.PriceFrom,
-				"currency":    "AUD",
-				"packages":    packages,
-				"cover_image": "/uploads/fine-dining/" + product.ImageFile,
+				"name_zh":         product.NameZh,
+				"name_en":         product.NameEn,
+				"status":          "draft",
+				"price_from":      product.PriceFrom,
+				"currency":        "AUD",
+				"packages":        packages,
+				"cover_image":     "/uploads/fine-dining/" + product.ImageFile,
+				"official_images": product.OfficialImages,
 			})
 		}
 		payload = append(payload, map[string]interface{}{

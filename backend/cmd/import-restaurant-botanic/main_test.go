@@ -3,6 +3,7 @@ package main
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	productmodel "enjoysa-backend/internal/product/model"
@@ -77,6 +78,43 @@ func TestRetainedDraftProductsHaveBundledCoverImages(t *testing.T) {
 			}
 			if matches, err := filepath.Glob(filepath.Join("..", "..", "assets", "fine-dining", product.ImageFile)); err != nil || len(matches) != 1 {
 				t.Errorf("%s cover image %q not found", product.NameEn, product.ImageFile)
+			}
+		}
+	}
+}
+
+func TestRetainedProductsHaveAtLeastTwoOfficialGalleryImages(t *testing.T) {
+	for _, record := range fineDiningImports() {
+		for _, product := range record.Products {
+			if len(product.OfficialImages) < 2 {
+				t.Errorf("%s has %d official images, want at least 2", product.NameEn, len(product.OfficialImages))
+			}
+			for _, image := range product.OfficialImages {
+				if image.File == "" || image.SourceURL == "" {
+					t.Errorf("%s has incomplete official image provenance", product.NameEn)
+				}
+				if matches, err := filepath.Glob(filepath.Join("..", "..", "assets", "fine-dining", image.File)); err != nil || len(matches) != 1 {
+					t.Errorf("%s official image %q not found", product.NameEn, image.File)
+				}
+			}
+		}
+	}
+}
+
+func TestCustomerDescriptionsExcludeInternalOperationalCopy(t *testing.T) {
+	internalPhrases := []string{
+		"草稿", "运营复核", "后台代录", "再上架", "后上架",
+		"admin-created draft", "this draft", "review before publishing", "operational review",
+	}
+	for _, record := range fineDiningImports() {
+		for _, product := range record.Products {
+			for _, description := range []string{product.DescriptionZh, product.DescriptionEn} {
+				lower := strings.ToLower(description)
+				for _, phrase := range internalPhrases {
+					if strings.Contains(lower, strings.ToLower(phrase)) {
+						t.Errorf("%s customer description contains internal phrase %q", product.NameEn, phrase)
+					}
+				}
 			}
 		}
 	}
