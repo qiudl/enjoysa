@@ -5,7 +5,7 @@ import { Eye, CheckCircle, XCircle, Image, Pencil, Trash2, Package } from 'lucid
 import clsx from 'clsx';
 import styles from './ProductReviewTable.module.css';
 
-export type ProductReviewStatus = 'pending' | 'approved' | 'rejected';
+export type ProductReviewStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
 
 // REQ-20260509-0030: 旧的 ProductCategory string enum 与 DB 实际 category.slug
 // 完全不匹配（前端写死 day_tour/multi_day/activity/ticket，DB 用 day-tours/
@@ -70,9 +70,11 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
 
   const getStatusLabel = (status: ProductReviewStatus) => {
     const labels: Record<ProductReviewStatus, string> = {
+      draft: t('admin.products.status.draft'),
       pending: t('admin.products.status.pending'),
       approved: t('admin.products.status.approved'),
       rejected: t('admin.products.status.rejected'),
+      offline: t('admin.products.status.offline'),
     };
     return labels[status];
   };
@@ -201,6 +203,7 @@ export const ProductReviewTable: React.FC<ProductReviewTableProps> = ({
                     </div>
                   )}
                   <div className={styles.nameInfo}>
+                    <span className={styles.productId}>ID: {product.id}</span>
                     <span className={styles.name}>{product.name}</span>
                     {product.nameEn && (
                       <span className={styles.nameEn}>{product.nameEn}</span>

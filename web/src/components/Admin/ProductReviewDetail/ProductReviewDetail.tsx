@@ -80,9 +80,11 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
 
   const getStatusLabel = (status: ProductReviewStatus) => {
     const labels: Record<ProductReviewStatus, string> = {
+      draft: t('admin.products.status.draft'),
       pending: t('admin.products.status.pending'),
       approved: t('admin.products.status.approved'),
       rejected: t('admin.products.status.rejected'),
+      offline: t('admin.products.status.offline'),
     };
     return labels[status];
   };
