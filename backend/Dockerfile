@@ -12,7 +12,8 @@ COPY . .
 # invoke this binary in normal operation, only ssh-in operators can.
 RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/ && \
     CGO_ENABLED=0 GOOS=linux go build -o /seed ./cmd/seed/ && \
-    CGO_ENABLED=0 GOOS=linux go build -o /import-restaurant-botanic ./cmd/import-restaurant-botanic/
+	CGO_ENABLED=0 GOOS=linux go build -o /import-restaurant-botanic ./cmd/import-restaurant-botanic/ && \
+	CGO_ENABLED=0 GOOS=linux go build -o /import-barossa-restaurants ./cmd/import-barossa-restaurants/
 
 FROM alpine:3.19
 
@@ -22,7 +23,7 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata wget
 
 WORKDIR /app
-COPY --from=builder /server /seed /import-restaurant-botanic ./
+COPY --from=builder /server /seed /import-restaurant-botanic /import-barossa-restaurants ./
 COPY configs/ configs/
 COPY assets/ assets/
 
