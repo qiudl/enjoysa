@@ -31,8 +31,17 @@ func TestSupplierAndProductDataIsComplete(t *testing.T) {
 		if len(p.Packages) == 0 || len(p.Highlights) < 2 || len(p.FAQs) < 2 {
 			t.Errorf("product %s lacks packages/highlights/FAQs", p.NameEn)
 		}
-		if matches, _ := filepath.Glob(filepath.Join("..", "..", "assets", "barossa-restaurants", p.ImageFile)); len(matches) != 1 {
-			t.Errorf("product %s image missing", p.NameEn)
+		images := append([]imageSeed{{p.ImageFile, p.ImageSource}}, galleryFor(p.NameEn)...)
+		if len(images) != 5 {
+			t.Errorf("product %s has %d images, want 5", p.NameEn, len(images))
+		}
+		for _, image := range images {
+			if image.SourceURL == "" {
+				t.Errorf("product %s image %s has no source", p.NameEn, image.File)
+			}
+			if matches, _ := filepath.Glob(filepath.Join("..", "..", "assets", "barossa-restaurants", image.File)); len(matches) != 1 {
+				t.Errorf("product %s image %s missing", p.NameEn, image.File)
+			}
 		}
 	}
 }

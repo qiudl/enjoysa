@@ -40,6 +40,7 @@ type packageSeed struct {
 }
 type highlightSeed struct{ TitleZh, TitleEn, DescZh, DescEn string }
 type faqSeed struct{ QuestionZh, QuestionEn, AnswerZh, AnswerEn string }
+type imageSeed struct{ File, SourceURL string }
 
 type result struct {
 	RegionID   uint             `json:"region_id"`
@@ -122,16 +123,18 @@ func copyImages(assetDir, uploadDir string) error {
 		return err
 	}
 	for _, seed := range seeds() {
-		name := seed.Product.ImageFile
-		if filepath.Base(name) != name {
-			return fmt.Errorf("invalid image filename %q", name)
-		}
-		data, err := os.ReadFile(filepath.Join(assetDir, name))
-		if err != nil {
-			return fmt.Errorf("read %s: %w", name, err)
-		}
-		if err := os.WriteFile(filepath.Join(target, name), data, 0o644); err != nil {
-			return fmt.Errorf("write %s: %w", name, err)
+		images := append([]imageSeed{{seed.Product.ImageFile, seed.Product.ImageSource}}, galleryFor(seed.Product.NameEn)...)
+		for _, image := range images {
+			if filepath.Base(image.File) != image.File {
+				return fmt.Errorf("invalid image filename %q", image.File)
+			}
+			data, err := os.ReadFile(filepath.Join(assetDir, image.File))
+			if err != nil {
+				return fmt.Errorf("read %s: %w", image.File, err)
+			}
+			if err := os.WriteFile(filepath.Join(target, image.File), data, 0o644); err != nil {
+				return fmt.Errorf("write %s: %w", image.File, err)
+			}
 		}
 	}
 	return nil
@@ -189,7 +192,8 @@ func upsertSupplier(tx *gorm.DB, seed supplierSeed) (*models.Supplier, error) {
 
 func upsertProduct(tx *gorm.DB, seed productSeed, supplierID, regionID, categoryID uint) (*productmodel.Product, error) {
 	tags, _ := json.Marshal(seed.Tags)
-	metadata, _ := json.Marshal(map[string]interface{}{"source_page": sourcePage, "official_product_url": seed.BookingURL, "official_image_source": seed.ImageSource, "collected_at": time.Now().UTC().Format(time.RFC3339)})
+	imageSources := append([]imageSeed{{seed.ImageFile, seed.ImageSource}}, galleryFor(seed.NameEn)...)
+	metadata, _ := json.Marshal(map[string]interface{}{"source_page": sourcePage, "official_product_url": seed.BookingURL, "official_image_sources": imageSources, "collected_at": time.Now().UTC().Format(time.RFC3339)})
 	fields := map[string]interface{}{"name_zh": seed.NameZh, "name_en": seed.NameEn, "supplier_id": supplierID, "region_id": regionID, "category_id": categoryID, "status": productmodel.ProductStatusDraft, "price_from": seed.Price, "currency": "AUD", "summary_zh": seed.SummaryZh, "summary_en": seed.SummaryEn, "description_zh": seed.DescriptionZh, "description_en": seed.DescriptionEn, "address_zh": seed.Address, "address_en": seed.Address, "duration": seed.Duration, "group_size": seed.GroupSize, "tags": string(tags), "metadata": metadata, "created_via": "admin_proxy"}
 	var product productmodel.Product
 	err := tx.Where("supplier_id = ? AND name_en = ?", supplierID, seed.NameEn).First(&product).Error
@@ -209,6 +213,12 @@ func upsertProduct(tx *gorm.DB, seed productSeed, supplierID, regionID, category
 	image := productmodel.ProductImage{ProductID: product.ID, URL: "/uploads/barossa-restaurants/" + seed.ImageFile, IsCover: true, SortOrder: 0}
 	if err := tx.Create(&image).Error; err != nil {
 		return nil, err
+	}
+	for i, gallery := range galleryFor(seed.NameEn) {
+		image := productmodel.ProductImage{ProductID: product.ID, URL: "/uploads/barossa-restaurants/" + gallery.File, IsCover: false, SortOrder: i + 1}
+		if err := tx.Create(&image).Error; err != nil {
+			return nil, err
+		}
 	}
 	for i, p := range seed.Packages {
 		record := productmodel.ProductPackage{ProductID: product.ID, NameZh: p.NameZh, NameEn: p.NameEn, DescZh: p.DescZh, DescEn: p.DescEn, Price: p.Price, StockTotal: -1, SortOrder: i + 1}
@@ -238,6 +248,35 @@ func replaceAssociations(tx *gorm.DB, id uint) error {
 		}
 	}
 	return nil
+}
+
+func galleryFor(productName string) []imageSeed {
+	return map[string][]imageSeed{
+		"Hentley Farm Discovery Tasting Menu": {
+			{"hentley-gallery-wine.jpg", "https://hentleyfarm.com.au/cdn/shop/collections/HentleyFarm-AUG22-0061-web.jpg?v=1747034503&width=1480"},
+			{"hentley-gallery-sparkling.jpg", "https://hentleyfarm.com.au/cdn/shop/collections/HentleyFarm-JUL22-0112-web.jpg?v=1747034038&width=1480"},
+			{"hentley-gallery-kitchen.jpg", "https://hentleyfarm.com.au/cdn/shop/files/DSC04761.jpg?v=1736731114&width=1200"},
+			{"hentley-gallery-dining.jpg", "https://hentleyfarm.com.au/cdn/shop/files/DSC04792-Enhanced-NR_f5fc25ef-ba73-4f26-a7a2-0cd33c8b1559.jpg?v=1736730996&width=1200"},
+		},
+		"fermentAsian Chef's Tasting Menu": {
+			{"fermentasian-gallery-restaurant.jpg", "https://fermentasian.com.au/wp-content/uploads/2015/11/restaurant-2-1024x683.jpg"},
+			{"fermentasian-gallery-wine-room.jpg", "https://fermentasian.com.au/wp-content/uploads/2015/11/wine-room-675x1024.jpg"},
+			{"fermentasian-gallery-chef.jpg", "https://fermentasian.com.au/wp-content/uploads/2015/02/Tuoi-Do-lg.jpg"},
+			{"fermentasian-gallery-garden.jpg", "https://fermentasian.com.au/wp-content/uploads/2016/01/garden-10.jpg"},
+		},
+		"Appellation Tasting Menu": {
+			{"appellation-gallery-dish.jpg", "https://thelouise.com.au/wp-content/uploads/2025/08/The-cuisine-Left.jpg"},
+			{"appellation-gallery-course.jpg", "https://thelouise.com.au/wp-content/uploads/2025/08/The-cuisine-Right.jpg"},
+			{"appellation-gallery-dining-room.jpg", "https://thelouise.com.au/wp-content/uploads/2025/08/The-space-Left.jpg"},
+			{"appellation-gallery-wine-cellar.jpg", "https://thelouise.com.au/wp-content/uploads/2025/08/The-winelist-Right.jpg"},
+		},
+		"Vintners Four Course Menu": {
+			{"vintners-gallery-sunset.jpg", "https://static.wixstatic.com/media/851d2f_08155afa08e24316a2186cb288eccaba~mv2.jpg"},
+			{"vintners-gallery-dish.jpg", "https://static.wixstatic.com/media/851d2f_b9496839b298409f874456ab0759fb71~mv2.jpg"},
+			{"vintners-gallery-kitchen.png", "https://static.wixstatic.com/media/851d2f_e2b9f185dc414e29a19d13bd7875ebf6~mv2.png"},
+			{"vintners-gallery-dessert.jpg", "https://static.wixstatic.com/media/851d2f_9a5a12352c7e46f98c047214a16ec71f~mv2.jpg"},
+		},
+	}[productName]
 }
 
 func seeds() []supplierSeed {
