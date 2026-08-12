@@ -119,3 +119,26 @@ func TestCustomerDescriptionsExcludeInternalOperationalCopy(t *testing.T) {
 		}
 	}
 }
+
+func TestTargetProductsHaveCustomerFacingFAQs(t *testing.T) {
+	internalPhrases := []string{
+		"官网", "草稿", "运营", "复核", "后台", "待确认",
+		"official faq", "official site", "draft", "operator", "review", "pending confirmation",
+	}
+	for _, record := range fineDiningImports() {
+		for _, product := range record.Products {
+			if len(product.FAQs) == 0 {
+				t.Errorf("product %d has no customer-facing FAQs", product.ProductID)
+				continue
+			}
+			for idx, faq := range product.FAQs {
+				copy := strings.ToLower(strings.Join([]string{faq.QuestionZh, faq.QuestionEn, faq.AnswerZh, faq.AnswerEn}, " "))
+				for _, phrase := range internalPhrases {
+					if strings.Contains(copy, phrase) {
+						t.Errorf("product %d FAQ %d contains internal/source phrase %q", product.ProductID, idx, phrase)
+					}
+				}
+			}
+		}
+	}
+}

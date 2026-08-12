@@ -542,8 +542,8 @@ func restaurantBotanic(collectedAt string) diningImport {
 				{TitleZh: "原生食材与当季菜单", TitleEn: "Native ingredients and seasonal menu", DescZh: "菜单围绕澳大利亚原生食材、当季农产和可持续理念设计。", DescEn: "Menus are shaped around Australian native ingredients, seasonal produce, and sustainability."},
 			},
 			FAQs: []faqSeed{
-				{QuestionZh: "体验预计多长时间？", QuestionEn: "How long should guests allow?", AnswerZh: "官网 FAQ 建议预留约 3.5 小时。", AnswerEn: "The official FAQ recommends allowing approximately 3.5 hours."},
-				{QuestionZh: "最大预订人数是多少？", QuestionEn: "What is the maximum booking size?", AnswerZh: "官网 FAQ 显示最大预订人数为 6 位。", AnswerEn: "The official FAQ lists the maximum reservation size as 6 guests."},
+				{QuestionZh: "体验预计多长时间？", QuestionEn: "How long should guests allow?", AnswerZh: "建议为完整用餐体验预留约 3.5 小时。", AnswerEn: "Allow approximately 3.5 hours for the full dining experience."},
+				{QuestionZh: "最多可以预订几位？", QuestionEn: "What is the maximum booking size?", AnswerZh: "每笔预订最多可安排 6 位客人。", AnswerEn: "Reservations can accommodate up to 6 guests per booking."},
 			},
 			Metadata: sourceMetadata(collectedAt, []string{
 				"https://southaustralia.com/destinations/adelaide/food-and-drink",
@@ -592,8 +592,8 @@ func restaurantBotanicChefTable(collectedAt string) productSeed {
 		Packages: []packageSeed{{
 			NameZh: "厨师桌品鉴菜单（每位）",
 			NameEn: "Chef's Table degustation menu (per person)",
-			DescZh: "按官网公开整体菜单价记录；席位和最终价格需预订页复核。",
-			DescEn: "Captured from the official menu price; seating and final price require booking-page review.",
+			DescZh: "厨师桌完整品鉴菜单，每位 AUD 315；实际席位以预订时可选场次为准。",
+			DescEn: "The full Chef's Table degustation menu is AUD 315 per person; seating is subject to availability when booking.",
 			Price:  315,
 		}, restaurantBotanicPairing("The Temperance 非酒精配餐", "The Temperance non-alcoholic pairing", 145), restaurantBotanicPairing("The Botanic 酒水配餐", "The Botanic beverage pairing", 205), restaurantBotanicPairing("The Sommelier's Reserve 酒水配餐", "The Sommelier's Reserve beverage pairing", 375), restaurantBotanicPairing("The Cellar Selection 酒水配餐", "The Cellar Selection beverage pairing", 650)},
 		Highlights: []highlightSeed{
@@ -601,7 +601,8 @@ func restaurantBotanicChefTable(collectedAt string) productSeed {
 			{TitleZh: "沉浸式品鉴", TitleEn: "Immersive degustation", DescZh: "将厨房剧场感与植物园环境结合。", DescEn: "Combines kitchen theatre with the Botanic Garden setting."},
 		},
 		FAQs: []faqSeed{
-			{QuestionZh: "厨师桌是否有普通桌椅？", QuestionEn: "What seating is used at the Chef's Table?", AnswerZh: "官网说明 Chef's Table 使用常规桌高餐椅。", AnswerEn: "The official site notes regular table-height dining chairs at the Chef's Table."},
+			{QuestionZh: "厨师桌使用什么座椅？", QuestionEn: "What seating is used at the Chef's Table?", AnswerZh: "厨师桌配有常规桌高的餐椅，座位环绕开放式厨房。", AnswerEn: "The Chef's Table uses regular table-height dining chairs arranged around the open kitchen."},
+			{QuestionZh: "体验预计多长时间？", QuestionEn: "How long should guests allow?", AnswerZh: "建议为完整品鉴体验预留约 3.5 小时。", AnswerEn: "Allow approximately 3.5 hours for the full degustation experience."},
 		},
 		Metadata: sourceMetadata(collectedAt, []string{
 			"https://restaurantbotanic.com.au/dining-experience/",
@@ -688,8 +689,8 @@ func penfoldsMagillEstate(collectedAt string) diningImport {
 				{TitleZh: "两档葡萄酒搭配", TitleEn: "Two wine pairing options", DescZh: "官网列出 Sommelier's 与 Icon 两档酒水搭配。", DescEn: "The official site lists Sommelier's and Icon wine pairing options."},
 			},
 			FAQs: []faqSeed{
-				{QuestionZh: "可以 BYO 自带酒吗？", QuestionEn: "Is BYO available?", AnswerZh: "官网 FAQ 显示 Magill Estate Restaurant 不提供 BYO。", AnswerEn: "The official FAQ states that Magill Estate Restaurant is not BYO."},
-				{QuestionZh: "有哪些葡萄酒搭配？", QuestionEn: "What wine pairings are available?", AnswerZh: "官网 FAQ 列出 Icon Wine Pairing AUD 325/人，Sommelier's Wine Pairing AUD 200/人。", AnswerEn: "The official FAQ lists Icon Wine Pairing at AUD 325 pp and Sommelier's Wine Pairing at AUD 200 pp."},
+				{QuestionZh: "可以 BYO 自带酒吗？", QuestionEn: "Is BYO available?", AnswerZh: "餐厅不提供 BYO 自带酒服务。", AnswerEn: "BYO is not available at Magill Estate Restaurant."},
+				{QuestionZh: "有哪些葡萄酒搭配？", QuestionEn: "What wine pairings are available?", AnswerZh: "可选侍酒师葡萄酒搭配 AUD 210/人，或 Icon 葡萄酒搭配 AUD 350/人。", AnswerEn: "Choose the Sommeliers Wine Pairing at AUD 210 per person or the Icon Wine Pairing at AUD 350 per person."},
 			},
 			Metadata: sourceMetadata(collectedAt, []string{
 				"https://southaustralia.com/destinations/adelaide/food-and-drink",
@@ -731,6 +732,10 @@ func penfoldsLunchTasting(collectedAt string) productSeed {
 		Highlights: []highlightSeed{
 			{TitleZh: "周末午餐", TitleEn: "Weekend lunch", DescZh: "官网显示午餐周六、周日 12:00 起。", DescEn: "The official site lists lunch Saturday and Sunday from 12:00."},
 			{TitleZh: "Penfolds 配餐", TitleEn: "Penfolds pairings", DescZh: "可选两档葡萄酒搭配。", DescEn: "Two optional wine pairing tiers are available."},
+		},
+		FAQs: []faqSeed{
+			{QuestionZh: "午餐菜单什么时候供应？", QuestionEn: "When is the lunch menu available?", AnswerZh: "Lunch Tasting Menu 于周六和周日 12:00 起供应。", AnswerEn: "The Lunch Tasting Menu is served from 12:00 on Saturday and Sunday."},
+			{QuestionZh: "可以搭配葡萄酒吗？", QuestionEn: "Are wine pairings available?", AnswerZh: "可选侍酒师葡萄酒搭配 AUD 210/人，或 Icon 葡萄酒搭配 AUD 350/人。", AnswerEn: "Choose the Sommeliers Wine Pairing at AUD 210 per person or the Icon Wine Pairing at AUD 350 per person."},
 		},
 		Metadata: sourceMetadata(collectedAt, []string{"https://www.magillestaterestaurant.com/"}, "https://www.sevenrooms.com/reservations/magillestaterestaurant", map[string]interface{}{
 			"opening_hours": "Lunch Saturday-Sunday from 12:00.",
@@ -807,6 +812,11 @@ func ozinChefsSelection(collectedAt string) productSeed {
 		Highlights: []highlightSeed{
 			{TitleZh: "餐厅代选菜单", TitleEn: "Chef-selected dishes", DescZh: "餐厅从菜单中代选多道菜品，减少点餐决策。", DescEn: "The team chooses dishes from across the menu on the guest's behalf."},
 			{TitleZh: "适合多人", TitleEn: "Suited to groups", DescZh: "官网说明 6 人及以上预订需选择该菜单。", DescEn: "The official menu notes this tasting menu is required for bookings of 6 or more."},
+		},
+		FAQs: []faqSeed{
+			{QuestionZh: "6 人及以上可以单点吗？", QuestionEn: "Can groups of 6 or more order a la carte?", AnswerZh: "6 人及以上的预订需选择 Chef's Selection Tasting Menu。", AnswerEn: "Bookings of 6 or more are required to choose the Chef's Selection Tasting Menu."},
+			{QuestionZh: "可以升级海鲜选项吗？", QuestionEn: "Is a seafood option available?", AnswerZh: "可以，每位加 AUD 20 即可选择海鲜升级。", AnswerEn: "Yes. A seafood option is available for an additional AUD 20 per person."},
+			{QuestionZh: "有饮食禁忌或过敏怎么办？", QuestionEn: "What if I have dietary requirements or allergies?", AnswerZh: "请在预订时告知饮食需求或过敏情况。厨房会尽力协助，但无法保证与所有过敏原完全隔离。", AnswerEn: "Share dietary requirements or allergies when booking. The kitchen will assist where possible but cannot guarantee complete separation from all allergens."},
 		},
 		Metadata: sourceMetadata(collectedAt, []string{"https://www.ozinrestaurant.com.au/food-menu"}, "https://bookings.nowbookit.com/?accountid=aa4ac0a9-72e5-45af-9c83-e24677227011&venueid=12484&theme=light&colors=hex,000000,dbc475", map[string]interface{}{
 			"menu_image":   "https://www.ozinrestaurant.com.au/assets/img/menu/food-menu-13-feb.jpg",
