@@ -47,8 +47,10 @@ type result struct {
 	Suppliers  []supplierResult `json:"suppliers"`
 }
 type supplierResult struct {
-	Name, ProductName     string `json:"name"`
-	SupplierID, ProductID uint   `json:"supplier_id"`
+	Name        string `json:"name"`
+	ProductName string `json:"product_name"`
+	SupplierID  uint   `json:"supplier_id"`
+	ProductID   uint   `json:"product_id"`
 }
 
 func main() {
