@@ -13,7 +13,7 @@ import type { Product, ProductCategory } from '../../types';
 import type { Region } from '../../data/types';
 import { regionService } from '../../services/regionService';
 import { productService, transformApiProduct } from '../../services/productService';
-import { Search } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Headphones, MapPinned, Search } from 'lucide-react';
 import SmartSearchDropdown from '../../components/AI/SmartSearch/SmartSearchDropdown';
 import { TestimonialSection, PartnerSection, CustomBlockSection } from '../../components/Homepage';
 import { homepagePublicService, type HomepageConfig, type CustomBlockConfig, CUSTOM_BLOCK_KEY_PREFIX } from '../../services/homepageService';
@@ -189,6 +189,25 @@ export const HomePage: React.FC<HomePageProps> = ({
         />
       )}
 
+      {isModuleVisible('banner') && carouselSlides.length === 0 && (
+        <section className={styles.fallbackHero} data-testid="home-fallback-hero">
+          <div className={styles.fallbackHeroContent}>
+            <span className={styles.eyebrow}>{isZh ? '南澳精选旅行' : 'CURATED SOUTH AUSTRALIA'}</span>
+            <h1>{isZh ? '为一场真正的南澳旅行，找到更好的打开方式' : 'A more thoughtful way to experience South Australia'}</h1>
+            <p>{isZh ? '在地精选景点体验、美食美酒与特色住宿，用清晰的中英双语信息，陪你从灵感走到出发。' : 'Discover locally curated experiences, food and wine, and remarkable stays with clear bilingual guidance from inspiration to departure.'}</p>
+            <div className={styles.heroActions}>
+              <button type="button" data-testid="home-btn-explore" onClick={() => onNavClick?.('/products?destination=adelaide')}>
+                {isZh ? '开始探索' : 'Start exploring'} <ArrowRight size={18} />
+              </button>
+              <button type="button" className={styles.heroGhostButton} onClick={() => onNavClick?.('/about')}>
+                {isZh ? '了解我们' : 'About EnjoySA'}
+              </button>
+            </div>
+          </div>
+          <span className={styles.heroLocation}><MapPinned size={17} /> Adelaide, South Australia</span>
+        </section>
+      )}
+
       {/* Search Tabs */}
       <section className={styles.searchSection}>
         <div className={styles.searchContainer}>
@@ -251,18 +270,28 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
+      <div className={styles.trustStrip} aria-label={isZh ? '平台服务特色' : 'Platform benefits'}>
+        <span><BadgeCheck size={20} />{isZh ? '本地供应商精选' : 'Curated local operators'}</span>
+        <span><Headphones size={20} />{isZh ? '中英双语服务' : 'Bilingual support'}</span>
+        <span><MapPinned size={20} />{isZh ? '专注南澳旅行' : 'South Australia specialists'}</span>
+      </div>
+
       {/* Region Navigation */}
       {isModuleVisible('regions') && (
-        <section className={styles.section}>
+        <section className={`${styles.section} ${styles.regionsSection}`}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>{t('region.title')}</h2>
-            <p className={styles.sectionSubtitle}>{t('region.subtitle')}</p>
+            <div>
+              <span className={styles.eyebrow}>{isZh ? '从地图出发' : 'EXPLORE THE MAP'}</span>
+              <h2 className={styles.sectionTitle}>{t('region.title')}</h2>
+            </div>
+            <p className={styles.sectionSubtitle}>{isZh ? '从城市文化到酒乡、海岛与壮阔海岸，每个区域都有自己的节奏。' : t('region.subtitle')}</p>
           </div>
           <div className={styles.regionsGrid}>
             {regions.map((region) => (
               <RegionCard
                 key={region.id}
                 region={region}
+                variant="editorial"
                 onClick={onRegionClick}
               />
             ))}
@@ -272,10 +301,15 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Featured Products */}
       {isModuleVisible('featured') && (
-        <section className={styles.section}>
+        <section className={`${styles.section} ${styles.featuredSection}`}>
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>{t('home.featuredProducts')}</h2>
-            <button className={styles.viewAllBtn}>{t('common.viewAll')} →</button>
+            <div>
+              <span className={styles.eyebrow}>{isZh ? '值得专程前往' : 'WORTH THE JOURNEY'}</span>
+              <h2 className={styles.sectionTitle}>{t('home.featuredProducts')}</h2>
+            </div>
+            <button className={styles.viewAllBtn} data-testid="home-btn-view-products" onClick={() => onNavClick?.('/products?destination=adelaide')}>
+              {t('common.viewAll')} <ArrowRight size={17} />
+            </button>
           </div>
           <div className={styles.productsGrid}>
             {(loading || productsLoading) ? (
@@ -285,10 +319,11 @@ export const HomePage: React.FC<HomePageProps> = ({
             ) : featuredProducts.length === 0 ? (
               <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8' }}>{t('common.noData', 'No products yet')}</p>
             ) : (
-              featuredProducts.map((product) => (
+              featuredProducts.slice(0, 8).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
+                  variant="editorial"
                   language={currentLang}
                   onClick={onProductClick}
                 />
@@ -327,6 +362,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Why Choose Us — CMS driven */}
       {isModuleVisible('features') && (
         <section className={styles.features}>
+          <span className={styles.featuresEyebrow}>{isZh ? 'WHY ENJOYSA' : 'WHY ENJOYSA'}</span>
           <h2 className={styles.sectionTitle}>{t('home.whyChooseUs')}</h2>
           <div className={styles.featuresGrid}>
             {homepageConfig && homepageConfig.features.length > 0

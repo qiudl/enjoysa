@@ -316,6 +316,40 @@
   justify-content: space-between;
 }
 
+.editorial {
+  border: 1px solid rgba(42, 58, 50, 0.09);
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(29, 46, 39, 0.07);
+}
+
+.editorial .imageWrapper {
+  aspect-ratio: 16 / 11;
+}
+
+.editorial .content {
+  min-height: 235px;
+  padding: 1.15rem;
+}
+
+.editorial .title {
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
+  font-size: 1.06rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.editorial .amount {
+  color: #a55c36;
+  font-family: Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.editorial .feature {
+  background: #eef5f0;
+  color: #35604d;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .horizontal {

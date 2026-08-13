@@ -2,7 +2,7 @@
   position: relative;
   height: 70vh;
   min-height: 500px;
-  max-height: 700px;
+  max-height: 760px;
   overflow: hidden;
   cursor: pointer;
 }
@@ -28,33 +28,38 @@
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.7) 0%,
-    rgba(0, 0, 0, 0.1) 50%,
-    rgba(0, 0, 0, 0.2) 100%
+    rgba(8, 27, 20, 0.78) 0%,
+    rgba(8, 27, 20, 0.16) 54%,
+    rgba(8, 27, 20, 0.22) 100%
   );
 }
 
 .content {
   position: relative;
   z-index: 1;
-  text-align: center;
-  padding: 0 2rem 5rem;
-  max-width: 800px;
+  width: min(1240px, calc(100% - 4rem));
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 0 6.5rem;
+  text-align: left;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 700;
+  max-width: 850px;
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
+  font-size: clamp(3rem, 5.8vw, 5.8rem);
+  font-weight: 500;
   color: white;
   margin: 0 0 1rem;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-  line-height: 1.4;
+  line-height: 1.04;
+  letter-spacing: -0.05em;
 }
 
 .tags {
   display: flex;
   gap: 0.75rem;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 
@@ -63,7 +68,7 @@
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 2rem;
+  border-radius: 0;
   color: white;
   font-size: 0.875rem;
   font-weight: 500;
@@ -142,11 +147,12 @@
   }
 
   .title {
-    font-size: 1.5rem;
+    font-size: clamp(2.5rem, 12vw, 4rem);
   }
 
   .content {
-    padding: 0 1.5rem 4rem;
+    width: calc(100% - 2rem);
+    padding: 0 0 4.5rem;
   }
 
   .arrow {

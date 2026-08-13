@@ -6,15 +6,16 @@ import styles from './RegionCard.module.css';
 
 export interface RegionCardProps {
   region: Region;
+  variant?: 'default' | 'editorial';
   onClick?: (region: Region) => void;
 }
 
-export const RegionCard: React.FC<RegionCardProps> = ({ region, onClick }) => {
+export const RegionCard: React.FC<RegionCardProps> = ({ region, variant = 'default', onClick }) => {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language?.startsWith('zh');
 
   return (
-    <div className={styles.card} onClick={() => onClick?.(region)}>
+    <div className={`${styles.card} ${styles[variant]}`} onClick={() => onClick?.(region)} role="button" tabIndex={0}>
       <div
         className={styles.image}
         style={{ backgroundImage: `url(${region.image})` }}

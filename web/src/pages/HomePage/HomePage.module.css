@@ -2,22 +2,136 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: #f8f5ef;
+  color: #1d2c25;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+.fallbackHero {
+  position: relative;
+  min-height: 660px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(10, 30, 23, 0.88) 0%, rgba(10, 30, 23, 0.55) 51%, rgba(10, 30, 23, 0.12) 100%),
+    url('https://assets.atdw-online.com.au/images/0cdf1ff0d642973b3f8942d8cf0e88d9.jpeg?fit=crop&h=1100&w=2200') center 52% / cover;
+}
+
+.fallbackHero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 180px;
+  background: linear-gradient(transparent, rgba(8, 24, 19, 0.45));
+}
+
+.fallbackHeroContent {
+  position: relative;
+  z-index: 1;
+  width: min(1240px, calc(100% - 4rem));
+  margin: 0 auto;
+  padding: 9rem 0 7.5rem;
+  color: #fff;
+}
+
+.eyebrow,
+.featuresEyebrow {
+  display: inline-block;
+  color: #a65c36;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.fallbackHero .eyebrow {
+  color: #f0cb8b;
+}
+
+.fallbackHero h1 {
+  max-width: 900px;
+  margin: 1.15rem 0 0;
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
+  font-size: clamp(3.3rem, 6.2vw, 6.2rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.fallbackHero p {
+  max-width: 690px;
+  margin: 1.8rem 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.08rem;
+  line-height: 1.8;
+}
+
+.heroActions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 2.2rem;
+}
+
+.heroActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 48px;
+  padding: 0.85rem 1.35rem;
+  border: 1px solid #edc786;
+  border-radius: 0;
+  background: #edc786;
+  color: #173429;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.heroActions button:hover {
+  transform: translateY(-2px);
+  background: #f5d79f;
+}
+
+.heroActions .heroGhostButton {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.heroLocation {
+  position: absolute;
+  z-index: 1;
+  right: max(2rem, calc((100vw - 1240px) / 2));
+  bottom: 3.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
 }
 
 /* Search Section (below banner) */
 .searchSection {
   position: relative;
   z-index: 10;
-  margin-top: -2rem;
+  margin-top: -3.5rem;
   padding: 0 2rem;
 }
 
 .searchContainer {
-  max-width: 640px;
+  max-width: 780px;
   margin: 0 auto;
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(32, 57, 46, 0.08);
+  border-radius: 1.2rem;
+  box-shadow: 0 24px 60px rgba(21, 43, 34, 0.18);
   overflow: hidden;
 }
 
@@ -29,7 +143,7 @@
 
 .searchTab {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   border: none;
   background: none;
   font-size: 0.9375rem;
@@ -46,7 +160,7 @@
 }
 
 .searchTabActive {
-  color: var(--color-primary, #2563eb);
+  color: #245443;
   font-weight: 600;
 }
 
@@ -57,13 +171,33 @@
   left: 1rem;
   right: 1rem;
   height: 2px;
-  background: var(--color-primary, #2563eb);
+  background: #a65c36;
   border-radius: 1px;
 }
 
 .searchBody {
-  padding: 0.75rem;
+  padding: 1rem;
 }
+
+.trustStrip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2rem, 7vw, 6rem);
+  padding: 5.5rem 2rem 2.5rem;
+  background: #f8f5ef;
+  color: #40554a;
+}
+
+.trustStrip span {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.trustStrip svg { color: #a65c36; }
 
 /* Hotel Search Form (inside search container) */
 .hotelSearchForm {
@@ -113,7 +247,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.625rem 1rem;
-  background: var(--color-primary, #2563eb);
+  background: #1d4939;
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -125,13 +259,13 @@
 }
 
 .hotelSearchBtn:hover {
-  background: #1d4ed8;
+  background: #13382b;
 }
 
 /* Sections */
 .section {
-  padding: 4rem 2rem;
-  max-width: 1280px;
+  padding: 6.5rem 2rem;
+  max-width: 1304px;
   margin: 0 auto;
   width: 100%;
 }
@@ -140,30 +274,38 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 2rem;
+  margin-bottom: 2.6rem;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .sectionTitle {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-text, #1a1a2e);
-  margin: 0;
+  margin: 0.55rem 0 0;
+  color: #1d2c25;
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
 }
 
 .sectionSubtitle {
-  font-size: 0.9375rem;
-  color: var(--color-text-muted, #64748b);
-  margin: 0;
+  max-width: 500px;
+  color: #66736c;
+  font-size: 0.96rem;
+  line-height: 1.75;
+  margin: 0 0 0.25rem;
 }
 
 .viewAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   background: none;
   border: none;
-  color: var(--color-primary, #0066ff);
-  font-size: 1rem;
-  font-weight: 500;
+  color: #8d4d30;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -171,15 +313,26 @@
 }
 
 .viewAllBtn:hover {
-  background: var(--color-primary-light, rgba(0, 102, 255, 0.1));
+  background: rgba(166, 92, 54, 0.08);
+}
+
+.regionsSection { padding-top: 4rem; }
+
+.featuredSection {
+  max-width: none;
+  padding-right: max(2rem, calc((100vw - 1240px) / 2));
+  padding-left: max(2rem, calc((100vw - 1240px) / 2));
+  background: #edf1eb;
 }
 
 /* Regions Grid - 7 cards */
 .regionsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  gap: 1.35rem;
 }
+
+.regionsGrid > :first-child { grid-column: span 2; }
 
 @media (max-width: 1024px) {
   .regionsGrid {
@@ -203,7 +356,7 @@
 .productsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 @media (max-width: 1024px) {
@@ -226,8 +379,8 @@
 
 /* Categories Grid */
 .categoriesSection {
-  padding-top: 5rem;
-  padding-bottom: 5rem;
+  padding-top: 7rem;
+  padding-bottom: 7rem;
 }
 
 .categoriesHeader {
@@ -240,7 +393,7 @@
 
 .categoriesHeader .sectionTitle {
   margin-top: 0.55rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 400;
   letter-spacing: -0.035em;
@@ -304,14 +457,18 @@
 
 /* Features Section */
 .features {
-  background: var(--color-surface, #f8fafc);
-  padding: 4rem 2rem;
+  background: #183b31;
+  padding: 6.5rem max(2rem, calc((100vw - 1240px) / 2));
+  color: white;
 }
 
 .features .sectionTitle {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 3.3rem;
+  color: white;
 }
+
+.featuresEyebrow { display: block; color: #efc983; text-align: center; }
 
 .featuresGrid {
   display: grid;
@@ -335,16 +492,18 @@
 
 .featureCard {
   text-align: center;
-  padding: 2rem 1.5rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 2.3rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: none;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .featureCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.13);
 }
 
 .featureIcon {
@@ -356,13 +515,13 @@
 .featureCard h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-text, #1a1a2e);
+  color: white;
   margin: 0 0 0.5rem;
 }
 
 .featureCard p {
   font-size: 0.875rem;
-  color: var(--color-text-muted, #64748b);
+  color: rgba(255, 255, 255, 0.64);
   margin: 0;
   line-height: 1.5;
 }
@@ -380,6 +539,10 @@
   .searchSection {
     padding: 0 1rem;
   }
+
+  .fallbackHeroContent { width: calc(100% - 2rem); }
+  .heroLocation { display: none; }
+  .trustStrip { flex-wrap: wrap; gap: 1rem 2rem; padding-top: 5rem; }
 }
 
 @media (max-width: 480px) {
@@ -388,7 +551,7 @@
   }
 
   .features {
-    padding: 2rem 1rem;
+    padding: 4.5rem 1rem;
   }
 
   .sectionHeader {
@@ -401,6 +564,14 @@
     border-radius: 0.75rem;
   }
 
+  .fallbackHero { min-height: 600px; }
+  .fallbackHeroContent { padding: 7rem 0 6.5rem; }
+  .fallbackHero h1 { font-size: clamp(2.75rem, 13vw, 4rem); }
+  .fallbackHero p { font-size: 0.96rem; line-height: 1.65; }
+  .heroActions { flex-direction: column; align-items: stretch; }
+  .trustStrip { justify-content: flex-start; padding-right: 1.25rem; padding-left: 1.25rem; }
+  .regionsGrid > :first-child { grid-column: auto; }
+
   .hotelSearchForm {
     flex-direction: column;
   }
@@ -409,4 +580,9 @@
     font-size: 0.875rem;
     padding: 0.625rem 0.75rem;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroActions button,
+  .featureCard { transition: none; }
 }

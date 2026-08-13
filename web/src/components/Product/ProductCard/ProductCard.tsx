@@ -18,7 +18,7 @@ export interface ProductCardProps {
   /** 加入购物车 */
   onAddToCart?: (product: Product) => void;
   /** 变体样式 */
-  variant?: 'default' | 'compact' | 'horizontal';
+  variant?: 'default' | 'compact' | 'horizontal' | 'editorial';
   /** 语言 */
   language?: 'zh' | 'en';
 }

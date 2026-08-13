@@ -1,14 +1,16 @@
 /* PartnerSection Styles */
 .section {
-  padding: 4rem 1.5rem;
-  max-width: 1200px;
+  padding: 6.5rem 1.5rem 7rem;
+  max-width: none;
   margin: 0 auto;
+  background: #fff;
 }
 
 .sectionTitle {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--color-text, #1a1a2e);
+  font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-weight: 500;
+  color: #1d2c25;
   text-align: center;
   margin: 0 0 2.5rem;
 }
@@ -20,6 +22,8 @@
   justify-content: center;
   align-items: center;
   gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Logo link */
@@ -29,7 +33,11 @@
   justify-content: center;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  transition: background 0.2s;
+  min-width: 150px;
+  min-height: 86px;
+  border: 1px solid #ece6dc;
+  background: #fff;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .featuredLogoLink {
@@ -54,7 +62,9 @@
 }
 
 .logoLink:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(29, 46, 39, 0.08);
+  transform: translateY(-2px);
 }
 
 /* Logo image */
