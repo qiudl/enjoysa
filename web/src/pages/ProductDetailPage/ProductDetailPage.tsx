@@ -258,6 +258,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const title = getLocalizedField({ zh: product.title, en: product.titleEn }, currentLang, { strict: previewMode }) ?? '';
   const location = getLocalizedField({ zh: product.location, en: product.locationEn }, currentLang, { strict: previewMode }) ?? '';
   const duration = getLocalizedField({ zh: product.duration, en: product.durationEn }, currentLang, { strict: previewMode }) ?? '';
+  const description = getLocalizedField({ zh: product.description, en: product.descriptionEn }, currentLang, { strict: previewMode }) ?? '';
+  const highlights = isZh ? product.highlights : (product.highlightsEn || product.highlights);
   const meetingPoint = product.meetingPoint;
 
   const canBook = selectedDate && (selectedDateSlots.length === 0 || selectedScheduleId !== null);
@@ -328,7 +330,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {product.instantConfirmation && <span className={styles.badge}>⚡ {t('product.instantConfirmation')}</span>}
                 {product.freeCancellation && <span className={styles.badge}>✓ {t('product.freeCancellation')}</span>}
               </div>
-              <p className={styles.description}>{product.description}</p>
+              <p className={styles.description}>{description}</p>
               <div className={styles.infoGrid}>
                 <div className={styles.infoItem}>
                   <span className={styles.infoLabel}>⏱ {t('product.duration')}</span>
@@ -353,27 +355,28 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </section>
             )}
 
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>{t('product.highlights')}</h2>
-              <ul className={styles.highlightsList}>
-                {product.highlights.map((item, index) => <li key={index}>✨ {item}</li>)}
-              </ul>
-            </section>
+            {highlights.length > 0 && (
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>{t('product.highlights')}</h2>
+                <ul className={styles.highlightsList}>
+                  {highlights.map((item, index) => <li key={index}>✨ {item}</li>)}
+                </ul>
+              </section>
+            )}
 
-            <div className={styles.inclusionsGrid}>
+            {(product.faqs?.length ?? 0) > 0 && (
               <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>{t('product.inclusions')}</h2>
-                <ul className={styles.list}>
-                  {product.inclusions.map((item, index) => <li key={index} className={styles.included}>✓ {item}</li>)}
-                </ul>
+                <h2 className={styles.sectionTitle}>{isZh ? '常见问题' : 'Frequently Asked Questions'}</h2>
+                <div className={styles.faqList}>
+                  {product.faqs?.map((faq, index) => (
+                    <article className={styles.faqItem} key={index}>
+                      <h3>{isZh ? faq.question : (faq.questionEn || faq.question)}</h3>
+                      <p>{isZh ? faq.answer : (faq.answerEn || faq.answer)}</p>
+                    </article>
+                  ))}
+                </div>
               </section>
-              <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>{t('product.exclusions')}</h2>
-                <ul className={styles.list}>
-                  {product.exclusions.map((item, index) => <li key={index} className={styles.excluded}>✗ {item}</li>)}
-                </ul>
-              </section>
-            </div>
+            )}
 
             {/* ========== AI Enhanced Sections ========== */}
             {/* REQ-20260510-0001 F1: previewMode 下禁用 lazy 子组件，减少二次请求 + 避免预览时混入推荐位 */}

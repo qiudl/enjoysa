@@ -51,6 +51,7 @@ export interface Product {
   durationEn?: string;
   highlights: string[];
   highlightsEn?: string[];
+  faqs?: ProductFAQ[];
   inclusions: string[];
   exclusions: string[];
   category: ProductCategory;
@@ -63,6 +64,13 @@ export interface Product {
   supplierId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductFAQ {
+  question: string;
+  questionEn?: string;
+  answer: string;
+  answerEn?: string;
 }
 
 export interface ProductCategory {

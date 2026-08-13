@@ -178,6 +178,9 @@ export function transformApiProduct(p: ApiProduct): Product {
     // ignore
   }
 
+  const formatHighlight = (title: string, description: string) =>
+    description ? `${title} — ${description}` : title;
+
   return {
     id: String(p.id),
     title: p.name_zh,
@@ -192,8 +195,14 @@ export function transformApiProduct(p: ApiProduct): Product {
     location: p.address_zh,
     locationEn: p.address_en,
     duration: p.duration,
-    highlights: p.highlights?.map((h) => h.title_zh) || [],
-    highlightsEn: p.highlights?.map((h) => h.title_en) || [],
+    highlights: p.highlights?.map((h) => formatHighlight(h.title_zh, h.desc_zh)) || [],
+    highlightsEn: p.highlights?.map((h) => formatHighlight(h.title_en, h.desc_en)) || [],
+    faqs: p.faqs?.map((faq) => ({
+      question: faq.question_zh,
+      questionEn: faq.question_en,
+      answer: faq.answer_zh,
+      answerEn: faq.answer_en,
+    })) || [],
     inclusions: [],
     exclusions: [],
     category: p.category
