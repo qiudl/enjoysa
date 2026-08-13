@@ -49,7 +49,11 @@ func main() {
 			}
 			ids = append(ids, id)
 		}
-		return nil
+		// Featured products sort ascending. Keep these two at 1 and 2 while
+		// preserving the relative order of all existing recommendations after them.
+		return tx.Model(&productmodel.Product{}).
+			Where("is_featured = ? AND id NOT IN ? AND sort_order < ?", true, ids, 10).
+			Update("sort_order", gorm.Expr("sort_order + 10")).Error
 	})
 	if err != nil {
 		log.Fatal(err)
