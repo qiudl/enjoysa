@@ -2841,8 +2841,8 @@
   "homepage": {
     "testimonials": "用户评价",
     "testimonialsSubtitle": "听听他们怎么说",
-    "partners": "探索南澳各地",
-    "partnersSubtitle": "按地区探索",
+    "partners": "合作伙伴",
+    "partnersSubtitle": "",
     "popularActivities": "热门活动",
     "popularSubtitle": "大家都在玩",
     "orderCount": "{{count}} 人已预订",

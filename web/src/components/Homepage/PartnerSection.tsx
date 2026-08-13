@@ -16,7 +16,22 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith('zh');
 
-  if (partners.length === 0) return null;
+  const featuredPartners: PartnerSectionProps['partners'] = [
+    {
+      id: -1,
+      name: 'Journey Beyond',
+      logo: 'https://www.journeybeyondrail.com.au/wp-content/themes/journey-beyond/built/images/jb_logo.png',
+      website: 'https://www.journeybeyondrail.com.au/',
+    },
+    {
+      id: -2,
+      name: 'SeaLink Kangaroo Island',
+      logo: 'https://cdn.productreview.com.au/resize/listing-picture/de07da50-85df-59c8-93c5-c17519d2fc53?height=600&v=2&width=600',
+      website: 'https://www.sealink.com.au/kangaroo-island/',
+    },
+  ];
+  const allPartners = [...featuredPartners, ...partners.filter((partner) =>
+    !featuredPartners.some((featured) => featured.name.toLowerCase() === partner.name.toLowerCase()))];
 
   const renderLogo = (partner: PartnerSectionProps['partners'][number]) => {
     const img = (
@@ -33,7 +48,7 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
         <Link
           key={partner.id}
           to={partner.website}
-          className={styles.logoLink}
+          className={`${styles.logoLink} ${partner.id < 0 ? styles.featuredLogoLink : ''}`}
           title={partner.name}
         >
           {img}
@@ -47,7 +62,7 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
         href={partner.website}
         target="_blank"
         rel="noopener noreferrer"
-        className={styles.logoLink}
+        className={`${styles.logoLink} ${partner.id < 0 ? styles.featuredLogoLink : ''}`}
         title={partner.name}
       >
         {img}
@@ -58,12 +73,9 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>
-        {t('homepage.partners', { defaultValue: isZh ? '探索南澳各地' : 'Destinations across South Australia' })}
+        {t('homepage.partners', { defaultValue: isZh ? '合作伙伴' : 'Our Partners' })}
       </h2>
-      <p className={styles.sectionSubtitle}>
-        {t('homepage.partnersSubtitle', { defaultValue: isZh ? '按地区探索' : 'Explore by region' })}
-      </p>
-      <div className={styles.logoRow}>{partners.map(renderLogo)}</div>
+      <div className={styles.logoRow}>{allPartners.map(renderLogo)}</div>
     </section>
   );
 };

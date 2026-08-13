@@ -2846,8 +2846,8 @@
   "homepage": {
     "testimonials": "Testimonials",
     "testimonialsSubtitle": "What our customers say",
-    "partners": "Destinations across South Australia",
-    "partnersSubtitle": "Explore by region",
+    "partners": "Our Partners",
+    "partnersSubtitle": "",
     "popularActivities": "Popular Activities",
     "popularSubtitle": "Most popular experiences",
     "orderCount": "{{count}} booked",
