@@ -101,20 +101,22 @@ type CreateProductRequest struct {
 	// 不能再用 binding:"required"。改用 ValidateAtLeastOneName() 在 handler
 	// 入口校验"至少填一种"，缺失的那一边由 maybeEnqueueZhToEn /
 	// maybeEnqueueEnToZh 自动翻译补齐。
-	NameZh        string  `json:"name_zh"`
-	NameEn        string  `json:"name_en"`
-	RegionID      uint    `json:"region_id"`
-	CategoryID    uint    `json:"category_id"`
-	PriceFrom     float64 `json:"price_from"`
-	SummaryZh     string  `json:"summary_zh"`
-	SummaryEn     string  `json:"summary_en"`
-	DescriptionZh string  `json:"description_zh"`
-	DescriptionEn string  `json:"description_en"`
-	AddressZh     string  `json:"address_zh"`
-	AddressEn     string  `json:"address_en"`
-	Duration      string  `json:"duration"`
-	GroupSize     string  `json:"group_size"`
-	Tags          string  `json:"tags"`
+	NameZh          string  `json:"name_zh"`
+	NameEn          string  `json:"name_en"`
+	RegionID        uint    `json:"region_id"`
+	CategoryID      uint    `json:"category_id"`
+	PriceFrom       float64 `json:"price_from"`
+	SummaryZh       string  `json:"summary_zh"`
+	SummaryEn       string  `json:"summary_en"`
+	DescriptionZh   string  `json:"description_zh"`
+	DescriptionEn   string  `json:"description_en"`
+	BookingNoticeZh string  `json:"booking_notice_zh"`
+	BookingNoticeEn string  `json:"booking_notice_en"`
+	AddressZh       string  `json:"address_zh"`
+	AddressEn       string  `json:"address_en"`
+	Duration        string  `json:"duration"`
+	GroupSize       string  `json:"group_size"`
+	Tags            string  `json:"tags"`
 
 	// REQ-20260511-0006: supplier 可上传 banner 图作为资产准备。
 	// 是否真出现在首页 carousel 由 admin 控（is_featured + carousel_rank）。
@@ -201,22 +203,24 @@ func (h *SupplierProductHandler) CreateProduct(c *gin.Context) {
 	}
 
 	product := &model.Product{
-		NameZh:        req.NameZh,
-		NameEn:        req.NameEn,
-		SupplierID:    supplierID,
-		RegionID:      req.RegionID,
-		CategoryID:    req.CategoryID,
-		PriceFrom:     req.PriceFrom,
-		SummaryZh:     req.SummaryZh,
-		SummaryEn:     req.SummaryEn,
-		DescriptionZh: req.DescriptionZh,
-		DescriptionEn: req.DescriptionEn,
-		AddressZh:     req.AddressZh,
-		AddressEn:     req.AddressEn,
-		Duration:      req.Duration,
-		GroupSize:     req.GroupSize,
-		Tags:          req.Tags,
-		Status:        model.ProductStatusDraft,
+		NameZh:          req.NameZh,
+		NameEn:          req.NameEn,
+		SupplierID:      supplierID,
+		RegionID:        req.RegionID,
+		CategoryID:      req.CategoryID,
+		PriceFrom:       req.PriceFrom,
+		SummaryZh:       req.SummaryZh,
+		SummaryEn:       req.SummaryEn,
+		DescriptionZh:   req.DescriptionZh,
+		DescriptionEn:   req.DescriptionEn,
+		BookingNoticeZh: req.BookingNoticeZh,
+		BookingNoticeEn: req.BookingNoticeEn,
+		AddressZh:       req.AddressZh,
+		AddressEn:       req.AddressEn,
+		Duration:        req.Duration,
+		GroupSize:       req.GroupSize,
+		Tags:            req.Tags,
+		Status:          model.ProductStatusDraft,
 	}
 	if req.BannerImage != nil {
 		product.BannerImage = *req.BannerImage
@@ -337,6 +341,8 @@ func (h *SupplierProductHandler) UpdateProduct(c *gin.Context) {
 	product.SummaryEn = req.SummaryEn
 	product.DescriptionZh = req.DescriptionZh
 	product.DescriptionEn = req.DescriptionEn
+	product.BookingNoticeZh = req.BookingNoticeZh
+	product.BookingNoticeEn = req.BookingNoticeEn
 	product.AddressZh = req.AddressZh
 	product.AddressEn = req.AddressEn
 	product.Duration = req.Duration

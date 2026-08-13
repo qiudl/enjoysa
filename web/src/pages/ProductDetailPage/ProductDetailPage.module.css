@@ -228,6 +228,32 @@
   line-height: 1.5;
 }
 
+.bookingNotice {
+  border-left: 4px solid #b8894f;
+  background: #fbf7ef;
+}
+
+.bookingNoticeContent {
+  display: grid;
+  gap: 12px;
+}
+
+.bookingNoticeContent p {
+  position: relative;
+  margin: 0;
+  padding-left: 22px;
+  color: #4d5c55;
+  line-height: 1.75;
+}
+
+.bookingNoticeContent p::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: #a4763f;
+  font-weight: 700;
+}
+
 .faqList {
   display: flex;
   flex-direction: column;

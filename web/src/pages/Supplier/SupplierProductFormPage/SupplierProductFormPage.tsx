@@ -50,6 +50,8 @@ interface FormData {
   summary_en: string;
   description_zh: string;
   description_en: string;
+  booking_notice_zh: string;
+  booking_notice_en: string;
   region_id: number;
   category_id: number;
   price_from: string;
@@ -170,6 +172,7 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
     name_zh: '', name_en: '',
     summary_zh: '', summary_en: '',
     description_zh: '', description_en: '',
+    booking_notice_zh: '', booking_notice_en: '',
     region_id: 0, category_id: 0,
     price_from: '', duration: '', group_size: '',
     address_zh: '', address_en: '', tags: '',
@@ -213,6 +216,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
           summary_en: p.summary_en || '',
           description_zh: p.description_zh || '',
           description_en: p.description_en || '',
+          booking_notice_zh: p.booking_notice_zh || '',
+          booking_notice_en: p.booking_notice_en || '',
           region_id: p.region_id || 0,
           category_id: p.category_id || 0,
           price_from: p.price_from ? String(p.price_from) : '',
@@ -283,6 +288,8 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
       summary_en: form.summary_en,
       description_zh: form.description_zh,
       description_en: form.description_en,
+      booking_notice_zh: form.booking_notice_zh,
+      booking_notice_en: form.booking_notice_en,
       region_id: form.region_id || undefined,
       category_id: form.category_id || undefined,
       price_from: parseFloat(form.price_from) || 0,
@@ -597,6 +604,21 @@ export const SupplierProductFormPage: React.FC<SupplierProductFormPageProps> = (
         <textarea className={styles.textarea} rows={4} value={form.description_en}
           onChange={(e) => updateField('description_en', e.target.value)}
           placeholder={t('supplier.productForm.descriptionPlaceholder')} />
+      </div>
+
+      <div className={styles.formRow}>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>预订须知</label>
+          <textarea data-testid="supplier-product-booking-notice-zh" className={styles.textarea} rows={6}
+            value={form.booking_notice_zh} onChange={(e) => updateField('booking_notice_zh', e.target.value)}
+            placeholder="每行一条：集合时间、年龄限制、携带物品、改期取消等" />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Booking information</label>
+          <textarea data-testid="supplier-product-booking-notice-en" className={styles.textarea} rows={6}
+            value={form.booking_notice_en} onChange={(e) => updateField('booking_notice_en', e.target.value)}
+            placeholder="One item per line: arrival, age limits, what to bring, changes and cancellations" />
+        </div>
       </div>
 
       <div className={styles.formRow}>

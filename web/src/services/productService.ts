@@ -79,6 +79,8 @@ export interface ApiProduct {
   summary_en: string;
   description_zh: string;
   description_en: string;
+  booking_notice_zh?: string;
+  booking_notice_en?: string;
   address_zh: string;
   address_en: string;
   duration: string;
@@ -187,6 +189,8 @@ export function transformApiProduct(p: ApiProduct): Product {
     titleEn: p.name_en,
     description: p.description_zh || p.summary_zh,
     descriptionEn: p.description_en || p.summary_en,
+    bookingNotice: p.booking_notice_zh || '',
+    bookingNoticeEn: p.booking_notice_en || '',
     images,
     price: p.price_from,
     currency: (p.currency || 'AUD') as 'AUD' | 'CNY',
@@ -220,7 +224,7 @@ export function transformApiProduct(p: ApiProduct): Product {
           ? 'limited'
           : 'available',
     instantConfirmation: true,
-    freeCancellation: true,
+    freeCancellation: /(?:免费取消|free cancellation)/i.test(`${p.booking_notice_zh || ''} ${p.booking_notice_en || ''}`),
     supplierId: String(p.supplier_id),
     createdAt: p.created_at,
     updatedAt: p.updated_at,

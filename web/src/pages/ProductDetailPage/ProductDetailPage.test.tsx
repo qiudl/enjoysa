@@ -17,6 +17,8 @@ const product = {
   titleEn: 'Gyroplane Flight',
   description: '公开产品描述',
   descriptionEn: 'Public product description',
+  bookingNotice: '请提前15分钟到达，并携带带照片的身份证件。',
+  bookingNoticeEn: 'Arrive 15 minutes early and bring photo identification.',
   images: [],
   price: 220,
   currency: 'AUD',
@@ -53,6 +55,8 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText(/在教练陪同下完成40分钟旋翼机飞行/)).toBeInTheDocument();
     expect(screen.getByText('需要提前预订吗？')).toBeInTheDocument();
     expect(screen.getByText('建议提前预订。')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '预订须知' })).toBeInTheDocument();
+    expect(screen.getByText(/提前15分钟到达/)).toBeInTheDocument();
     expect(screen.queryByText('product.inclusions')).not.toBeInTheDocument();
     expect(screen.queryByText('product.exclusions')).not.toBeInTheDocument();
     expect(screen.queryByText('不应显示的费用包含')).not.toBeInTheDocument();

@@ -259,6 +259,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const location = getLocalizedField({ zh: product.location, en: product.locationEn }, currentLang, { strict: previewMode }) ?? '';
   const duration = getLocalizedField({ zh: product.duration, en: product.durationEn }, currentLang, { strict: previewMode }) ?? '';
   const description = getLocalizedField({ zh: product.description, en: product.descriptionEn }, currentLang, { strict: previewMode }) ?? '';
+  const bookingNotice = getLocalizedField({ zh: product.bookingNotice, en: product.bookingNoticeEn }, currentLang, { strict: previewMode }) ?? '';
   const highlights = isZh ? product.highlights : (product.highlightsEn || product.highlights);
   const meetingPoint = product.meetingPoint;
 
@@ -361,6 +362,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <ul className={styles.highlightsList}>
                   {highlights.map((item, index) => <li key={index}>✨ {item}</li>)}
                 </ul>
+              </section>
+            )}
+
+            {bookingNotice && (
+              <section className={`${styles.section} ${styles.bookingNotice}`} data-testid="product-booking-notice">
+                <h2 className={styles.sectionTitle}>{isZh ? '预订须知' : 'Booking information'}</h2>
+                <div className={styles.bookingNoticeContent}>
+                  {bookingNotice.split(/\n+/).filter(Boolean).map((item, index) => (
+                    <p key={index}>{item.replace(/^[-•]\s*/, '')}</p>
+                  ))}
+                </div>
               </section>
             )}
 

@@ -1,0 +1,3 @@
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS booking_notice_zh TEXT NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS booking_notice_en TEXT NOT NULL DEFAULT '';

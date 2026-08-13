@@ -17,6 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/ && \
 	CGO_ENABLED=0 GOOS=linux go build -o /import-regional-food-drink ./cmd/import-regional-food-drink/ && \
 	CGO_ENABLED=0 GOOS=linux go build -o /import-luxury-accommodation ./cmd/import-luxury-accommodation/ && \
 	CGO_ENABLED=0 GOOS=linux go build -o /import-curated-sa-experiences ./cmd/import-curated-sa-experiences/
+RUN CGO_ENABLED=0 GOOS=linux go build -o /backfill-booking-notices ./cmd/backfill-booking-notices/
 
 FROM alpine:3.19
 
@@ -27,6 +28,7 @@ RUN apk add --no-cache ca-certificates tzdata wget
 
 WORKDIR /app
 COPY --from=builder /server /seed /import-restaurant-botanic /import-barossa-restaurants /import-regional-food-drink /import-luxury-accommodation /import-curated-sa-experiences ./
+COPY --from=builder /backfill-booking-notices ./
 COPY configs/ configs/
 COPY assets/ assets/
 

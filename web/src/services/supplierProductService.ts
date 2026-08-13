@@ -29,6 +29,8 @@ export interface ProductPayload {
   summary_en?: string;
   description_zh?: string;
   description_en?: string;
+  booking_notice_zh?: string;
+  booking_notice_en?: string;
   address_zh?: string;
   address_en?: string;
   duration?: string;

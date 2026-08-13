@@ -236,6 +236,8 @@ export interface EnTranslationStatus {
     name_en?: string;
     summary_en?: string;
     description_en?: string;
+    booking_notice_zh?: string;
+    booking_notice_en?: string;
     address_en?: string;
   };
 }

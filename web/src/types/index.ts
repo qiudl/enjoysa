@@ -39,6 +39,8 @@ export interface Product {
   titleEn?: string;
   description: string;
   descriptionEn?: string;
+  bookingNotice?: string;
+  bookingNoticeEn?: string;
   images: string[];
   price: number;
   originalPrice?: number;

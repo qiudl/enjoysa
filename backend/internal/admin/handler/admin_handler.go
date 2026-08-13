@@ -1337,22 +1337,24 @@ func (h *AdminHandler) CreateProduct(c *gin.Context) {
 	}
 
 	product := &productmodel.Product{
-		NameZh:        req.NameZh,
-		NameEn:        req.NameEn,
-		SupplierID:    req.SupplierID,
-		RegionID:      req.RegionID,
-		CategoryID:    req.CategoryID,
-		PriceFrom:     req.PriceFrom,
-		SummaryZh:     req.SummaryZh,
-		SummaryEn:     req.SummaryEn,
-		DescriptionZh: req.DescriptionZh,
-		DescriptionEn: req.DescriptionEn,
-		AddressZh:     req.AddressZh,
-		AddressEn:     req.AddressEn,
-		Duration:      req.Duration,
-		GroupSize:     req.GroupSize,
-		Tags:          req.Tags,
-		Status:        status,
+		NameZh:          req.NameZh,
+		NameEn:          req.NameEn,
+		SupplierID:      req.SupplierID,
+		RegionID:        req.RegionID,
+		CategoryID:      req.CategoryID,
+		PriceFrom:       req.PriceFrom,
+		SummaryZh:       req.SummaryZh,
+		SummaryEn:       req.SummaryEn,
+		DescriptionZh:   req.DescriptionZh,
+		DescriptionEn:   req.DescriptionEn,
+		BookingNoticeZh: req.BookingNoticeZh,
+		BookingNoticeEn: req.BookingNoticeEn,
+		AddressZh:       req.AddressZh,
+		AddressEn:       req.AddressEn,
+		Duration:        req.Duration,
+		GroupSize:       req.GroupSize,
+		Tags:            req.Tags,
+		Status:          status,
 		// REQ-20260509-0019: 凡走 admin endpoint 创建的商品都标 admin_proxy；
 		// supplier 自录走另一条 supplier handler 路径，不会经过这里。
 		CreatedVia: "admin_proxy",
@@ -1507,6 +1509,8 @@ func (h *AdminHandler) UpdateProduct(c *gin.Context) {
 	product.SummaryEn = req.SummaryEn
 	product.DescriptionZh = req.DescriptionZh
 	product.DescriptionEn = req.DescriptionEn
+	product.BookingNoticeZh = req.BookingNoticeZh
+	product.BookingNoticeEn = req.BookingNoticeEn
 	product.AddressZh = req.AddressZh
 	product.AddressEn = req.AddressEn
 	product.Duration = req.Duration
@@ -3043,10 +3047,10 @@ func (h *AdminHandler) UpdateProductManualOverride(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"id":                  id,
-		"field":               req.Field,
-		"manual_override_zh":  req.Zh != nil,
-		"manual_override_en":  req.En != nil,
+		"id":                 id,
+		"field":              req.Field,
+		"manual_override_zh": req.Zh != nil,
+		"manual_override_en": req.En != nil,
 	})
 }
 
