@@ -25,6 +25,7 @@
   },
   "nav": {
     "home": "Home",
+    "productSearch": "Product Search",
     "destinations": "Destinations",
     "categories": "Categories",
     "itinerary": "Itinerary",

@@ -36,7 +36,7 @@ export interface HeaderProps {
 
 const navItems = [
   { key: 'home', path: '/' },
-  { key: 'destinations', path: '/destinations' },
+  { key: 'productSearch', path: '/products?destination=adelaide' },
   { key: 'categories', path: '/categories' },
   { key: 'itinerary', path: '/plan' },
   { key: 'about', path: '/about' },
