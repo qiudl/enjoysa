@@ -20,8 +20,8 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
     {
       id: -1,
       name: 'Journey Beyond',
-      logo: 'https://www.journeybeyondrail.com.au/wp-content/themes/journey-beyond/built/images/jb_logo.png',
-      website: 'https://www.journeybeyondrail.com.au/',
+      logo: 'https://www.journeybeyond.com/wp-content/uploads/JB_LOGO.svg',
+      website: 'https://www.journeybeyond.com/',
     },
     {
       id: -2,
@@ -38,7 +38,7 @@ export const PartnerSection: React.FC<PartnerSectionProps> = ({ partners }) => {
       <img
         src={partner.logo}
         alt={partner.name}
-        className={styles.logo}
+        className={`${styles.logo} ${partner.id === -1 ? styles.journeyBeyondLogo : ''}`}
         loading="lazy"
       />
     );

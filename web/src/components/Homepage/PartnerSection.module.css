@@ -49,6 +49,10 @@
   opacity: 1;
 }
 
+.featuredLogoLink .journeyBeyondLogo {
+  filter: brightness(0) saturate(100%) invert(23%) sepia(24%) saturate(1542%) hue-rotate(166deg) brightness(91%) contrast(91%);
+}
+
 .logoLink:hover {
   background: rgba(0, 0, 0, 0.02);
 }
