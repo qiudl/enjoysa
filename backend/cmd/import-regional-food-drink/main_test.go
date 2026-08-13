@@ -8,10 +8,10 @@ import (
 
 func TestSeedsContainFourEntriesPerRegion(t *testing.T) {
 	want := map[string][]string{
-		"adelaide-hills":                 {"Hardy's Verandah Restaurant", "The Stirling Hotel", "Red Cacao", "Haus Restaurant"},
-		"kangaroo-island":                {"The Islander Estate Vineyards", "Bay of Shoals Estate", "Dudley Wines", "Springs Road Kangaroo Island"},
-		"fleurieu-peninsula":             {"The d'Arenberg Cube", "Down The Rabbit Hole Cellar Door and Restaurant", "Anvers Wines - Cellar Door", "Coriole Vineyards Cellar Door and Restaurant"},
-		"murray-river-lakes-and-coorong": {"Cafe Mannum", "Mannum Hotel", "Steam Dock Eatery", "Pretoria Hotel"},
+		"adelaide-hills":  {"Hardy's Verandah Restaurant", "The Stirling Hotel", "Red Cacao", "Haus Restaurant"},
+		"kangaroo-island": {"The Islander Estate Vineyards", "Bay of Shoals Estate", "Dudley Wines", "Springs Road Kangaroo Island"},
+		"fleurieu":        {"The d'Arenberg Cube", "Down The Rabbit Hole Cellar Door and Restaurant", "Anvers Wines - Cellar Door", "Coriole Vineyards Cellar Door and Restaurant"},
+		"murray":          {"Cafe Mannum", "Mannum Hotel", "Steam Dock Eatery", "Pretoria Hotel"},
 	}
 	got := seeds()
 	if len(got) != 16 {
