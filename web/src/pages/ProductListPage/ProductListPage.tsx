@@ -30,6 +30,8 @@ export interface ProductListPageProps {
   initialCategory?: string;
   /** 初始目的地 slug */
   initialDestination?: string;
+  /** 每页产品数；区域分类入口固定为 4 */
+  initialPageSize?: number;
   /** 加载中 */
   loading?: boolean;
   /** 登录点击 */
@@ -50,6 +52,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   initialKeyword = '',
   initialCategory = '',
   initialDestination = '',
+  initialPageSize = 12,
   loading: externalLoading = false,
   onLoginClick,
   onRegisterClick,
@@ -60,7 +63,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   const [keyword, setKeyword] = useState(initialKeyword);
   const [sortBy, setSortBy] = useState('recommend');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(initialPageSize);
   const [filters, setFilters] = useState<Partial<FilterType>>({
     category: initialCategory || undefined,
     destination: initialDestination || undefined,
@@ -114,7 +117,8 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
       destination: initialDestination || undefined,
     }));
     setCurrentPage(1);
-  }, [initialKeyword, initialCategory, initialDestination]);
+    setPageSize(initialPageSize);
+  }, [initialKeyword, initialCategory, initialDestination, initialPageSize]);
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
@@ -272,8 +276,8 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
                   current={currentPage}
                   total={totalProducts}
                   pageSize={pageSize}
-                  showQuickJumper
-                  showSizeChanger
+                  showQuickJumper={initialPageSize !== 4}
+                  showSizeChanger={initialPageSize !== 4}
                   showTotal
                   language={language}
                   onChange={handlePageChange}

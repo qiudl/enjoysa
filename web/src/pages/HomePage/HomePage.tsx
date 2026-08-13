@@ -99,7 +99,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   // Fetch regions from API
   useEffect(() => {
     regionService.getAll().then((apiRegions) => {
-      setRegions(apiRegions);
+      setRegions(apiRegions.filter((region) => region.id !== 'uluru'));
     }).catch(() => {
       // API error - regions stay empty
     });

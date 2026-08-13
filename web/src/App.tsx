@@ -215,7 +215,6 @@ function RegionPageWrapper() {
     <RegionPage
       regionId={id}
       cartCount={getCartCount()}
-      onAttractionClick={(attractionId) => navigate(`/attractions/${attractionId}`)}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
@@ -306,6 +305,7 @@ function ProductListPageWrapper() {
   const keyword = searchParams.get('q') || '';
   const category = searchParams.get('category') || routeCategory || '';
   const destination = searchParams.get('destination') || '';
+  const isRegionalCategory = Boolean(category && destination);
   const { getCartCount } = useCart();
 
   return (
@@ -313,6 +313,7 @@ function ProductListPageWrapper() {
       initialKeyword={keyword}
       initialCategory={category}
       initialDestination={destination}
+      initialPageSize={isRegionalCategory ? 4 : undefined}
       cartCount={getCartCount()}
       onProductClick={(product) => navigate(`/product/${product.id}`)}
       onLoginClick={() => navigate('/login')}

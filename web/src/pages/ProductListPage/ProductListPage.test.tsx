@@ -29,7 +29,9 @@ vi.mock('../../services/productService', () => ({
 
 vi.mock('../../services/regionService', () => ({
   regionService: {
-    getAllRaw: vi.fn().mockResolvedValue([]),
+    getAllRaw: vi.fn().mockResolvedValue([
+      { id: 1, slug: 'adelaide', name_zh: '阿德莱德', name_en: 'Adelaide' },
+    ]),
     getCategoriesRaw: vi.fn().mockResolvedValue([
       { id: 1, slug: 'attractions', name_zh: '景点体验', name_en: 'Attractions' },
       { id: 2, slug: 'food-wine', name_zh: '美食美酒', name_en: 'Food & Wine' },
@@ -55,6 +57,27 @@ describe('ProductListPage category filtering', () => {
     await waitFor(() => {
       expect(productService.list).toHaveBeenCalledWith(expect.objectContaining({
         category_id: 2,
+      }));
+    });
+  });
+
+  it('uses four products per page for a category inside a region', async () => {
+    vi.mocked(productService.list).mockResolvedValue({
+      items: [], total: 0, page: 1, page_size: 4, total_pages: 0,
+    });
+
+    render(
+      <ProductListPage
+        initialCategory="attractions"
+        initialDestination="adelaide"
+        initialPageSize={4}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(productService.list).toHaveBeenCalledWith(expect.objectContaining({
+        page_size: 4,
+        category_id: 1,
       }));
     });
   });
