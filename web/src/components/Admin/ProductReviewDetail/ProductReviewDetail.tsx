@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { ProductReview, ProductReviewStatus, ProductCategory } from '../ProductReviewTable';
-import { productService } from '../../../services/productService';
+import { adminService } from '../../../services/adminService';
 import type { ApiProduct, ApiProductImage, ApiProductPackage, ApiProductHighlight, ApiProductFAQ } from '../../../services/productService';
 import styles from './ProductReviewDetail.module.css';
 
@@ -59,7 +59,10 @@ export const ProductReviewDetail: React.FC<ProductReviewDetailProps> = ({
     (async () => {
       setLoadingDetail(true);
       try {
-        const data = await productService.getById(Number(product.id));
+        // Admin review must use the authenticated endpoint: the public product
+        // endpoint intentionally hides drafts, which previously left their
+        // images, packages, highlights and FAQs blank in this drawer.
+        const data = await adminService.getProduct(Number(product.id));
         setFullProduct(data);
       } catch {
         // fallback: no full data
