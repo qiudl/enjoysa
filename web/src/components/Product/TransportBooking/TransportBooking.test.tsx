@@ -20,5 +20,17 @@ describe('TransportBooking', () => {
     fireEvent.click(screen.getByTestId('transport-preview-button'));
     expect(screen.getByTestId('transport-booking-preview')).toHaveTextContent('Cape Jervis ⇄ Penneshaw');
     expect(screen.getByTestId('transport-booking-preview')).toHaveTextContent('2026-09-13');
+    expect(screen.getByTestId('transport-booking-preview')).toHaveTextContent('A$136');
+  });
+
+  it.each([
+    ['indian-pacific', 'Adelaide → Perth'],
+    ['great-southern', 'Adelaide → Brisbane'],
+    ['overland', 'Adelaide → Melbourne'],
+  ] as const)('builds a specialist preview for %s', (productType, route) => {
+    render(<TransportBooking productType={productType} isZh />);
+    fireEvent.change(screen.getByTestId('transport-travel-date'), { target: { value: '2026-12-10' } });
+    fireEvent.click(screen.getByTestId('transport-preview-button'));
+    expect(screen.getByTestId('transport-booking-preview')).toHaveTextContent(route);
   });
 });

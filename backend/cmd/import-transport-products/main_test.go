@@ -4,7 +4,7 @@ import "testing"
 
 func TestTransportSeedsAreRichAndFeatured(t *testing.T) {
 	items := seeds()
-	if len(items) != 2 {
+	if len(items) != 5 {
 		t.Fatalf("got %d products", len(items))
 	}
 	for i, p := range items {
