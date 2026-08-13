@@ -18,7 +18,9 @@ import {
 } from '../../components/Common';
 import type { Product } from '../../types';
 import { productService, transformApiProduct } from '../../services/productService';
-import type { ApiProductSchedule, ApiProductPackage } from '../../services/productService';
+import { getTransportBookingType } from '../../services/productService';
+import type { ApiProductSchedule, ApiProductPackage, TransportBookingType } from '../../services/productService';
+import { TransportBooking } from '../../components/Product/TransportBooking/TransportBooking';
 import { getLocalizedField } from '../../utils/getLocalizedField';
 import styles from './ProductDetailPage.module.css';
 
@@ -83,6 +85,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<ApiProductSchedule[]>([]);
   const [apiPackages, setApiPackages] = useState<ApiProductPackage[]>([]);
+  const [transportType, setTransportType] = useState<TransportBookingType | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Selection state
@@ -111,6 +114,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     Promise.all([
       productService.getById(numId).then((apiProduct) => {
         setProduct(transformApiProduct(apiProduct));
+        setTransportType(getTransportBookingType(apiProduct));
         const pkgs = apiProduct.packages || [];
         setApiPackages(pkgs);
         if (pkgs.length > 0) setSelectedPackageId(pkgs[0].id);
@@ -421,7 +425,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
 
           {/* ========== Booking Card ========== */}
-          <aside className={styles.bookingCard}>
+          {transportType ? (
+            <aside className={styles.transportBookingCard}>
+              <TransportBooking productType={transportType} isZh={isZh} />
+            </aside>
+          ) : <aside className={styles.bookingCard}>
             {/* Price Header */}
             <div className={styles.priceSection}>
               <div className={styles.price}>
@@ -594,7 +602,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </>
               )}
             </div>
-          </aside>
+          </aside>}
         </div>
       </main>
 

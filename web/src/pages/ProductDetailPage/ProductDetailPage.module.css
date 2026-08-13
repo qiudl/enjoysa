@@ -323,6 +323,12 @@
   height: fit-content;
 }
 
+.transportBookingCard {
+  position: sticky;
+  top: 96px;
+  align-self: start;
+}
+
 .priceSection {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
@@ -791,6 +797,14 @@
     overflow-y: auto;
   }
 
+  .transportBookingCard {
+    position: static;
+  }
+
+  .container:has(.transportBookingCard) {
+    padding-bottom: 0;
+  }
+
   .priceSection {
     margin-bottom: 1rem;
   }
@@ -868,6 +882,10 @@
 
   .main {
     padding-bottom: 280px;
+  }
+
+  .main:has(.transportBookingCard) {
+    padding-bottom: 2rem;
   }
 
   .mapSection {

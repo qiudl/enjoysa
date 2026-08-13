@@ -135,6 +135,17 @@ export interface ApiProduct {
   created_by_admin_name?: string;
 }
 
+export type TransportBookingType = 'ghan' | 'sealink';
+
+export function getTransportBookingType(product?: Pick<ApiProduct, 'metadata' | 'name_en'> | null): TransportBookingType | null {
+  const configured = product?.metadata?.booking_experience;
+  if (configured === 'ghan' || configured === 'sealink') return configured;
+  const name = product?.name_en?.toLowerCase() || '';
+  if (name.includes('ghan')) return 'ghan';
+  if (name.includes('sealink') && name.includes('ferry')) return 'sealink';
+  return null;
+}
+
 // 分页响应
 interface PaginatedProductResponse {
   items: ApiProduct[];
