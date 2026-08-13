@@ -19,6 +19,10 @@
   gap: 2rem;
 }
 
+.container > * {
+  min-width: 0;
+}
+
 .loadingContainer {
   flex: 1;
   display: flex;
@@ -838,6 +842,7 @@
 @media (max-width: 640px) {
   .container {
     padding: 0 1rem;
+    width: 100%;
   }
 
   .title {
