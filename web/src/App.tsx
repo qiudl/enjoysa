@@ -299,13 +299,18 @@ function RegisterPageWrapper() {
 // 包装组件：ProductListPage
 function ProductListPageWrapper() {
   const navigate = useNavigate();
+  const { id: routeCategory } = useParams();
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get('q') || '';
+  const category = searchParams.get('category') || routeCategory || '';
+  const destination = searchParams.get('destination') || '';
   const { getCartCount } = useCart();
 
   return (
     <ProductListPage
       initialKeyword={keyword}
+      initialCategory={category}
+      initialDestination={destination}
       cartCount={getCartCount()}
       onProductClick={(product) => navigate(`/product/${product.id}`)}
       onLoginClick={() => navigate('/login')}
@@ -544,7 +549,7 @@ function CategoriesPageWrapper() {
   return (
     <CategoriesPage
       cartCount={getCartCount()}
-      onCategoryClick={(cat) => navigate(`/products?category=${cat.id}`)}
+      onCategoryClick={(cat) => navigate(`/categories/${cat.id}`)}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}

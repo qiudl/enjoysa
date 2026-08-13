@@ -26,6 +26,10 @@ export interface ProductListPageProps {
   cartCount?: number;
   /** 初始搜索词 */
   initialKeyword?: string;
+  /** 初始分类 slug */
+  initialCategory?: string;
+  /** 初始目的地 slug */
+  initialDestination?: string;
   /** 加载中 */
   loading?: boolean;
   /** 登录点击 */
@@ -44,6 +48,8 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   userName,
   cartCount = 0,
   initialKeyword = '',
+  initialCategory = '',
+  initialDestination = '',
   loading: externalLoading = false,
   onLoginClick,
   onRegisterClick,
@@ -55,33 +61,82 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
   const [sortBy, setSortBy] = useState('recommend');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-  const [filters, setFilters] = useState<Partial<FilterType>>({});
+  const [filters, setFilters] = useState<Partial<FilterType>>({
+    category: initialCategory || undefined,
+    destination: initialDestination || undefined,
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [categoryIds, setCategoryIds] = useState<Record<string, number>>({});
+  const [destinationIds, setDestinationIds] = useState<Record<string, number>>({});
+  const [filterOptionsLoaded, setFilterOptionsLoaded] = useState(false);
 
   // Fetch filter data
   useEffect(() => {
-    regionService.getAll().then((regions) => {
-      setDestinations(regions.map((r) => ({
-        id: r.id, name: r.name, nameEn: r.nameEn || '', region: '南澳大利亚', regionEn: 'South Australia',
-      })));
-    }).catch(() => {});
-    regionService.getCategories().then((cats) => {
-      setCategories(cats.map((c) => ({ id: c.id, name: c.name, nameEn: c.nameEn })));
-    }).catch(() => {});
+    Promise.allSettled([
+      regionService.getAllRaw(),
+      regionService.getCategoriesRaw(),
+    ]).then(([regionResult, categoryResult]) => {
+      if (regionResult.status === 'fulfilled') {
+        setDestinations(regionResult.value.map((region) => ({
+          id: region.slug,
+          name: region.name_zh,
+          nameEn: region.name_en,
+          region: '南澳大利亚',
+          regionEn: 'South Australia',
+        })));
+        setDestinationIds(Object.fromEntries(
+          regionResult.value.map((region) => [region.slug, region.id]),
+        ));
+      }
+      if (categoryResult.status === 'fulfilled') {
+        setCategories(categoryResult.value.map((category) => ({
+          id: category.slug,
+          name: category.name_zh,
+          nameEn: category.name_en,
+        })));
+        setCategoryIds(Object.fromEntries(
+          categoryResult.value.map((category) => [category.slug, category.id]),
+        ));
+      }
+      setFilterOptionsLoaded(true);
+    });
   }, []);
+
+  useEffect(() => {
+    setKeyword(initialKeyword);
+    setFilters((current) => ({
+      ...current,
+      category: initialCategory || undefined,
+      destination: initialDestination || undefined,
+    }));
+    setCurrentPage(1);
+  }, [initialKeyword, initialCategory, initialDestination]);
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
+    if (!filterOptionsLoaded) return;
+
     setLoading(true);
     try {
+      const categoryId = filters.category ? categoryIds[filters.category] : undefined;
+      const destinationId = filters.destination ? destinationIds[filters.destination] : undefined;
+
+      if ((filters.category && !categoryId) || (filters.destination && !destinationId)) {
+        setProducts([]);
+        setTotalProducts(0);
+        return;
+      }
+
       const result = await productService.list({
         page: currentPage,
         page_size: pageSize,
         keyword: keyword || undefined,
+        category_id: categoryId,
+        region_id: destinationId,
       });
       setProducts((result.items || []).map(transformApiProduct));
       setTotalProducts(result.total || 0);
@@ -91,7 +146,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, keyword]);
+  }, [currentPage, pageSize, keyword, filters.category, filters.destination, categoryIds, destinationIds, filterOptionsLoaded]);
 
   useEffect(() => {
     fetchProducts();
