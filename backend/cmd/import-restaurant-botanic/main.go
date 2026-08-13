@@ -207,11 +207,11 @@ func prepareCoverImages(assetDir string, uploadDir string) error {
 
 func upsertDiningCategory(tx *gorm.DB) (*productmodel.Category, error) {
 	category := productmodel.Category{
-		Slug:      "dining",
-		NameZh:    "餐饮美食",
-		NameEn:    "Dining",
-		Icon:      "utensils",
-		SortOrder: 8,
+		Slug:      "food-wine",
+		NameZh:    "美食美酒",
+		NameEn:    "Food & Wine",
+		Icon:      "wine",
+		SortOrder: 2,
 	}
 	var existing productmodel.Category
 	err := tx.Where("slug = ?", category.Slug).First(&existing).Error
@@ -852,7 +852,7 @@ func printDryRun() error {
 	enc.SetIndent("", "  ")
 	return enc.Encode(map[string]interface{}{
 		"category": map[string]interface{}{
-			"slug": "dining", "name_zh": "餐饮美食", "name_en": "Dining",
+			"slug": "food-wine", "name_zh": "美食美酒", "name_en": "Food & Wine",
 		},
 		"records": payload,
 	})

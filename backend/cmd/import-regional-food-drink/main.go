@@ -130,14 +130,14 @@ func copyImages(assetDir, uploadDir string) error {
 
 func upsertCategory(tx *gorm.DB) (*productmodel.Category, error) {
 	var x productmodel.Category
-	err := tx.Where("slug = ?", "dining").First(&x).Error
+	err := tx.Where("slug = ?", "food-wine").First(&x).Error
 	if err == nil {
 		return &x, nil
 	}
 	if err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
-	x = productmodel.Category{Slug: "dining", NameZh: "餐饮美食", NameEn: "Dining", Icon: "utensils", SortOrder: 8}
+	x = productmodel.Category{Slug: "food-wine", NameZh: "美食美酒", NameEn: "Food & Wine", Icon: "wine", SortOrder: 2}
 	return &x, tx.Create(&x).Error
 }
 func upsertRegion(tx *gorm.DB, s supplierSeed) (*productmodel.Region, error) {
@@ -229,7 +229,7 @@ func makeSeed(r rawSeed, index int) supplierSeed {
 	for i := range images {
 		images[i] = imageSeed{fmt.Sprintf("%s-%d.jpg", prefix, i+1), imageSources[index][i]}
 	}
-	return supplierSeed{RegionSlug: r.region, RegionZh: r.rzh, RegionEn: r.ren, Name: r.name, Email: r.email, Phone: r.phone, Website: r.site, Address: r.street, City: r.city, PostalCode: r.post, Description: r.summaryEn, Product: productSeed{NameZh: r.productZh, NameEn: r.productEn, Price: r.price, SummaryZh: r.summaryZh, SummaryEn: r.summaryEn, DescriptionZh: r.descZh, DescriptionEn: r.descEn, Address: r.street + ", " + r.city + " SA " + r.post, Duration: r.duration, GroupSize: r.group, BookingURL: r.booking, Tags: []string{r.rzh, "餐饮美食", r.productZh}, Images: images, Packages: []packageSeed{{r.productZh + "（每位）", r.productEn + " (per person)", r.summaryZh, r.summaryEn, r.price}}, Highlights: []highlightSeed{{"地区风味", "Regional character", "体验当地食材、风土与待客之道。", "Discover local produce, place and hospitality."}, {"精选体验", "Curated experience", r.summaryZh, r.summaryEn}}, FAQs: []faqSeed{{"需要提前预订吗？", "Is advance booking required?", "建议提前预订，尤其是周末及节假日。", "Advance booking is recommended, especially on weekends and public holidays."}, {"可以照顾饮食需求吗？", "Can dietary requirements be accommodated?", "请在预订时告知过敏及饮食需求，场地方会确认可提供的安排。", "Advise allergies and dietary requirements when booking so the venue can confirm available options."}}}}
+	return supplierSeed{RegionSlug: r.region, RegionZh: r.rzh, RegionEn: r.ren, Name: r.name, Email: r.email, Phone: r.phone, Website: r.site, Address: r.street, City: r.city, PostalCode: r.post, Description: r.summaryEn, Product: productSeed{NameZh: r.productZh, NameEn: r.productEn, Price: r.price, SummaryZh: r.summaryZh, SummaryEn: r.summaryEn, DescriptionZh: r.descZh, DescriptionEn: r.descEn, Address: r.street + ", " + r.city + " SA " + r.post, Duration: r.duration, GroupSize: r.group, BookingURL: r.booking, Tags: []string{r.rzh, "美食美酒", r.productZh}, Images: images, Packages: []packageSeed{{r.productZh + "（每位）", r.productEn + " (per person)", r.summaryZh, r.summaryEn, r.price}}, Highlights: []highlightSeed{{"地区风味", "Regional character", "体验当地食材、风土与待客之道。", "Discover local produce, place and hospitality."}, {"精选体验", "Curated experience", r.summaryZh, r.summaryEn}}, FAQs: []faqSeed{{"需要提前预订吗？", "Is advance booking required?", "建议提前预订，尤其是周末及节假日。", "Advance booking is recommended, especially on weekends and public holidays."}, {"可以照顾饮食需求吗？", "Can dietary requirements be accommodated?", "请在预订时告知过敏及饮食需求，场地方会确认可提供的安排。", "Advise allergies and dietary requirements when booking so the venue can confirm available options."}}}}
 }
 
 func seeds() []supplierSeed {

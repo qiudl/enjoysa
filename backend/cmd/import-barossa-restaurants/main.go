@@ -155,14 +155,14 @@ func upsertRegion(tx *gorm.DB) (*productmodel.Region, error) {
 
 func upsertCategory(tx *gorm.DB) (*productmodel.Category, error) {
 	var category productmodel.Category
-	err := tx.Where("slug = ?", "dining").First(&category).Error
+	err := tx.Where("slug = ?", "food-wine").First(&category).Error
 	if err == nil {
 		return &category, nil
 	}
 	if err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
-	category = productmodel.Category{Slug: "dining", NameZh: "餐饮美食", NameEn: "Dining", Icon: "utensils", SortOrder: 8}
+	category = productmodel.Category{Slug: "food-wine", NameZh: "美食美酒", NameEn: "Food & Wine", Icon: "wine", SortOrder: 2}
 	return &category, tx.Create(&category).Error
 }
 
