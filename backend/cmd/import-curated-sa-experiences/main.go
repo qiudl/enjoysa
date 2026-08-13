@@ -145,9 +145,12 @@ func categories(tx *gorm.DB) (map[string]productmodel.Category, error) {
 }
 func upsertRegion(tx *gorm.DB, s supplierSeed) (*productmodel.Region, error) {
 	var x productmodel.Region
-	err := tx.Where("slug = ?", s.RegionSlug).First(&x).Error
+	err := tx.Unscoped().Where("slug = ?", s.RegionSlug).First(&x).Error
 	if err == nil {
-		return &x, nil
+		if x.DeletedAt.Valid {
+			err = tx.Unscoped().Model(&x).Updates(map[string]interface{}{"deleted_at": nil, "name_zh": s.RegionZh, "name_en": s.RegionEn}).Error
+		}
+		return &x, err
 	}
 	if err != gorm.ErrRecordNotFound {
 		return nil, err
