@@ -1,263 +1,85 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+.page { min-height: 100vh; background: #f7f3ed; color: #1d2c25; }
 
-/* Hero Section */
 .hero {
   position: relative;
-  height: 280px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  min-height: 540px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
   overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(10, 30, 23, .88) 0%, rgba(10, 30, 23, .53) 52%, rgba(10, 30, 23, .13) 100%),
+    url('https://assets.atdw-online.com.au/images/ad5498e704591af223b1f1d4c78202ef.jpeg?fit=crop&w=2200&h=1100&sharp=10&rot=360') center 54% / cover;
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1920') center/cover;
-  opacity: 0.2;
+.heroContent { position: relative; z-index: 1; width: min(1180px, calc(100% - 3rem)); margin: 0 auto; padding: 8rem 0 6rem; color: white; }
+.eyebrow, .sectionNumber { color: #efc984; font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+.hero h1 { max-width: 880px; margin: 1.1rem 0 0; font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif; font-size: clamp(3.2rem, 6vw, 5.8rem); font-weight: 500; line-height: 1; letter-spacing: -.055em; }
+.hero p { max-width: 680px; margin: 1.7rem 0 0; color: rgba(255,255,255,.83); font-size: 1.05rem; line-height: 1.8; }
+.heroLocation { position: absolute; z-index: 1; right: max(2rem, calc((100vw - 1180px)/2)); bottom: 3.5rem; display: flex; align-items: center; gap: .5rem; color: rgba(255,255,255,.78); font-size: .8rem; }
+
+.main { background: #f7f3ed; }
+.contactIntro, .formSection { width: min(1180px, calc(100% - 3rem)); margin: 0 auto; }
+.contactIntro { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(3rem, 8vw, 7rem); align-items: center; padding: 7rem 0; }
+.sectionNumber { color: #a45b36; }
+.infoColumn h2, .formIntro h2 { margin: .85rem 0 1.4rem; font-family: 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif; font-size: clamp(2.2rem, 4.2vw, 3.8rem); font-weight: 500; line-height: 1.08; letter-spacing: -.04em; }
+.lead, .formIntro p { margin: 0; color: #65716a; line-height: 1.8; }
+
+.contactList { margin-top: 2.2rem; border-top: 1px solid #ded6ca; }
+.contactItem { display: grid; grid-template-columns: 48px 1fr; gap: 1rem; padding: 1.35rem 0; border-bottom: 1px solid #ded6ca; }
+.contactIcon { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #c9b9a8; border-radius: 50%; color: #a45b36; }
+.contactItem > div { display: flex; flex-direction: column; gap: .2rem; }
+.contactLabel { color: #7b847f; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.contactItem a, .contactItem strong { color: #1d2c25; font-size: 1.06rem; font-weight: 650; text-decoration: none; }
+.contactItem a:hover { color: #a45b36; }
+.contactItem small { color: #7a847e; font-size: .82rem; }
+
+.hoursCard { display: flex; align-items: flex-start; gap: 1rem; margin-top: 1.5rem; padding: 1.2rem 1.3rem; background: #e9eee8; color: #24483a; }
+.hoursCard svg { flex-shrink: 0; margin-top: .1rem; }
+.hoursCard div { display: flex; flex-direction: column; gap: .28rem; }
+.hoursCard span { color: #5d7066; font-size: .85rem; line-height: 1.55; }
+
+.adelaideImage { position: relative; height: 650px; }
+.adelaideImage::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 58%, rgba(10,30,23,.43)); pointer-events: none; }
+.adelaideImage img { width: 100%; height: 100%; object-fit: cover; }
+.adelaideImage > span { position: absolute; z-index: 1; right: 1.5rem; bottom: 1.5rem; display: flex; align-items: center; gap: .5rem; padding: .75rem 1rem; background: rgba(255,255,255,.92); color: #234538; font-size: .8rem; font-weight: 650; backdrop-filter: blur(8px); }
+
+.formSection { display: grid; grid-template-columns: .72fr 1.28fr; gap: clamp(3rem, 7vw, 6rem); align-items: start; padding: 6.5rem 0 7.5rem; border-top: 1px solid #ded6ca; }
+.formIntro { position: sticky; top: 2rem; }
+.formCard { padding: clamp(1.6rem, 4vw, 3rem); background: white; border: 1px solid #e4ddd2; box-shadow: 0 20px 50px rgba(29,46,39,.08); }
+.form { display: flex; flex-direction: column; gap: 1.3rem; }
+.twoColumns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.formGroup { display: flex; flex-direction: column; gap: .5rem; }
+.formGroup label { color: #34483e; font-size: .82rem; font-weight: 650; }
+.formGroup input, .formGroup textarea { width: 100%; padding: .85rem 1rem; border: 1px solid #dcd6cd; border-radius: 0; background: #fbfaf7; color: #1d2c25; font: inherit; transition: border-color .2s, box-shadow .2s, background .2s; }
+.formGroup input:focus, .formGroup textarea:focus { outline: none; border-color: #a45b36; background: white; box-shadow: 0 0 0 3px rgba(164,91,54,.1); }
+.formGroup textarea { min-height: 150px; resize: vertical; }
+.submitButton { display: flex; align-items: center; justify-content: center; gap: .65rem; min-height: 52px; padding: .85rem 1.25rem; border: 1px solid #193e32; background: #193e32; color: white; font-size: .9rem; font-weight: 700; cursor: pointer; transition: transform .2s, background .2s; }
+.submitButton:hover:not(:disabled) { transform: translateY(-2px); background: #102e24; }
+.submitButton:disabled { opacity: .6; cursor: wait; }
+
+.successMessage { padding: 4rem 1rem; text-align: center; }
+.successMessage > span { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 1.4rem; border-radius: 50%; background: #e8f2ea; color: #2d694c; font-size: 1.6rem; }
+.successMessage h3 { margin: 0 0 .6rem; font: 500 1.8rem 'Noto Serif SC', 'Songti SC', STSong, Georgia, serif; }
+.successMessage p { margin: 0; color: #65716a; }
+
+@media (max-width: 900px) {
+  .heroLocation { display: none; }
+  .contactIntro, .formSection { grid-template-columns: 1fr; }
+  .adelaideImage { height: 520px; }
+  .formIntro { position: static; }
 }
 
-.heroOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+@media (max-width: 640px) {
+  .hero { min-height: 510px; }
+  .heroContent { width: calc(100% - 2rem); padding: 7rem 0 4.2rem; }
+  .hero h1 { font-size: clamp(2.7rem, 13vw, 4rem); }
+  .hero p { font-size: .95rem; line-height: 1.65; }
+  .contactIntro, .formSection { width: calc(100% - 2rem); }
+  .contactIntro { padding: 5rem 0; }
+  .adelaideImage { height: 420px; }
+  .formSection { padding: 4.5rem 0 5.5rem; }
+  .twoColumns { grid-template-columns: 1fr; }
+  .formCard { padding: 1.3rem; }
 }
 
-.heroContent {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 0 1.5rem;
-}
-
-.heroTitle {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 0.75rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.heroSubtitle {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0;
-}
-
-/* Main Content */
-.main {
-  flex: 1;
-  padding: 3rem 0;
-  background: #f8fafc;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-}
-
-.sectionTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 1.5rem;
-}
-
-/* Contact Info Section */
-.infoSection {
-  padding-right: 1rem;
-}
-
-.contactList {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.contactItem {
-  display: flex;
-  gap: 1rem;
-}
-
-.contactIcon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.contactContent {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.contactLabel {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.contactValue {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.contactDesc {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-/* Working Hours */
-.workingHours {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.hoursTitle {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 1rem;
-}
-
-.hoursList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hoursList li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.hoursList li:last-child {
-  border-bottom: none;
-}
-
-.day {
-  color: #475569;
-}
-
-.hours {
-  color: #1e293b;
-  font-weight: 500;
-}
-
-/* Form Section */
-.formSection {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.formGroup label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.formGroup input,
-.formGroup textarea {
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.formGroup input:focus,
-.formGroup textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.formGroup textarea {
-  resize: vertical;
-  min-height: 120px;
-}
-
-/* Success Message */
-.successMessage {
-  text-align: center;
-  padding: 3rem 1rem;
-}
-
-.successIcon {
-  font-size: 3rem;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.successMessage p {
-  font-size: 1.125rem;
-  color: #059669;
-  margin: 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .hero {
-    height: 240px;
-  }
-
-  .heroTitle {
-    font-size: 2rem;
-  }
-
-  .heroSubtitle {
-    font-size: 1rem;
-  }
-
-  .main {
-    padding: 2rem 0;
-  }
-
-  .container {
-    padding: 0 1rem;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .infoSection {
-    padding-right: 0;
-  }
-
-  .formSection {
-    padding: 1.5rem;
-  }
-}
+@media (prefers-reduced-motion: reduce) { .submitButton { transition: none; } }

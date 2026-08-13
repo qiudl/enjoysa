@@ -47,9 +47,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({
   ];
 
   const services = [
-    { label: isZh ? '景点体验' : 'Experiences', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=86' },
-    { label: isZh ? '美食美酒' : 'Food & Wine', image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1200&q=86' },
-    { label: isZh ? '特色住宿' : 'Unique Stays', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=86' },
+    { label: isZh ? '景点体验' : 'Experiences', image: 'https://assets.atdw-online.com.au/images/0cdf1ff0d642973b3f8942d8cf0e88d9.jpeg?fit=crop&h=900&w=1200' },
+    { label: isZh ? '美食美酒' : 'Food & Wine', image: 'https://assets.atdw-online.com.au/images/f41b1d4d4a4b58b9cc9909c6df142509.jpeg?fit=crop&w=1200&h=900&sharp=10&rot=360' },
+    { label: isZh ? '特色住宿' : 'Unique Stays', image: 'https://demo.enjoysau.com/uploads/luxury-accommodation/luxury-14-1.jpg' },
   ];
 
   return (
@@ -77,7 +77,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
       <main>
         <section className={styles.story}>
           <div className={styles.storyImage}>
-            <img src="https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=1400&q=88" alt={isZh ? '南澳大利亚旅行风景' : 'South Australian travel landscape'} />
+            <img src="https://assets.atdw-online.com.au/images/ad5498e704591af223b1f1d4c78202ef.jpeg?fit=crop&w=1400&h=1100&sharp=10&rot=360" alt={isZh ? '南澳大利亚菲尔半岛风景' : 'Fleurieu Peninsula, South Australia'} />
             <span>{isZh ? '深耕南澳' : 'ROOTED IN SOUTH AUSTRALIA'}</span>
           </div>
           <div className={styles.storyCopy}>
