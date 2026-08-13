@@ -19,6 +19,12 @@ import { TestimonialSection, PartnerSection, CustomBlockSection } from '../../co
 import { homepagePublicService, type HomepageConfig, type CustomBlockConfig, CUSTOM_BLOCK_KEY_PREFIX } from '../../services/homepageService';
 import styles from './HomePage.module.css';
 
+const homepageCategoryImages: Record<string, string> = {
+  attractions: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=86',
+  'food-wine': 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1200&q=86',
+  accommodation: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=86',
+};
+
 export interface HomePageProps {
   /** 是否登录 */
   isLoggedIn?: boolean;
@@ -122,7 +128,6 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   // Fetch featured products from API
   useEffect(() => {
-    setProductsLoading(true);
     productService.featured().then((apiProducts) => {
       setFeaturedProducts(apiProducts.map(transformApiProduct));
     }).catch(() => {
@@ -295,8 +300,14 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Categories */}
       {isModuleVisible('categories') && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>{t('home.categories')}</h2>
+        <section className={`${styles.section} ${styles.categoriesSection}`}>
+          <div className={styles.categoriesHeader}>
+            <div>
+              <span className={styles.categoriesEyebrow}>{isZh ? '按兴趣出发' : 'TRAVEL BY INTEREST'}</span>
+              <h2 className={styles.sectionTitle}>{t('home.categories')}</h2>
+            </div>
+            <p>{isZh ? '从山海探险到美酒佳肴，找到属于你的南澳旅行方式。' : 'From wild coastlines to remarkable tables, find your way to experience South Australia.'}</p>
+          </div>
           <div className={styles.categoriesGrid}>
             {categories.map((cat) => (
               <CategoryCard
@@ -304,6 +315,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 category={cat}
                 productCount={cat.productCount || 0}
                 icon={cat.icon}
+                backgroundImage={homepageCategoryImages[String(cat.id)]}
                 language={currentLang}
                 onClick={onCategoryClick}
               />
