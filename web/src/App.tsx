@@ -175,8 +175,10 @@ function HomePageWrapper() {
 // 包装组件：PlanPage (AI 行程规划)
 function PlanPageWrapper() {
   const navigate = useNavigate();
+  const { regionSlug } = useParams();
   return (
     <PlanPage
+      regionSlug={regionSlug}
       onLoginClick={() => navigate('/login')}
       onRegisterClick={() => navigate('/register')}
       onNavClick={(path) => navigate(path)}
@@ -1312,6 +1314,7 @@ function App() {
         {/* 首页 */}
         <Route path="/" element={<HomePageWrapper />} />
         <Route path="/plan" element={<PlanPageWrapper />} />
+        <Route path="/plan/:regionSlug" element={<PlanPageWrapper />} />
 
         {/* 认证页面 */}
         <Route path="/login" element={<LoginPageWrapper />} />
