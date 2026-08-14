@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 import clsx from 'clsx';
+import { setLocaleForCurrentRoute } from '../../../i18n';
+import { fromI18nLanguage, toI18nLanguage, type AppLocale } from '../../../i18n/locale';
 import styles from './LanguageSwitcher.module.css';
 
 export interface LanguageSwitcherProps {
@@ -23,10 +25,15 @@ export interface LanguageSwitcherProps {
 }
 
 const languages = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'zh', name: '简体中文', nativeName: '简体中文' },
-  { code: 'zh-TW', name: '繁體中文', nativeName: '繁體中文' },
-];
+  { code: 'zh-TW', name: 'Traditional Chinese', nativeName: '繁體中文' },
+  { code: 'en-US', name: 'English', nativeName: 'English' },
+  { code: 'zh-CN', name: 'Simplified Chinese', nativeName: '简体中文' },
+] satisfies Array<{ code: AppLocale; name: string; nativeName: string }>;
+
+const currentLocaleFromI18n = (language?: string) => {
+  const locale = fromI18nLanguage(language);
+  return languages.find((lang) => lang.code === locale) ?? languages[0];
+};
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   variant = 'dropdown',
@@ -41,14 +48,10 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currentLang = languages.find(
-    (lang) => lang.code === i18n.language
-  ) || languages.find(
-    (lang) => i18n.language?.startsWith(lang.code)
-  ) || languages[0];
+  const currentLang = currentLocaleFromI18n(i18n.language);
 
-  const handleLanguageChange = (langCode: string) => {
-    i18n.changeLanguage(langCode);
+  const handleLanguageChange = (langCode: AppLocale) => {
+    setLocaleForCurrentRoute(langCode);
     onLanguageChange?.(langCode);
     setIsOpen(false);
   };
@@ -73,7 +76,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             key={lang.code}
             className={clsx(
               styles.langButton,
-              currentLang.code === lang.code && styles.active
+              toI18nLanguage(currentLang.code) === toI18nLanguage(lang.code) && styles.active
             )}
             onClick={() => handleLanguageChange(lang.code)}
           >
@@ -124,14 +127,14 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               <button
                 className={clsx(
                   styles.menuItem,
-                  currentLang.code === lang.code && styles.selected
+                  toI18nLanguage(currentLang.code) === toI18nLanguage(lang.code) && styles.selected
                 )}
                 onClick={() => handleLanguageChange(lang.code)}
                 role="option"
-                aria-selected={currentLang.code === lang.code}
+                aria-selected={toI18nLanguage(currentLang.code) === toI18nLanguage(lang.code)}
               >
                 <span>{lang.nativeName}</span>
-                {currentLang.code === lang.code && <Check size={14} />}
+                {toI18nLanguage(currentLang.code) === toI18nLanguage(lang.code) && <Check size={14} />}
               </button>
             </li>
           ))}

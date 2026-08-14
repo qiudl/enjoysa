@@ -8,15 +8,18 @@ export interface BannerSlide {
   image: string;
   title: string;
   titleEn: string;
+  subtitle?: string;
+  subtitleEn?: string;
   tags: string[];
   tagsEn: string[];
-  attractionId: string;
+  attractionId?: string;
+  linkUrl?: string;
 }
 
 export interface HeroBannerProps {
   slides: BannerSlide[];
   autoPlayInterval?: number;
-  onSlideClick?: (attractionId: string) => void;
+  onSlideClick?: (slide: BannerSlide) => void;
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({
@@ -70,13 +73,18 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           key={slide.id}
           className={`${styles.slide} ${index === current ? styles.active : ''}`}
           style={{ backgroundImage: `url(${slide.image})` }}
-          onClick={() => onSlideClick?.(slide.attractionId)}
+          onClick={() => onSlideClick?.(slide)}
         >
           <div className={styles.overlay} />
           <div className={styles.content}>
             <h2 className={styles.title}>
               {isZh ? slide.title : slide.titleEn}
             </h2>
+            {(isZh ? slide.subtitle : slide.subtitleEn) && (
+              <p className={styles.subtitle}>
+                {isZh ? slide.subtitle : slide.subtitleEn}
+              </p>
+            )}
             <div className={styles.tags}>
               {(isZh ? slide.tags : slide.tagsEn).map((tag) => (
                 <span key={tag} className={styles.tag}>{tag}</span>

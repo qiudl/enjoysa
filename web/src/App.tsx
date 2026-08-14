@@ -95,6 +95,7 @@ import { SupplierAuthGuard } from './components/Common/SupplierAuthGuard';
 import { AdminAuthGuard } from './components/Common/AdminAuthGuard';
 import { AdminLayout } from './components/Admin';
 import { SupplierLayout } from './components/Supplier/SupplierLayout';
+import { syncLocaleWithPath } from './i18n';
 import './App.css';
 
 function PageLoading() {
@@ -1279,12 +1280,23 @@ function CartFeedbackToast() {
   );
 }
 
+function LocaleRouteSync() {
+  const location = useLocation();
+
+  useEffect(() => {
+    syncLocaleWithPath(location.pathname);
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <AppErrorBoundary>
     <RegionProvider>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <BrowserRouter>
+      <LocaleRouteSync />
       <CartProvider>
       <UserAuthProvider>
       <ChatProvider>

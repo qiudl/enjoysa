@@ -19,6 +19,8 @@ export interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
   /** 变体样式 */
   variant?: 'default' | 'compact' | 'horizontal';
+  /** 是否显示图片上的标签与可用性角标 */
+  showImageBadges?: boolean;
   /** 语言 */
   language?: 'zh' | 'en';
 }
@@ -43,6 +45,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onFavoriteToggle,
   onAddToCart,
   variant = 'default',
+  showImageBadges = true,
   language = 'zh',
 }) => {
   const { t } = useTranslation();
@@ -100,7 +103,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
 
         {/* 标签 */}
-        {product.tags.length > 0 && (
+        {showImageBadges && product.tags.length > 0 && (
           <div className={styles.tags}>
             {product.tags.slice(0, 2).map((tag) => (
               <span
@@ -130,12 +133,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </button>
 
         {/* 可用性指示 */}
-        {product.availability === 'sold_out' && (
+        {showImageBadges && product.availability === 'sold_out' && (
           <div className={clsx(styles.availabilityBadge, styles.soldOutBadge)}>
             {t('product.soldOut')}
           </div>
         )}
-        {product.availability === 'limited' && (
+        {showImageBadges && product.availability === 'limited' && (
           <div className={styles.availabilityBadge}>
             {t('product.limited')}
           </div>

@@ -5,6 +5,7 @@ import {
   Footer,
   CardSkeleton,
   RegionCard,
+  HeroBanner,
 } from '../../components/Common';
 import { ProductCard } from '../../components/Product';
 import { CategoryCard } from '../../components/Category';
@@ -15,7 +16,8 @@ import { productService, transformApiProduct } from '../../services/productServi
 import { Search } from 'lucide-react';
 import SmartSearchDropdown from '../../components/AI/SmartSearch/SmartSearchDropdown';
 import { TestimonialSection, PartnerSection } from '../../components/Homepage';
-import { homepagePublicService, type HomepageConfig } from '../../services/homepageService';
+import { bannerSlides } from '../../data/bannerSlides';
+import { homepagePublicService, type HomepageBanner, type HomepageConfig } from '../../services/homepageService';
 import styles from './HomePage.module.css';
 
 export interface HomePageProps {
@@ -62,6 +64,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onHotelSearch,
   onProductClick,
   onRegionClick,
+  onAttractionClick,
   onCategoryClick,
   onLoginClick,
   onRegisterClick,
@@ -79,16 +82,52 @@ export const HomePage: React.FC<HomePageProps> = ({
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig | null>(null);
+  const [banners, setBanners] = useState<HomepageBanner[]>([]);
 
   // Fetch homepage CMS config
   useEffect(() => {
     homepagePublicService.getConfig().then(setHomepageConfig).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    homepagePublicService.listBanners().then(setBanners).catch(() => {});
+  }, []);
+
   const isModuleVisible = (key: string) => {
     if (!homepageConfig) return true; // show all by default while loading
     const mod = homepageConfig.modules.find((m) => m.module_key === key);
     return mod ? mod.is_visible : true;
+  };
+
+  const apiBannerSlides = banners
+    .filter((banner) => banner.image)
+    .map((banner) => ({
+      id: String(banner.id),
+      image: banner.image,
+      title: banner.title_zh,
+      titleEn: banner.title_en || banner.title_zh,
+      subtitle: banner.subtitle_zh,
+      subtitleEn: banner.subtitle_en || banner.subtitle_zh,
+      tags: [],
+      tagsEn: [],
+      linkUrl: banner.link_url,
+    }));
+  const bannerDisplaySlides = apiBannerSlides.length > 0 ? apiBannerSlides : bannerSlides;
+
+  const handleBannerClick = (slide: { attractionId?: string; linkUrl?: string }) => {
+    if (slide.linkUrl) {
+      if (/^https?:\/\//.test(slide.linkUrl)) {
+        window.location.href = slide.linkUrl;
+      } else {
+        if (onNavClick) {
+          onNavClick(slide.linkUrl);
+        } else {
+          window.location.href = slide.linkUrl;
+        }
+      }
+      return;
+    }
+    if (slide.attractionId) onAttractionClick?.(slide.attractionId);
   };
 
 
@@ -148,6 +187,13 @@ export const HomePage: React.FC<HomePageProps> = ({
         后端 popular_products / popular module 数据保持，admin CMS 未来想
         重启用即可还原 import 与 JSX。
       */}
+
+      {isModuleVisible('banner') && bannerDisplaySlides.length > 0 && (
+        <HeroBanner
+          slides={bannerDisplaySlides}
+          onSlideClick={handleBannerClick}
+        />
+      )}
 
       {/* Search Tabs */}
       <section className={styles.searchSection}>
@@ -250,6 +296,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   key={product.id}
                   product={product}
                   language={currentLang}
+                  showImageBadges={false}
                   onClick={onProductClick}
                 />
               ))

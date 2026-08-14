@@ -60,6 +60,20 @@ export interface PopularProduct {
   order_count: number;
 }
 
+export interface HomepageBanner {
+  id: number;
+  title_zh: string;
+  title_en: string;
+  subtitle_zh: string;
+  subtitle_en: string;
+  image: string;
+  link_url: string;
+  sort_order: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HomepageConfig {
   modules: HomepageModule[];
   features: HomepageFeature[];
@@ -73,6 +87,10 @@ export interface HomepageConfig {
 export const homepagePublicService = {
   async getConfig(): Promise<HomepageConfig> {
     return get<HomepageConfig>('/homepage/config');
+  },
+
+  async listBanners(): Promise<HomepageBanner[]> {
+    return get<HomepageBanner[]>('/banners');
   },
 };
 
