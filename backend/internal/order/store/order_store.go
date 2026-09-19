@@ -1,11 +1,22 @@
 package store
 
 import (
+	"errors"
 	"time"
 
 	"enjoysa-backend/internal/order/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+// Refund-claim sentinel errors, returned by ClaimRefundIntent.
+var (
+	// ErrRefundInProgress means a refund was already claimed (processing or
+	// completed) — the concurrent/duplicate caller must be rejected.
+	ErrRefundInProgress = errors.New("refund already in progress or completed")
+	// ErrOrderNotRefundable means the order is not in a refundable status.
+	ErrOrderNotRefundable = errors.New("order is not in a refundable status")
 )
 
 type OrderStore struct {
@@ -34,6 +45,40 @@ func (s *OrderStore) Create(order *model.Order) error {
 
 func (s *OrderStore) Update(order *model.Order) error {
 	return s.db.Save(order).Error
+}
+
+// ClaimRefundIntent atomically reserves the right to refund an order. Inside a
+// single transaction it takes a SELECT ... FOR UPDATE row lock on the order,
+// re-checks the refundability invariants under that lock, and marks
+// RefundStatus=processing. Only the first concurrent caller wins; any other
+// caller racing on the same order gets ErrRefundInProgress. This closes the
+// check-then-act window that previously allowed concurrent double-refunds.
+//
+// It returns the locked order snapshot (so callers have the authoritative
+// OrderNo / StripePaymentIntentID) on success.
+func (s *OrderStore) ClaimRefundIntent(orderID uint, refundType string, refundAmount float64) (*model.Order, error) {
+	var order model.Order
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&order, orderID).Error; err != nil {
+			return err
+		}
+		if order.Status != model.OrderStatusPaid && order.Status != model.OrderStatusAccepted {
+			return ErrOrderNotRefundable
+		}
+		if order.RefundStatus == "processing" || order.RefundStatus == "completed" {
+			return ErrRefundInProgress
+		}
+		order.RefundStatus = "processing"
+		order.RefundType = refundType
+		order.RefundAmount = refundAmount
+		return tx.Model(&order).
+			Select("refund_status", "refund_type", "refund_amount").
+			Updates(&order).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &order, nil
 }
 
 // UpdateWithStatus optimistic lock: only updates if current DB status matches expectedStatus

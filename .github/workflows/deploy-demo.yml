@@ -120,7 +120,7 @@ jobs:
           ssh aws-demo "cd ${{ env.BACKEND_DEPLOY }} && \
             export DB_PASSWORD='enjoysa-demo-2026' && \
             export JWT_SECRET='enjoysa-demo-jwt-secret-2026' && \
-            export STRIPE_SECRET_KEY='' && \
+            export STRIPE_SECRET_KEY='${{ secrets.STRIPE_SECRET_KEY_TEST }}' && \
             export STRIPE_WEBHOOK_SECRET='' && \
             export RESEND_API_KEY='' && \
             export AI_PROJ_BASE='' && \

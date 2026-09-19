@@ -102,9 +102,15 @@ func Setup(cfg Config) *gin.Engine {
 	r.Use(middleware.Recovery())
 	r.Use(middleware.CORS(cfg.FrontendURL))
 
-	// Health check
+	// Health check — probes DB so the deploy healthcheck and load balancer
+	// get a real liveness signal, not a fake-green 200 while DB is down.
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		sqlDB, err := cfg.DB.DB()
+		if err != nil || sqlDB.PingContext(context.Background()) != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "degraded", "db": "unreachable"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "db": "ok"})
 	})
 
 	// Static files for uploads
@@ -224,8 +230,8 @@ func Setup(cfg Config) *gin.Engine {
 	// REQ-20260510-0004: stock alert wired post-construction so legacy code
 	// paths that build OrderHandler directly stay compatible.
 	orderHandler.SetStockAlertService(stockAlertSvc)
-	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pStore, pg)
-	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL)
+	supplierOrderHandler := orderhandler.NewSupplierOrderHandler(oStore, pStore, pg, feishuClient)
+	paymentHandler := paymenthandler.NewPaymentHandler(oStore, pg, cfg.FrontendURL, feishuClient)
 	supplierHandler := supplierhandler.NewSupplierHandler(cfg.DB, oStore, pStore)
 	adminHandler := handler.NewAdminHandler(cfg.DB, adminStore, userStore, oStore, pStore, regionStore, categoryStore, auditLogger, notifSvc, aStore, rvStore, slStore, supplierAuditStore)
 	// REQ-20260509-0004: wire the same translation service so admin
