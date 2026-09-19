@@ -12,6 +12,10 @@ on:
           - full
           - frontend
           - backend
+      reason:
+        description: '部署原因（记录在 Actions log 中，方便事后排查）'
+        required: false
+        type: string
 
 env:
   SERVER_IP: 13.239.210.53
@@ -104,6 +108,8 @@ jobs:
             export AI_GLM_BASE_URL='${{ secrets.AI_GLM_BASE_URL }}' && \
             export AI_GLM_API_KEY='${{ secrets.AI_GLM_API_KEY }}' && \
             export FEISHU_WEBHOOK_URL='${{ secrets.FEISHU_WEBHOOK_URL }}' && \
+            export STRIPE_SECRET_KEY='${{ secrets.STRIPE_SECRET_KEY }}' && \
+            export STRIPE_WEBHOOK_SECRET='${{ secrets.STRIPE_WEBHOOK_SECRET }}' && \
             docker compose up -d --build --wait --remove-orphans"
 
       # --- Nginx Config ---
